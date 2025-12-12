@@ -31,16 +31,95 @@ C:\Mitienda
 - Toda comunicación entre capas se realiza mediante API REST (HTTP + JSON).
 - El backend es la única capa autorizada a acceder a la base de datos.
 
+---
 
-## 4. Capa Backend (FastAPI)
+## 4. Reglas de trabajo, calidad y consistencia (OBLIGATORIAS)
 
-### 4.1 Ubicación física
+Estas reglas rigen **cómo se desarrolla** MiTienda y **cómo se protege** el código.
+Son vinculantes para todas las etapas del proyecto.
+
+### 4.1 Método de avance (paso a paso)
+
+- El desarrollo se realiza **paso a paso**.
+- El asistente propone **un solo paso por vez**.
+- El usuario confirma explícitamente antes de continuar.
+- Se evita avanzar múltiples pasos juntos para no saltear lógica ni romper flujo.
+
+### 4.2 Protección del código y la arquitectura existente
+
+- No se recrean archivos existentes sin indicación explícita.
+- No se mueven ni renombran carpetas o archivos sin confirmación previa si afecta arquitectura.
+- Todo cambio estructural debe ser informado y aprobado antes de aplicarse.
+
+### 4.3 Estilo, nombres y mantenibilidad
+
+- Todo código nuevo debe incluir **comentarios claros** explicando:
+  - propósito del archivo
+  - responsabilidad de funciones
+  - decisiones relevantes
+- Los nombres deben ser:
+  - semánticos
+  - explícitos
+  - coherentes con su responsabilidad
+- Se mantiene consistencia de nombres entre capas.
+
+Ejemplos:
+- `usuarios_models.py` ↔ `usuarios_services.py` ↔ `usuarios_routers.py`
+- `AuthContext.jsx` ↔ `authService.js`
+
+### 4.4 Gestión de archivos (lista archivero)
+
+- Se mantiene una **lista archivero lógica** que contempla:
+  - carpetas creadas
+  - archivos creados
+  - propósito de cada archivo
+- Antes de crear algo nuevo se debe verificar:
+  - que no exista algo equivalente
+  - que el nombre sea coherente con la estructura actual
+- No se crean archivos duplicados para una misma responsabilidad.
+
+### 4.5 Regla de modificación de archivos
+
+- Siempre debe indicarse si un cambio implica:
+  - **reemplazar completamente** un archivo existente, o
+  - **agregar/modificar** partes puntuales.
+- El asistente debe aclararlo antes de escribir código.
+
+### 4.6 Documentación por bloques (ESTADOS)
+
+- 🟢 **ESTADO A — Desarrollo normal**
+  - Se avanza con código.
+  - NO se actualiza PROJECT.md ni HISTORY.md por cambios pequeños.
+
+- 🟡 **ESTADO B — Cierre de bloque**
+  - Se alcanza un punto estable y probado.
+  - Se actualiza:
+    - PROJECT.md (si hay cambios estructurales)
+    - HISTORY.md (registro del avance).
+
+- 🔴 **ESTADO C — Retomar**
+  - Para continuar se utiliza la frase:
+    > “Quiero continuar el proyecto MiTienda.  
+    > Tengo PROJECT.md y HISTORY.md actualizados.”
+
+### 4.7 Regla de no suposición de estado
+
+- El asistente NO debe asumir:
+  - que un archivo existe si no fue mostrado o documentado
+  - que un paso está hecho si no figura en HISTORY.md
+- Ante duda, se debe **verificar o preguntar**, nunca inferir.
+
+---
+
+## 5. Capa Backend (FastAPI)
+
+### 5.1 Ubicación física
 
 C:\Mitienda\backend
 
 ---
 
-### 4.2 Rol del Backend
+### 5.2 Rol del Backend
 
 El backend es la **capa central del sistema** y cumple las siguientes responsabilidades:
 
@@ -55,82 +134,81 @@ El backend es la **fuente de la verdad** del sistema.
 
 ---
 
-### 4.3 Estructura interna del Backend
+### 5.3 Estructura interna del Backend
 
 backend/
-├── main.py                 → Punto de entrada de FastAPI
-├── create_tables.py        → Creación inicial de tablas
-├── .env                    → Variables de entorno
+├── main.py
+├── create_tables.py
+├── .env
 │
 └── app/
-    ├── core/               → Infraestructura y seguridad
-    │    ├── config.py      → Carga de configuración desde .env
-    │    ├── database.py    → Engine, SessionLocal y Base ORM
-    │    ├── security.py    → Hash y verificación de contraseñas
-    │    └── auth.py        → JWT, usuario actual y logout
+    ├── core/
+    │    ├── config.py
+    │    ├── database.py
+    │    ├── security.py
+    │    └── auth.py
     │
-    ├── models/             → Modelos ORM (SQLAlchemy)
-    ├── schemas/            → Modelos de validación (Pydantic)
-    ├── services/           → Lógica de negocio
-    └── routers/            → Endpoints HTTP (API REST)
+    ├── models/
+    ├── schemas/
+    ├── services/
+    └── routers/
 
 ---
 
-### 4.4 Estado actual del Backend
-
-Funcionalidades implementadas y probadas:
+### 5.4 Estado actual del Backend
 
 - Registro de usuarios
 - Login con JWT
 - Tokens con expiración
-- Endpoint protegido /usuarios/me
-- Logout real con revocación de tokens en base de datos
-- Protección de rutas mediante dependencias
-- Configuración segura por variables de entorno
+- Endpoint /usuarios/me
+- Logout real con revocación de tokens
+- Seguridad por dependencias
+- Variables de entorno (.env)
 
-El backend se considera **estable** y no debe modificarse sin autorización explícita.
+Backend considerado **estable**.
 
+---
 
-## 5. Capa Frontend (React)
+## 6. Capa Frontend (React)
 
-### 5.1 Ubicación física
+### 6.1 Ubicación física
 
 C:\Mitienda\frontend
 
 ---
 
-### 5.2 Stack tecnológico del Frontend
+### 6.2 Stack tecnológico
 
 - React
 - Vite
 - TailwindCSS v4
-- JavaScript (no TypeScript)
+- JavaScript
 - Node.js / npm
 
 ---
 
-### 5.3 Rol del Frontend
+### 6.3 Rol del Frontend
 
-El frontend es responsable exclusivamente de:
+- Renderizar UI
+- Navegación entre vistas
+- Consumo de API backend
+- Manejo del estado de autenticación (JWT)
 
-- Renderizar la interfaz de usuario.
-- Gestionar la experiencia del usuario (UI/UX).
-- Navegar entre vistas.
-- Consumir la API del backend mediante HTTP.
-- Manejar el estado del usuario autenticado (token JWT).
-
-El frontend **no contiene lógica de negocio crítica**  
-y **no accede directamente a la base de datos**.
+No contiene lógica de negocio crítica.
 
 ---
 
-### 5.4 Estructura actual del Frontend
+### 6.4 Estructura actual del Frontend
 
 frontend/
 ├── src/
-│   ├── App.jsx          → Componente raíz de la aplicación
-│   ├── main.jsx         → Punto de entrada de React
-│   └── index.css        → Estilos globales (TailwindCSS)
+│   ├── main.jsx
+│   ├── index.css
+│   ├── context/
+│   ├── layouts/
+│   ├── pages/
+│   ├── router/
+│   └── services/
 │
 ├── public/
 ├── index.html
@@ -140,182 +218,51 @@ frontend/
 
 ---
 
-### 5.5 Configuración de TailwindCSS
+### 6.5 TailwindCSS
 
-El proyecto utiliza **TailwindCSS v4**.
-
-- No se usa tailwind.config.js por defecto.
-- No se usa postcss.config.js por defecto.
-- Tailwind se activa mediante importación directa en CSS.
-
-Archivo clave:
-
-src/index.css
-
-Contenido mínimo requerido:
-
-@import "tailwindcss";
+- TailwindCSS v4
+- Sin tailwind.config.js
+- Importación directa en index.css
 
 ---
 
-### 5.6 Estado actual del Frontend
+## 7. Capa Database
 
-Estado validado:
-
-- Proyecto creado correctamente con Vite.
-- Separación física del backend confirmada.
-- TailwindCSS v4 funcionando correctamente.
-- Renderizado probado en navegador.
-- Sin conexión aún al backend (intencional).
-
-El frontend está listo para comenzar la navegación y conexión con la API.
-
-
-## 6. Capa Database (Base de Datos)
-
-### 6.1 Ubicación física
+### 7.1 Ubicación
 
 C:\Mitienda\database
 
 ---
 
-### 6.2 Rol de la capa Database
+### 7.2 Rol
 
-La carpeta database representa la **base de datos física** y su entorno,
-no la lógica de acceso ni el ORM.
+- Almacenamiento de datos
+- Scripts SQL (opcional)
+- Backups
 
-Sus responsabilidades son:
-
-- Almacenar datos persistentes.
-- Contener scripts SQL manuales (opcional).
-- Contener backups o dumps de la base de datos.
-- Documentación relacionada a la base de datos.
+Sin lógica de aplicación.
 
 ---
 
-### 6.3 Restricciones importantes
+## 8. Comunicación entre capas
 
-- La carpeta database NO contiene código Python.
-- La carpeta database NO contiene código JavaScript.
-- La carpeta database NO contiene lógica de negocio.
-- El acceso a la base de datos se realiza exclusivamente desde el backend.
-- SQLAlchemy (ORM) vive en la capa backend, no aquí.
+Frontend → Backend: HTTP + JSON + JWT  
+Backend → Database: SQLAlchemy ORM  
 
 ---
 
-### 6.4 Motor de base de datos utilizado
+## 9. Estado actual del proyecto
 
-- Motor: MySQL
-- Acceso: SQLAlchemy ORM (desde backend)
-- Configuración: Variables de entorno (.env)
-
----
-
-### 6.5 Estado actual de la capa Database
-
-- Base de datos configurada y operativa.
-- Tablas creadas mediante SQLAlchemy.
-- Integración estable con el backend.
-
-La capa database se considera **estable**.
-
-## 7. Comunicación entre capas
-
-### 7.1 Frontend → Backend
-
-La comunicación entre frontend y backend se realiza exclusivamente mediante
-HTTP utilizando una API REST.
-
-Características:
-
-- Protocolo: HTTP
-- Formato de datos: JSON
-- Autenticación: JWT (Bearer Token)
-- Transporte seguro: HTTPS (en producción)
-
-Ejemplos de endpoints:
-
-- POST /usuarios/login
-- POST /usuarios/registrar
-- GET /usuarios/me
-- POST /usuarios/logout
-
-El frontend **nunca accede directamente a la base de datos**.
+- Backend estable
+- Frontend con auth y navegación base
+- Database operativa
+- Arquitectura respetada
 
 ---
 
-### 7.2 Backend → Database
+## 10. Punto exacto para continuar
 
-La comunicación entre backend y base de datos se realiza exclusivamente mediante:
+Frontend — PASO 6  
+Carga y visualización del usuario autenticado (`/usuarios/me`).
 
-- SQLAlchemy ORM
-- Sesiones controladas (SessionLocal)
-- Modelos ORM declarativos
-
-Características:
-
-- El backend es el único que conoce la estructura de la base de datos.
-- El backend gestiona transacciones, commits y rollbacks.
-- La base de datos no conoce al frontend.
-
----
-
-### 7.3 Restricciones de comunicación
-
-- El frontend NO se comunica con la base de datos.
-- La base de datos NO expone endpoints.
-- El frontend NO contiene lógica de negocio crítica.
-- Toda validación de reglas de negocio vive en el backend.
-
-Estas reglas son obligatorias para mantener la arquitectura por capas.
-
-## 8. Estado actual del proyecto
-
-### 8.1 Componentes validados
-
-Backend:
-- API FastAPI operativa.
-- Registro y login de usuarios funcionando.
-- Autenticación JWT implementada.
-- Expiración de tokens configurada.
-- Endpoint /usuarios/me funcionando.
-- Logout real con revocación de tokens en base de datos.
-- Configuración por variables de entorno (.env).
-- Arquitectura por capas respetada.
-- Backend considerado estable.
-
-Frontend:
-- Proyecto React creado con Vite.
-- Separación física del backend confirmada.
-- TailwindCSS v4 instalado y funcionando.
-- Renderizado de estilos validado en navegador.
-- Frontend considerado estable para continuar.
-
-Database:
-- Base de datos MySQL operativa.
-- Tablas creadas mediante SQLAlchemy.
-- Acceso exclusivo desde backend.
-- Capa database considerada estable.
-
----
-
-### 8.2 Restricciones actuales
-
-- No modificar el backend sin autorización explícita.
-- No cambiar la estructura de carpetas.
-- No romper la separación por capas.
-- No introducir lógica de negocio en el frontend.
-- No acceder a la base de datos fuera del backend.
-
----
-
-### 8.3 Punto exacto para continuar
-
-El proyecto se encuentra en la siguiente etapa:
-
-Frontend — PASO 3  
-Instalar y configurar React Router para navegación entre vistas.
-
-Todo el trabajo previo se considera estable y documentado.
-Cualquier avance debe continuar desde este punto.
-
+Todo lo previo se considera **estable y documentado**.
