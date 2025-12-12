@@ -42,3 +42,6 @@ build/
 *.tmp
 *.swp
 
+# Scripts locales de activación
+backend/activate.ps1
+
