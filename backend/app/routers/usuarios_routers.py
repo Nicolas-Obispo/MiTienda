@@ -11,7 +11,15 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 
 # Schemas
-from app.schemas.usuarios_schemas import UsuarioCreate, UsuarioLogin, UsuarioResponse
+from app.schemas.usuarios_schemas import (
+    UsuarioCreate,
+    UsuarioLogin,
+    UsuarioResponse,
+    UsuarioOnboarding,
+    UsuarioCambioModo
+)
+
+
 
 # Autenticación y seguridad
 from fastapi.security import HTTPAuthorizationCredentials
@@ -27,7 +35,9 @@ from app.models.tokens_models import TokenRevocado
 from app.services.usuarios_services import (
     crear_usuario,
     autenticar_usuario,
-    obtener_usuario_por_id
+    obtener_usuario_por_id,
+    completar_onboarding_usuario,
+    cambiar_modo_usuario
 )
 
 
@@ -129,3 +139,65 @@ def obtener_usuario_endpoint(usuario_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
     return usuario
+
+# =============================================================
+#  ONBOARDING DEL USUARIO
+# =============================================================
+@router.post(
+    "/onboarding",
+    response_model=UsuarioResponse,
+    summary="Completar onboarding inicial del usuario"
+)
+def completar_onboarding_endpoint(
+    payload: UsuarioOnboarding,
+    db: Session = Depends(get_db),
+    usuario_actual=Depends(obtener_usuario_actual)
+):
+    """
+    Completa el onboarding del usuario autenticado.
+
+    - Guarda provincia y ciudad
+    - Marca onboarding_completo = True
+    - Devuelve el usuario actualizado
+    """
+
+    usuario_actualizado = completar_onboarding_usuario(
+        db=db,
+        usuario=usuario_actual,
+        provincia=payload.provincia,
+        ciudad=payload.ciudad
+    )
+
+    return usuario_actualizado
+
+# =============================================================
+#  CAMBIO DE MODO (USUARIO ↔ PUBLICADOR)
+# =============================================================
+@router.post(
+    "/modo",
+    response_model=UsuarioResponse,
+    summary="Cambiar modo activo del usuario"
+)
+def cambiar_modo_endpoint(
+    payload: UsuarioCambioModo,
+    db: Session = Depends(get_db),
+    usuario_actual=Depends(obtener_usuario_actual)
+):
+    """
+    Permite cambiar el modo activo del usuario autenticado.
+
+    - No genera nuevo token
+    - No crea cuentas nuevas
+    - Solo actualiza estado interno
+    """
+
+    try:
+        usuario_actualizado = cambiar_modo_usuario(
+            db=db,
+            usuario=usuario_actual,
+            nuevo_modo=payload.modo
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return usuario_actualizado

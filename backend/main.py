@@ -6,6 +6,18 @@ from fastapi import FastAPI
 # Routers
 from app.routers.productos_routers import router as productos_routers
 from app.routers.usuarios_routers import router as usuarios_routers  
+from app.routers.comercios_routers import router as comercios_router
+from app.routers.rubros_routers import router as rubros_routers
+from app.routers.secciones_routers import router as secciones_router
+from app.routers.publicaciones_routers import router as publicaciones_router
+from app.routers.historias_routers import router as historias_router
+from app.routers.likes_publicaciones_routers import router as likes_publicaciones_router
+from app.routers.ranking_publicaciones_routers import router as ranking_publicaciones_router
+from app.routers.feed_publicaciones_routers import router as feed_publicaciones_router
+
+
+
+
 
 app = FastAPI(
     title="MiTienda API",
@@ -28,3 +40,12 @@ def home():
 # ✅ Registrar routers
 app.include_router(productos_routers)
 app.include_router(usuarios_routers)  
+app.include_router(comercios_router)
+app.include_router(rubros_routers)
+app.include_router(secciones_router)
+app.include_router(publicaciones_router)
+app.include_router(historias_router)
+app.include_router(likes_publicaciones_router)
+app.include_router(ranking_publicaciones_router)
+app.include_router(feed_publicaciones_router)
+

@@ -47,3 +47,60 @@ def autenticar_usuario(db: Session, data: UsuarioLogin) -> Usuario | None:
 
 def obtener_usuario_por_id(db: Session, usuario_id: int) -> Usuario | None:
     return db.query(Usuario).filter(Usuario.id == usuario_id).first()
+
+
+def completar_onboarding_usuario(
+    db: Session,
+    usuario: Usuario,
+    provincia: str,
+    ciudad: str
+) -> Usuario:
+    """
+    Completa el onboarding inicial del usuario.
+
+    - Guarda provincia y ciudad
+    - Marca onboarding_completo = True
+    - No crea usuario nuevo
+    - No toca autenticación ni tokens
+
+    Se espera que el usuario ya esté autenticado.
+    """
+
+    usuario.provincia = provincia
+    usuario.ciudad = ciudad
+    usuario.onboarding_completo = True
+
+    db.commit()
+    db.refresh(usuario)
+
+    return usuario
+
+def cambiar_modo_usuario(
+    db: Session,
+    usuario: Usuario,
+    nuevo_modo: str
+) -> Usuario:
+    """
+    Cambia el modo activo del usuario.
+
+    Modos permitidos:
+    - "usuario"
+    - "publicador"
+
+    Reglas:
+    - No crea nuevas cuentas
+    - No genera nuevos tokens
+    - Solo actualiza el estado del usuario autenticado
+    """
+
+    modos_permitidos = {"usuario", "publicador"}
+
+    if nuevo_modo not in modos_permitidos:
+        raise ValueError("Modo inválido")
+
+    usuario.modo_activo = nuevo_modo
+
+    db.commit()
+    db.refresh(usuario)
+
+    return usuario
