@@ -2598,3 +2598,37 @@ Al cerrar esta etapa se actualiza `NUEVOHISTORY.md` y se sube al repositorio con
 Al cerrar esta etapa:
 - se actualiza `NUEVOHISTORY.md`
 - se sube al repositorio con commit correspondiente
+
+
+## ETAPA 35 — Ranking interactivo (FRONTEND) ✅ (CERRADA + SUBIDA)
+
+**Objetivo:** permitir interacciones desde la pantalla Ranking sin modificar backend: Like (toggle) y Guardar/Quitar guardado con Optimistic UI y rollback ante error.
+
+### Cambios realizados
+- Se extendió `RankingPage` para incluir:
+  - Botón **Like** (toggle) consumiendo `POST /likes/publicaciones/{publicacion_id}`
+  - Botón **Guardar/Quitar** consumiendo:
+    - `POST /publicaciones/guardadas` con body `{ publicacion_id }`
+    - `DELETE /publicaciones/guardadas/{publicacion_id}`
+- Se incorporó carga de guardados del usuario:
+  - `GET /publicaciones/guardadas`
+  - Se construye un `Set` de `publicacion_id` y se mergea en el ranking con `guardada_by_me`.
+- **Optimistic UI**:
+  - Like: actualiza instantáneamente `liked_by_me` + `likes_count`
+  - Guardado: actualiza instantáneamente `guardada_by_me` + `guardados_count`
+  - Si falla backend: rollback al estado anterior (snapshot).
+- Locks por publicación para evitar múltiples clicks mientras se procesa.
+
+### Archivos impactados
+- `frontend/src/pages/RankingPage.jsx` (ACTUALIZADO: acciones Like/Guardar + optimistic UI)
+
+### Pruebas realizadas
+- Ranking carga correctamente.
+- Like funciona desde Ranking (cambio inmediato + contador + rollback si falla).
+- Guardar/Quitar funciona desde Ranking (cambio inmediato + contador + rollback si falla).
+- No se afectó Feed, Login, Auth ni navegación.
+
+### Regla de sincronización
+Al cerrar esta etapa:
+- se actualiza `NUEVOHISTORY.md`
+- se sube al repositorio con commit correspondiente
