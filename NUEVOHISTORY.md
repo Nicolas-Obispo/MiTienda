@@ -2024,3 +2024,500 @@ ranking existente y respetando el diseño no social de MiPlaza.
   - filtros por rubro y ubicación
   - feeds más inteligentes
   - evolución futura del descubrimiento
+
+
+## Etapa 29 — Backend: Publicaciones Guardadas / Favoritos (COMPLETADA)
+
+En esta etapa se implementó la funcionalidad de **publicaciones guardadas por usuario**,
+orientada al uso personal (guardar para ver más tarde), manteniendo el diseño
+**no social** de MiPlaza y sin impacto en ranking ni feed principal.
+
+---
+
+### Objetivo de la etapa
+
+- Permitir que un usuario guarde publicaciones
+- Mantener el guardado como acción privada
+- No interferir con likes, ranking ni feed
+- Respetar estrictamente la arquitectura por capas
+
+---
+
+### Trabajo realizado
+
+#### 1. Model de Publicaciones Guardadas (`publicaciones_guardadas_models.py`)
+- Creación de tabla intermedia usuario ↔ publicación
+- Campos:
+  - usuario_id
+  - publicacion_id
+  - created_at
+- Constraint único:
+  - un usuario no puede guardar la misma publicación dos veces
+- Eliminación en cascada ante borrado de usuario o publicación
+
+---
+
+#### 2. Schemas (`publicaciones_guardadas_schemas.py`)
+- Schema de creación (`PublicacionGuardadaCreate`)
+- Schema de respuesta
+- Schema de listado
+- Sin lógica de negocio
+- Preparados para futura ampliación
+
+---
+
+#### 3. Service (`publicaciones_guardadas_services.py`)
+- Lógica centralizada:
+  - guardar publicación
+  - evitar duplicados
+  - quitar guardado
+  - listar guardados del usuario
+- Validación de existencia de publicación
+- Manejo de errores de integridad
+- Sin dependencias HTTP
+
+---
+
+#### 4. Router (`publicaciones_guardadas_routers.py`)
+- Endpoints implementados:
+  - `POST /publicaciones/guardadas`
+  - `GET /publicaciones/guardadas`
+  - `DELETE /publicaciones/guardadas/{publicacion_id}`
+- Requiere usuario autenticado
+- Uso de auth existente (`obtener_usuario_actual`)
+- Router liviano, delega toda la lógica al service
+
+---
+
+#### 5. Integración y limpieza
+- Model integrado en `create_tables.py`
+- Router registrado en `main.py`
+- Eliminación de archivo duplicado `app/create_tables.py`
+- Backend levanta correctamente
+- Tabla creada sin errores
+
+---
+
+### Validaciones realizadas
+
+- Un usuario puede guardar una publicación válida
+- No se permiten duplicados
+- El listado devuelve solo publicaciones del usuario
+- El borrado funciona correctamente
+- Likes, ranking y feed no se vieron afectados
+- Arquitectura por capas respetada
+- Código consistente con módulos previos
+
+---
+
+### Estado tras esta etapa
+
+- Módulo **Publicaciones Guardadas cerrado y estable**
+- Proyecto en **ESTADO B — Bloque cerrado**
+- Base lista para:
+  - métricas de guardados
+  - mejoras de descubrimiento
+  - features de organización personal
+
+
+## Etapa 30 — Backend: Métricas avanzadas de interacción (COMPLETADA)
+
+En esta etapa se incorporaron métricas avanzadas de interacción para publicaciones,
+con el objetivo de enriquecer el análisis de contenido y preparar el sistema para
+rankings y descubrimiento más inteligentes, sin modificar el diseño no social de MiPlaza.
+
+---
+
+### Objetivo de la etapa
+
+- Incorporar métricas de interacción adicionales
+- Reutilizar datos existentes (likes y guardados)
+- No agregar columnas ni tablas nuevas
+- No romper ranking, feed ni endpoints existentes
+
+---
+
+### Trabajo realizado
+
+#### 1. Helpers de métricas en `publicaciones_services.py`
+- Se agregaron funciones reutilizables:
+  - `obtener_guardados_count`
+  - `obtener_interacciones_count`
+- Métricas calculadas on-the-fly
+- Sin persistencia en base de datos
+- Sin modificar firmas existentes
+
+---
+
+#### 2. Ampliación de schemas (`PublicacionRead`)
+- Nuevos campos:
+  - `guardados_count`
+  - `interacciones_count`
+- Valores por defecto seguros (`0`)
+- Backwards compatible
+- Preparado para futura migración a Pydantic v2
+
+---
+
+#### 3. Integración en Feed personalizado
+- Reutilización de helpers de métricas
+- Feed mantiene ranking por likes + recencia
+- No se rompe `liked_by_me`
+- Métricas inyectadas en runtime
+
+---
+
+#### 4. Correcciones de ORM y consistencia
+- Relaciones bidireccionales completas:
+  - Usuario ↔ PublicacionGuardada
+  - Publicacion ↔ PublicacionGuardada
+- Resolución de error de mapper SQLAlchemy
+- Login y auth funcionando correctamente
+
+---
+
+### Validaciones realizadas
+
+- Login exitoso
+- Feed operativo
+- Métricas visibles en respuestas:
+  - `guardados_count`
+  - `interacciones_count`
+- Guardados impactan correctamente en métricas
+- Ranking y likes continúan funcionando
+- Backend estable
+
+---
+
+### Estado tras esta etapa
+
+- Módulo de métricas avanzado cerrado y estable
+- Proyecto en **ESTADO B — Bloque cerrado**
+- Base lista para:
+  - ranking avanzado
+  - métricas por comercio / rubro
+  - dashboards futuros
+
+
+## 🟢 ETAPA 31 — Feed personalizado, Guardados, Likes, Ranking e Historias (BACKEND)
+
+### 📌 Objetivo de la etapa
+Cerrar y validar completamente la lógica social del backend de **MiPlaza**, asegurando que:
+- El feed funcione correctamente
+- Guardados y likes se comporten de forma consistente
+- El ranking refleje interacciones reales
+- Las historias funcionen como contenido efímero por comercio
+- Todo quede estable y listo para consumo desde frontend
+
+---
+
+## ✅ Funcionalidades implementadas y verificadas
+
+### 1️⃣ Autenticación y contexto de usuario
+- Login funcional con JWT
+- Todos los endpoints sociales dependen del usuario autenticado
+- Se verificó funcionamiento con **múltiples usuarios distintos**
+- Cada acción (guardar, like) queda correctamente asociada al usuario
+
+---
+
+### 2️⃣ Publicaciones
+- Creación de publicaciones por comercio
+- Campos verificados:
+  - `titulo`
+  - `descripcion`
+  - `is_activa`
+  - timestamps automáticos
+- Publicaciones activas visibles en feed y ranking
+
+---
+
+### 3️⃣ Guardado de publicaciones
+**Endpoints**
+- `POST /publicaciones/guardadas`
+- `GET /publicaciones/guardadas`
+- `DELETE /publicaciones/guardadas/{publicacion_id}`
+
+**Comportamiento validado**
+- Un usuario puede guardar una publicación
+- El mismo usuario **no puede guardar dos veces la misma publicación**
+  - Devuelve `400 Bad Request` → `"La publicación ya está guardada"`
+- Distintos usuarios pueden guardar la misma publicación
+- Al borrar un guardado:
+  - `204 No Content`
+  - Se actualizan correctamente los contadores
+
+**Impacto en métricas**
+- `guardados_count` se incrementa/decrementa correctamente
+- `interacciones_count` refleja la suma de interacciones
+
+---
+
+### 4️⃣ Likes en publicaciones
+**Endpoint**
+- `POST /likes/publicaciones/{publicacion_id}` (toggle)
+
+**Comportamiento validado**
+- Like funciona como toggle:
+  - Primera llamada → `liked: true`
+  - Segunda llamada → `liked: false`
+- El estado es **por usuario**
+- Likes afectan métricas globales
+
+**Impacto en métricas**
+- `likes_count` se actualiza correctamente
+- `interacciones_count` se incrementa/decrementa en consecuencia
+- `liked_by_me` refleja correctamente el estado del usuario actual
+
+---
+
+### 5️⃣ Feed personalizado
+**Endpoint**
+- `GET /feed/publicaciones`
+
+**Características**
+- Devuelve publicaciones ordenadas por score (ranking)
+- Incluye métricas calculadas:
+  - `guardados_count`
+  - `interacciones_count`
+  - `likes_count`
+  - `liked_by_me`
+- El feed cambia dinámicamente según:
+  - Usuario autenticado
+  - Likes y guardados realizados
+
+**Estado**
+- Funciona correctamente
+- Sin errores SQL
+- Datos consistentes entre requests
+
+---
+
+### 6️⃣ Ranking de publicaciones
+**Endpoint**
+- `GET /ranking/publicaciones`
+
+**Lógica del ranking**
+- Basado en:
+  - Cantidad de interacciones (guardados + likes)
+  - Orden secundario por fecha de creación
+- Solo publicaciones activas
+
+**Validaciones realizadas**
+- Ranking se reordena al:
+  - Guardar/desguardar publicaciones
+  - Agregar/quitar likes
+- Cambios hechos por distintos usuarios impactan el ranking global
+- Se verificó que:
+  - Dos usuarios guardando la misma publicación suman correctamente
+  - Al quitar un guardado, la publicación baja en ranking
+
+---
+
+### 7️⃣ Historias por comercio
+**Endpoints**
+- `POST /historias/comercios/{comercio_id}`
+- `GET /historias/comercios/{comercio_id}`
+
+**Campos requeridos**
+- `media_url`
+- `expira_en`
+- `is_activa`
+
+**Validaciones**
+- Error 422 cuando faltan campos obligatorios
+- Creación exitosa con datos completos
+- Listado correcto por comercio
+- Historias asociadas correctamente al comercio
+- Preparado para lógica de expiración futura
+
+---
+
+## 🧠 Decisiones técnicas importantes
+- Likes y guardados son **interacciones, no contenido social**
+- No hay comentarios (postergado para etapa futura)
+- El feed y ranking reutilizan lógica común
+- Las métricas son calculadas (no duplicadas innecesariamente)
+- Arquitectura respetada:
+  - Routers → HTTP
+  - Services → lógica de negocio
+  - Models → persistencia
+  - Schemas → serialización
+
+---
+
+## 🟢 Estado final de la etapa
+- ✅ Feed estable
+- ✅ Guardados correctos
+- ✅ Likes correctos
+- ✅ Ranking coherente y dinámico
+- ✅ Historias funcionando
+- ✅ Probado con múltiples usuarios
+- ✅ Backend listo para integración frontend
+
+---
+
+## ➡️ Próximo paso (ETAPA 32)
+Integración frontend del feed:
+- Consumo de `/feed/publicaciones`
+- Render dinámico
+- Estados de liked/guardado
+- Preparación UI para historias
+
+
+## 🟢 ETAPA 32 — Integración Frontend: Feed, Autenticación y UI App-like
+
+### 📌 Objetivo de la etapa
+Integrar el **frontend** con el backend ya estable (ETAPA 31), asegurando que:
+- El feed pueda consumirse correctamente desde la UI
+- El usuario pueda autenticarse desde el frontend sin pasos manuales
+- La interfaz tenga un diseño consistente y nivel “app”
+- No se modifique ninguna lógica existente del backend
+
+---
+
+## ✅ Funcionalidades implementadas y verificadas
+
+### 1️⃣ Infraestructura base del frontend
+- Se confirmó que el entrypoint real del frontend es `src/main.jsx`
+- La aplicación se monta utilizando:
+  - `AuthProvider`
+  - `AppRouter`
+- Se respetó la arquitectura existente:
+  - `pages`
+  - `layouts`
+  - `services`
+  - `context`
+- No se recreó ni duplicó ninguna estructura existente
+
+---
+
+### 2️⃣ Configuración de Tailwind CSS (v4)
+- Se detectó que Tailwind no estaba aplicando estilos
+- Se corrigió la infraestructura necesaria:
+  - Creación de `postcss.config.js`
+  - Instalación y configuración correcta de `@tailwindcss/postcss`
+  - Uso de `@import "tailwindcss";` en `src/index.css`
+- Se verificó que Tailwind aplique correctamente en:
+  - `/`
+  - `/login`
+  - `/feed`
+
+---
+
+### 3️⃣ Consumo del Feed desde el frontend
+- Se creó una capa de servicios HTTP:
+  - `http_service.js` para requests autenticados
+  - `feed_service.js` para consumir `/feed/publicaciones`
+- El frontend envía correctamente:
+  - `Authorization: Bearer <token>`
+- Se integró el endpoint:
+  - `GET /feed/publicaciones`
+- Se renderizan correctamente los datos:
+  - `titulo`
+  - `descripcion`
+  - `likes_count`
+  - `guardados_count`
+  - `liked_by_me`
+- Se manejan correctamente los estados:
+  - Loading
+  - Error (401 / token inválido o expirado)
+  - Empty
+  - OK
+
+---
+
+### 4️⃣ Feed UI (nivel app)
+- Se implementó un feed visualmente consistente:
+  - Cards con jerarquía tipográfica clara
+  - Badges métricos (Likes, Guardados, Liked)
+  - Layout centrado (`max-w-3xl`)
+- Se evitó duplicación de headers:
+  - El feed utiliza únicamente el header global del layout
+- El diseño respeta la filosofía de MiPlaza:
+  - Descubrimiento de contenido
+  - No red social
+
+---
+
+### 5️⃣ Home Page
+- Se refactorizó la página de inicio:
+  - Fondo oscuro
+  - Card central
+  - Call-to-Action hacia el Feed
+- Se unificó el look & feel con el resto del frontend
+
+---
+
+### 6️⃣ MainLayout (barra superior global)
+- Se eliminaron estilos inline
+- Se implementó una barra superior app-like con Tailwind:
+  - Navegación: Inicio / Feed / Login
+  - Header sticky con blur
+- Se agregó indicador visual de estado de sesión:
+  - “Sesión activa”
+  - “No autenticado”
+- Se mantuvo intacta la lógica existente de:
+  - `AuthContext`
+  - `logout`
+
+---
+
+### 7️⃣ Login desde frontend (UX completo)
+- Se refactorizó `Login.jsx`:
+  - UI con Tailwind
+  - Card centrada
+  - Inputs y mensajes de error claros
+- Flujo verificado:
+  - Login → `/usuarios/login`
+  - Token gestionado por `AuthContext`
+  - Redirección automática a `/feed`
+- Ya no es necesario pegar tokens manualmente en consola
+
+---
+
+## 🧪 Pruebas realizadas y confirmadas
+
+- `npm run dev` ejecuta sin errores
+- `/` renderiza correctamente (Home)
+- `/login`:
+  - Permite autenticarse
+  - Redirige automáticamente al Feed
+- `/feed`:
+  - Consume el backend correctamente
+  - Renderiza publicaciones con métricas correctas
+- Logout:
+  - Revoca el token
+  - Actualiza el estado visual
+  - Fuerza re-login cuando corresponde
+
+---
+
+## 🔒 Reglas respetadas
+- No se modificó ninguna lógica del backend
+- No se tocaron:
+  - Ranking
+  - Likes
+  - Guardados
+  - Feed
+  - Historias
+- No se mezcló frontend con backend
+- Se avanzó por etapas, validando cada paso
+
+---
+
+## 📌 Estado final de la etapa
+- Backend estable (ETAPA 31 intacta)
+- Frontend integrado y usable
+- Feed funcionando end-to-end
+- Autenticación completa desde UI
+- Base sólida para interacciones futuras
+
+---
+
+### ▶ Próximo paso sugerido
+**ETAPA 33 — Interacciones desde el Feed (Frontend)**
+- Like y Guardar desde la UI
+- Optimistic UI
+- Reutilizando endpoints existentes
+- Sin modificar lógica de backend
