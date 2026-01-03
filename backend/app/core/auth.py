@@ -14,8 +14,10 @@ from app.core.database import get_db
 from app.models.usuarios_models import Usuario
 from app.models.tokens_models import TokenRevocado
 
-# Esquema Bearer para autenticar mediante JWT
-bearer_scheme = HTTPBearer()
+# auto_error=False evita que FastAPI corte antes con "Not authenticated"
+# y nos permite dar un error propio y controlado.
+bearer_scheme = HTTPBearer(auto_error=False)
+
 
 
 # -----------------------------------------
@@ -64,7 +66,12 @@ def obtener_usuario_actual(
     y devuelve el usuario autenticado.
     """
 
+    # Si no viene Authorization: Bearer <token>, FastAPI entrega None
+    if credenciales is None or not credenciales.credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
     token = credenciales.credentials
+
 
     # 1. Decodificar token
     try:

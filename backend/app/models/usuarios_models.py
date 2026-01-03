@@ -56,3 +56,16 @@ class Usuario(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+
+        # -------------------------
+    # Publicaciones guardadas
+    # -------------------------
+    # Relación con publicaciones que el usuario guardó
+    # Uso personal (no social)
+    publicaciones_guardadas = relationship(
+        "PublicacionGuardada",
+        back_populates="usuario",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+

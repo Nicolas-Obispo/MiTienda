@@ -4,7 +4,7 @@ Modelo ORM: Publicaciones
 
 Reglas:
 - Models = solo SQLAlchemy (sin lógica de negocio)
-- created_at / updated_at incluidos desde ahora
+- created_at / updated_at incluidos
 - Relaciones explícitas y consistentes
 """
 
@@ -21,7 +21,6 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.orm import relationship
-
 
 from app.core.database import Base
 
@@ -114,6 +113,18 @@ class Publicacion(Base):
     # -------------------------
     likes = relationship(
         "LikePublicacion",
+        back_populates="publicacion",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+    # -------------------------
+    # Publicaciones guardadas
+    # -------------------------
+    # Usuarios que guardaron esta publicación
+    # Uso personal (no social)
+    usuarios_que_la_guardaron = relationship(
+        "PublicacionGuardada",
         back_populates="publicacion",
         cascade="all, delete-orphan",
         lazy="selectin",
