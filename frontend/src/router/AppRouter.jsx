@@ -4,6 +4,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 // Importamos las páginas
 import Home from "../pages/Home";
 import Login from "../pages/Login";
+// Feed (ETAPA 32)
+import FeedPage from "../pages/FeedPage";
+
 
 // Importamos el layout principal
 import MainLayout from "../layouts/MainLayout";
@@ -22,6 +25,9 @@ export default function AppRouter() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          {/* Feed principal (ETAPA 32) */}
+          <Route path="/feed" element={<FeedPage />} />
+
         </Route>
       </Routes>
     </BrowserRouter>

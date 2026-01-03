@@ -3,20 +3,26 @@ import { useAuth } from "../context/AuthContext";
 
 /**
  * MainLayout
- * Layout principal de la aplicación.
- * Contiene:
- * - Barra superior con navegación básica
- * - Botón de Logout (si está autenticado)
- * - Área de contenido (Outlet)
+ * -----------
+ * Layout principal (UI + navegación).
+ *
+ * Mantiene la lógica existente:
+ * - Link a Inicio
+ * - Logout si está autenticado
+ * - Outlet para renderizar páginas hijas
+ *
+ * ETAPA 32.A:
+ * - Reemplazamos estilos inline por Tailwind para un look consistente
+ * - Sin tocar rutas ni lógica de auth
  */
 export default function MainLayout() {
   const { estaAutenticado, logout } = useAuth();
   const navigate = useNavigate();
 
   /**
-   * Maneja el proceso de Logout:
-   * 1. Llama al logout del AuthContext
-   * 2. Redirige a /login
+   * manejarLogout
+   * - Llama al logout del AuthContext
+   * - Redirige a /login
    */
   async function manejarLogout() {
     await logout();
@@ -24,34 +30,55 @@ export default function MainLayout() {
   }
 
   return (
-    <div>
-      {/* Barra superior */}
-      <header
-        style={{
-          padding: "10px",
-          backgroundColor: "#f0f0f0",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        {/* Navegación izquierda */}
-        <nav>
-          <Link to="/">Inicio</Link>
-        </nav>
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* Barra superior app-like */}
+      <header className="sticky top-0 z-20 border-b border-gray-800 bg-gray-950/80 backdrop-blur">
+        <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between">
+          {/* Navegación izquierda */}
+          <nav className="flex items-center gap-4">
+            <Link to="/" className="font-semibold hover:underline">
+              Inicio
+            </Link>
 
-        {/* Acción derecha (Logout si está logueado) */}
-        <div>
+            <Link to="/feed" className="text-gray-300 hover:text-white hover:underline">
+              Feed
+            </Link>
+
+            <Link to="/login" className="text-gray-300 hover:text-white hover:underline">
+              Login
+            </Link>
+          </nav>
+
+          {/* Acciones derecha */}
+          <div className="flex items-center gap-3">
+          {/* Chip de estado */}
+          <span
+            className={[
+              "rounded-full px-3 py-1 text-xs font-semibold border",
+              estaAutenticado
+                ? "bg-green-950/40 text-green-300 border-green-800"
+                : "bg-gray-900 text-gray-300 border-gray-800",
+            ].join(" ")}
+          >
+            {estaAutenticado ? "Sesión activa" : "No autenticado"}
+          </span>
+
+          {/* Acción */}
           {estaAutenticado && (
-            <button onClick={manejarLogout}>
+            <button
+              onClick={manejarLogout}
+              className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm font-semibold hover:bg-gray-800"
+            >
               Cerrar sesión
             </button>
           )}
         </div>
+
+        </div>
       </header>
 
       {/* Contenido principal */}
-      <main style={{ padding: "20px" }}>
+      <main className="mx-auto max-w-3xl px-4 py-6">
         <Outlet />
       </main>
     </div>
