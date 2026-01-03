@@ -2666,3 +2666,37 @@ Al cerrar esta etapa:
 Al cerrar esta etapa:
 - se actualiza `NUEVOHISTORY.md`
 - se sube al repositorio con commit correspondiente
+
+## ETAPA 37 — Rutas protegidas (Frontend) ✅
+
+**Commit ancla anterior:** 3fee321
+
+### Objetivo
+- Bloquear acceso a `/feed` y `/ranking` si el usuario no tiene sesión activa.
+- Redirigir automáticamente a `/login` cuando corresponde.
+- Evitar que un usuario logueado permanezca en `/login` (redirigir a `/feed`).
+
+### Cambios realizados (Frontend)
+- Se implementó protección de rutas en:
+  - `/feed`
+  - `/ranking`
+- Se implementó comportamiento público-controlado en:
+  - `/login` (si hay sesión → redirige a `/feed`)
+- Se mantuvo el layout actual basado en `MainLayout` como route layout (Outlet).
+- Se aplicó la lógica en un único archivo para no duplicar ni romper estructura.
+
+### Archivos tocados
+- `frontend/src/router/AppRouter.jsx` (REEMPLAZADO COMPLETO)
+
+### Pruebas realizadas
+- Sin login:
+  - Acceso a `/feed` → redirige a `/login` ✅
+  - Acceso a `/ranking` → redirige a `/login` ✅
+- Con login:
+  - Acceso a `/feed` y `/ranking` funciona ✅
+  - Acceso a `/login` redirige a `/feed` ✅
+
+### Estado final
+- ETAPA 37 cerrada y estable.
+- Backend sin cambios.
+- Frontend con rutas protegidas funcionando según reglas.
