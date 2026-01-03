@@ -43,3 +43,78 @@ export async function fetchFeedPublicaciones() {
   // Dejamos que la UI maneje el error (ej: mostrar "tenés que loguearte").
   return httpGet("/feed/publicaciones", token);
 }
+
+import { httpPost, httpDelete } from "./http_service";
+
+/**
+ * toggleLikePublicacion
+ * Da o quita like a una publicación (toggle).
+ *
+ * Backend:
+ * - POST /likes/publicaciones/{publicacion_id}
+ *
+ * @param {number} publicacionId
+ * @returns {Promise<any>}
+ */
+export async function toggleLikePublicacion(publicacionId) {
+  const token = getAccessToken();
+
+  return httpPost(
+    `/likes/publicaciones/${publicacionId}`,
+    null,
+    token
+  );
+}
+
+/**
+ * guardarPublicacion
+ * Guarda una publicación para el usuario autenticado.
+ *
+ * Backend:
+ * - POST /publicaciones/guardadas
+ *
+ * @param {number} publicacionId
+ * @returns {Promise<any>}
+ */
+export async function guardarPublicacion(publicacionId) {
+  const token = getAccessToken();
+
+  return httpPost(
+    "/publicaciones/guardadas",
+    { publicacion_id: publicacionId },
+    token
+  );
+}
+
+/**
+ * quitarPublicacionGuardada
+ * Quita una publicación de los guardados del usuario.
+ *
+ * Backend:
+ * - DELETE /publicaciones/guardadas/{publicacion_id}
+ *
+ * @param {number} publicacionId
+ * @returns {Promise<any>}
+ */
+export async function quitarPublicacionGuardada(publicacionId) {
+  const token = getAccessToken();
+
+  return httpDelete(
+    `/publicaciones/guardadas/${publicacionId}`,
+    token
+  );
+}
+
+/**
+ * fetchPublicacionesGuardadas
+ * Trae las publicaciones guardadas del usuario autenticado.
+ *
+ * Backend:
+ * - GET /publicaciones/guardadas
+ *
+ * @returns {Promise<Array>} Lista de guardados (ej: [{ publicacion_id, created_at }])
+ */
+export async function fetchPublicacionesGuardadas() {
+  const token = getAccessToken();
+  return httpGet("/publicaciones/guardadas", token);
+}

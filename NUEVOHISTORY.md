@@ -2521,3 +2521,48 @@ Integrar el **frontend** con el backend ya estable (ETAPA 31), asegurando que:
 - Optimistic UI
 - Reutilizando endpoints existentes
 - Sin modificar lógica de backend
+
+
+## ETAPA 33 — Interacciones desde el Feed (FRONTEND) ✅ (CERRADA + SUBIDA)
+
+**Objetivo:** permitir interacciones desde la UI del feed sin modificar backend: Like (toggle) y Guardar/Quitar guardado, con Optimistic UI y rollback ante error.
+
+### Cambios realizados (Frontend)
+- Se agregaron acciones en el Feed:
+  - **Like** (toggle) usando `POST /likes/publicaciones/{publicacion_id}`
+  - **Guardar** usando `POST /publicaciones/guardadas` con body `{ publicacion_id }`
+  - **Quitar guardado** usando `DELETE /publicaciones/guardadas/{publicacion_id}`
+- Se incorporó carga de guardados del usuario:
+  - `GET /publicaciones/guardadas`
+  - Se construye un `Set` de `publicacion_id` para marcar cada item del feed con `guardada_by_me`.
+- **Optimistic UI**:
+  - Like: actualiza instantáneamente `liked_by_me` + `likes_count`
+  - Guardado: actualiza instantáneamente `guardada_by_me` + `guardados_count`
+  - Si el backend falla: **rollback** al estado anterior (snapshot).
+- Se agregaron **locks por publicación** para evitar doble click mientras se procesa.
+
+### Infraestructura HTTP (Frontend)
+- Se completó la capa `http_service` para soportar las operaciones necesarias:
+  - Se agregaron `httpPost` y `httpDelete` (antes existía solo `httpGet`).
+  - `httpPost` detecta si la respuesta es JSON o texto.
+
+### Archivos impactados
+- `frontend/src/services/http_service.js` (AGREGADO: `httpPost`, `httpDelete`)
+- `frontend/src/services/feed_service.js` (AGREGADO: funciones de like/guardado + `fetchPublicacionesGuardadas`)
+- `frontend/src/pages/FeedPage.jsx` (REEMPLAZADO/ACTUALIZADO: UI + handlers + optimistic UI)
+
+### Pruebas realizadas
+- Feed carga correctamente.
+- Se visualiza el estado de cada publicación:
+  - `liked_by_me` desde el feed
+  - `guardada_by_me` mergeando `GET /publicaciones/guardadas`
+- Like:
+  - cambia instantáneamente y ajusta contador
+  - revierte si falla backend
+- Guardar/Quitar:
+  - cambia instantáneamente y ajusta contador
+  - revierte si falla backend
+- Se verificó bloqueo de acciones mientras “Procesando...”.
+
+### Regla de sincronización (Docs + Repo)
+Al cerrar esta etapa se actualiza `NUEVOHISTORY.md` y se sube al repositorio con su commit correspondiente.

@@ -56,3 +56,57 @@ export async function httpGet(path, token = null) {
 
   return response.json();
 }
+
+
+/**
+ * httpPost
+ * Request POST genérico.
+ *
+ * @param {string} path - Ruta del backend
+ * @param {object|null} body - Body JSON
+ * @param {string|null} token - JWT opcional
+ * @returns {Promise<any>} JSON parseado
+ */
+export async function httpPost(path, body = null, token = null) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: buildHeaders(token),
+    body: body ? JSON.stringify(body) : null,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status} - ${errorText}`);
+  }
+
+  // Algunos endpoints devuelven texto simple
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  return response.text();
+}
+
+/**
+ * httpDelete
+ * Request DELETE genérico.
+ *
+ * @param {string} path - Ruta del backend
+ * @param {string|null} token - JWT opcional
+ * @returns {Promise<any>} respuesta vacía o texto
+ */
+export async function httpDelete(path, token = null) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "DELETE",
+    headers: buildHeaders(token),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status} - ${errorText}`);
+  }
+
+  // DELETE suele devolver 204 No Content
+  return null;
+}
