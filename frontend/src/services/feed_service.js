@@ -118,3 +118,17 @@ export async function fetchPublicacionesGuardadas() {
   const token = getAccessToken();
   return httpGet("/publicaciones/guardadas", token);
 }
+
+/**
+ * fetchRankingPublicaciones
+ * Trae el ranking de publicaciones ordenadas por score (likes + recencia).
+ *
+ * Backend:
+ * - GET /ranking/publicaciones
+ *
+ * @returns {Promise<Array>} Lista de publicaciones rankeadas
+ */
+export async function fetchRankingPublicaciones() {
+  const token = getAccessToken();
+  return httpGet("/ranking/publicaciones", token);
+}

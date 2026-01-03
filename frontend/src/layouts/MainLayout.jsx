@@ -7,12 +7,12 @@ import { useAuth } from "../context/AuthContext";
  * Layout principal (UI + navegación).
  *
  * Mantiene la lógica existente:
- * - Link a Inicio
+ * - Links a Inicio / Feed / Ranking / Login
  * - Logout si está autenticado
  * - Outlet para renderizar páginas hijas
  *
- * ETAPA 32.A:
- * - Reemplazamos estilos inline por Tailwind para un look consistente
+ * ETAPA 34:
+ * - Se agrega link a Ranking
  * - Sin tocar rutas ni lógica de auth
  */
 export default function MainLayout() {
@@ -40,40 +40,52 @@ export default function MainLayout() {
               Inicio
             </Link>
 
-            <Link to="/feed" className="text-gray-300 hover:text-white hover:underline">
+            <Link
+              to="/feed"
+              className="text-gray-300 hover:text-white hover:underline"
+            >
               Feed
             </Link>
 
-            <Link to="/login" className="text-gray-300 hover:text-white hover:underline">
+            <Link
+              to="/ranking"
+              className="text-gray-300 hover:text-white hover:underline"
+            >
+              Ranking
+            </Link>
+
+            <Link
+              to="/login"
+              className="text-gray-300 hover:text-white hover:underline"
+            >
               Login
             </Link>
           </nav>
 
           {/* Acciones derecha */}
           <div className="flex items-center gap-3">
-          {/* Chip de estado */}
-          <span
-            className={[
-              "rounded-full px-3 py-1 text-xs font-semibold border",
-              estaAutenticado
-                ? "bg-green-950/40 text-green-300 border-green-800"
-                : "bg-gray-900 text-gray-300 border-gray-800",
-            ].join(" ")}
-          >
-            {estaAutenticado ? "Sesión activa" : "No autenticado"}
-          </span>
-
-          {/* Acción */}
-          {estaAutenticado && (
-            <button
-              onClick={manejarLogout}
-              className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm font-semibold hover:bg-gray-800"
+            {/* Chip de estado */}
+            <span
+              className={[
+                "rounded-full px-3 py-1 text-xs font-semibold border",
+                estaAutenticado
+                  ? "bg-green-950/40 text-green-300 border-green-800"
+                  : "bg-gray-900 text-gray-300 border-gray-800",
+              ].join(" ")}
             >
-              Cerrar sesión
-            </button>
-          )}
-        </div>
+              {estaAutenticado ? "Sesión activa" : "No autenticado"}
+            </span>
 
+            {/* Acción */}
+            {estaAutenticado && (
+              <button
+                onClick={manejarLogout}
+                className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm font-semibold hover:bg-gray-800"
+              >
+                Cerrar sesión
+              </button>
+            )}
+          </div>
         </div>
       </header>
 

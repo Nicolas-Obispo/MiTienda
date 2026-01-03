@@ -2566,3 +2566,35 @@ Integrar el **frontend** con el backend ya estable (ETAPA 31), asegurando que:
 
 ### Regla de sincronización (Docs + Repo)
 Al cerrar esta etapa se actualiza `NUEVOHISTORY.md` y se sube al repositorio con su commit correspondiente.
+
+
+## ETAPA 34 — Ranking (FRONTEND) ✅ (CERRADA + SUBIDA)
+
+**Objetivo:** mostrar el ranking de publicaciones ordenadas por score (likes + recencia) desde el frontend, reutilizando backend existente, sin modificar lógica de negocio.
+
+### Cambios realizados
+- Se creó la pantalla `RankingPage.jsx` consumiendo:
+  - `GET /ranking/publicaciones`
+- Se renderizan publicaciones ordenadas con:
+  - posición en ranking (#1, #2, #3…)
+  - métricas: likes, guardados, interacciones
+- Se agregó la ruta `/ranking` en el router principal.
+- Se incorporó el link **Ranking** en el menú de navegación (`MainLayout`).
+- Se reutilizó el estilo visual del feed para mantener consistencia UI.
+
+### Archivos impactados
+- `frontend/src/services/feed_service.js` (AGREGADO: `fetchRankingPublicaciones`)
+- `frontend/src/pages/RankingPage.jsx` (NUEVO)
+- `frontend/src/router/AppRouter.jsx` (AGREGADO: ruta `/ranking`)
+- `frontend/src/layouts/MainLayout.jsx` (AGREGADO: link Ranking)
+
+### Pruebas realizadas
+- Endpoint `/ranking/publicaciones` responde 200.
+- Ranking se visualiza correctamente desde UI.
+- Navegación desde menú funciona.
+- No se afectó Feed, Login ni Auth.
+
+### Regla de sincronización
+Al cerrar esta etapa:
+- se actualiza `NUEVOHISTORY.md`
+- se sube al repositorio con commit correspondiente
