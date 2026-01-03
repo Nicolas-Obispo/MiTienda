@@ -1,102 +1,43 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { obtenerUsuarioActual } from "../services/usuarioService";
+import { createContext, useEffect, useMemo, useState } from "react";
 import { logoutUsuario } from "../services/authService";
 
-/**
- * AuthContext
- * Contexto global de autenticación
- */
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
-/**
- * AuthProvider
- * Provee el estado de autenticación a toda la app
- */
 export function AuthProvider({ children }) {
-  const [authToken, setAuthToken] = useState(null);
-  const [usuarioActual, setUsuarioActual] = useState(null);
-  const [authInicializado, setAuthInicializado] = useState(false);
+  const [accessToken, setAccessToken] = useState(null);
+  const [estaAutenticado, setEstaAutenticado] = useState(false);
 
-  /**
-   * Inicializa la sesión al cargar la app
-   */
   useEffect(() => {
-    async function inicializarAuth() {
-      const tokenGuardado = localStorage.getItem("authToken");
-
-      if (!tokenGuardado) {
-        setAuthInicializado(true);
-        return;
-      }
-
-      try {
-        const usuario = await obtenerUsuarioActual(tokenGuardado);
-        setAuthToken(tokenGuardado);
-        setUsuarioActual(usuario);
-      } catch (error) {
-        localStorage.removeItem("authToken");
-        setAuthToken(null);
-        setUsuarioActual(null);
-      } finally {
-        setAuthInicializado(true);
-      }
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      setAccessToken(token);
+      setEstaAutenticado(true);
     }
-
-    inicializarAuth();
   }, []);
 
-  /**
-   * login
-   */
-  function login(tokenJWT) {
-    localStorage.setItem("authToken", tokenJWT);
-    setAuthToken(tokenJWT);
-    setUsuarioActual(null);
+  function login(token) {
+    if (!token || typeof token !== "string") return;
+    localStorage.setItem("access_token", token);
+    setAccessToken(token);
+    setEstaAutenticado(true);
   }
 
-  /**
-   * logout
-   */
   async function logout() {
     try {
-      if (authToken) {
-        await logoutUsuario(authToken);
-      }
+      await logoutUsuario(accessToken);
     } catch (error) {
-      console.warn("Logout backend falló:", error.message);
+      console.error("Error al cerrar sesión:", error);
     } finally {
-      localStorage.removeItem("authToken");
-      setAuthToken(null);
-      setUsuarioActual(null);
+      localStorage.removeItem("access_token");
+      setAccessToken(null);
+      setEstaAutenticado(false);
     }
   }
 
-  const authContextValue = {
-    authToken,
-    usuarioActual,
-    estaAutenticado: Boolean(authToken),
-    authInicializado,
-    login,
-    logout,
-  };
-
-  return (
-    <AuthContext.Provider value={authContextValue}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ accessToken, estaAutenticado, login, logout }),
+    [accessToken, estaAutenticado]
   );
-}
 
-/**
- * useAuth
- * Hook para consumir el contexto
- */
-export function useAuth() {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth debe usarse dentro de AuthProvider");
-  }
-
-  return context;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

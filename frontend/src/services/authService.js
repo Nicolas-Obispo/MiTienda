@@ -43,8 +43,11 @@ export async function loginUsuario({ email, password }) {
 
     const data = await response.json();
 
-    // El backend devuelve { token: "..." }
-    return data.token;
+        // El backend devuelve { access_token: "..." }
+        const token = data.access_token || data.token;
+    if (!token) throw new Error("El backend no devolvió token");
+    return token;
+
   } catch (error) {
     // Normalizamos el error para la UI
     throw new Error(error.message || "Error al iniciar sesión");

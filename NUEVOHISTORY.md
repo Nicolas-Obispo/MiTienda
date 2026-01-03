@@ -2632,3 +2632,37 @@ Al cerrar esta etapa:
 Al cerrar esta etapa:
 - se actualiza `NUEVOHISTORY.md`
 - se sube al repositorio con commit correspondiente
+
+
+## ETAPA 36 — Login real desde UI + Auth estable (FRONTEND) ✅ (CERRADA + SUBIDA)
+
+**Objetivo:** eliminar dependencia de Swagger para autenticación, dejando login/logout funcional desde la UI, sesión persistida y estado global coherente.
+
+### Cambios realizados
+- Login desde `http://localhost:5173/login` ahora funciona end-to-end:
+  - El token se obtiene del backend y se persiste en `localStorage` como `access_token`.
+  - El estado UI se sincroniza (“Sesión activa” / “No autenticado”).
+- Se envolvió la app con `AuthProvider` en `main.jsx` renderizando `AppRouter` (estructura correcta).
+- `authService` se volvió robusto aceptando respuesta del backend como:
+  - `{ access_token }` o `{ token }`.
+- Se corrigió warning de Vite Fast Refresh separando `useAuth` en un archivo dedicado.
+
+### Archivos impactados
+- `frontend/src/services/authService.js` (FIX: lectura token robusta)
+- `frontend/src/context/AuthContext.jsx` (ACTUALIZADO: persistencia + estado auth)
+- `frontend/src/context/useAuth.js` (NUEVO: hook separado)
+- `frontend/src/main.jsx` (ACTUALIZADO: AuthProvider envolviendo AppRouter)
+- `frontend/src/layouts/MainLayout.jsx` (ACTUALIZADO: import de useAuth)
+- `frontend/src/pages/Login.jsx` (ACTUALIZADO: import de useAuth)
+
+### Pruebas realizadas
+- Login desde UI → redirige a `/feed`, crea `access_token` en localStorage.
+- Feed/Guardados/Ranking funcionan con sesión activa (200 OK).
+- Logout revoca token y limpia localStorage; endpoints protegidos devuelven 401 (esperado).
+- Re-login vuelve a habilitar acceso.
+- Vite deja de mostrar warning de Fast Refresh.
+
+### Regla de sincronización
+Al cerrar esta etapa:
+- se actualiza `NUEVOHISTORY.md`
+- se sube al repositorio con commit correspondiente
