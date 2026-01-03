@@ -2700,3 +2700,46 @@ Al cerrar esta etapa:
 - ETAPA 37 cerrada y estable.
 - Backend sin cambios.
 - Frontend con rutas protegidas funcionando según reglas.
+
+
+## ETAPA 38 — Refactor UI (PublicacionCard común) ✅
+
+**Commit ancla anterior:** 28c6ce0
+
+### Objetivo
+- Eliminar duplicación de UI entre Feed y Ranking.
+- Extraer un componente reutilizable `PublicacionCard`.
+- Mantener intacta la lógica de negocio y optimistic UI.
+
+### Cambios realizados (Frontend)
+- Se creó la carpeta `src/components`.
+- Se implementó `PublicacionCard.jsx` como componente común:
+  - Acciones Like / Guardar
+  - Métricas (likes, guardados, interacciones)
+  - Estados visuales (liked / guardada)
+  - Soporte opcional para Ranking:
+    - `#posición`
+    - Badge derecho (“Ranking”)
+- Se refactorizaron:
+  - `FeedPage.jsx`
+  - `RankingPage.jsx`
+- Se eliminó código duplicado (MetricBadge, ActionButton y cards internas).
+
+### Archivos involucrados
+- `frontend/src/components/PublicacionCard.jsx` (NUEVO)
+- `frontend/src/pages/FeedPage.jsx` (refactor)
+- `frontend/src/pages/RankingPage.jsx` (refactor)
+
+### Pruebas realizadas
+- Feed funciona sin cambios visuales ni funcionales.
+- Ranking muestra:
+  - posición
+  - badge “Ranking”
+  - métricas completas
+- Like / Guardar con optimistic UI OK.
+- Sin errores en consola.
+
+### Estado final
+- UI desacoplada y reutilizable.
+- Arquitectura frontend más limpia y escalable.
+- ETAPA 38 cerrada y estable.
