@@ -1,32 +1,30 @@
 /**
- * RankingPage.jsx
+ * ProfilePage.jsx
  * ----------------
- * ETAPA 35 (Ranking interactivo):
- * - Like + Guardar desde Ranking (reutiliza endpoints existentes)
- * - Optimistic UI con rollback
- * - Locks por publicación para evitar doble click
+ * ETAPA 39 (Perfil de usuario) - 39.1 Guardados
  *
- * ETAPA 38 (Refactor UI):
- * - Usa PublicacionCard común
+ * Objetivo:
+ * - Mostrar publicaciones guardadas del usuario (GET /publicaciones/guardadas)
+ * - Reutilizar PublicacionCard común
+ * - Mantener interacción Like/Guardar con optimistic UI (reutiliza endpoints existentes)
  *
  * ETAPA 39 (Fix UI):
- * - Optimistic UI también para interacciones_count
- * - FIX BUG: Ranking no siempre trae liked_by_me real -> lo tomamos desde Feed por ID
+ * - Optimistic UI también para interacciones_count (likes + guardados)
+ *
+ * Nota:
+ * - Sin cambios en backend (usa endpoints existentes)
  */
 
 import { useEffect, useMemo, useState } from "react";
+import PublicacionCard from "../components/PublicacionCard";
 import {
-  fetchRankingPublicaciones,
-  fetchFeedPublicaciones,
   fetchPublicacionesGuardadas,
   toggleLikePublicacion,
   guardarPublicacion,
   quitarPublicacionGuardada,
 } from "../services/feed_service";
 
-import PublicacionCard from "../components/PublicacionCard";
-
-export default function RankingPage() {
+export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [publicaciones, setPublicaciones] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
@@ -42,68 +40,36 @@ export default function RankingPage() {
     setter((prev) => ({ ...prev, [pubId]: value }));
   }
 
-  async function loadRanking() {
+  async function loadGuardadas() {
     try {
       setIsLoading(true);
       setErrorMessage("");
 
-      // Ranking define el orden, Feed define liked_by_me real por usuario
-      const [rankingData, feedData, guardadasData] = await Promise.all([
-        fetchRankingPublicaciones(),
-        fetchFeedPublicaciones(),
-        fetchPublicacionesGuardadas(),
-      ]);
-
-      const rankingItems = Array.isArray(rankingData)
-        ? rankingData
-        : rankingData?.items || [];
-
-      const feedItems = Array.isArray(feedData) ? feedData : feedData?.items || [];
+      const guardadasData = await fetchPublicacionesGuardadas();
 
       const guardadasItems = Array.isArray(guardadasData)
         ? guardadasData
         : guardadasData?.items || [];
 
-      // Map de liked_by_me desde Feed (fuente confiable del estado por usuario)
-      const feedById = new Map(
-        feedItems
-          .filter((p) => p && typeof p.id === "number")
-          .map((p) => [p.id, p])
-      );
-
-      // Guardadas por usuario
-      const guardadasSet = new Set(
-        guardadasItems
-          .map((g) => g?.publicacion_id)
-          .filter((id) => typeof id === "number")
-      );
-
-      // Merge final:
-      // - orden y métricas base del ranking
-      // - liked_by_me desde feed (si existe ese id)
-      // - guardada_by_me desde guardadas
-      const merged = rankingItems.map((p) => {
-        const feedMatch = feedById.get(p.id);
-
-        const likedByMe =
-          // preferimos el dato del feed si existe
-          feedMatch?.liked_by_me ??
-          // fallback si ranking lo trae (por si a veces sí viene)
-          p?.liked_by_me ??
-          // fallback adicional por si cambia el nombre
-          p?.is_liked ??
-          false;
-
-        return {
+      // Normalizamos para que todas queden como publicaciones “guardadas por mí”
+      // Soporta varios formatos de backend sin romper:
+      // - viene como publicación directa
+      // - viene envuelta como { publicacion: {...} }
+      const normalized = guardadasItems
+        .map((g) => {
+          if (g && typeof g.id === "number") return g;
+          if (g?.publicacion && typeof g.publicacion.id === "number") return g.publicacion;
+          return null;
+        })
+        .filter(Boolean)
+        .map((p) => ({
           ...p,
-          liked_by_me: Boolean(likedByMe),
-          guardada_by_me: guardadasSet.has(p.id),
-        };
-      });
+          guardada_by_me: true,
+        }));
 
-      setPublicaciones(merged);
+      setPublicaciones(normalized);
     } catch (error) {
-      setErrorMessage(error.message || "Error desconocido cargando el ranking.");
+      setErrorMessage(error.message || "Error desconocido cargando guardados.");
       setPublicaciones([]);
     } finally {
       setIsLoading(false);
@@ -111,7 +77,7 @@ export default function RankingPage() {
   }
 
   useEffect(() => {
-    loadRanking();
+    loadGuardadas();
   }, []);
 
   /**
@@ -132,8 +98,7 @@ export default function RankingPage() {
       prev.map((p) => {
         if (p.id !== pubId) return p;
 
-        const currentLiked = Boolean(p.liked_by_me);
-        const nextLiked = !currentLiked;
+        const nextLiked = !p.liked_by_me;
         const delta = nextLiked ? 1 : -1;
 
         const nextLikesCount = Math.max(0, (p.likes_count || 0) + delta);
@@ -163,9 +128,8 @@ export default function RankingPage() {
 
   /**
    * Optimistic Guardado:
-   * - Toggle inmediato de guardada_by_me
-   * - Ajusta guardados_count +1 o -1
-   * - Ajusta interacciones_count +1 o -1
+   * - En “Mis guardados”, si quitás guardado, desaparece de la lista
+   * - Ajusta interacciones_count de forma coherente (+1/-1) para mantener consistencia visual
    * - Si falla backend, revertimos
    */
   async function handleToggleSave(pubId) {
@@ -178,28 +142,31 @@ export default function RankingPage() {
     const current = publicaciones.find((p) => p.id === pubId);
     const estabaGuardada = Boolean(current?.guardada_by_me);
 
-    setPublicaciones((prev) =>
-      prev.map((p) => {
-        if (p.id !== pubId) return p;
+    // Optimistic update
+    if (estabaGuardada) {
+      // En esta vista, quitar guardado => se elimina del listado
+      setPublicaciones((prev) => prev.filter((p) => p.id !== pubId));
+    } else {
+      // Caso raro: si por algún motivo no estaba marcada, la marcamos y subimos interacciones/guardados
+      setPublicaciones((prev) =>
+        prev.map((p) => {
+          if (p.id !== pubId) return p;
 
-        const currentSaved = Boolean(p.guardada_by_me);
-        const nextSaved = !currentSaved;
-        const delta = nextSaved ? 1 : -1;
+          const nextGuardadosCount = Math.max(0, (p.guardados_count || 0) + 1);
+          const nextInteraccionesCount = Math.max(
+            0,
+            (p.interacciones_count || 0) + 1
+          );
 
-        const nextGuardadosCount = Math.max(0, (p.guardados_count || 0) + delta);
-        const nextInteraccionesCount = Math.max(
-          0,
-          (p.interacciones_count || 0) + delta
-        );
-
-        return {
-          ...p,
-          guardada_by_me: nextSaved,
-          guardados_count: nextGuardadosCount,
-          interacciones_count: nextInteraccionesCount,
-        };
-      })
-    );
+          return {
+            ...p,
+            guardada_by_me: true,
+            guardados_count: nextGuardadosCount,
+            interacciones_count: nextInteraccionesCount,
+          };
+        })
+      );
+    }
 
     try {
       if (estabaGuardada) {
@@ -220,10 +187,8 @@ export default function RankingPage() {
       <main className="mx-auto max-w-3xl px-4 py-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-white">Ranking</h1>
-          <p className="mt-1 text-sm text-gray-400">
-            Publicaciones ordenadas por score (likes + recencia).
-          </p>
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Mi Perfil</h1>
+          <p className="mt-1 text-sm text-gray-400">Mis publicaciones guardadas.</p>
         </div>
 
         {/* Estado: Loading */}
@@ -240,15 +205,21 @@ export default function RankingPage() {
           <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
             <p className="font-semibold text-red-200">Error</p>
             <p className="mt-2 text-red-100 break-words">{errorMessage}</p>
+
+            <p className="mt-3 text-sm text-gray-200">
+              Si ves <b>401</b>, verificá que exista{" "}
+              <code className="bg-gray-800 px-1 rounded">access_token</code> en
+              localStorage.
+            </p>
           </div>
         )}
 
         {/* Estado: Vacío */}
         {!isLoading && !errorMessage && publicaciones.length === 0 && (
           <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center">
-            <p className="text-gray-200 font-semibold">No hay publicaciones</p>
+            <p className="text-gray-200 font-semibold">No tenés guardados</p>
             <p className="mt-2 text-gray-400 text-sm">
-              Cuando existan publicaciones con actividad, aparecerán acá.
+              Guardá publicaciones desde el Feed o Ranking y van a aparecer acá.
             </p>
           </div>
         )}
@@ -256,12 +227,10 @@ export default function RankingPage() {
         {/* Estado: OK */}
         {!isLoading && !errorMessage && publicaciones.length > 0 && (
           <div className="space-y-4">
-            {publicaciones.map((p, idx) => (
+            {publicaciones.map((p) => (
               <PublicacionCard
                 key={p.id}
                 pub={p}
-                rankIndex={idx}
-                headerRightBadgeText="Ranking"
                 isActingLike={Boolean(likeLocksMemo[p.id])}
                 isActingSave={Boolean(saveLocksMemo[p.id])}
                 onToggleLike={() => handleToggleLike(p.id)}

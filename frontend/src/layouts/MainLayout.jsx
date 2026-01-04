@@ -1,7 +1,6 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 
-
 /**
  * MainLayout
  * -----------
@@ -12,9 +11,9 @@ import { useAuth } from "../context/useAuth";
  * - Logout si está autenticado
  * - Outlet para renderizar páginas hijas
  *
- * ETAPA 34:
- * - Se agrega link a Ranking
- * - Sin tocar rutas ni lógica de auth
+ * ETAPA 39:
+ * - Se agrega link a Perfil (/perfil) SOLO si está autenticado
+ * - (Mejora UX) Login solo se muestra si NO está autenticado
  */
 export default function MainLayout() {
   const { estaAutenticado, logout } = useAuth();
@@ -55,12 +54,25 @@ export default function MainLayout() {
               Ranking
             </Link>
 
-            <Link
-              to="/login"
-              className="text-gray-300 hover:text-white hover:underline"
-            >
-              Login
-            </Link>
+            {/* Perfil (ETAPA 39) - solo visible con sesión */}
+            {estaAutenticado && (
+              <Link
+                to="/perfil"
+                className="text-gray-300 hover:text-white hover:underline"
+              >
+                Perfil
+              </Link>
+            )}
+
+            {/* Login solo si NO está autenticado (UX más clara) */}
+            {!estaAutenticado && (
+              <Link
+                to="/login"
+                className="text-gray-300 hover:text-white hover:underline"
+              >
+                Login
+              </Link>
+            )}
           </nav>
 
           {/* Acciones derecha */}

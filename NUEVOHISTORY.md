@@ -2743,3 +2743,45 @@ Al cerrar esta etapa:
 - UI desacoplada y reutilizable.
 - Arquitectura frontend más limpia y escalable.
 - ETAPA 38 cerrada y estable.
+
+
+## ETAPA 39 — Perfil de usuario (guardados + fixes UI) ✅
+
+**Commit ancla anterior:** (ETAPA 38)
+
+### Objetivo
+- Incorporar perfil de usuario con publicaciones guardadas.
+- Mantener coherencia de estados (likes, guardados, interacciones).
+- Corregir inconsistencias visuales entre Feed y Ranking.
+
+### Cambios realizados (Frontend)
+- Se creó `ProfilePage.jsx`:
+  - Lista de publicaciones guardadas del usuario.
+  - Reutiliza `PublicacionCard`.
+  - Optimistic UI para like/guardar.
+  - Quitar guardado elimina la card del listado.
+- Se agregó la ruta protegida `/perfil`.
+- Se expuso “Perfil” en el menú (`MainLayout.jsx`) solo con sesión activa.
+- Se ocultó “Login” cuando el usuario está autenticado (mejora UX).
+
+### Fixes importantes
+- Optimistic UI ahora actualiza correctamente:
+  - `likes_count`
+  - `guardados_count`
+  - `interacciones_count`
+- Se corrigió bug en Ranking:
+  - `liked_by_me` se normaliza tomando el estado real desde Feed.
+  - Evita dobles likes visuales y desincronización entre vistas.
+
+### Archivos involucrados
+- `frontend/src/pages/ProfilePage.jsx` (NUEVO)
+- `frontend/src/router/AppRouter.jsx`
+- `frontend/src/layouts/MainLayout.jsx`
+- `frontend/src/pages/FeedPage.jsx`
+- `frontend/src/pages/RankingPage.jsx`
+
+### Estado final
+- Perfil funcional y accesible desde la UI.
+- Estados coherentes sin recargar páginas.
+- UX consistente en toda la app.
+- ETAPA 39 cerrada y estable.

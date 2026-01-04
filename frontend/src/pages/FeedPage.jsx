@@ -6,11 +6,13 @@
  * - Guardar/Quitar guardado desde la UI (endpoints existentes)
  * - Optimistic UI (sin recargar feed completo)
  * - Sin cambios backend
+ *
+ * ETAPA 39 (Fix UI):
+ * - Optimistic UI también para interacciones_count (likes + guardados)
  */
 
 import { useEffect, useMemo, useState } from "react";
 import PublicacionCard from "../components/PublicacionCard";
-
 import {
   fetchFeedPublicaciones,
   fetchPublicacionesGuardadas,
@@ -18,7 +20,6 @@ import {
   guardarPublicacion,
   quitarPublicacionGuardada,
 } from "../services/feed_service";
-
 
 export default function FeedPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -79,6 +80,7 @@ export default function FeedPage() {
    * Optimistic Like:
    * - Toggle inmediato de liked_by_me
    * - Ajusta likes_count +1 o -1 según corresponda
+   * - Ajusta interacciones_count +1 o -1 (porque interacciones = likes + guardados)
    * - Si falla backend, revertimos
    */
   async function handleToggleLike(pubId) {
@@ -95,15 +97,19 @@ export default function FeedPage() {
         if (p.id !== pubId) return p;
 
         const nextLiked = !p.liked_by_me;
-        const nextLikesCount = Math.max(
+        const delta = nextLiked ? 1 : -1;
+
+        const nextLikesCount = Math.max(0, (p.likes_count || 0) + delta);
+        const nextInteraccionesCount = Math.max(
           0,
-          (p.likes_count || 0) + (nextLiked ? 1 : -1)
+          (p.interacciones_count || 0) + delta
         );
 
         return {
           ...p,
           liked_by_me: nextLiked,
           likes_count: nextLikesCount,
+          interacciones_count: nextInteraccionesCount,
         };
       })
     );
@@ -123,6 +129,7 @@ export default function FeedPage() {
    * Optimistic Guardado:
    * - Toggle inmediato de guardada_by_me
    * - Ajusta guardados_count +1 o -1
+   * - Ajusta interacciones_count +1 o -1 (porque interacciones = likes + guardados)
    * - Si falla backend, revertimos
    */
   async function handleToggleSave(pubId) {
@@ -142,15 +149,23 @@ export default function FeedPage() {
         if (p.id !== pubId) return p;
 
         const nextGuardada = !p.guardada_by_me;
+        const delta = nextGuardada ? 1 : -1;
+
         const nextGuardadosCount = Math.max(
           0,
-          (p.guardados_count || 0) + (nextGuardada ? 1 : -1)
+          (p.guardados_count || 0) + delta
+        );
+
+        const nextInteraccionesCount = Math.max(
+          0,
+          (p.interacciones_count || 0) + delta
         );
 
         return {
           ...p,
           guardada_by_me: nextGuardada,
           guardados_count: nextGuardadosCount,
+          interacciones_count: nextInteraccionesCount,
         };
       })
     );

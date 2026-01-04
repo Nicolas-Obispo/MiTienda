@@ -10,6 +10,8 @@ import Login from "../pages/Login";
 import FeedPage from "../pages/FeedPage";
 // Ranking (ETAPA 34)
 import RankingPage from "../pages/RankingPage";
+// Perfil (ETAPA 39)
+import ProfilePage from "../pages/ProfilePage";
 
 // Importamos el layout principal
 import MainLayout from "../layouts/MainLayout";
@@ -94,6 +96,16 @@ export default function AppRouter() {
             element={
               <ProtectedRoute>
                 <RankingPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Perfil protegido (ETAPA 39) */}
+          <Route
+            path="/perfil"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             }
           />
