@@ -2785,3 +2785,40 @@ Al cerrar esta etapa:
 - Estados coherentes sin recargar páginas.
 - UX consistente en toda la app.
 - ETAPA 39 cerrada y estable.
+
+
+## ETAPA 40 — Perfil de comercio ✅ (Frontend)
+
+**Objetivo:** incorporar Perfil de comercio como pantalla real para monetización futura (comercio + publicaciones + historias) y habilitar navegación desde la UI.
+
+### Cambios realizados
+- Se creó la página **PerfilComercioPage** y se agregó la ruta protegida:
+  - `GET /comercios/{id}`
+  - `GET /publicaciones/comercios/{id}`
+  - `GET /historias/comercios/{id}`
+  - Ruta frontend: `/comercios/:id` (protegida)
+- Se corrigió la coherencia de autenticación en el router:
+  - `ProtectedRoute` y `PublicOnlyRoute` usan `estaAutenticado` (una sola fuente de verdad)
+  - Se evitó el redirect incorrecto a `/feed` al entrar directo a `/comercios/:id`
+- Se agregó acceso desde **Home** a Perfil de comercio (bloque de test con input de ID y botón “Ver comercio”)
+- Se agregó navegación real desde cada publicación:
+  - `PublicacionCard` incluye link a `/comercios/{comercio_id}` cuando el campo existe
+
+### Archivos creados / modificados
+- ✅ `frontend/src/pages/PerfilComercioPage.jsx` (nuevo)
+- ✅ `frontend/src/router/AppRouter.jsx` (ruta protegida `/comercios/:id` + auth consistente)
+- ✅ `frontend/src/pages/Home.jsx` (bloque “Ir a un comercio (test)”)
+- ✅ `frontend/src/components/PublicacionCard.jsx` (link “Ver comercio #id” usando `comercio_id`)
+
+### Validaciones realizadas
+- Acceso a `/comercios/1` funcionando con sesión activa (sin redirección incorrecta)
+- 404 de comercio inexistente se muestra correctamente en UI
+- Comercio existente:
+  - muestra datos del comercio
+  - lista publicaciones del comercio
+  - muestra historias o estado vacío
+- Link “Ver comercio” desde publicaciones funciona en:
+  - Feed
+  - Ranking
+  - Perfil
+  - Perfil de comercio

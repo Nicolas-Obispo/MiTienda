@@ -1,5 +1,6 @@
 // frontend/src/components/PublicacionCard.jsx
 import React from "react";
+import { Link } from "react-router-dom";
 
 /**
  * MetricBadge
@@ -61,7 +62,7 @@ function ActionButton({
  * PublicacionCard (componente reutilizable)
  *
  * Props:
- * - pub: publicación (id, titulo, descripcion, liked_by_me, guardada_by_me, likes_count, guardados_count, interacciones_count?)
+ * - pub: publicación (id, titulo, descripcion, comercio_id?, liked_by_me, guardada_by_me, likes_count, guardados_count, interacciones_count?)
  * - isActingLike: boolean (lock UI like)
  * - isActingSave: boolean (lock UI guardado)
  * - onToggleLike: () => void
@@ -90,6 +91,12 @@ export default function PublicacionCard({
   const showInteracciones =
     typeof pub?.interacciones_count === "number" && pub.interacciones_count >= 0;
 
+  // Link real al perfil del comercio (ETAPA 40)
+  const comercioId =
+    typeof pub?.comercio_id === "number" && pub.comercio_id > 0
+      ? pub.comercio_id
+      : null;
+
   return (
     <article className="rounded-2xl border border-gray-800 bg-gray-950 p-5">
       <header className="flex items-start justify-between gap-4">
@@ -106,12 +113,26 @@ export default function PublicacionCard({
             </h2>
           </div>
 
-          <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
             <span className="rounded-md border border-gray-800 bg-gray-900 px-2 py-0.5">
               ID #{pub?.id}
             </span>
+
             <span className="hidden sm:inline">•</span>
             <span className="hidden sm:inline">MiPlaza</span>
+
+            {comercioId ? (
+              <>
+                <span className="hidden sm:inline">•</span>
+                <Link
+                  to={`/comercios/${comercioId}`}
+                  className="inline-flex items-center rounded-md border border-gray-800 bg-gray-900 px-2 py-0.5 text-gray-300 hover:text-white hover:bg-gray-800"
+                  title={`Ver comercio #${comercioId}`}
+                >
+                  🏪 Ver comercio #{comercioId}
+                </Link>
+              </>
+            ) : null}
           </div>
         </div>
 

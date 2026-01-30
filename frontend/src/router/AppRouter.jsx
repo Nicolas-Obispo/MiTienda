@@ -6,12 +6,14 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // Importamos las páginas
 import Home from "../pages/Home";
 import Login from "../pages/Login";
-// Feed (ETAPA 32)
+// Feed
 import FeedPage from "../pages/FeedPage";
-// Ranking (ETAPA 34)
+// Ranking
 import RankingPage from "../pages/RankingPage";
-// Perfil (ETAPA 39)
+// Perfil usuario
 import ProfilePage from "../pages/ProfilePage";
+// Perfil comercio (ETAPA 40)
+import PerfilComercioPage from "../pages/PerfilComercioPage";
 
 // Importamos el layout principal
 import MainLayout from "../layouts/MainLayout";
@@ -29,9 +31,7 @@ function ProtectedRoute({ children }) {
   // Soporta distintas implementaciones posibles sin romper:
   // - isAuthenticated (ideal)
   // - token / accessToken / access_token
-  const isAuthenticated =
-    auth?.isAuthenticated ??
-    Boolean(auth?.token ?? auth?.accessToken ?? auth?.access_token);
+  const isAuthenticated = auth?.estaAutenticado === true;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -80,7 +80,7 @@ export default function AppRouter() {
             }
           />
 
-          {/* Feed protegido (ETAPA 37) */}
+          {/* Feed protegido */}
           <Route
             path="/feed"
             element={
@@ -90,7 +90,7 @@ export default function AppRouter() {
             }
           />
 
-          {/* Ranking protegido (ETAPA 37) */}
+          {/* Ranking protegido */}
           <Route
             path="/ranking"
             element={
@@ -100,12 +100,22 @@ export default function AppRouter() {
             }
           />
 
-          {/* Perfil protegido (ETAPA 39) */}
+          {/* Perfil usuario protegido */}
           <Route
             path="/perfil"
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Perfil comercio protegido (ETAPA 40) */}
+          <Route
+            path="/comercios/:id"
+            element={
+              <ProtectedRoute>
+                <PerfilComercioPage />
               </ProtectedRoute>
             }
           />
