@@ -1,19 +1,25 @@
-import { createContext, useEffect, useMemo, useState } from "react";
+// frontend/src/context/AuthContext.jsx
+import { createContext, useMemo, useState } from "react";
 import { logoutUsuario } from "../services/authService";
 
 export const AuthContext = createContext(null);
 
+/**
+ * AuthProvider
+ * - Hidratación SINCRÓNICA desde localStorage (evita rebote /login -> /feed en pestaña nueva)
+ * - Mantiene tu contrato actual: accessToken + estaAutenticado
+ */
 export function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState(null);
-  const [estaAutenticado, setEstaAutenticado] = useState(false);
-
-  useEffect(() => {
+  // ✅ Hidratar token en el primer render (clave para que no rebote)
+  const [accessToken, setAccessToken] = useState(() => {
     const token = localStorage.getItem("access_token");
-    if (token) {
-      setAccessToken(token);
-      setEstaAutenticado(true);
-    }
-  }, []);
+    return token && token !== "null" && token !== "undefined" ? token : null;
+  });
+
+  const [estaAutenticado, setEstaAutenticado] = useState(() => {
+    const token = localStorage.getItem("access_token");
+    return Boolean(token && token !== "null" && token !== "undefined");
+  });
 
   function login(token) {
     if (!token || typeof token !== "string") return;

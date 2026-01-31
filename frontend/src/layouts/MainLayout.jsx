@@ -6,24 +6,15 @@ import { useAuth } from "../context/useAuth";
  * -----------
  * Layout principal (UI + navegación).
  *
- * Mantiene la lógica existente:
- * - Links a Inicio / Feed / Ranking / Login
- * - Logout si está autenticado
- * - Outlet para renderizar páginas hijas
- *
- * ETAPA 39:
- * - Se agrega link a Perfil (/perfil) SOLO si está autenticado
- * - (Mejora UX) Login solo se muestra si NO está autenticado
+ * ETAPA 41 – Opción A:
+ * - Navegación coherente tipo app
+ * - Sin sesión: Inicio | Login
+ * - Con sesión: Inicio | Feed | Ranking | Perfil | Cerrar sesión
  */
 export default function MainLayout() {
   const { estaAutenticado, logout } = useAuth();
   const navigate = useNavigate();
 
-  /**
-   * manejarLogout
-   * - Llama al logout del AuthContext
-   * - Redirige a /login
-   */
   async function manejarLogout() {
     await logout();
     navigate("/login");
@@ -31,40 +22,40 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Barra superior app-like */}
+      {/* Barra superior */}
       <header className="sticky top-0 z-20 border-b border-gray-800 bg-gray-950/80 backdrop-blur">
         <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between">
-          {/* Navegación izquierda */}
+          {/* Navegación */}
           <nav className="flex items-center gap-4">
             <Link to="/" className="font-semibold hover:underline">
               Inicio
             </Link>
 
-            <Link
-              to="/feed"
-              className="text-gray-300 hover:text-white hover:underline"
-            >
-              Feed
-            </Link>
-
-            <Link
-              to="/ranking"
-              className="text-gray-300 hover:text-white hover:underline"
-            >
-              Ranking
-            </Link>
-
-            {/* Perfil (ETAPA 39) - solo visible con sesión */}
             {estaAutenticado && (
-              <Link
-                to="/perfil"
-                className="text-gray-300 hover:text-white hover:underline"
-              >
-                Perfil
-              </Link>
+              <>
+                <Link
+                  to="/feed"
+                  className="text-gray-300 hover:text-white hover:underline"
+                >
+                  Feed
+                </Link>
+
+                <Link
+                  to="/ranking"
+                  className="text-gray-300 hover:text-white hover:underline"
+                >
+                  Ranking
+                </Link>
+
+                <Link
+                  to="/perfil"
+                  className="text-gray-300 hover:text-white hover:underline"
+                >
+                  Perfil
+                </Link>
+              </>
             )}
 
-            {/* Login solo si NO está autenticado (UX más clara) */}
             {!estaAutenticado && (
               <Link
                 to="/login"
@@ -75,9 +66,8 @@ export default function MainLayout() {
             )}
           </nav>
 
-          {/* Acciones derecha */}
+          {/* Estado sesión */}
           <div className="flex items-center gap-3">
-            {/* Chip de estado */}
             <span
               className={[
                 "rounded-full px-3 py-1 text-xs font-semibold border",
@@ -89,7 +79,6 @@ export default function MainLayout() {
               {estaAutenticado ? "Sesión activa" : "No autenticado"}
             </span>
 
-            {/* Acción */}
             {estaAutenticado && (
               <button
                 onClick={manejarLogout}
@@ -102,7 +91,7 @@ export default function MainLayout() {
         </div>
       </header>
 
-      {/* Contenido principal */}
+      {/* Contenido */}
       <main className="mx-auto max-w-3xl px-4 py-6">
         <Outlet />
       </main>

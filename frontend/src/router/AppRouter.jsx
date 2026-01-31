@@ -1,37 +1,79 @@
 // frontend/src/router/AppRouter.jsx
 
-// React Router: componentes necesarios para manejar rutas
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-// Importamos las páginas
+// Páginas
 import Home from "../pages/Home";
 import Login from "../pages/Login";
-// Feed
 import FeedPage from "../pages/FeedPage";
-// Ranking
 import RankingPage from "../pages/RankingPage";
-// Perfil usuario
 import ProfilePage from "../pages/ProfilePage";
-// Perfil comercio (ETAPA 40)
 import PerfilComercioPage from "../pages/PerfilComercioPage";
 
-// Importamos el layout principal
+// Layout
 import MainLayout from "../layouts/MainLayout";
 
 // Auth
 import { useAuth } from "../context/useAuth";
 
 /**
+ * getStoredToken
+ * Lee un token directamente desde storage para evitar el "rebote"
+ * en pestañas nuevas (antes de que el AuthContext se hidrate).
+ */
+function getStoredToken() {
+  const keys = [
+    "token",
+    "accessToken",
+    "access_token",
+    "authToken",
+    "AUTH_TOKEN",
+    "mitienda_token",
+    "mplaza_token",
+  ];
+
+  // localStorage
+  try {
+    for (const k of keys) {
+      const v = window?.localStorage?.getItem(k);
+      if (v && v !== "null" && v !== "undefined") return v;
+    }
+  } catch (_) {}
+
+  // sessionStorage (por si tu implementación lo usa)
+  try {
+    for (const k of keys) {
+      const v = window?.sessionStorage?.getItem(k);
+      if (v && v !== "null" && v !== "undefined") return v;
+    }
+  } catch (_) {}
+
+  return null;
+}
+
+/**
+ * getIsAuthenticated
+ * Unifica el criterio:
+ * - Si el contexto ya sabe (estaAutenticado boolean), usamos eso.
+ * - Si NO está listo todavía, usamos token desde el contexto.
+ * - Si el contexto todavía no cargó nada, usamos token desde storage.
+ */
+function getIsAuthenticated(auth) {
+  if (typeof auth?.estaAutenticado === "boolean") return auth.estaAutenticado;
+
+  const tokenFromContext = auth?.token ?? auth?.accessToken ?? auth?.access_token;
+  if (tokenFromContext) return true;
+
+  const tokenFromStorage = getStoredToken();
+  return Boolean(tokenFromStorage);
+}
+
+/**
  * ProtectedRoute
- * Bloquea rutas si no hay sesión.
  */
 function ProtectedRoute({ children }) {
   const auth = useAuth();
-
-  // Soporta distintas implementaciones posibles sin romper:
-  // - isAuthenticated (ideal)
-  // - token / accessToken / access_token
-  const isAuthenticated = auth?.estaAutenticado === true;
+  const isAuthenticated = getIsAuthenticated(auth);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -42,14 +84,10 @@ function ProtectedRoute({ children }) {
 
 /**
  * PublicOnlyRoute
- * Si el usuario ya está logueado, evita entrar a /login.
  */
 function PublicOnlyRoute({ children }) {
   const auth = useAuth();
-
-  const isAuthenticated =
-    auth?.isAuthenticated ??
-    Boolean(auth?.token ?? auth?.accessToken ?? auth?.access_token);
+  const isAuthenticated = getIsAuthenticated(auth);
 
   if (isAuthenticated) {
     return <Navigate to="/feed" replace />;
@@ -58,19 +96,13 @@ function PublicOnlyRoute({ children }) {
   return children;
 }
 
-/**
- * AppRouter
- * Define todas las rutas de la aplicación.
- */
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rutas con layout principal */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
 
-          {/* Login público (si hay sesión, redirige a /feed) */}
           <Route
             path="/login"
             element={
@@ -80,7 +112,6 @@ export default function AppRouter() {
             }
           />
 
-          {/* Feed protegido */}
           <Route
             path="/feed"
             element={
@@ -90,7 +121,6 @@ export default function AppRouter() {
             }
           />
 
-          {/* Ranking protegido */}
           <Route
             path="/ranking"
             element={
@@ -100,7 +130,6 @@ export default function AppRouter() {
             }
           />
 
-          {/* Perfil usuario protegido */}
           <Route
             path="/perfil"
             element={
@@ -110,7 +139,6 @@ export default function AppRouter() {
             }
           />
 
-          {/* Perfil comercio protegido (ETAPA 40) */}
           <Route
             path="/comercios/:id"
             element={
@@ -120,7 +148,6 @@ export default function AppRouter() {
             }
           />
 
-          {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

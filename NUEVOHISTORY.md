@@ -2822,3 +2822,53 @@ Al cerrar esta etapa:
   - Ranking
   - Perfil
   - Perfil de comercio
+
+
+## ETAPA 40 — Perfil de comercio + navegación desde publicaciones ✅ (CERRADA)
+
+**Commit (main):** `6a29c30` — `feat(frontend): perfil de comercio + navegación desde publicaciones (ETAPA 40)`
+
+### Objetivo
+Implementar el **Perfil de Comercio** en el frontend (ruta protegida), consumiendo endpoints ya existentes del backend:
+- Datos del comercio
+- Publicaciones por comercio
+- Historias por comercio  
+Sin romper el flujo de Auth, Feed, Ranking ni la navegación.
+
+### Cambios realizados (Frontend)
+- ✅ **Nueva página:** `frontend/src/pages/PerfilComercioPage.jsx`
+  - Vista de comercio por ruta: `/comercios/:id`
+  - Carga de:
+    - `GET /comercios/{comercio_id}`
+    - `GET /publicaciones/comercios/{comercio_id}`
+    - `GET /historias/comercios/{comercio_id}`
+  - Manejo de estados:
+    - loading
+    - error (incluye 404)
+    - vacío (sin publicaciones / sin historias)
+- ✅ **Nuevo service:** `frontend/src/services/comercios_service.js`
+  - Centraliza las llamadas HTTP del perfil de comercio.
+- ✅ **Refactor UI:** `frontend/src/components/PublicacionCard.jsx`
+  - Componente reutilizable (incluye `MetricBadge` y `ActionButton`).
+  - Preparado para navegación/uso en Feed y Ranking sin duplicación.
+- ✅ **Router:** `frontend/src/router/AppRouter.jsx`
+  - Se agrega ruta protegida: `/comercios/:id`
+- ✅ **Home:** `frontend/src/pages/Home.jsx`
+  - Ajustes menores de UI (consistencia visual / navegación).
+- ✅ **Regla de naming aplicada:** dominio del negocio en español (PerfilComercioPage) / técnico en inglés (services, layout, router, etc.).
+
+### Bug importante resuelto (navegación por URL en pestaña nueva)
+**Síntoma:** estando logueado, al abrir `/comercios/:id` en una nueva pestaña redirigía erróneamente a `/feed`.  
+**Causa:** `estaAutenticado` iniciaba en `false` y se hidrataba en `useEffect` (después del primer render), provocando un redirect incorrecto en rutas protegidas.  
+**Fix:** `frontend/src/context/AuthContext.jsx`
+- Hidratación **sincrónica** desde `localStorage` en los `useState` iniciales (`access_token`).
+- Resultado: rutas protegidas funcionan correctamente en refresh / pestañas nuevas (permanece en `/comercios/:id`).
+
+### Validaciones realizadas
+- ✅ `/comercios/:id` funciona con sesión activa.
+- ✅ Al pegar la URL de un comercio en otra pestaña, **permanece en la ruta del comercio** (no rebota a `/feed`).
+- ✅ Feed y Ranking siguen operativos y estables.
+- ✅ Rutas protegidas mantienen el comportamiento esperado.
+
+### Estado final
+ETAPA 40 cerrada y subida al repo (commit + push) ✅
