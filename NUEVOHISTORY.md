@@ -2872,3 +2872,103 @@ Sin romper el flujo de Auth, Feed, Ranking ni la navegación.
 
 ### Estado final
 ETAPA 40 cerrada y subida al repo (commit + push) ✅
+
+
+
+## ETAPA 41 — Historias (UI tipo Instagram) ✅ (CERRADA)
+
+**Commit (main):** `PENDIENTE` — `feat(frontend): historias UI tipo Instagram (ETAPA 41)`
+
+### Objetivo
+Implementar en el **frontend** la funcionalidad de **Historias** (estilo Instagram), consumiendo **exclusivamente endpoints existentes del backend**, sin introducir lógica de negocio nueva ni romper el flujo actual de la aplicación.
+
+La etapa apunta a:
+- Visualizar historias activas por comercio.
+- Integrarlas de forma natural en el Feed.
+- Proveer un viewer modal reutilizable y estable.
+- Mantener la arquitectura por capas y las reglas de naming del proyecto.
+
+---
+
+### Cambios realizados (Frontend)
+
+- ✅ **Nuevo service:** `frontend/src/services/historias_service.js`
+  - Centraliza las llamadas HTTP relacionadas a historias.
+  - Consume endpoint real:
+    - `GET /historias/comercios/{comercio_id}`
+  - Reutiliza `http_service.js` para manejo de auth/token (sin duplicar lógica).
+
+- ✅ **Nuevo componente:** `frontend/src/components/HistoriasBar.jsx`
+  - Barra horizontal de historias en el Feed.
+  - Muestra burbujas por comercio con:
+    - nombre del comercio
+    - thumbnail (si existe)
+    - contador de historias activas
+  - Manejo de estado vacío (“No hay historias para mostrar”).
+
+- ✅ **Nuevo componente:** `frontend/src/components/HistoriasViewer.jsx`
+  - Viewer modal tipo Instagram.
+  - Renderiza historias en formato vertical.
+  - Navegación por click (siguiente / anterior).
+  - Autoplay con timeout.
+  - Botón de cierre.
+  - Comportamiento seguro en desktop (centrado, sin fullscreen forzado).
+
+- ✅ **Refactor / integración:** `frontend/src/pages/FeedPage.jsx`
+  - Integración de HistoriasBar arriba del Feed.
+  - Construcción dinámica de la barra de historias a partir de los comercios presentes en el feed.
+  - Al hacer click en una burbuja:
+    - carga historias reales del backend
+    - abre el viewer modal
+  - Fallback:
+    - si un comercio no tiene historias → navegación a `/comercios/:id`
+  - Pulido de UX:
+    - cierre automático del viewer al cambiar de ruta (`useLocation`)
+    - limpieza de estados al cerrar el modal
+
+---
+
+### Decisiones de diseño importantes
+
+- Las historias **no se marcan como vistas** en esta etapa.
+  - El contador indica **historias activas**, no historias no vistas.
+  - No se implementa tracking por usuario (`historias_vistas`) para evitar sobre-ingeniería.
+  - El comportamiento es consistente con una primera versión de producto.
+
+- El viewer **no es fullscreen total en desktop**:
+  - decisión intencional de UX
+  - evita romper layout y navegación
+  - preparado para una futura etapa de pulido visual / mobile-first
+
+---
+
+### Bugs importantes resueltos durante la etapa
+
+- ❌ Import incorrecto de helpers HTTP (`apiGet`, `getAccessToken`)
+  - **Causa:** nombres de exports no existentes en `http_service.js` / `authService.js`
+  - **Fix:** alineación del service de historias con el helper HTTP real usado por el resto del frontend.
+
+- ❌ Pantalla en blanco por error de import en Vite
+  - **Causa:** mismatch de nombres de archivos (`auth_service.js` vs `authService.js`)
+  - **Fix:** corrección de imports y eliminación de dependencias innecesarias.
+
+---
+
+### Validaciones realizadas
+
+- ✅ Feed carga correctamente con sesión activa.
+- ✅ Barra de historias aparece solo cuando hay historias activas.
+- ✅ Estado vacío (“No hay historias para mostrar”) se muestra correctamente.
+- ✅ Click en burbuja:
+  - abre viewer con historia real
+  - renderiza imagen correctamente
+- ✅ Cierre manual del viewer funciona.
+- ✅ Navegación a otra ruta cierra automáticamente el viewer.
+- ✅ Feed, Ranking, Likes, Guardados e Interacciones **no se rompieron**.
+- ✅ Integración backend–frontend validada vía `/docs`.
+
+---
+
+### Estado final
+ETAPA 41 **completa, funcional y estable**.  
+Subida al repo con commit y push correspondientes. ✅
