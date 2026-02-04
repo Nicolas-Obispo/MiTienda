@@ -57,7 +57,10 @@ class Historia(Base):
     # -------------------------
     # Contenido
     # -------------------------
-    media_url = Column(String(255), nullable=False)
+    # media_url puede ser largo (CDN, query params, etc.)
+    # Por eso NO usamos 255, que rompe con URLs reales.
+    media_url = Column(String(2048), nullable=False)
+
     is_activa = Column(Boolean, nullable=False, server_default="1")
 
     # Fecha de expiración (clave)

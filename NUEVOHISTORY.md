@@ -2972,3 +2972,56 @@ La etapa apunta a:
 ### Estado final
 ETAPA 41 **completa, funcional y estable**.  
 Subida al repo con commit y push correspondientes. ✅
+
+
+================================================================================
+ETAPA 42 — Crear historias desde la UI (comercios) ✅
+================================================================================
+
+Objetivo:
+- Permitir crear historias desde el frontend (perfil de comercio), usando el backend real:
+  - POST /historias/comercios/{comercio_id}
+  - GET /historias/comercios/{comercio_id}
+
+Cambios realizados (Frontend):
+1) Service: creación de historias
+- Archivo: frontend/src/services/historias_service.js
+- Se agregó la función:
+  - crearHistoria(comercioId, historiaPayload)
+- Se corrigió el uso del http_service para respetar el wrapper existente:
+  - Se usa httpPost (junto a httpGet ya existente).
+
+2) Modal reutilizable para crear historia
+- Archivo nuevo: frontend/src/components/CrearHistoriaModal.jsx
+- Funcionalidad:
+  - Modal UI con campos: media_url, expira_en (datetime-local), is_activa
+  - Validación: media_url requerido
+  - Integración real: llama a crearHistoria()
+  - Mejora UX: si expira_en no se completa, se envía default “now + 24hs”
+    (porque el backend requiere expira_en).
+
+3) Integración en Perfil de Comercio
+- Archivo: frontend/src/pages/PerfilComercioPage.jsx
+- Se agregó:
+  - Botón “+ Historia”
+  - Apertura/cierre del modal CrearHistoriaModal
+  - Refresh de historias post-creación (re-fetch con getHistoriasDeComercio)
+- Se mejoró la lista simple para mostrar media_url (campo real del backend).
+
+Pruebas realizadas:
+- UI:
+  - El modal abre/cierra correctamente.
+  - Validación de media_url OK.
+- Backend real:
+  - POST /historias/comercios/{comercio_id} probado:
+    - Se detectó que expira_en era requerido (422) -> resuelto con default 24hs en frontend.
+    - Se logró creación real 201 Created y re-fetch 200 OK mostrando la historia en UI.
+- Nota importante (DB):
+  - Se detectó límite de media_url en DB (String(255)) causando error 500 “Data too long...”
+    al pegar URLs largas (ej: Google Search).
+  - Recomendación aplicada/pendiente según ejecución:
+    - Ajustar columna a VARCHAR(2048) (o TEXT) en tabla historias.
+
+Resultado:
+- Quedó implementada la creación de historias desde UI (perfil de comercio),
+  con refresco inmediato y UX estable.

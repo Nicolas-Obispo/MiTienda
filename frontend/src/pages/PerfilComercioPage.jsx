@@ -7,16 +7,18 @@
  * - GET /comercios/{comercio_id}
  * - GET /publicaciones/comercios/{comercio_id}
  * - GET /historias/comercios/{comercio_id}
+ * - POST /historias/comercios/{comercio_id}  ✅ (ETAPA 42: crear historia desde UI)
  *
  * Frontend:
  * - Ruta prevista: /comercios/:id (protegida)
  * - Reutiliza PublicacionCard para publicaciones del comercio
- * - Historias (por ahora) se muestran como lista simple (ETAPA 42 hará viewer)
+ * - Historias: lista simple + botón "+ Historia" (ETAPA 42)
  */
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import PublicacionCard from "../components/PublicacionCard";
+import CrearHistoriaModal from "../components/CrearHistoriaModal";
 import {
   getComercioById,
   getHistoriasDeComercio,
@@ -39,6 +41,9 @@ export default function CommerceProfilePage() {
   const [comercio, setComercio] = useState(null);
   const [historias, setHistorias] = useState([]);
   const [publicaciones, setPublicaciones] = useState([]);
+
+  // Modal crear historia (ETAPA 42)
+  const [isCrearHistoriaOpen, setIsCrearHistoriaOpen] = useState(false);
 
   // Locks por publicación (like/guardar)
   const [likeLocks, setLikeLocks] = useState({});
@@ -99,12 +104,32 @@ export default function CommerceProfilePage() {
       setHistorias(hist);
       setPublicaciones(mergedPubs);
     } catch (error) {
-      setErrorMessage(error.message || "Error desconocido cargando perfil del comercio.");
+      setErrorMessage(
+        error.message || "Error desconocido cargando perfil del comercio."
+      );
       setComercio(null);
       setHistorias([]);
       setPublicaciones([]);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  // Refresca SOLO historias (útil después de crear una historia)
+  async function refreshHistorias() {
+    if (!comercioId || Number.isNaN(comercioId)) return;
+
+    try {
+      const historiasData = await getHistoriasDeComercio(comercioId);
+
+      const hist = Array.isArray(historiasData)
+        ? historiasData
+        : historiasData?.items || [];
+
+      setHistorias(hist);
+    } catch (error) {
+      // No bloqueamos toda la pantalla; mostramos mensaje
+      setErrorMessage(error.message || "Error refrescando historias.");
     }
   }
 
@@ -186,6 +211,12 @@ export default function CommerceProfilePage() {
     }
   }
 
+  // Callback cuando el modal crea una historia con éxito
+  async function handleHistoriaCreated() {
+    // Source of truth: re-fetch (evita inconsistencias)
+    await refreshHistorias();
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <main className="mx-auto max-w-3xl px-4 py-8">
@@ -195,7 +226,8 @@ export default function CommerceProfilePage() {
             Perfil de comercio
           </h1>
           <p className="mt-1 text-sm text-gray-400">
-            Comercio ID: <span className="text-gray-200 font-semibold">{id}</span>
+            Comercio ID:{" "}
+            <span className="text-gray-200 font-semibold">{id}</span>
           </p>
         </div>
 
@@ -241,13 +273,25 @@ export default function CommerceProfilePage() {
 
             {/* Historias */}
             <section className="mt-6">
-              <h3 className="text-base font-semibold text-white">Historias</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-white">Historias</h3>
+
+                {/* Botón crear historia (ETAPA 42) */}
+                <button
+                  type="button"
+                  className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:opacity-90"
+                  onClick={() => setIsCrearHistoriaOpen(true)}
+                >
+                  + Historia
+                </button>
+              </div>
 
               {historias.length === 0 ? (
                 <div className="mt-3 rounded-2xl border border-gray-800 bg-gray-950 p-5">
                   <p className="text-gray-300">No hay historias todavía.</p>
                   <p className="mt-1 text-sm text-gray-500">
-                    (El viewer tipo Instagram lo hacemos en ETAPA 42)
+                    (El viewer tipo Instagram ya existe; acá sumamos la creación
+                    desde UI en ETAPA 42)
                   </p>
                 </div>
               ) : (
@@ -260,8 +304,16 @@ export default function CommerceProfilePage() {
                       <p className="text-sm text-gray-200 font-semibold">
                         Historia #{h.id}
                       </p>
-                      {h.titulo && (
-                        <p className="mt-1 text-sm text-gray-300">{h.titulo}</p>
+
+                      {/* Backend confirmado: media_url */}
+                      {h.media_url ? (
+                        <p className="mt-1 text-sm text-gray-300 break-words">
+                          {h.media_url}
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-sm text-gray-500">
+                          (Sin media_url)
+                        </p>
                       )}
                     </div>
                   ))}
@@ -297,6 +349,14 @@ export default function CommerceProfilePage() {
                 </div>
               )}
             </section>
+
+            {/* Modal Crear Historia */}
+            <CrearHistoriaModal
+              isOpen={isCrearHistoriaOpen}
+              comercioId={comercioId}
+              onClose={() => setIsCrearHistoriaOpen(false)}
+              onCreated={handleHistoriaCreated}
+            />
           </>
         )}
       </main>
