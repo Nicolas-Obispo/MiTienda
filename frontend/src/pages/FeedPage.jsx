@@ -1,23 +1,14 @@
 /**
  * FeedPage.jsx
  * ----------------
- * ETAPA 33 (Interacciones desde el Feed):
- * - Like desde la UI (endpoint existente)
- * - Guardar/Quitar guardado desde la UI (endpoints existentes)
- * - Optimistic UI (sin recargar feed completo)
- * - Sin cambios backend
- *
- * ETAPA 39 (Fix UI):
- * - Optimistic UI también para interacciones_count (likes + guardados)
- *
- * ETAPA 41 (Historias UI tipo Instagram):
- * - Barra horizontal de historias arriba del Feed (UI)
- * - Historias se cargan por comercio (backend real: GET /historias/comercios/{comercio_id})
- * - Viewer tipo Instagram (modal) al tocar una burbuja
- * - Pulido: cerrar viewer al cambiar de ruta (evita modal “colgado”)
+ * ETAPA 33: Like + Guardar/Quitar (optimistic UI)
+ * ETAPA 39: Optimistic también en interacciones_count
+ * ETAPA 41: Historias (barra + viewer tipo Instagram)
+ * ETAPA 43: Marcar historia como vista al abrir el viewer (primera historia)
+ * ETAPA 44 (parcial): Autoplay entre comercios (cuando termina un comercio, pasa al siguiente)
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import PublicacionCard from "../components/PublicacionCard";
@@ -32,142 +23,147 @@ import {
   quitarPublicacionGuardada,
 } from "../services/feed_service";
 
-import { fetchHistoriasPorComercio } from "../services/historias_service";
+import {
+  fetchHistoriasPorComercio,
+  marcarHistoriaVista,
+} from "../services/historias_service";
 
 export default function FeedPage() {
   const navigate = useNavigate();
-
-  /**
-   * location:
-   * - Se usa para detectar cambios de ruta y cerrar viewer si estaba abierto.
-   */
   const location = useLocation();
 
-  /**
-   * Estado principal del Feed
-   */
+  // -----------------------------
+  // Estado principal del Feed
+  // -----------------------------
   const [isLoading, setIsLoading] = useState(true);
   const [publicaciones, setPublicaciones] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
 
-  /**
-   * Estado de Historias (Barra)
-   * - historiasItems: lista de burbujas por comercio (lo que consume HistoriasBar)
-   * - historiasErrorMessage: error específico de historias (no bloquea el feed)
-   */
+  // -----------------------------
+  // Estado de Historias (Barra)
+  // -----------------------------
   const [historiasItems, setHistoriasItems] = useState([]);
   const [historiasErrorMessage, setHistoriasErrorMessage] = useState("");
 
-  /**
-   * Estado del viewer de historias (modal tipo Instagram)
-   * - viewerIsOpen: controla visibilidad
-   * - viewerTitulo: título mostrado (ej: nombre del comercio)
-   * - viewerHistorias: lista de historias del comercio seleccionado
-   */
+  // -----------------------------
+  // Estado del Viewer (Modal)
+  // -----------------------------
   const [viewerIsOpen, setViewerIsOpen] = useState(false);
   const [viewerTitulo, setViewerTitulo] = useState("Historias");
   const [viewerHistorias, setViewerHistorias] = useState([]);
 
-  /**
-   * Locks por publicación para evitar doble click mientras pega al backend
-   */
-  const [likeLocks, setLikeLocks] = useState({}); // { [pubId]: true }
-  const [saveLocks, setSaveLocks] = useState({}); // { [pubId]: true }
+  // Evita marcar vista 2 veces por la misma apertura
+  const ultimaHistoriaVistaMarcadaRef = useRef(null);
+
+  // ✅ Autoplay entre comercios (cola/orden)
+  const viewerComercioIdRef = useRef(null);
+  const historiasOrdenRef = useRef([]); // [{ comercioId, nombre }]
+
+  // Locks por publicación (like/guardar)
+  const [likeLocks, setLikeLocks] = useState({});
+  const [saveLocks, setSaveLocks] = useState({});
 
   const likeLocksMemo = useMemo(() => likeLocks, [likeLocks]);
   const saveLocksMemo = useMemo(() => saveLocks, [saveLocks]);
 
-  /**
-   * cerrarViewer
-   * Cierra el viewer y limpia estados asociados.
-   *
-   * Por qué existe:
-   * - Evita repetir el mismo bloque en varios lugares.
-   * - Garantiza que siempre se cierre de la misma manera.
-   */
-  function cerrarViewer() {
-    setViewerIsOpen(false);
-    setViewerHistorias([]);
-    setViewerTitulo("Historias");
-  }
-
-  /**
-   * closeOnRouteChange
-   * Si cambia la ruta mientras el viewer está abierto:
-   * - cerramos el modal
-   * - limpiamos estados
-   *
-   * Por qué:
-   * - Evita que el viewer quede abierto sobre otra pantalla.
-   */
-  useEffect(() => {
-    if (viewerIsOpen) {
-      cerrarViewer();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
-
-  /**
-   * setLock
-   * Helper para setear locks por id de publicación.
-   *
-   * @param {Function} setter - setState del lock
-   * @param {number} pubId - id de publicación
-   * @param {boolean} value - lock true/false
-   */
+  // -----------------------------
+  // Helpers
+  // -----------------------------
   function setLock(setter, pubId, value) {
     setter((prev) => ({ ...prev, [pubId]: value }));
   }
 
+  function cerrarViewer() {
+    setViewerIsOpen(false);
+    setViewerHistorias([]);
+    setViewerTitulo("Historias");
+    ultimaHistoriaVistaMarcadaRef.current = null;
+    viewerComercioIdRef.current = null;
+  }
+
+  // Si cambia la ruta con el viewer abierto, cerramos (evita modal “colgado”)
+  useEffect(() => {
+    if (viewerIsOpen) cerrarViewer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // ✅ Mantener el orden actual de la barra para autoplay
+  useEffect(() => {
+    historiasOrdenRef.current = (historiasItems || []).map((i) => ({
+      comercioId: i.comercioId,
+      nombre: i.nombre,
+    }));
+  }, [historiasItems]);
+
   /**
-   * buildHistoriasBarItemsFromFeed
-   * Construye los items para HistoriasBar basándose en los comercios presentes en el feed.
-   *
-   * Importante:
-   * - Backend real solo permite traer historias por comercio.
-   * - Tomamos comercios del feed para no inventar endpoint "recientes".
-   * - Si un comercio NO tiene historias, no aparece en la barra.
-   *
-   * @param {Array} feedItems - publicaciones ya cargadas/mergeadas
-   * @returns {Promise<void>}
+   * Preload de imágenes en background (no bloquea UI).
+   * - Evita pantalla negra en la primer historia cuando se abre por primera vez.
+   */
+  function preloadHistoriasImages(historias, max = 10) {
+    if (!Array.isArray(historias) || historias.length === 0) return;
+
+    const urls = [];
+    for (const h of historias) {
+      const url = h?.media_url;
+      if (url && typeof url === "string") {
+        urls.push(url);
+        if (urls.length >= max) break;
+      }
+    }
+
+    const doPreload = () => {
+      for (const url of urls) {
+        const img = new Image();
+        img.decoding = "async";
+        img.loading = "eager";
+        img.src = url;
+      }
+    };
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      window.requestIdleCallback(doPreload, { timeout: 1200 });
+    } else {
+      setTimeout(doPreload, 0);
+    }
+  }
+
+  /**
+   * Construye items para la barra desde comercios presentes en el feed
+   * y precarga algunas imágenes en background.
    */
   async function buildHistoriasBarItemsFromFeed(feedItems) {
     try {
       setHistoriasErrorMessage("");
 
-      /**
-       * Extraemos IDs únicos de comercios desde el feed.
-       * - Usamos varios posibles campos para no romper si cambia el shape:
-       *   comercio_id / comercioId / comercio?.id
-       */
+      // ✅ Normaliza IDs: acepta number o string numérico ("7")
+      function normalizarId(value) {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : null;
+      }
+
       const comercioIdsUnicos = [];
       const seen = new Set();
 
       for (const p of feedItems) {
-        const comercioId =
+        const raw =
           p?.comercio_id ?? p?.comercioId ?? p?.comercio?.id ?? null;
 
-        if (typeof comercioId === "number" && !seen.has(comercioId)) {
+        const comercioId = normalizarId(raw);
+
+        if (comercioId !== null && !seen.has(comercioId)) {
           seen.add(comercioId);
           comercioIdsUnicos.push(comercioId);
         }
       }
 
-      /**
-       * Evitamos disparar demasiadas requests si el feed es enorme.
-       * - Cap simple: primeros 15 comercios únicos.
-       */
       const comercioIds = comercioIdsUnicos.slice(0, 15);
 
-      /**
-       * Para mostrar nombre/thumbnail en la barra, intentamos deducirlos del feed.
-       * - nombre: comercio_nombre / comercioNombre / comercio?.nombre
-       * - thumbnailUrl: comercio_logo_url / comercioLogoUrl / comercio?.logo_url
-       */
+      // Meta (nombre/logo) deducida del feed
       const comercioMeta = new Map();
       for (const p of feedItems) {
-        const id = p?.comercio_id ?? p?.comercioId ?? p?.comercio?.id ?? null;
-        if (typeof id !== "number") continue;
+        const raw = p?.comercio_id ?? p?.comercioId ?? p?.comercio?.id ?? null;
+        const id = normalizarId(raw);
+        if (id === null) continue;
 
         if (!comercioMeta.has(id)) {
           const nombre =
@@ -186,10 +182,7 @@ export default function FeedPage() {
         }
       }
 
-      /**
-       * Traemos historias por comercio en paralelo.
-       * - Si un comercio da error, NO tiramos abajo todo: lo tratamos como "sin historias".
-       */
+      // Traemos historias por comercio en paralelo
       const results = await Promise.all(
         comercioIds.map(async (comercioId) => {
           try {
@@ -197,18 +190,26 @@ export default function FeedPage() {
             const list = Array.isArray(historias)
               ? historias
               : historias?.items || [];
-
             return { comercioId, historias: list };
-          } catch (e) {
+          } catch {
             return { comercioId, historias: [] };
           }
         })
       );
 
-      /**
-       * Construimos items para HistoriasBar:
-       * - Solo incluimos comercios con al menos 1 historia.
-       */
+      // Precarga liviana global (primeras historias encontradas)
+      let preloadedCount = 0;
+      const MAX_PRELOAD_TOTAL = 20;
+
+      for (const r of results) {
+        if (preloadedCount >= MAX_PRELOAD_TOTAL) break;
+        const historias = r?.historias || [];
+        const slice = historias.slice(0, 2);
+        preloadHistoriasImages(slice, 2);
+        preloadedCount += slice.length;
+      }
+
+      // Items para la barra (solo comercios con historias)
       const items = results
         .filter((r) => Array.isArray(r.historias) && r.historias.length > 0)
         .map((r) => {
@@ -227,10 +228,6 @@ export default function FeedPage() {
 
       setHistoriasItems(items);
     } catch (error) {
-      /**
-       * Si falla algo inesperado, mostramos error solo de historias.
-       * - El feed sigue funcionando.
-       */
       setHistoriasItems([]);
       setHistoriasErrorMessage(
         error?.message || "Error desconocido cargando historias."
@@ -238,11 +235,9 @@ export default function FeedPage() {
     }
   }
 
-  /**
-   * loadFeed
-   * Carga feed + guardadas y mergea guardada_by_me.
-   * Luego dispara carga de HistoriasBar basándose en comercios del feed.
-   */
+  // -----------------------------
+  // Carga inicial del Feed
+  // -----------------------------
   async function loadFeed() {
     try {
       setIsLoading(true);
@@ -256,6 +251,7 @@ export default function FeedPage() {
       const feedItems = Array.isArray(feedData)
         ? feedData
         : feedData?.items || [];
+
       const guardadasItems = Array.isArray(guardadasData)
         ? guardadasData
         : guardadasData?.items || [];
@@ -273,19 +269,11 @@ export default function FeedPage() {
 
       setPublicaciones(merged);
 
-      /**
-       * ETAPA 41:
-       * Construimos barra de historias desde comercios presentes en el feed.
-       * - No bloqueamos el render del feed.
-       */
+      // Historias (no bloquea el feed)
       buildHistoriasBarItemsFromFeed(merged);
     } catch (error) {
-      setErrorMessage(error.message || "Error desconocido cargando el feed.");
+      setErrorMessage(error?.message || "Error desconocido cargando el feed.");
       setPublicaciones([]);
-
-      /**
-       * Si el feed falla, limpiamos historias (no mostramos data vieja).
-       */
       setHistoriasItems([]);
       setHistoriasErrorMessage("");
     } finally {
@@ -298,90 +286,128 @@ export default function FeedPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /**
-   * handleClickHistoriaComercio
-   * Al tocar una burbuja:
-   * - Trae historias del comercio desde backend (endpoint real)
-   * - Abre el viewer (modal tipo Instagram)
-   *
-   * Backend:
-   * - GET /historias/comercios/{comercio_id}
-   *
-   * @param {number} comercioId
-   */
+  // -----------------------------
+  // Historias: autoplay siguiente comercio
+  // -----------------------------
+  async function abrirSiguienteComercioHistorias() {
+    try {
+      const orden = historiasOrdenRef.current || [];
+      const actualId = viewerComercioIdRef.current;
+
+      if (!actualId || orden.length === 0) {
+        cerrarViewer();
+        return;
+      }
+
+      const idx = orden.findIndex((x) => x.comercioId === actualId);
+      const next = idx >= 0 ? orden[idx + 1] : null;
+
+      if (!next) {
+        cerrarViewer();
+        return;
+      }
+
+      const nextId = next.comercioId;
+      const nextTitulo = next.nombre || `Comercio ${nextId}`;
+
+      const historias = await fetchHistoriasPorComercio(nextId);
+      const list = Array.isArray(historias) ? historias : [];
+
+      if (list.length === 0) {
+        // Si justo ese comercio quedó sin historias, saltamos al siguiente
+        viewerComercioIdRef.current = nextId;
+        return abrirSiguienteComercioHistorias();
+      }
+
+      preloadHistoriasImages(list, 3);
+
+      // Abrimos el siguiente grupo
+      viewerComercioIdRef.current = nextId;
+      setViewerTitulo(nextTitulo);
+      setViewerHistorias(list);
+      setViewerIsOpen(true);
+
+      // Marcar vista de primera historia (sin bloquear)
+      const primeraHistoriaId = list?.[0]?.id ?? null;
+      if (
+        typeof primeraHistoriaId === "number" &&
+        ultimaHistoriaVistaMarcadaRef.current !== primeraHistoriaId
+      ) {
+        ultimaHistoriaVistaMarcadaRef.current = primeraHistoriaId;
+
+        setTimeout(() => {
+          marcarHistoriaVista(primeraHistoriaId).catch(() => {});
+        }, 0);
+      }
+    } catch {
+      cerrarViewer();
+    }
+  }
+
+  // -----------------------------
+  // Historias: click en burbuja
+  // -----------------------------
   async function handleClickHistoriaComercio(comercioId) {
     try {
-      /**
-       * Buscamos metadata del comercio desde la barra para el título del viewer.
-       * - Si no existe, usamos fallback.
-       */
       const item = historiasItems.find((i) => i.comercioId === comercioId);
       const titulo = item?.nombre || `Comercio ${comercioId}`;
 
-      /**
-       * Traemos historias reales del backend.
-       * - Si no devuelve array, forzamos a [] para evitar romper el viewer.
-       */
       const historias = await fetchHistoriasPorComercio(comercioId);
       const list = Array.isArray(historias) ? historias : [];
 
-      /**
-       * Si no hay historias, por ahora navegamos al perfil del comercio
-       * (esto evita abrir un viewer vacío).
-       */
       if (list.length === 0) {
         navigate(`/comercios/${comercioId}`);
         return;
       }
 
-      /**
-       * Seteamos estados del viewer y lo abrimos.
-       */
+      preloadHistoriasImages(list, 3);
+
+      // ✅ set comercio actual (para autoplay)
+      viewerComercioIdRef.current = comercioId;
+
       setViewerTitulo(titulo);
       setViewerHistorias(list);
       setViewerIsOpen(true);
-    } catch (error) {
-      /**
-       * Si falla, hacemos fallback al perfil del comercio.
-       */
+
+      // ETAPA 43: marcar vista (primera historia) sin bloquear UI
+      const primeraHistoriaId = list?.[0]?.id ?? null;
+
+      if (
+        typeof primeraHistoriaId === "number" &&
+        ultimaHistoriaVistaMarcadaRef.current !== primeraHistoriaId
+      ) {
+        ultimaHistoriaVistaMarcadaRef.current = primeraHistoriaId;
+
+        setTimeout(() => {
+          marcarHistoriaVista(primeraHistoriaId).catch(() => {});
+        }, 0);
+      }
+    } catch {
       navigate(`/comercios/${comercioId}`);
     }
   }
 
-  /**
-   * Optimistic Like:
-   * - Toggle inmediato de liked_by_me
-   * - Ajusta likes_count +1 o -1 según corresponda
-   * - Ajusta interacciones_count +1 o -1 (porque interacciones = likes + guardados)
-   * - Si falla backend, revertimos
-   */
+  // -----------------------------
+  // Interacciones: Like
+  // -----------------------------
   async function handleToggleLike(pubId) {
     if (likeLocksMemo[pubId]) return;
 
     setLock(setLikeLocks, pubId, true);
-
-    // Snapshot para revertir si falla
     const snapshot = publicaciones;
 
-    // Optimistic update
     setPublicaciones((prev) =>
       prev.map((p) => {
         if (p.id !== pubId) return p;
 
-        const nextLiked = !p.liked_by_me;
+        const nextLiked = !Boolean(p.liked_by_me);
         const delta = nextLiked ? 1 : -1;
-
-        const nextLikesCount = Math.max(0, (p.likes_count || 0) + delta);
-        const nextInteraccionesCount = Math.max(
-          0,
-          (p.interacciones_count || 0) + delta
-        );
 
         return {
           ...p,
           liked_by_me: nextLiked,
-          likes_count: nextLikesCount,
-          interacciones_count: nextInteraccionesCount,
+          likes_count: Math.max(0, (p.likes_count || 0) + delta),
+          interacciones_count: Math.max(0, (p.interacciones_count || 0) + delta),
         };
       })
     );
@@ -389,55 +415,37 @@ export default function FeedPage() {
     try {
       await toggleLikePublicacion(pubId);
     } catch (error) {
-      // Revertimos si falla
       setPublicaciones(snapshot);
-      setErrorMessage(error.message || "Error al togglear like.");
+      setErrorMessage(error?.message || "Error al togglear like.");
     } finally {
       setLock(setLikeLocks, pubId, false);
     }
   }
 
-  /**
-   * Optimistic Guardado:
-   * - Toggle inmediato de guardada_by_me
-   * - Ajusta guardados_count +1 o -1
-   * - Ajusta interacciones_count +1 o -1 (porque interacciones = likes + guardados)
-   * - Si falla backend, revertimos
-   */
+  // -----------------------------
+  // Interacciones: Guardar/Quitar
+  // -----------------------------
   async function handleToggleSave(pubId) {
     if (saveLocksMemo[pubId]) return;
 
     setLock(setSaveLocks, pubId, true);
-
     const snapshot = publicaciones;
 
-    // Determinamos estado actual para elegir endpoint
     const current = publicaciones.find((p) => p.id === pubId);
     const estabaGuardada = Boolean(current?.guardada_by_me);
 
-    // Optimistic update
     setPublicaciones((prev) =>
       prev.map((p) => {
         if (p.id !== pubId) return p;
 
-        const nextGuardada = !p.guardada_by_me;
-        const delta = nextGuardada ? 1 : -1;
-
-        const nextGuardadosCount = Math.max(
-          0,
-          (p.guardados_count || 0) + delta
-        );
-
-        const nextInteraccionesCount = Math.max(
-          0,
-          (p.interacciones_count || 0) + delta
-        );
+        const nextSaved = !Boolean(p.guardada_by_me);
+        const delta = nextSaved ? 1 : -1;
 
         return {
           ...p,
-          guardada_by_me: nextGuardada,
-          guardados_count: nextGuardadosCount,
-          interacciones_count: nextInteraccionesCount,
+          guardada_by_me: nextSaved,
+          guardados_count: Math.max(0, (p.guardados_count || 0) + delta),
+          interacciones_count: Math.max(0, (p.interacciones_count || 0) + delta),
         };
       })
     );
@@ -450,16 +458,19 @@ export default function FeedPage() {
       }
     } catch (error) {
       setPublicaciones(snapshot);
-      setErrorMessage(error.message || "Error al guardar/quitar guardado.");
+      setErrorMessage(error?.message || "Error al guardar/quitar guardado.");
     } finally {
       setLock(setSaveLocks, pubId, false);
     }
   }
 
+  // -----------------------------
+  // Render
+  // -----------------------------
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <main className="mx-auto max-w-3xl px-4 py-8">
-        {/* ETAPA 41: Barra de Historias (no bloquea el feed) */}
+        {/* Barra de Historias */}
         {!isLoading && !errorMessage && (
           <div className="mb-4">
             <HistoriasBar
@@ -467,7 +478,6 @@ export default function FeedPage() {
               onClickComercio={handleClickHistoriaComercio}
             />
 
-            {/* Error de historias: se muestra discreto y NO bloquea el feed */}
             {historiasErrorMessage ? (
               <div className="mt-2 rounded-xl border border-yellow-900 bg-yellow-950/30 p-3 text-sm text-yellow-200">
                 {historiasErrorMessage}
@@ -476,7 +486,7 @@ export default function FeedPage() {
           </div>
         )}
 
-        {/* Estado: Loading */}
+        {/* Loading */}
         {isLoading && (
           <div className="space-y-3">
             <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
@@ -485,21 +495,15 @@ export default function FeedPage() {
           </div>
         )}
 
-        {/* Estado: Error */}
+        {/* Error */}
         {!isLoading && errorMessage && (
           <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
             <p className="font-semibold text-red-200">Error</p>
             <p className="mt-2 text-red-100 break-words">{errorMessage}</p>
-
-            <p className="mt-3 text-sm text-gray-200">
-              Si ves <b>401</b>, verificá que exista{" "}
-              <code className="bg-gray-800 px-1 rounded">access_token</code> en
-              localStorage.
-            </p>
           </div>
         )}
 
-        {/* Estado: Vacío */}
+        {/* Vacío */}
         {!isLoading && !errorMessage && publicaciones.length === 0 && (
           <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center">
             <p className="text-gray-200 font-semibold">No hay publicaciones</p>
@@ -509,7 +513,7 @@ export default function FeedPage() {
           </div>
         )}
 
-        {/* Estado: OK */}
+        {/* OK */}
         {!isLoading && !errorMessage && publicaciones.length > 0 && (
           <div className="space-y-4">
             {publicaciones.map((p) => (
@@ -526,17 +530,11 @@ export default function FeedPage() {
         )}
       </main>
 
-      {/* ETAPA 41: Viewer de Historias (modal tipo Instagram) */}
+      {/* Viewer tipo Instagram */}
       <HistoriasViewer
         isOpen={viewerIsOpen}
-        onClose={() => {
-          /**
-           * Al cerrar:
-           * - ocultamos modal
-           * - limpiamos data para no mostrar historias viejas en la próxima apertura
-           */
-          cerrarViewer();
-        }}
+        onClose={cerrarViewer}
+        onEnd={abrirSiguienteComercioHistorias}
         historias={viewerHistorias}
         titulo={viewerTitulo}
       />

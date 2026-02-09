@@ -9,9 +9,9 @@ para no romper compatibilidad con usuarios existentes.
 """
 
 from sqlalchemy import Column, Integer, String, Boolean
-from app.core.database import Base
 from sqlalchemy.orm import relationship
 
+from app.core.database import Base
 
 
 class Usuario(Base):
@@ -20,7 +20,6 @@ class Usuario(Base):
     # -----------------------------
     # Campos existentes (MiTienda)
     # -----------------------------
-
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, nullable=False)
 
@@ -57,7 +56,7 @@ class Usuario(Base):
         lazy="selectin",
     )
 
-        # -------------------------
+    # -------------------------
     # Publicaciones guardadas
     # -------------------------
     # Relación con publicaciones que el usuario guardó
@@ -69,3 +68,13 @@ class Usuario(Base):
         lazy="selectin",
     )
 
+    # -------------------------
+    # Vistas de historias (ETAPA 43)
+    # -------------------------
+    # - Relación hacia historias_vistas
+    # - sin back_populates en este paso (lo conectamos luego)
+    historias_vistas = relationship(
+        "HistoriaVista",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )

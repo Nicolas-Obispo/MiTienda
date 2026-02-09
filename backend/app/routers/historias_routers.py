@@ -10,10 +10,11 @@ Reglas:
 
 from typing import List
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.auth import obtener_usuario_actual
 from app.schemas.historias_schemas import (
     HistoriaCreate,
     HistoriaRead,
@@ -21,6 +22,9 @@ from app.schemas.historias_schemas import (
 from app.services.historias_services import (
     crear_historia,
     listar_historias_activas_por_comercio,
+)
+from app.services.historias_vistas_services import (
+    marcar_historia_como_vista,
 )
 
 router = APIRouter(
@@ -66,3 +70,37 @@ def listar_historias_por_comercio_endpoint(
         db,
         comercio_id=comercio_id,
     )
+
+
+# ------------------------------------------------------------------
+# VISTAS DE HISTORIAS (ETAPA 43)
+# ------------------------------------------------------------------
+
+@router.post(
+    "/{historia_id}/vistas",
+    status_code=status.HTTP_201_CREATED,
+)
+def marcar_historia_vista_endpoint(
+    historia_id: int,
+    db: Session = Depends(get_db),
+    usuario_actual=Depends(obtener_usuario_actual),
+):
+    """
+    Marca una historia como vista por el usuario autenticado.
+
+    - Idempotente: si ya fue vista, no duplica.
+    - Devuelve 201 y {"ok": true}.
+    """
+
+    try:
+        marcar_historia_como_vista(
+            db,
+            historia_id=historia_id,
+            usuario_id=usuario_actual.id,
+        )
+        return {"ok": True}
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )

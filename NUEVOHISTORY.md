@@ -2975,53 +2975,112 @@ Subida al repo con commit y push correspondientes. ✅
 
 
 ================================================================================
-ETAPA 42 — Crear historias desde la UI (comercios) ✅
+ETAPA 42 — Crear historias desde la UI (comercios) ✅ CIERRE REAL
 ================================================================================
 
 Objetivo:
 - Permitir crear historias desde el frontend (perfil de comercio), usando el backend real:
   - POST /historias/comercios/{comercio_id}
   - GET /historias/comercios/{comercio_id}
+- Asegurar coherencia de permisos (solo el dueño del comercio puede crear historias).
+- Mostrar correctamente qué usuario está logueado en la UI.
 
-Cambios realizados (Frontend):
-1) Service: creación de historias
+--------------------------------------------------------------------------------
+Cambios realizados
+--------------------------------------------------------------------------------
+
+BACKEND
+-------
+
+1) Ajuste en modelo de historias (media_url)
+- Archivo: app/models/historias_models.py
+- Problema detectado:
+  - Error 500: “Data too long for column 'media_url'” al pegar URLs largas.
+- Solución aplicada:
+  - Se ajustó el tipo/longitud de la columna media_url
+    (VARCHAR más largo / TEXT según DB).
+- Resultado:
+  - El backend ahora soporta URLs reales largas sin error.
+
+FRONTEND
+--------
+
+2) Service: creación de historias
 - Archivo: frontend/src/services/historias_service.js
 - Se agregó la función:
   - crearHistoria(comercioId, historiaPayload)
-- Se corrigió el uso del http_service para respetar el wrapper existente:
-  - Se usa httpPost (junto a httpGet ya existente).
+- Se respetó la arquitectura existente:
+  - Uso de httpPost / httpGet desde http_service.js
+- Resultado:
+  - Comunicación correcta con POST /historias/comercios/{comercio_id}
 
-2) Modal reutilizable para crear historia
+3) Modal reutilizable para crear historias
 - Archivo nuevo: frontend/src/components/CrearHistoriaModal.jsx
 - Funcionalidad:
-  - Modal UI con campos: media_url, expira_en (datetime-local), is_activa
-  - Validación: media_url requerido
-  - Integración real: llama a crearHistoria()
-  - Mejora UX: si expira_en no se completa, se envía default “now + 24hs”
-    (porque el backend requiere expira_en).
+  - Modal UI con campos:
+    - media_url (obligatorio)
+    - expira_en (datetime-local, opcional)
+    - is_activa
+  - Validaciones claras en frontend.
+  - Integración real con crearHistoria().
+  - UX:
+    - Si expira_en no se completa, se envía default:
+      “now + 24hs” (requerido por backend).
 
-3) Integración en Perfil de Comercio
+4) Integración en Perfil de Comercio
 - Archivo: frontend/src/pages/PerfilComercioPage.jsx
 - Se agregó:
   - Botón “+ Historia”
   - Apertura/cierre del modal CrearHistoriaModal
   - Refresh de historias post-creación (re-fetch con getHistoriasDeComercio)
-- Se mejoró la lista simple para mostrar media_url (campo real del backend).
+- Regla de permisos:
+  - El botón “+ Historia” solo aparece si el usuario logueado
+    es el dueño del comercio.
+- Resultado:
+  - Vista pública y vista admin correctamente diferenciadas.
 
-Pruebas realizadas:
+5) Corrección definitiva de sesión de usuario (frontend)
+- Problema detectado:
+  - El frontend llamaba incorrectamente a /me (404 Not Found).
+  - No se sabía qué usuario estaba logueado (“Sesión activa” sin identidad).
+- Análisis:
+  - Según Swagger, el endpoint real existente es:
+    GET /usuarios/me
+- Solución aplicada:
+  - Archivo: frontend/src/services/authService.js
+    - Se agregó/ajustó getMe() apuntando a /usuarios/me
+  - Archivo: frontend/src/context/AuthContext.jsx
+    - Se carga el usuario real desde /usuarios/me al iniciar sesión
+      y al hidratar desde localStorage.
+  - Archivo: frontend/src/layouts/MainLayout.jsx
+    - Se muestra el correo del usuario logueado en el header.
+- Resultado:
+  - Ahora la UI muestra claramente:
+    “Sesión: usuario@email.com”
+  - La lógica de permisos por dueño funciona de forma consistente.
+
+--------------------------------------------------------------------------------
+Pruebas realizadas
+--------------------------------------------------------------------------------
+
 - UI:
-  - El modal abre/cierra correctamente.
-  - Validación de media_url OK.
-- Backend real:
-  - POST /historias/comercios/{comercio_id} probado:
-    - Se detectó que expira_en era requerido (422) -> resuelto con default 24hs en frontend.
-    - Se logró creación real 201 Created y re-fetch 200 OK mostrando la historia en UI.
-- Nota importante (DB):
-  - Se detectó límite de media_url en DB (String(255)) causando error 500 “Data too long...”
-    al pegar URLs largas (ej: Google Search).
-  - Recomendación aplicada/pendiente según ejecución:
-    - Ajustar columna a VARCHAR(2048) (o TEXT) en tabla historias.
+  - El modal de crear historia abre y cierra correctamente.
+  - El texto pegado en media_url se visualiza correctamente.
+  - El botón “+ Historia” aparece solo para el dueño del comercio.
+- Backend:
+  - POST /historias/comercios/{comercio_id} → 201 Created OK
+  - GET /historias/comercios/{comercio_id} → 200 OK
+- Auth:
+  - GET /usuarios/me → 200 OK
+  - Header muestra el email del usuario logueado.
+- Flujo completo:
+  - Crear historia → refresh inmediato → historia visible en UI.
 
-Resultado:
-- Quedó implementada la creación de historias desde UI (perfil de comercio),
-  con refresco inmediato y UX estable.
+--------------------------------------------------------------------------------
+Resultado final
+--------------------------------------------------------------------------------
+
+- La creación de historias desde UI quedó implementada y estable.
+- Los permisos están correctamente alineados con el backend.
+- La sesión de usuario es visible y entendible en toda la app.
+- ETAPA 42 queda cerrada de forma definitiva, sin parches temporales.

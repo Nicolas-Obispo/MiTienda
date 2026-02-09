@@ -2,17 +2,7 @@
  * PerfilComercioPage.jsx
  * -----------------------
  * ETAPA 40 — Perfil de comercio (40.1 UI + 40.2 Data básica)
- *
- * Backend (Swagger):
- * - GET /comercios/{comercio_id}
- * - GET /publicaciones/comercios/{comercio_id}
- * - GET /historias/comercios/{comercio_id}
- * - POST /historias/comercios/{comercio_id}  ✅ (ETAPA 42: crear historia desde UI)
- *
- * Frontend:
- * - Ruta prevista: /comercios/:id (protegida)
- * - Reutiliza PublicacionCard para publicaciones del comercio
- * - Historias: lista simple + botón "+ Historia" (ETAPA 42)
+ * ETAPA 42 — Crear historia desde UI (solo dueño)
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -30,10 +20,14 @@ import {
   guardarPublicacion,
   quitarPublicacionGuardada,
 } from "../services/feed_service";
+import { useAuth } from "../context/useAuth";
 
 export default function CommerceProfilePage() {
   const { id } = useParams();
   const comercioId = Number(id);
+
+  const { usuario, user } = useAuth();
+  const usuarioActivo = usuario || user || null;
 
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -55,6 +49,27 @@ export default function CommerceProfilePage() {
   function setLock(setter, pubId, value) {
     setter((prev) => ({ ...prev, [pubId]: value }));
   }
+
+  // ✅ Determina si el comercio es “mío”
+  // Intentamos campos comunes: owner_user_id / usuario_id / propietario_id
+  function esComercioMio(comercioData, userData) {
+    if (!comercioData || !userData) return false;
+
+    const comercioOwner =
+      comercioData.owner_user_id ??
+      comercioData.usuario_id ??
+      comercioData.propietario_id ??
+      null;
+
+    const userId =
+      userData.id ?? userData.user_id ?? userData.usuario_id ?? null;
+
+    if (comercioOwner == null || userId == null) return false;
+
+    return Number(comercioOwner) === Number(userId);
+  }
+
+  const puedoCrearHistoria = esComercioMio(comercio, usuarioActivo);
 
   async function loadAll() {
     if (!comercioId || Number.isNaN(comercioId)) {
@@ -93,8 +108,6 @@ export default function CommerceProfilePage() {
           .filter((pid) => typeof pid === "number")
       );
 
-      // En publicaciones por comercio, liked_by_me debería venir del backend (como feed/ranking)
-      // Solo normalizamos guardada_by_me con el set de guardadas.
       const mergedPubs = pubs.map((p) => ({
         ...p,
         guardada_by_me: guardadasSet.has(p.id),
@@ -115,7 +128,6 @@ export default function CommerceProfilePage() {
     }
   }
 
-  // Refresca SOLO historias (útil después de crear una historia)
   async function refreshHistorias() {
     if (!comercioId || Number.isNaN(comercioId)) return;
 
@@ -128,7 +140,6 @@ export default function CommerceProfilePage() {
 
       setHistorias(hist);
     } catch (error) {
-      // No bloqueamos toda la pantalla; mostramos mensaje
       setErrorMessage(error.message || "Error refrescando historias.");
     }
   }
@@ -138,7 +149,6 @@ export default function CommerceProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comercioId]);
 
-  // Optimistic Like (incluye interacciones_count)
   async function handleToggleLike(pubId) {
     if (likeLocksMemo[pubId]) return;
 
@@ -171,7 +181,6 @@ export default function CommerceProfilePage() {
     }
   }
 
-  // Optimistic Guardado (incluye interacciones_count)
   async function handleToggleSave(pubId) {
     if (saveLocksMemo[pubId]) return;
 
@@ -211,9 +220,7 @@ export default function CommerceProfilePage() {
     }
   }
 
-  // Callback cuando el modal crea una historia con éxito
   async function handleHistoriaCreated() {
-    // Source of truth: re-fetch (evita inconsistencias)
     await refreshHistorias();
   }
 
@@ -268,6 +275,20 @@ export default function CommerceProfilePage() {
                     {comercio?.is_activo ? "Activo" : "Inactivo"}
                   </span>
                 </p>
+
+                {/* Debug suave para que veas si el backend manda owner */}
+                {(comercio?.owner_user_id ??
+                  comercio?.usuario_id ??
+                  comercio?.propietario_id) != null ? (
+                  <p className="text-xs text-gray-500">
+                    Owner:{" "}
+                    {String(
+                      comercio?.owner_user_id ??
+                        comercio?.usuario_id ??
+                        comercio?.propietario_id
+                    )}
+                  </p>
+                ) : null}
               </div>
             </section>
 
@@ -276,23 +297,25 @@ export default function CommerceProfilePage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold text-white">Historias</h3>
 
-                {/* Botón crear historia (ETAPA 42) */}
-                <button
-                  type="button"
-                  className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:opacity-90"
-                  onClick={() => setIsCrearHistoriaOpen(true)}
-                >
-                  + Historia
-                </button>
+                {/* ✅ Botón crear historia SOLO si es mío */}
+                {puedoCrearHistoria ? (
+                  <button
+                    type="button"
+                    className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:opacity-90"
+                    onClick={() => setIsCrearHistoriaOpen(true)}
+                  >
+                    + Historia
+                  </button>
+                ) : (
+                  <span className="text-xs text-white/60">
+                    (Solo el dueño puede publicar historias)
+                  </span>
+                )}
               </div>
 
               {historias.length === 0 ? (
                 <div className="mt-3 rounded-2xl border border-gray-800 bg-gray-950 p-5">
                   <p className="text-gray-300">No hay historias todavía.</p>
-                  <p className="mt-1 text-sm text-gray-500">
-                    (El viewer tipo Instagram ya existe; acá sumamos la creación
-                    desde UI en ETAPA 42)
-                  </p>
                 </div>
               ) : (
                 <div className="mt-3 space-y-2">
@@ -305,7 +328,6 @@ export default function CommerceProfilePage() {
                         Historia #{h.id}
                       </p>
 
-                      {/* Backend confirmado: media_url */}
                       {h.media_url ? (
                         <p className="mt-1 text-sm text-gray-300 break-words">
                           {h.media_url}

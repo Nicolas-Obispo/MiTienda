@@ -1,345 +1,267 @@
-/**
- * HistoriasViewer.jsx
- * -------------------------------------------------------
- * Viewer de Historias (UI tipo Instagram).
- *
- * Responsabilidad:
- * - Mostrar historias en modo pantalla completa (modal).
- * - Permitir avanzar/retroceder entre historias.
- * - Auto-advance con timer.
- *
- * Reglas:
- * - Este componente NO hace requests.
- * - Recibe las historias por props (la página decide cómo cargarlas).
- */
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 
-import React, { useEffect, useMemo, useState } from "react";
+const DURACION_MS_DEFAULT = 4500;
 
-/**
- * getMediaUrlFromHistoria
- * -------------------------------------------------------
- * Qué hace:
- * - Devuelve la URL del media de una historia, soportando ambos formatos:
- *   - media_url (snake_case típico de backend Python)
- *   - mediaUrl (camelCase típico de frontend)
- *
- * Por qué existe:
- * - Evita que el viewer dependa del shape exacto del backend.
- *
- * @param {Object} historia
- * @returns {string|null}
- */
-function getMediaUrlFromHistoria(historia) {
-  if (!historia) return null;
-
-  // Backend probable (snake_case)
-  if (typeof historia.media_url === "string" && historia.media_url.trim() !== "") {
-    return historia.media_url;
-  }
-
-  // Frontend probable (camelCase)
-  if (typeof historia.mediaUrl === "string" && historia.mediaUrl.trim() !== "") {
-    return historia.mediaUrl;
-  }
-
-  return null;
-}
-
-/**
- * HistoriasViewer
- * -------------------------------------------------------
- * Qué hace:
- * - Renderiza un modal fullscreen con una historia activa.
- * - Click izquierda: anterior
- * - Click derecha: siguiente
- * - Botón X: cerrar
- * - Barra de progreso simple arriba
- *
- * @param {Object} props
- * @param {boolean} props.isOpen - si el viewer está visible
- * @param {() => void} props.onClose - cerrar viewer
- * @param {Array} props.historias - lista de historias a reproducir
- * @param {string} props.titulo - título a mostrar (ej: nombre del comercio)
- * @returns {JSX.Element|null}
- */
 export default function HistoriasViewer({
   isOpen,
   onClose,
-  historias = [],
-  titulo = "Historias",
+  onEnd, // ✅ NUEVO: se llama cuando termina la última historia
+  historias,
+  titulo,
 }) {
-  /**
-   * indexActual:
-   * - Controla qué historia se está mostrando.
-   */
+  const historiasList = useMemo(
+    () => (Array.isArray(historias) ? historias : []),
+    [historias]
+  );
+
   const [indexActual, setIndexActual] = useState(0);
-
-  /**
-   * progreso:
-   * - 0 a 100 para simular barra de tiempo (auto-advance).
-   */
   const [progreso, setProgreso] = useState(0);
+  const [mediaLista, setMediaLista] = useState(false);
+  const [cycleKey, setCycleKey] = useState(0);
 
-  /**
-   * historiaActual:
-   * - La historia a mostrar según indexActual.
-   */
-  const historiaActual = useMemo(() => {
-    if (!Array.isArray(historias) || historias.length === 0) return null;
-    return historias[Math.min(indexActual, historias.length - 1)];
-  }, [historias, indexActual]);
+  const imgRef = useRef(null);
+  const rafRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const runIdRef = useRef(0);
 
-  /**
-   * mediaUrl:
-   * - URL normalizada del media (soporta snake_case y camelCase).
-   */
-  const mediaUrl = useMemo(() => {
-    return getMediaUrlFromHistoria(historiaActual);
-  }, [historiaActual]);
-
-  /**
-   * resetAlAbrir:
-   * - Cada vez que se abre, arrancamos desde la primera historia.
-   */
-  useEffect(() => {
-    if (isOpen) {
-      setIndexActual(0);
-      setProgreso(0);
+  const limpiarRaf = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     }
-  }, [isOpen]);
+  }, []);
 
-  /**
-   * cerrar:
-   * - Cierra el viewer y resetea progreso.
-   */
-  function cerrar() {
-    setProgreso(0);
-    if (typeof onClose === "function") onClose();
-  }
+  const cerrarViewer = useCallback(() => {
+    limpiarRaf();
+    onClose?.();
+  }, [limpiarRaf, onClose]);
 
-  /**
-   * avanzar:
-   * - Pasa a la siguiente historia.
-   * - Si es la última, cierra.
-   */
-  function avanzar() {
+  const finalizarGrupo = useCallback(() => {
+    // ✅ Si hay onEnd, delegamos al padre (FeedPage) para pasar al próximo comercio
+    if (typeof onEnd === "function") {
+      limpiarRaf();
+      onEnd();
+      return;
+    }
+    // fallback: si no hay onEnd, cerramos como antes
+    cerrarViewer();
+  }, [onEnd, limpiarRaf, cerrarViewer]);
+
+  const irSiguiente = useCallback(() => {
+    if (!isOpen) return;
+    if (historiasList.length === 0) return;
+
     setIndexActual((prev) => {
-      const next = prev + 1;
-      if (next >= historias.length) {
-        cerrar();
+      if (prev >= historiasList.length - 1) {
+        // ✅ en vez de cerrar, avisamos que terminó el grupo
+        setTimeout(() => finalizarGrupo(), 0);
         return prev;
       }
-      return next;
+      return prev + 1;
     });
-  }
+  }, [isOpen, historiasList.length, finalizarGrupo]);
 
-  /**
-   * retroceder:
-   * - Vuelve a la historia anterior.
-   */
-  function retroceder() {
-    setIndexActual((prev) => Math.max(0, prev - 1));
+  const irAnterior = useCallback(() => {
+    if (!isOpen) return;
+    if (historiasList.length === 0) return;
+
+    setIndexActual((prev) => {
+      if (prev <= 0) {
+        setTimeout(() => cerrarViewer(), 0);
+        return prev;
+      }
+      return prev - 1;
+    });
+  }, [isOpen, historiasList.length, cerrarViewer]);
+
+  // Reset fuerte al abrir
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setCycleKey((k) => k + 1);
+    setIndexActual(0);
     setProgreso(0);
-  }
+    setMediaLista(false);
 
-  /**
-   * autoAdvanceTimer:
-   * - Simula el “avance automático” de historias.
-   * - Si llega a 100%, pasa a la siguiente.
-   */
+    startTimeRef.current = null;
+    runIdRef.current += 1;
+    limpiarRaf();
+
+    return () => {
+      runIdRef.current += 1;
+      limpiarRaf();
+    };
+  }, [isOpen, historiasList, limpiarRaf]);
+
+  // Si abre sin historias -> cerrar
   useEffect(() => {
     if (!isOpen) return;
-    if (!historiaActual) return;
+    if (historiasList.length > 0) return;
 
-    const tickMs = 50; // cada 50ms
-    const duracionMs = 5000; // 5s por historia
-    const delta = (100 * tickMs) / duracionMs;
+    const t = setTimeout(() => onClose?.(), 0);
+    return () => clearTimeout(t);
+  }, [isOpen, historiasList.length, onClose]);
 
-    const intervalId = setInterval(() => {
-      setProgreso((prev) => {
-        const next = prev + delta;
+  // Al cambiar historia: reset y esperar load
+  useEffect(() => {
+    if (!isOpen) return;
+    if (historiasList.length === 0) return;
 
-        if (next >= 100) {
-          /**
-           * Si termina el tiempo, avanzamos.
-           * - Si ya estamos en la última, cerramos.
-           */
-          avanzar();
-          return 0;
-        }
+    setProgreso(0);
+    setMediaLista(false);
+    startTimeRef.current = null;
 
-        return next;
-      });
-    }, tickMs);
+    runIdRef.current += 1;
+    limpiarRaf();
+  }, [isOpen, indexActual, historiasList.length, limpiarRaf]);
 
-    return () => clearInterval(intervalId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, historiaActual, indexActual]);
+  const historiaActual = historiasList[indexActual];
 
-  /**
-   * handleKeyDown:
-   * - ESC cierra
-   * - Flecha derecha avanza
-   * - Flecha izquierda retrocede
-   */
+  // Fix cache: si ya está cargada, activar mediaLista
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!historiaActual?.media_url) return;
+
+    const t = setTimeout(() => {
+      const el = imgRef.current;
+      if (el && el.complete && el.naturalWidth > 0) {
+        setMediaLista(true);
+      }
+    }, 0);
+
+    return () => clearTimeout(t);
+  }, [isOpen, historiaActual?.media_url, cycleKey, indexActual]);
+
+  // Timer RAF: solo cuando mediaLista=true
+  useEffect(() => {
+    if (!isOpen) return;
+    if (historiasList.length === 0) return;
+    if (!mediaLista) return;
+
+    const myRun = ++runIdRef.current;
+
+    limpiarRaf();
+    startTimeRef.current = null;
+
+    const tick = (ts) => {
+      if (runIdRef.current !== myRun) return;
+
+      if (!startTimeRef.current) startTimeRef.current = ts;
+
+      const elapsed = ts - startTimeRef.current;
+      const p = Math.min(1, elapsed / DURACION_MS_DEFAULT);
+
+      setProgreso(p);
+
+      if (p >= 1) {
+        irSiguiente();
+        return;
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (runIdRef.current === myRun) runIdRef.current += 1;
+      limpiarRaf();
+    };
+  }, [isOpen, historiasList.length, mediaLista, limpiarRaf, irSiguiente]);
+
+  // Teclado
   useEffect(() => {
     if (!isOpen) return;
 
-    function handleKeyDown(e) {
-      if (e.key === "Escape") cerrar();
-      if (e.key === "ArrowRight") avanzar();
-      if (e.key === "ArrowLeft") retroceder();
-    }
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") cerrarViewer();
+      if (e.key === "ArrowLeft") irAnterior();
+      if (e.key === "ArrowRight") irSiguiente();
+    };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, historias]);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, cerrarViewer, irAnterior, irSiguiente]);
 
-  /**
-   * Si no está abierto, no renderizamos nada.
-   */
   if (!isOpen) return null;
+  if (historiasList.length === 0) return null;
 
-  /**
-   * Si no hay historias, renderizamos modal simple con mensaje.
-   */
-  if (!historiaActual) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-gray-950 p-5 text-white">
-          <div className="flex items-center justify-between">
-            <div className="font-semibold">{titulo}</div>
-            <button
-              type="button"
-              className="rounded-xl border border-white/10 px-3 py-1 text-sm"
-              onClick={cerrar}
-            >
-              Cerrar
-            </button>
-          </div>
-          <p className="mt-4 text-sm opacity-80">No hay historias para mostrar.</p>
-        </div>
-      </div>
-    );
-  }
+  const getBarValue = (i) => {
+    if (i < indexActual) return 1;
+    if (i === indexActual) return progreso;
+    return 0;
+  };
 
-  /**
-   * Si la historia existe pero no tiene mediaUrl válido:
-   * - Mostramos un fallback visual y permitimos avanzar.
-   */
-  if (!mediaUrl) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-gray-950 p-5 text-white">
-          <div className="flex items-center justify-between">
-            <div className="font-semibold">{titulo}</div>
-            <button
-              type="button"
-              className="rounded-xl border border-white/10 px-3 py-1 text-sm"
-              onClick={cerrar}
-            >
-              ✕
-            </button>
-          </div>
-
-          <p className="mt-4 text-sm opacity-80">
-            Esta historia no tiene media válido.
-          </p>
-
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              className="flex-1 rounded-xl border border-white/10 px-3 py-2 text-sm"
-              onClick={retroceder}
-            >
-              Anterior
-            </button>
-            <button
-              type="button"
-              className="flex-1 rounded-xl border border-white/10 px-3 py-2 text-sm"
-              onClick={avanzar}
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  /**
-   * Render modal fullscreen.
-   */
   return (
     <div className="fixed inset-0 z-50 bg-black">
-      {/* Header + barras de progreso */}
-      <div className="absolute left-0 right-0 top-0 z-10 px-3 pt-3">
-        {/* Barras de progreso por historia */}
-        <div className="mb-3 flex gap-1">
-          {historias.map((h, i) => {
-            /**
-             * Cada historia tiene su barra:
-             * - anteriores: 100%
-             * - actual: progreso
-             * - futuras: 0%
-             */
-            const width = i < indexActual ? 100 : i === indexActual ? progreso : 0;
-
-            return (
+      <div className="absolute inset-x-0 top-0 z-30 p-3">
+        <div className="flex gap-1">
+          {historiasList.map((_, i) => (
+            <div
+              key={i}
+              className="h-1 flex-1 rounded bg-white/25 overflow-hidden"
+            >
               <div
-                key={h?.id || i}
-                className="h-1 flex-1 overflow-hidden rounded-full bg-white/20"
-              >
-                <div className="h-full bg-white" style={{ width: `${width}%` }} />
-              </div>
-            );
-          })}
+                className="h-full bg-white"
+                style={{ width: `${getBarValue(i) * 100}%` }}
+              />
+            </div>
+          ))}
         </div>
 
-        {/* Título + botón cerrar */}
-        <div className="flex items-center justify-between text-white">
-          <div className="truncate pr-3 text-sm font-semibold">{titulo}</div>
+        <div className="mt-3 flex items-center justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white truncate">
+              {titulo || "Historias"}
+            </p>
+            <p className="text-xs text-white/70">
+              {indexActual + 1} / {historiasList.length} • ID{" "}
+              {historiaActual?.id ?? "-"}
+            </p>
+          </div>
+
           <button
             type="button"
-            className="rounded-xl border border-white/10 px-3 py-1 text-sm"
-            onClick={cerrar}
+            onClick={cerrarViewer}
+            className="ml-3 rounded-full bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20"
           >
             ✕
           </button>
         </div>
       </div>
 
-      {/* Zonas de click (izquierda/centro/derecha) */}
-      <div className="absolute inset-0 flex">
-        {/* Zona izquierda: retroceder */}
+      <div className="absolute inset-0 z-10 flex items-center justify-center">
+        {historiaActual?.media_url ? (
+          <img
+            ref={imgRef}
+            key={`${cycleKey}-${indexActual}-${historiaActual.media_url}`}
+            src={historiaActual.media_url}
+            alt={`Historia ${historiaActual.id}`}
+            className="h-full w-full object-contain"
+            draggable="false"
+            onLoad={() => setMediaLista(true)}
+            onError={() => {
+              setMediaLista(false);
+              setTimeout(() => irSiguiente(), 120);
+            }}
+          />
+        ) : (
+          <div className="text-white/70 text-sm">Historia sin media_url</div>
+        )}
+      </div>
+
+      <div className="absolute inset-0 z-20 flex">
         <button
           type="button"
-          className="h-full w-1/3"
-          onClick={retroceder}
+          className="w-1/2 h-full bg-transparent focus:outline-none"
+          onClick={irAnterior}
           aria-label="Historia anterior"
-          title="Anterior"
         />
-
-        {/* Zona centro: contenido */}
-        <div className="flex h-full w-1/3 items-center justify-center">
-          <div className="mx-auto flex h-full w-full max-w-md items-center justify-center px-3">
-            <img
-              src={mediaUrl}
-              alt="Historia"
-              className="max-h-[85vh] w-full rounded-2xl object-contain"
-              loading="eager"
-            />
-          </div>
-        </div>
-
-        {/* Zona derecha: avanzar */}
         <button
           type="button"
-          className="h-full w-1/3"
-          onClick={avanzar}
-          aria-label="Historia siguiente"
-          title="Siguiente"
+          className="w-1/2 h-full bg-transparent focus:outline-none"
+          onClick={irSiguiente}
+          aria-label="Siguiente historia"
         />
       </div>
     </div>

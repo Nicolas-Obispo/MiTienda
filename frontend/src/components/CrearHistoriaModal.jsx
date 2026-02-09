@@ -76,19 +76,13 @@ export default function CrearHistoriaModal({
         media_url: mediaUrl.trim(),
         expira_en: buildExpiraEnIso(),
         is_activa: isActiva,
-        // publicacion_id: null (lo deja por defecto el service)
       };
 
       const nuevaHistoria = await crearHistoria(comercioId, payload);
 
-      // Avisamos al padre para refrescar UI (re-fetch o update local)
       if (onCreated) onCreated(nuevaHistoria);
-
-      // Cerramos modal
       onClose();
     } catch (err) {
-      // Si el backend devuelve 422, muchas veces viene como objeto/JSON en err.message.
-      // Mostramos el message como venga para debug rápido.
       setErrorMsg(err?.message || "No se pudo crear la historia.");
     } finally {
       setIsSubmitting(false);
@@ -100,26 +94,26 @@ export default function CrearHistoriaModal({
       {/* Overlay */}
       <button
         type="button"
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-black/70"
         onClick={onClose}
         aria-label="Cerrar modal"
       />
 
-      {/* Caja modal */}
-      <div className="relative z-10 w-[92%] max-w-md rounded-2xl bg-white p-4 shadow-lg">
+      {/* Caja modal (tema oscuro para evitar texto invisible) */}
+      <div className="relative z-10 w-[92%] max-w-md rounded-2xl border border-white/10 bg-gray-950 p-4 shadow-xl">
         <div className="mb-3">
-          <h2 className="text-lg font-semibold">Nueva historia</h2>
-          <p className="text-sm text-gray-600">
-            Pegá una URL de imagen/video (por ahora el backend usa media_url).
+          <h2 className="text-lg font-semibold text-white">Nueva historia</h2>
+          <p className="text-sm text-white/70">
+            Pegá una URL de imagen (por ahora el viewer usa &lt;img&gt;).
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* media_url */}
           <div className="space-y-1">
-            <label className="text-sm font-medium">media_url *</label>
+            <label className="text-sm font-medium text-white">media_url *</label>
             <input
-              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
+              className="w-full rounded-xl border border-white/10 bg-gray-900 px-3 py-2 text-sm text-white caret-white placeholder:text-white/40 outline-none focus:border-white/30"
               placeholder="https://..."
               value={mediaUrl}
               onChange={(e) => setMediaUrl(e.target.value)}
@@ -129,16 +123,19 @@ export default function CrearHistoriaModal({
 
           {/* expira_en */}
           <div className="space-y-1">
-            <label className="text-sm font-medium">
+            <label className="text-sm font-medium text-white">
               expira_en (opcional, default 24h)
             </label>
             <input
               type="datetime-local"
-              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
+              className="w-full rounded-xl border border-white/10 bg-gray-900 px-3 py-2 text-sm text-white caret-white outline-none focus:border-white/30"
               value={expiraEn}
               onChange={(e) => setExpiraEn(e.target.value)}
               disabled={isSubmitting}
             />
+            <p className="text-xs text-white/50">
+              Si lo dejás vacío, se publica con vencimiento automático en 24hs.
+            </p>
           </div>
 
           {/* is_activa */}
@@ -146,19 +143,19 @@ export default function CrearHistoriaModal({
             <input
               id="is_activa"
               type="checkbox"
-              className="h-4 w-4"
+              className="h-4 w-4 accent-white"
               checked={isActiva}
               onChange={(e) => setIsActiva(e.target.checked)}
               disabled={isSubmitting}
             />
-            <label htmlFor="is_activa" className="text-sm">
+            <label htmlFor="is_activa" className="text-sm text-white">
               is_activa
             </label>
           </div>
 
           {/* Error */}
           {errorMsg ? (
-            <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 break-words">
+            <div className="rounded-xl border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-200 break-words">
               {errorMsg}
             </div>
           ) : null}
@@ -167,7 +164,7 @@ export default function CrearHistoriaModal({
           <div className="flex items-center justify-end gap-2 pt-2">
             <button
               type="button"
-              className="rounded-xl border border-gray-300 px-4 py-2 text-sm"
+              className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
               onClick={onClose}
               disabled={isSubmitting}
             >
@@ -176,7 +173,7 @@ export default function CrearHistoriaModal({
 
             <button
               type="submit"
-              className="rounded-xl bg-black px-4 py-2 text-sm text-white disabled:opacity-60"
+              className="rounded-xl bg-white px-4 py-2 text-sm text-black disabled:opacity-60"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Publicando..." : "Publicar"}

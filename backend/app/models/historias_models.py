@@ -58,7 +58,6 @@ class Historia(Base):
     # Contenido
     # -------------------------
     # media_url puede ser largo (CDN, query params, etc.)
-    # Por eso NO usamos 255, que rompe con URLs reales.
     media_url = Column(String(2048), nullable=False)
 
     is_activa = Column(Boolean, nullable=False, server_default="1")
@@ -94,4 +93,13 @@ class Historia(Base):
         "Publicacion",
         back_populates="historias",
         lazy="selectin",
+    )
+
+    # Vistas (ETAPA 43)
+    # - 1 vista = 1 usuario vio la historia (idempotente por unique constraint)
+    # - sin back_populates en este paso (lo conectamos luego)
+    vistas = relationship(
+        "HistoriaVista",
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )

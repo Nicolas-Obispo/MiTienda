@@ -6,19 +6,50 @@ import { useAuth } from "../context/useAuth";
  * -----------
  * Layout principal (UI + navegación).
  *
- * ETAPA 41 – Opción A:
- * - Navegación coherente tipo app
  * - Sin sesión: Inicio | Login
  * - Con sesión: Inicio | Feed | Ranking | Perfil | Cerrar sesión
+ * - ✅ Muestra quién está logueado:
+ *    - email (si existe)
+ *    - sino ID (si existe)
+ *    - sino "Activa"
  */
 export default function MainLayout() {
-  const { estaAutenticado, logout } = useAuth();
+  const { estaAutenticado, logout, usuario } = useAuth();
   const navigate = useNavigate();
+
+  function getEtiquetaSesion() {
+    if (!estaAutenticado) return "No autenticado";
+
+    // 1) Identificador ideal
+    const email =
+      usuario?.email ||
+      usuario?.correo ||
+      usuario?.mail ||
+      usuario?.sub || // si el backend lo mete así
+      null;
+
+    if (typeof email === "string" && email.trim()) {
+      return `Sesión: ${email.trim()}`;
+    }
+
+    // 2) Fallback útil (al menos sabés con qué usuario estás)
+    const id =
+      usuario?.id ?? usuario?.user_id ?? usuario?.usuario_id ?? usuario?.uid ?? null;
+
+    if (id !== null && id !== undefined) {
+      return `Sesión: ID: ${id}`;
+    }
+
+    // 3) Último fallback
+    return "Sesión: Activa";
+  }
 
   async function manejarLogout() {
     await logout();
     navigate("/login");
   }
+
+  const etiquetaSesion = getEtiquetaSesion();
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -70,13 +101,14 @@ export default function MainLayout() {
           <div className="flex items-center gap-3">
             <span
               className={[
-                "rounded-full px-3 py-1 text-xs font-semibold border",
+                "rounded-full px-3 py-1 text-xs font-semibold border max-w-[260px] truncate",
                 estaAutenticado
                   ? "bg-green-950/40 text-green-300 border-green-800"
                   : "bg-gray-900 text-gray-300 border-gray-800",
               ].join(" ")}
+              title={etiquetaSesion}
             >
-              {estaAutenticado ? "Sesión activa" : "No autenticado"}
+              {etiquetaSesion}
             </span>
 
             {estaAutenticado && (
