@@ -3084,3 +3084,34 @@ Resultado final
 - Los permisos están correctamente alineados con el backend.
 - La sesión de usuario es visible y entendible en toda la app.
 - ETAPA 42 queda cerrada de forma definitiva, sin parches temporales.
+
+## ETAPA 43 — Vistas de historias (validación + fix mínimo frontend)
+
+**Estado:** CERRADA  
+**Tipo:** Corrección mínima + validación end-to-end  
+**Base:** commit ancla 66146d6
+
+### Objetivo
+Cerrar correctamente el flujo de registro de vistas de historias, validando backend, DB y frontend sin romper funcionalidades existentes.
+
+### Trabajo realizado
+- Validación completa del endpoint protegido:
+  - `POST /historias/{historia_id}/vistas`
+  - Funciona con JWT, es idempotente y registra correctamente en DB.
+- Pruebas reales desde UI (sin Swagger):
+  - Sin errores 401.
+  - Registro correcto de vistas por usuario.
+- Corrección mínima en frontend:
+  - Ajuste en `frontend/src/services/historias_service.js`
+  - Envío correcto de Authorization.
+  - POST de vistas sin body (evita headers/preflight innecesarios).
+
+### Archivos modificados
+- `frontend/src/services/historias_service.js`
+
+### Resultado
+- Sistema estable.
+- Sin cambios en backend.
+- Sin cambios en viewer ni UX.
+- ETAPA validada con pruebas limpias desde la UI.
+

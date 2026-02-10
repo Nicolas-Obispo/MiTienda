@@ -10,7 +10,7 @@
  * Backend confirmado:
  * - GET  /historias/comercios/{comercio_id}
  * - POST /historias/comercios/{comercio_id}
- * - POST /historias/{historia_id}/vistas   (PROTEGIDO)
+ * - POST /historias/{historia_id}/vistas   (PROTEGIDO, idempotente)
  */
 
 // Base URL del backend (fallback seguro)
@@ -26,13 +26,24 @@ function getAccessToken() {
   return localStorage.getItem("access_token");
 }
 
-async function requestJson(path, { method = "GET", body = null, auth = false } = {}) {
+/**
+ * requestJson
+ * Helper genérico para requests al backend.
+ *
+ * - Si auth=true → agrega Authorization: Bearer <token>
+ * - Si body=null → NO setea Content-Type y NO manda body (ideal para POST sin payload)
+ */
+async function requestJson(
+  path,
+  { method = "GET", body = null, auth = false } = {}
+) {
   const url = `${getApiBaseUrl()}${path}`;
 
   const headers = {
     Accept: "application/json",
   };
 
+  // Solo seteamos Content-Type si realmente vamos a enviar body
   if (body !== null) {
     headers["Content-Type"] = "application/json";
   }
@@ -40,7 +51,7 @@ async function requestJson(path, { method = "GET", body = null, auth = false } =
   if (auth) {
     const token = getAccessToken();
     if (!token) {
-      // Si no hay token, es consistente tirar error antes del request
+      // Si no hay token, es consistente cortar antes del request
       throw new Error("No authenticated: falta access_token en localStorage.");
     }
     headers.Authorization = `Bearer ${token}`;
@@ -49,6 +60,7 @@ async function requestJson(path, { method = "GET", body = null, auth = false } =
   const response = await fetch(url, {
     method,
     headers,
+    // Si body es null, NO mandamos body (evita problemas y preflight innecesario)
     body: body !== null ? JSON.stringify(body) : undefined,
   });
 
@@ -64,7 +76,10 @@ async function requestJson(path, { method = "GET", body = null, auth = false } =
       data?.detail ||
       data?.message ||
       `HTTP ${response.status} ${response.statusText}`;
-    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+
+    throw new Error(
+      typeof detail === "string" ? detail : JSON.stringify(detail)
+    );
   }
 
   return data;
@@ -127,16 +142,19 @@ export async function crearHistoria(comercioId, historiaPayload) {
  * - POST /historias/{historia_id}/vistas
  *
  * ESTE ENDPOINT ES PROTEGIDO → auth: true
+ *
+ * Nota importante:
+ * - No enviamos body (body=null). Es un POST "vacío".
+ *   Evita headers innecesarios y reduce chances de 401 raros / preflight.
  */
 export async function marcarHistoriaVista(historiaId) {
   if (!historiaId) {
     throw new Error("marcarHistoriaVista: historiaId es requerido");
   }
 
-  // endpoint sin body
   return requestJson(`/historias/${historiaId}/vistas`, {
     method: "POST",
-    body: {}, // mandamos {} para evitar problemas con algunos servidores
+    body: null, // <- clave: NO mandar {} (POST vacío)
     auth: true,
   });
 }
