@@ -82,6 +82,32 @@ def listar_comercios_endpoint(
 
 
 # ============================================================
+# Mis comercios (del usuario logueado)
+# ============================================================
+@router.get("/mis", response_model=list[ComercioResponse])
+def listar_mis_comercios_endpoint(
+    db: Session = Depends(get_db),
+    usuario_actual=Depends(obtener_usuario_actual),
+):
+    """
+    Devuelve los comercios del usuario logueado.
+    - Es un endpoint "admin" del Perfil.
+    - NO aplica filtros de ciudad/rubro: es "mis recursos".
+    """
+    # Nota: evitamos lógica de negocio acá; solo resolvemos el query simple.
+    # Si más adelante esto crece (paginado/estado/etc), se mueve a services.
+    comercios = (
+        db.query(Comercio)
+        .filter(Comercio.usuario_id == usuario_actual.id)
+        .order_by(Comercio.id.desc())
+        .all()
+    )
+
+    return comercios
+
+
+
+# ============================================================
 # Obtener comercio por ID
 # ============================================================
 
@@ -154,3 +180,42 @@ def desactivar_comercio_endpoint(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(e)
         )
+
+# ============================================================
+# Reactivar comercio
+# ============================================================
+
+@router.post("/{comercio_id}/reactivar", response_model=ComercioResponse)
+def reactivar_comercio_endpoint(
+    comercio_id: int,
+    db: Session = Depends(get_db),
+    usuario_actual=Depends(obtener_usuario_actual),
+):
+    """
+    Reactiva un comercio del usuario logueado.
+    - Revierte el soft delete (activo = True).
+    - Importante: acá buscamos por ID sin filtrar activo, porque si está inactivo
+      el "obtener_comercio_por_id" puede no encontrarlo.
+    """
+    # Buscamos directo en DB (incluye activos e inactivos)
+    comercio = db.query(Comercio).filter(Comercio.id == comercio_id).first()
+
+    if not comercio:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Comercio no encontrado"
+        )
+
+    # Solo el dueño puede reactivar
+    if comercio.usuario_id != usuario_actual.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tenés permisos para reactivar este comercio"
+        )
+
+    comercio.activo = True
+    db.add(comercio)
+    db.commit()
+    db.refresh(comercio)
+
+    return comercio

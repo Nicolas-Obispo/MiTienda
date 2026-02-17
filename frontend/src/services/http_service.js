@@ -110,3 +110,33 @@ export async function httpDelete(path, token = null) {
   // DELETE suele devolver 204 No Content
   return null;
 }
+
+/**
+ * httpPut
+ * Request PUT genérico.
+ *
+ * @param {string} path - Ruta del backend
+ * @param {object|null} body - Body JSON
+ * @param {string|null} token - JWT opcional
+ * @returns {Promise<any>} JSON parseado
+ */
+export async function httpPut(path, body = null, token = null) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "PUT",
+    headers: buildHeaders(token),
+    body: body ? JSON.stringify(body) : null,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status} - ${errorText}`);
+  }
+
+  // PUT normalmente devuelve JSON
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  return response.text();
+}

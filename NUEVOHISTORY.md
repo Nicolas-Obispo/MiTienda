@@ -3137,3 +3137,15 @@ Cerrar correctamente el flujo de registro de vistas de historias, validando back
 - Al abrir una burbuja: se marca vista y la burbuja pasa a gris cuando ya no hay pendientes.
 - Al crear historias nuevas: vuelven a aparecer como pendientes (verde + badge) y se ordenan arriba.
 
+## ETAPA 45 — Perfil como zona admin (Crear / Editar / Activar / Desactivar)
+
+- Nuevo endpoint: GET /comercios/mis (backend)
+- Nuevo endpoint: POST /comercios/{id}/reactivar
+- Perfil muestra sección "Mis comercios"
+- Crear comercio (POST /comercios)
+- Editar comercio (PUT /comercios/{id})
+- Desactivar comercio (soft delete)
+- Reactivar comercio
+- Botón dinámico Activar/Desactivar
+- Estado real persistido en DB
+- Sin lógica inventada en frontend
