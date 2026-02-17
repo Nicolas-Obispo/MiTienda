@@ -6,6 +6,7 @@
  * ETAPA 41: Historias (barra + viewer tipo Instagram)
  * ETAPA 43: Marcar historia como vista al abrir el viewer (primera historia)
  * ETAPA 44 (parcial): Autoplay entre comercios (cuando termina un comercio, pasa al siguiente)
+ * ETAPA 44: Visto/No visto REAL (backend devuelve vista_by_me)
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -128,6 +129,39 @@ export default function FeedPage() {
   }
 
   /**
+   * ETAPA 44:
+   * - El backend devuelve vista_by_me (estado real por usuario).
+   * - El frontend SOLO calcula "pendientes" desde ese flag para UI.
+   */
+  function calcularPendientes(historiasList) {
+    const list = Array.isArray(historiasList) ? historiasList : [];
+    return list.filter((h) => !Boolean(h?.vista_by_me)).length;
+  }
+
+  /**
+   * ETAPA 44:
+   * Recalcula el item de un comercio (cantidad + pendientes) consultando backend.
+   * - Se usa después de marcar vista para que aro/contador se actualicen sin parches.
+   */
+  async function refrescarItemHistoriasComercio(comercioId) {
+    try {
+      const historias = await fetchHistoriasPorComercio(comercioId);
+      const list = Array.isArray(historias) ? historias : historias?.items || [];
+
+      const cantidad = list.length;
+      const pendientes = calcularPendientes(list);
+
+      setHistoriasItems((prev) =>
+        (prev || []).map((it) =>
+          it.comercioId === comercioId ? { ...it, cantidad, pendientes } : it
+        )
+      );
+    } catch {
+      // Si falla, no rompemos nada. Queda el estado anterior.
+    }
+  }
+
+  /**
    * Construye items para la barra desde comercios presentes en el feed
    * y precarga algunas imágenes en background.
    */
@@ -218,11 +252,15 @@ export default function FeedPage() {
             thumbnailUrl: null,
           };
 
+          // ETAPA 44: pendientes reales por usuario (backend manda vista_by_me)
+          const pendientes = calcularPendientes(r.historias);
+
           return {
             comercioId: r.comercioId,
             nombre: meta.nombre,
             thumbnailUrl: meta.thumbnailUrl,
             cantidad: r.historias.length,
+            pendientes, // <- nuevo: HistoriasBar lo usa para aro/contador/orden
           };
         });
 
@@ -336,7 +374,12 @@ export default function FeedPage() {
         ultimaHistoriaVistaMarcadaRef.current = primeraHistoriaId;
 
         setTimeout(() => {
-          marcarHistoriaVista(primeraHistoriaId).catch(() => {});
+          marcarHistoriaVista(primeraHistoriaId)
+            .then(() => {
+              // ETAPA 44: refresca el aro/contador de ese comercio con info real del backend
+              refrescarItemHistoriasComercio(nextId);
+            })
+            .catch(() => {});
         }, 0);
       }
     } catch {
@@ -369,7 +412,7 @@ export default function FeedPage() {
       setViewerHistorias(list);
       setViewerIsOpen(true);
 
-      // ETAPA 43: marcar vista (primera historia) sin bloquear UI
+      // ETAPA 43/44: marcar vista (primera historia) sin bloquear UI
       const primeraHistoriaId = list?.[0]?.id ?? null;
 
       if (
@@ -379,7 +422,12 @@ export default function FeedPage() {
         ultimaHistoriaVistaMarcadaRef.current = primeraHistoriaId;
 
         setTimeout(() => {
-          marcarHistoriaVista(primeraHistoriaId).catch(() => {});
+          marcarHistoriaVista(primeraHistoriaId)
+            .then(() => {
+              // ETAPA 44: refresca el aro/contador de ese comercio con info real del backend
+              refrescarItemHistoriasComercio(comercioId);
+            })
+            .catch(() => {});
         }, 0);
       }
     } catch {

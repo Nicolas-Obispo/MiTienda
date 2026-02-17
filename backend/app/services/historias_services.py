@@ -6,14 +6,16 @@ Reglas:
 - Services = lógica de negocio
 - Sin HTTP
 - Maneja expiración de historias
+- ETAPA 44: Resolver estado vista_by_me en backend (estado real por usuario)
 """
 
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
 from app.models.historias_models import Historia
+from app.models.historias_vistas_models import HistoriaVista
 from app.schemas.historias_schemas import HistoriaCreate
 
 
@@ -25,6 +27,9 @@ def crear_historia(
 ) -> Historia:
     """
     Crea una historia para un comercio.
+
+    - Solo inserta en DB.
+    - No resuelve lógica de vistas.
     """
 
     nueva_historia = Historia(
@@ -46,14 +51,21 @@ def listar_historias_activas_por_comercio(
     db: Session,
     *,
     comercio_id: int,
+    usuario_id: Optional[int] = None,  # NUEVO
 ) -> List[Historia]:
     """
-    Devuelve las historias activas y no expiradas de un comercio.
+    Devuelve historias activas y no expiradas de un comercio.
+
+    ETAPA 44:
+    - Si se recibe usuario_id:
+        → Se resuelve vista_by_me para cada historia.
+    - Si no hay usuario:
+        → vista_by_me queda False (no autenticado).
     """
 
     ahora = datetime.utcnow()
 
-    return (
+    historias = (
         db.query(Historia)
         .filter(
             Historia.comercio_id == comercio_id,
@@ -63,3 +75,25 @@ def listar_historias_activas_por_comercio(
         .order_by(Historia.created_at.desc())
         .all()
     )
+
+    # Si no hay usuario autenticado, devolvemos sin modificar
+    if not usuario_id:
+        for h in historias:
+            h.vista_by_me = False
+        return historias
+
+    # Obtener IDs de historias vistas por el usuario
+    vistas_ids = (
+        db.query(HistoriaVista.historia_id)
+        .filter(HistoriaVista.usuario_id == usuario_id)
+        .all()
+    )
+
+    # Convertimos lista de tuplas a set de ids
+    vistas_set = {row[0] for row in vistas_ids}
+
+    # Marcamos cada historia
+    for h in historias:
+        h.vista_by_me = h.id in vistas_set
+
+    return historias

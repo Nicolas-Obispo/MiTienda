@@ -14,10 +14,8 @@ from app.core.database import get_db
 from app.models.usuarios_models import Usuario
 from app.models.tokens_models import TokenRevocado
 
-# auto_error=False evita que FastAPI corte antes con "Not authenticated"
-# y nos permite dar un error propio y controlado.
+# auto_error=False permite controlar manualmente el 401
 bearer_scheme = HTTPBearer(auto_error=False)
-
 
 
 # -----------------------------------------
@@ -25,7 +23,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 # -----------------------------------------
 def token_esta_revocado(token: str, db: Session) -> bool:
     """
-    Devuelve True si el token YA fue invalidado por logout.
+    Devuelve True si el token ya fue invalidado por logout.
     """
     return (
         db.query(TokenRevocado)
@@ -55,25 +53,64 @@ def crear_token_jwt(datos: dict) -> str:
 
 
 # -----------------------------------------
-# 🧩 Obtener usuario actual desde JWT
+# 🧩 Obtener usuario actual (OBLIGATORIO)
 # -----------------------------------------
 def obtener_usuario_actual(
     credenciales: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db)
 ):
     """
-    Valida el token JWT, verifica expiración, revocación
-    y devuelve el usuario autenticado.
+    Valida el token JWT y devuelve el usuario autenticado.
+
+    - Si no hay token → 401
+    - Si es inválido / expirado / revocado → 401
     """
 
-    # Si no viene Authorization: Bearer <token>, FastAPI entrega None
     if credenciales is None or not credenciales.credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    token = credenciales.credentials
+    return _validar_token_y_obtener_usuario(
+        token=credenciales.credentials,
+        db=db,
+    )
 
 
-    # 1. Decodificar token
+# -----------------------------------------
+# 🧩 Obtener usuario actual (OPCIONAL)
+# -----------------------------------------
+def obtener_usuario_actual_opcional(
+    credenciales: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: Session = Depends(get_db)
+):
+    """
+    Versión opcional del usuario autenticado.
+
+    - Si no hay token → devuelve None (NO 401)
+    - Si hay token inválido → 401 (seguridad intacta)
+    - Si token válido → devuelve Usuario
+    """
+
+    if credenciales is None or not credenciales.credentials:
+        return None
+
+    return _validar_token_y_obtener_usuario(
+        token=credenciales.credentials,
+        db=db,
+    )
+
+
+# -----------------------------------------
+# 🔒 Lógica interna compartida
+# -----------------------------------------
+def _validar_token_y_obtener_usuario(token: str, db: Session) -> Usuario:
+    """
+    Función interna reutilizable:
+    - Decodifica token
+    - Verifica expiración
+    - Verifica revocación
+    - Devuelve usuario
+    """
+
     try:
         payload = jwt.decode(
             token,
@@ -81,7 +118,6 @@ def obtener_usuario_actual(
             algorithms=[settings.ALGORITHM]
         )
 
-        # 🔥 sub SIEMPRE VIENE COMO STRING → convertir a int
         usuario_id = payload.get("sub")
         if usuario_id is None:
             raise HTTPException(status_code=401, detail="Token inválido")
@@ -91,11 +127,9 @@ def obtener_usuario_actual(
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido o expirado")
 
-    # 2. Verificar si está revocado
     if token_esta_revocado(token, db):
         raise HTTPException(status_code=401, detail="Token revocado")
 
-    # 3. Buscar usuario
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
 
     if not usuario:

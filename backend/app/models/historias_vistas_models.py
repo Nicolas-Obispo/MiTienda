@@ -72,7 +72,10 @@ class HistoriaVista(Base):
     )
 
     # -------------------------
-    # ORM relationships (sin back_populates todavía)
+    # ORM relationships
     # -------------------------
-    historia = relationship("Historia", lazy="selectin")
-    usuario = relationship("Usuario", lazy="selectin")
+    # overlaps:
+    # - Silencia warnings de SQLAlchemy por relaciones superpuestas
+    # - No cambia comportamiento ni queries
+    historia = relationship("Historia", lazy="selectin", overlaps="vistas")
+    usuario = relationship("Usuario", lazy="selectin", overlaps="historias_vistas")

@@ -37,12 +37,21 @@ class HistoriaCreate(HistoriaBase):
 class HistoriaRead(HistoriaBase):
     """
     Schema de lectura de historia.
+
+    ETAPA 44:
+    - Agregamos vista_by_me.
+    - Este campo representa estado de negocio por usuario.
+    - El backend debe resolverlo.
+    - El frontend solo lo renderiza.
     """
 
     id: int
     comercio_id: int
     created_at: datetime
     updated_at: datetime
+
+    # NUEVO — estado real por usuario
+    vista_by_me: bool = False
 
     class Config:
         orm_mode = True

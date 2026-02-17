@@ -6,9 +6,10 @@
  * Objetivo:
  * - Centralizar llamadas HTTP relacionadas a Historias.
  * - Asegurar Authorization en endpoints protegidos (vistas).
+ * - En GET públicos, mandar token SI EXISTE (para vista_by_me real).
  *
  * Backend confirmado:
- * - GET  /historias/comercios/{comercio_id}
+ * - GET  /historias/comercios/{comercio_id}  (PÚBLICO + token opcional)
  * - POST /historias/comercios/{comercio_id}
  * - POST /historias/{historia_id}/vistas   (PROTEGIDO, idempotente)
  */
@@ -30,8 +31,12 @@ function getAccessToken() {
  * requestJson
  * Helper genérico para requests al backend.
  *
- * - Si auth=true → agrega Authorization: Bearer <token>
- * - Si body=null → NO setea Content-Type y NO manda body (ideal para POST sin payload)
+ * auth:
+ * - false  -> no manda Authorization
+ * - true   -> exige token (si no hay, tira error)
+ * - "optional" -> manda token SOLO si existe (no falla si no hay)
+ *
+ * - Si body=null → NO setea Content-Type y NO manda body
  */
 async function requestJson(
   path,
@@ -48,19 +53,26 @@ async function requestJson(
     headers["Content-Type"] = "application/json";
   }
 
-  if (auth) {
+  // Authorization según modo
+  if (auth === true) {
     const token = getAccessToken();
     if (!token) {
-      // Si no hay token, es consistente cortar antes del request
       throw new Error("No authenticated: falta access_token en localStorage.");
     }
     headers.Authorization = `Bearer ${token}`;
   }
 
+  if (auth === "optional") {
+    const token = getAccessToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
   const response = await fetch(url, {
     method,
     headers,
-    // Si body es null, NO mandamos body (evita problemas y preflight innecesario)
+    // Si body es null, NO mandamos body
     body: body !== null ? JSON.stringify(body) : undefined,
   });
 
@@ -91,13 +103,19 @@ async function requestJson(
  *
  * Backend:
  * - GET /historias/comercios/{comercio_id}
+ *
+ * Importante (ETAPA 44):
+ * - Es público, pero si hay token lo mandamos para obtener vista_by_me real.
  */
 export async function fetchHistoriasPorComercio(comercioId) {
   if (!comercioId) {
     throw new Error("fetchHistoriasPorComercio: comercioId es requerido");
   }
 
-  return requestJson(`/historias/comercios/${comercioId}`, { method: "GET" });
+  return requestJson(`/historias/comercios/${comercioId}`, {
+    method: "GET",
+    auth: "optional", // <- clave: si hay token, backend calcula vista_by_me
+  });
 }
 
 /**
@@ -106,10 +124,6 @@ export async function fetchHistoriasPorComercio(comercioId) {
  *
  * Backend:
  * - POST /historias/comercios/{comercio_id}
- *
- * Nota:
- * - Si tu backend exige auth para crear historias, poné auth:true.
- *   (si hoy no lo exige, queda en false para no romper)
  */
 export async function crearHistoria(comercioId, historiaPayload) {
   if (!comercioId) {
@@ -141,11 +155,7 @@ export async function crearHistoria(comercioId, historiaPayload) {
  * Backend:
  * - POST /historias/{historia_id}/vistas
  *
- * ESTE ENDPOINT ES PROTEGIDO → auth: true
- *
- * Nota importante:
- * - No enviamos body (body=null). Es un POST "vacío".
- *   Evita headers innecesarios y reduce chances de 401 raros / preflight.
+ * PROTEGIDO → auth: true
  */
 export async function marcarHistoriaVista(historiaId) {
   if (!historiaId) {
@@ -154,7 +164,7 @@ export async function marcarHistoriaVista(historiaId) {
 
   return requestJson(`/historias/${historiaId}/vistas`, {
     method: "POST",
-    body: null, // <- clave: NO mandar {} (POST vacío)
+    body: null, // POST vacío
     auth: true,
   });
 }

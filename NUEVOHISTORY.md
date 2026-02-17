@@ -3115,3 +3115,25 @@ Cerrar correctamente el flujo de registro de vistas de historias, validando back
 - Sin cambios en viewer ni UX.
 - ETAPA validada con pruebas limpias desde la UI.
 
+
+## ✅ ETAPA 44 — UX Historias (visto/no visto real por usuario)
+
+**Objetivo:** que la UI de historias refleje estado real por usuario (sin parches visuales).
+- Burbuja **verde** si hay historias pendientes (no vistas).
+- Burbuja **gris** si el usuario ya vio todas.
+- Badge numérico muestra **pendientes** y desaparece cuando llega a 0.
+- Orden UI: primero pendientes, al final vistas.
+
+### Backend (base)
+- `GET /historias/comercios/{comercio_id}` devuelve `vista_by_me`:
+  - sin token: `vista_by_me=false`
+  - con token: `vista_by_me` real (backend lo resuelve)
+
+### Frontend (capa UI)
+- `FeedPage.jsx`: calcula `pendientes` desde `vista_by_me` y refresca el item del comercio después de marcar vista.
+- `historias_service.js`: `GET /historias/comercios/{id}` envía token **si existe** (auth opcional), para obtener `vista_by_me` real sin depender de Swagger.
+
+### Resultado
+- Al abrir una burbuja: se marca vista y la burbuja pasa a gris cuando ya no hay pendientes.
+- Al crear historias nuevas: vuelven a aparecer como pendientes (verde + badge) y se ordenan arriba.
+
