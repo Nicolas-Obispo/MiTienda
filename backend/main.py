@@ -17,6 +17,14 @@ from app.routers.historias_routers import router as historias_router
 from app.routers.likes_publicaciones_routers import router as likes_publicaciones_router
 from app.routers.ranking_publicaciones_routers import router as ranking_publicaciones_router
 from app.routers.feed_publicaciones_routers import router as feed_publicaciones_router
+from app.routers.media_routers import router as media_router
+
+# ------------------------------
+# Soporte para archivos estáticos (uploads)
+# ------------------------------
+from fastapi.staticfiles import StaticFiles
+import os
+
 
 
 app = FastAPI(
@@ -37,6 +45,19 @@ app.add_middleware(
 def home():
     return {"mensaje": "Bienvenido a MiTienda API 🚀"}
 
+# ------------------------------
+# Configuración carpeta uploads
+# ------------------------------
+
+# Ruta absoluta a la carpeta uploads dentro del backend
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
+
+# Si la carpeta no existe, la creamos automáticamente
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Montamos la carpeta como estático en /uploads
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
 
 # ✅ Registrar routers
 app.include_router(productos_routers)
@@ -53,3 +74,5 @@ app.include_router(historias_router)
 app.include_router(likes_publicaciones_router)
 app.include_router(ranking_publicaciones_router)
 app.include_router(feed_publicaciones_router)
+app.include_router(media_router)
+

@@ -45,3 +45,7 @@ build/
 # Scripts locales de activación
 backend/activate.ps1
 
+# =========================
+# UPLOADS (archivos dinámicos)
+# =========================
+backend/uploads/

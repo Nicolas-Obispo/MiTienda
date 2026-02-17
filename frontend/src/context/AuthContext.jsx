@@ -8,7 +8,11 @@ export const AuthContext = createContext(null);
  * AuthProvider
  * - Hidratación SINCRÓNICA desde localStorage (evita rebote)
  * - Contrato intacto: accessToken + estaAutenticado + login(token) + logout()
- * - ✅ Definitivo: trae usuario desde GET /usuarios/me (según Swagger)
+ * - Trae usuario desde GET /usuarios/me
+ *
+ * MEJORA UX:
+ * - Si /usuarios/me responde 401 (token inválido/expirado/revocado):
+ *   limpiamos sesión local SIN ensuciar consola con "error".
  */
 export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(() => {
@@ -24,6 +28,14 @@ export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [isCargandoUsuario, setIsCargandoUsuario] = useState(false);
 
+  function limpiarSesionLocal() {
+    // Centralizamos limpieza para evitar estados inconsistentes
+    localStorage.removeItem("access_token");
+    setAccessToken(null);
+    setEstaAutenticado(false);
+    setUsuario(null);
+  }
+
   function login(token) {
     if (!token || typeof token !== "string") return;
     localStorage.setItem("access_token", token);
@@ -34,14 +46,15 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     try {
-      await logoutUsuario(accessToken);
+      // Logout real en backend (revoca token) si hay token
+      if (accessToken) {
+        await logoutUsuario(accessToken);
+      }
     } catch (error) {
-      console.error("Error al cerrar sesión:", error);
+      // Si falla el logout remoto, igual limpiamos local (no bloquea al usuario)
+      console.warn("Logout remoto falló (se limpia sesión local igual):", error);
     } finally {
-      localStorage.removeItem("access_token");
-      setAccessToken(null);
-      setEstaAutenticado(false);
-      setUsuario(null);
+      limpiarSesionLocal();
     }
   }
 
@@ -56,13 +69,24 @@ export function AuthProvider({ children }) {
       const me = await getMe(accessToken);
       setUsuario(me || null);
     } catch (error) {
-      console.error("Error obteniendo /usuarios/me:", error);
+      // Detectamos 401 de forma robusta (según cómo authService construya el error)
+      const msg = String(error?.message || "");
+      const is401 =
+        msg.includes("HTTP 401") ||
+        msg.includes("401") ||
+        msg.toLowerCase().includes("token inválido") ||
+        msg.toLowerCase().includes("token invalido") ||
+        msg.toLowerCase().includes("expirado") ||
+        msg.toLowerCase().includes("unauthorized");
 
-      // ✅ Definitivo: token inválido => limpiamos sesión local
-      localStorage.removeItem("access_token");
-      setAccessToken(null);
-      setEstaAutenticado(false);
-      setUsuario(null);
+      if (is401) {
+        // 401 no es “error”: es sesión vencida/revocada -> limpieza silenciosa
+        limpiarSesionLocal();
+        return;
+      }
+
+      // Otros errores sí interesan (backend caído, CORS, etc.)
+      console.error("Error obteniendo /usuarios/me:", error);
     } finally {
       setIsCargandoUsuario(false);
     }
