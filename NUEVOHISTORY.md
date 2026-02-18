@@ -3149,3 +3149,107 @@ Cerrar correctamente el flujo de registro de vistas de historias, validando back
 - Botón dinámico Activar/Desactivar
 - Estado real persistido en DB
 - Sin lógica inventada en frontend
+
+
+## ETAPA 46: Upload real de imágenes (Backend + Frontend) + JWT
+Commit ancla (CIERRE REAL ETAPA 46): 742b66a
+Fecha: 17/02/2026
+
+OBJETIVO
+- Implementar upload real de imágenes para historias desde la UI, persistiendo en el backend y devolviendo una URL pública.
+- Proteger el endpoint de upload con JWT para evitar subidas anónimas.
+
+RESULTADO
+✅ Upload real funcionando end-to-end:
+- UI selecciona archivo → POST /media/upload → backend guarda en /backend/uploads → devuelve { url }
+- Luego se crea la historia con media_url = url persistida en BD
+✅ Viewer carga la imagen desde /uploads/<archivo> (HTTP 200 / 304 Not Modified por cache)
+✅ Endpoint de upload protegido con JWT
+
+BACKEND (FastAPI)
+- Se habilitó serving estático de archivos en /uploads (StaticFiles en main.py).
+- Se creó router /media con endpoint:
+  - POST /media/upload (multipart/form-data)
+  - Validaciones MVP:
+    - Tipos permitidos: image/jpeg, image/png, image/webp
+    - Tamaño máximo: 5MB
+  - Respuesta: { "url": "http://127.0.0.1:8000/uploads/<uuid>.<ext>" }
+  - Seguridad: requiere JWT usando Depends(obtener_usuario_actual) (app/core/auth.py).
+- Se instaló dependencia necesaria para multipart:
+  - python-multipart (en venv)
+
+FRONTEND (React)
+- Se creó service:
+  - frontend/src/services/media_service.js
+  - Upload vía fetch + FormData
+  - Envía Authorization: Bearer <token> cuando existe sesión (accessToken)
+- Se actualizó CrearHistoriaModal:
+  - input file para elegir imagen
+  - si hay archivo: sube primero (media_service) y usa url devuelta
+  - fallback opcional: pegar media_url manual
+- Se mejoró AuthContext:
+  - Manejo robusto del 401 en /usuarios/me (token inválido/expirado) limpiando sesión local.
+
+GIT / REPO
+- Se agregó ignore para uploads (no versionar archivos dinámicos):
+  - backend/uploads/ agregado a .gitignore
+- Commit + push realizados:
+  - 742b66a feat(etapa46): upload real de imágenes + media/upload protegido con JWT
+
+ARCHIVOS MODIFICADOS / CREADOS
+- modified: .gitignore
+- modified: backend/main.py
+- new:      backend/app/routers/media_routers.py
+- modified: frontend/src/components/CrearHistoriaModal.jsx
+- modified: frontend/src/context/AuthContext.jsx
+- new:      frontend/src/services/media_service.js
+
+NOTAS
+- backend/uploads/ queda como storage local (MVP). No se sube al repo.
+- Respuestas 304 Not Modified al pedir imágenes son normales (cache del navegador).
+
+PRÓXIMA ETAPA (ETAPA 47)
+- Consistencia de visibilidad global:
+  - Comercios nuevos creados desde Mi Perfil aparecen en “Mis comercios” pero NO se ven en Feed/Ranking.
+  - Historias creadas para comercios nuevos no se ven en HistoriasBar / Feed / Ranking.
+- Sesión persistente:
+  - Definir comportamiento esperado: hoy el token persiste en localStorage (sesión “activa” al reabrir). Confirmar si se quiere mantener o cambiar.
+
+
+## ETAPA 47 — Consistencia Feed / Comercios / Historias + Sesión persistente
+
+
+Tipo: Validación estructural (sin cambios de código)
+Estado: CIERRE REAL
+
+OBJETIVO
+
+Validar comportamiento real del sistema respecto a:
+
+1) Comercios creados desde "Mi Perfil" que no aparecen en Feed.
+2) Historias de comercios nuevos que no se ven en la HistoriasBar.
+3) Persistencia de sesión tras reinicio de navegador/backend.
+
+ANÁLISIS REALIZADO
+
+- El Feed lista PUBLICACIONES, no comercios.
+- Un comercio sin publicaciones activas NO aparece en Feed.
+- HistoriasBar del Feed se construye desde comercios presentes en el feed.
+- Por lo tanto:
+  → Si un comercio no tiene publicaciones, no aparecerá en la barra.
+  → No es un bug, es comportamiento consistente con la arquitectura actual.
+
+Sesión persistente:
+- Auth persistido en localStorage (ETAPA 36).
+- Comportamiento correcto.
+- No se modifica estrategia.
+
+DECISIÓN
+
+No se realizan cambios de backend ni frontend.
+No se agregan endpoints nuevos.
+Se mantiene arquitectura actual.
+
+Resultado:
+Sistema consistente.
+Etapa cerrada sin modificaciones estructurales.
