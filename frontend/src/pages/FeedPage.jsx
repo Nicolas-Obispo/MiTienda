@@ -7,6 +7,7 @@
  * ETAPA 43: Marcar historia como vista al abrir el viewer (primera historia)
  * ETAPA 44 (parcial): Autoplay entre comercios (cuando termina un comercio, pasa al siguiente)
  * ETAPA 44: Visto/No visto REAL (backend devuelve vista_by_me)
+ * ETAPA 47: Barra de historias desde backend (/historias/bar)
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -26,6 +27,7 @@ import {
 
 import {
   fetchHistoriasPorComercio,
+  fetchHistoriasBarItems,
   marcarHistoriaVista,
 } from "../services/historias_service";
 
@@ -129,141 +131,16 @@ export default function FeedPage() {
   }
 
   /**
-   * ETAPA 44:
-   * - El backend devuelve vista_by_me (estado real por usuario).
-   * - El frontend SOLO calcula "pendientes" desde ese flag para UI.
+   * ETAPA 47:
+   * Carga la barra directamente desde backend (/historias/bar).
+   * - Público + token opcional.
+   * - Devuelve items listos: { comercioId, nombre, thumbnailUrl, cantidad, pendientes }
    */
-  function calcularPendientes(historiasList) {
-    const list = Array.isArray(historiasList) ? historiasList : [];
-    return list.filter((h) => !Boolean(h?.vista_by_me)).length;
-  }
-
-  /**
-   * ETAPA 44:
-   * Recalcula el item de un comercio (cantidad + pendientes) consultando backend.
-   * - Se usa después de marcar vista para que aro/contador se actualicen sin parches.
-   */
-  async function refrescarItemHistoriasComercio(comercioId) {
-    try {
-      const historias = await fetchHistoriasPorComercio(comercioId);
-      const list = Array.isArray(historias) ? historias : historias?.items || [];
-
-      const cantidad = list.length;
-      const pendientes = calcularPendientes(list);
-
-      setHistoriasItems((prev) =>
-        (prev || []).map((it) =>
-          it.comercioId === comercioId ? { ...it, cantidad, pendientes } : it
-        )
-      );
-    } catch {
-      // Si falla, no rompemos nada. Queda el estado anterior.
-    }
-  }
-
-  /**
-   * Construye items para la barra desde comercios presentes en el feed
-   * y precarga algunas imágenes en background.
-   */
-  async function buildHistoriasBarItemsFromFeed(feedItems) {
+  async function loadHistoriasBar() {
     try {
       setHistoriasErrorMessage("");
-
-      // ✅ Normaliza IDs: acepta number o string numérico ("7")
-      function normalizarId(value) {
-        const n = Number(value);
-        return Number.isFinite(n) ? n : null;
-      }
-
-      const comercioIdsUnicos = [];
-      const seen = new Set();
-
-      for (const p of feedItems) {
-        const raw =
-          p?.comercio_id ?? p?.comercioId ?? p?.comercio?.id ?? null;
-
-        const comercioId = normalizarId(raw);
-
-        if (comercioId !== null && !seen.has(comercioId)) {
-          seen.add(comercioId);
-          comercioIdsUnicos.push(comercioId);
-        }
-      }
-
-      const comercioIds = comercioIdsUnicos.slice(0, 15);
-
-      // Meta (nombre/logo) deducida del feed
-      const comercioMeta = new Map();
-      for (const p of feedItems) {
-        const raw = p?.comercio_id ?? p?.comercioId ?? p?.comercio?.id ?? null;
-        const id = normalizarId(raw);
-        if (id === null) continue;
-
-        if (!comercioMeta.has(id)) {
-          const nombre =
-            p?.comercio_nombre ??
-            p?.comercioNombre ??
-            p?.comercio?.nombre ??
-            `Comercio ${id}`;
-
-          const thumbnailUrl =
-            p?.comercio_logo_url ??
-            p?.comercioLogoUrl ??
-            p?.comercio?.logo_url ??
-            null;
-
-          comercioMeta.set(id, { nombre, thumbnailUrl });
-        }
-      }
-
-      // Traemos historias por comercio en paralelo
-      const results = await Promise.all(
-        comercioIds.map(async (comercioId) => {
-          try {
-            const historias = await fetchHistoriasPorComercio(comercioId);
-            const list = Array.isArray(historias)
-              ? historias
-              : historias?.items || [];
-            return { comercioId, historias: list };
-          } catch {
-            return { comercioId, historias: [] };
-          }
-        })
-      );
-
-      // Precarga liviana global (primeras historias encontradas)
-      let preloadedCount = 0;
-      const MAX_PRELOAD_TOTAL = 20;
-
-      for (const r of results) {
-        if (preloadedCount >= MAX_PRELOAD_TOTAL) break;
-        const historias = r?.historias || [];
-        const slice = historias.slice(0, 2);
-        preloadHistoriasImages(slice, 2);
-        preloadedCount += slice.length;
-      }
-
-      // Items para la barra (solo comercios con historias)
-      const items = results
-        .filter((r) => Array.isArray(r.historias) && r.historias.length > 0)
-        .map((r) => {
-          const meta = comercioMeta.get(r.comercioId) || {
-            nombre: `Comercio ${r.comercioId}`,
-            thumbnailUrl: null,
-          };
-
-          // ETAPA 44: pendientes reales por usuario (backend manda vista_by_me)
-          const pendientes = calcularPendientes(r.historias);
-
-          return {
-            comercioId: r.comercioId,
-            nombre: meta.nombre,
-            thumbnailUrl: meta.thumbnailUrl,
-            cantidad: r.historias.length,
-            pendientes, // <- nuevo: HistoriasBar lo usa para aro/contador/orden
-          };
-        });
-
+      const data = await fetchHistoriasBarItems();
+      const items = Array.isArray(data) ? data : data?.items || [];
       setHistoriasItems(items);
     } catch (error) {
       setHistoriasItems([]);
@@ -271,6 +148,16 @@ export default function FeedPage() {
         error?.message || "Error desconocido cargando historias."
       );
     }
+  }
+
+  /**
+   * ETAPA 47:
+   * Refresca la barra desde backend.
+   * - Se usa después de marcar vista para que aro/contador se actualicen sin parches.
+   */
+  async function refrescarItemHistoriasComercio() {
+    // Refresco simple y seguro: backend es fuente de verdad.
+    await loadHistoriasBar();
   }
 
   // -----------------------------
@@ -286,9 +173,7 @@ export default function FeedPage() {
         fetchPublicacionesGuardadas(),
       ]);
 
-      const feedItems = Array.isArray(feedData)
-        ? feedData
-        : feedData?.items || [];
+      const feedItems = Array.isArray(feedData) ? feedData : feedData?.items || [];
 
       const guardadasItems = Array.isArray(guardadasData)
         ? guardadasData
@@ -307,8 +192,8 @@ export default function FeedPage() {
 
       setPublicaciones(merged);
 
-      // Historias (no bloquea el feed)
-      buildHistoriasBarItemsFromFeed(merged);
+      // Historias (no bloquea el feed) — ETAPA 47: desde backend
+      loadHistoriasBar();
     } catch (error) {
       setErrorMessage(error?.message || "Error desconocido cargando el feed.");
       setPublicaciones([]);
@@ -376,8 +261,8 @@ export default function FeedPage() {
         setTimeout(() => {
           marcarHistoriaVista(primeraHistoriaId)
             .then(() => {
-              // ETAPA 44: refresca el aro/contador de ese comercio con info real del backend
-              refrescarItemHistoriasComercio(nextId);
+              // ETAPA 47: refresca la barra desde backend (fuente de verdad)
+              refrescarItemHistoriasComercio();
             })
             .catch(() => {});
         }, 0);
@@ -424,8 +309,8 @@ export default function FeedPage() {
         setTimeout(() => {
           marcarHistoriaVista(primeraHistoriaId)
             .then(() => {
-              // ETAPA 44: refresca el aro/contador de ese comercio con info real del backend
-              refrescarItemHistoriasComercio(comercioId);
+              // ETAPA 47: refresca la barra desde backend (fuente de verdad)
+              refrescarItemHistoriasComercio();
             })
             .catch(() => {});
         }, 0);

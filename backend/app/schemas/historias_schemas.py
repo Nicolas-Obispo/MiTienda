@@ -55,3 +55,27 @@ class HistoriaRead(HistoriaBase):
 
     class Config:
         orm_mode = True
+
+# --------------------------------------------------
+# ETAPA 47 — Item para barra de historias
+# --------------------------------------------------
+
+class HistoriasBarItem(BaseModel):
+    """
+    Item agregado para la barra de historias.
+
+    Representa un comercio que tiene al menos
+    una historia activa y no expirada.
+    """
+
+    comercioId: int
+    nombre: str
+
+    # Importante:
+    # El frontend espera "thumbnailUrl"
+    # aunque en DB el campo sea "portada_url"
+    thumbnailUrl: Optional[str] = None
+
+    cantidad: int          # total de historias activas
+    pendientes: int        # historias NO vistas por el usuario
+

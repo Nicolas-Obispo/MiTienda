@@ -12,6 +12,10 @@ ETAPA 44:
 - GET de historias por comercio es PÚBLICO:
     - sin token → vista_by_me=False
     - con token → vista_by_me real
+
+ETAPA 47:
+- Barra de historias basada en DB (comercios con historias activas/no expiradas),
+  independiente del feed.
 """
 
 from typing import List, Optional
@@ -24,10 +28,11 @@ from app.core.auth import (
     obtener_usuario_actual,
     obtener_usuario_actual_opcional,
 )
-from app.schemas.historias_schemas import HistoriaCreate, HistoriaRead
+from app.schemas.historias_schemas import HistoriaCreate, HistoriaRead, HistoriasBarItem
 from app.services.historias_services import (
     crear_historia,
     listar_historias_activas_por_comercio,
+    listar_historias_bar,
 )
 from app.services.historias_vistas_services import marcar_historia_como_vista
 
@@ -78,6 +83,29 @@ def listar_historias_por_comercio_endpoint(
     return listar_historias_activas_por_comercio(
         db,
         comercio_id=comercio_id,
+        usuario_id=usuario_id,
+    )
+
+
+@router.get(
+    "/bar",
+    response_model=List[HistoriasBarItem],
+)
+def listar_historias_bar_endpoint(
+    db: Session = Depends(get_db),
+    usuario_actual: Optional[object] = Depends(obtener_usuario_actual_opcional),
+):
+    """
+    Barra de historias basada en DB (ETAPA 47).
+
+    - Público:
+        - sin token -> pendientes = cantidad (porque vista_by_me=False)
+        - con token -> pendientes real por usuario
+    """
+    usuario_id = getattr(usuario_actual, "id", None) if usuario_actual else None
+
+    return listar_historias_bar(
+        db,
         usuario_id=usuario_id,
     )
 

@@ -17,6 +17,8 @@ from sqlalchemy.orm import Session
 from app.models.historias_models import Historia
 from app.models.historias_vistas_models import HistoriaVista
 from app.schemas.historias_schemas import HistoriaCreate
+from app.models.comercios_models import Comercio
+
 
 
 def crear_historia(
@@ -97,3 +99,67 @@ def listar_historias_activas_por_comercio(
         h.vista_by_me = h.id in vistas_set
 
     return historias
+
+def listar_historias_bar(
+    db: Session,
+    *,
+    usuario_id: Optional[int] = None,
+) -> List[dict]:
+    """
+    Devuelve items para la barra de historias basados en comercios con historias activas/no expiradas.
+
+    Reglas:
+    - Solo comercios activos.
+    - Solo comercios con al menos 1 historia activa y no expirada.
+    - Si hay usuario_id: pendientes se calcula con vista_by_me real.
+    - Si no hay usuario: vista_by_me queda False y pendientes = cantidad.
+    """
+
+    ahora = datetime.utcnow()
+
+    # Traemos comercios que tienen al menos 1 historia activa/no expirada
+    comercios = (
+        db.query(Comercio)
+        .join(Historia, Historia.comercio_id == Comercio.id)
+        .filter(
+            Comercio.activo.is_(True),
+            Historia.is_activa.is_(True),
+            Historia.expira_en > ahora,
+        )
+        .distinct()
+        .all()
+    )
+
+    items: List[dict] = []
+
+    for c in comercios:
+        # Reutilizamos lógica existente (resuelve vista_by_me)
+        historias = listar_historias_activas_por_comercio(
+            db,
+            comercio_id=c.id,
+            usuario_id=usuario_id,
+        )
+
+        if not historias:
+            continue
+
+        pendientes = 0
+        for h in historias:
+            if not getattr(h, "vista_by_me", False):
+                pendientes += 1
+
+        items.append(
+            {
+                "comercioId": c.id,
+                "nombre": c.nombre,
+                # Frontend espera thumbnailUrl, usamos la portada del comercio
+                "thumbnailUrl": c.portada_url,
+                "cantidad": len(historias),
+                "pendientes": pendientes,
+            }
+        )
+
+    # Orden UX: pendientes primero, luego vistos
+    items.sort(key=lambda x: (x["pendientes"] == 0, -x["pendientes"]))
+
+    return items

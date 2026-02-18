@@ -12,6 +12,9 @@
  * - GET  /historias/comercios/{comercio_id}  (PÚBLICO + token opcional)
  * - POST /historias/comercios/{comercio_id}
  * - POST /historias/{historia_id}/vistas   (PROTEGIDO, idempotente)
+ *
+ * ETAPA 47:
+ * - GET /historias/bar (PÚBLICO + token opcional) -> items listos para HistoriasBar
  */
 
 // Base URL del backend (fallback seguro)
@@ -95,6 +98,24 @@ async function requestJson(
   }
 
   return data;
+}
+
+/**
+ * fetchHistoriasBarItems (ETAPA 47)
+ * Trae items listos para renderizar en HistoriasBar.
+ *
+ * Backend:
+ * - GET /historias/bar (PÚBLICO + token opcional)
+ *
+ * Importante:
+ * - Si hay token, el backend devuelve pendientes reales por usuario.
+ * - Si NO hay token, pendientes = cantidad (todo queda "no visto").
+ */
+export async function fetchHistoriasBarItems() {
+  return requestJson("/historias/bar", {
+    method: "GET",
+    auth: "optional",
+  });
 }
 
 /**
