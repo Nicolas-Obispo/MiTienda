@@ -16,10 +16,9 @@ from app.schemas.usuarios_schemas import (
     UsuarioLogin,
     UsuarioResponse,
     UsuarioOnboarding,
-    UsuarioCambioModo
+    UsuarioCambioModo,
+    UsuarioAvatarUpdate,  # ETAPA 49
 )
-
-
 
 # Autenticación y seguridad
 from fastapi.security import HTTPAuthorizationCredentials
@@ -37,7 +36,7 @@ from app.services.usuarios_services import (
     autenticar_usuario,
     obtener_usuario_por_id,
     completar_onboarding_usuario,
-    cambiar_modo_usuario
+    cambiar_modo_usuario,
 )
 
 
@@ -129,6 +128,40 @@ def obtener_mi_perfil(usuario_actual=Depends(obtener_usuario_actual)):
 
 
 # =============================================================
+#  ACTUALIZAR AVATAR DEL USUARIO (ETAPA 49)
+# =============================================================
+@router.put(
+    "/me/avatar",
+    response_model=UsuarioResponse,
+    summary="Actualizar foto de perfil (avatar) del usuario autenticado"
+)
+def actualizar_avatar_endpoint(
+    payload: UsuarioAvatarUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual=Depends(obtener_usuario_actual),
+):
+    """
+    Actualiza el avatar del usuario autenticado.
+
+    Flujo esperado:
+    1) El frontend sube imagen a /media/upload (JWT requerido)
+    2) /media/upload devuelve { url }
+    3) El frontend llama a este endpoint con avatar_url = url
+    4) Se persiste en BD y se devuelve el usuario actualizado
+    """
+
+    avatar_url_normalizada = payload.avatar_url.strip()
+    if not avatar_url_normalizada:
+        raise HTTPException(status_code=400, detail="avatar_url no puede ser vacío")
+
+    usuario_actual.avatar_url = avatar_url_normalizada
+    db.commit()
+    db.refresh(usuario_actual)
+
+    return usuario_actual
+
+
+# =============================================================
 #  OBTENER USUARIO POR ID
 # =============================================================
 @router.get("/{usuario_id}", response_model=UsuarioResponse)
@@ -139,6 +172,7 @@ def obtener_usuario_endpoint(usuario_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
     return usuario
+
 
 # =============================================================
 #  ONBOARDING DEL USUARIO
@@ -169,6 +203,7 @@ def completar_onboarding_endpoint(
     )
 
     return usuario_actualizado
+
 
 # =============================================================
 #  CAMBIO DE MODO (USUARIO ↔ PUBLICADOR)

@@ -10,8 +10,12 @@ Este módulo:
 - SOLO lógica de negocio
 """
 
+from sqlalchemy import case
 from sqlalchemy.orm import Session
+
 from app.models.comercios_models import Comercio
+from app.models.historias_models import Historia
+from app.models.publicaciones_models import Publicacion
 from app.models.usuarios_models import Usuario
 from app.schemas.comercios_schemas import ComercioCreate, ComercioUpdate
 
@@ -92,7 +96,7 @@ def listar_comercios(
 
 
 # ============================================================
-# Listar comercios activos (ETAPA 48: Explorar)
+# Listar comercios activos (ETAPA 48: Explorar) + ETAPA 49: orden inteligente
 # ============================================================
 
 def listar_comercios_activos(
@@ -108,6 +112,15 @@ def listar_comercios_activos(
     - Solo activo=True
     - Búsqueda simple por nombre (contiene, case-insensitive)
     - Paginado por limit/offset
+    - Orden inteligente (ETAPA 49):
+        1) Comercios con historias primero
+        2) Luego comercios con publicaciones
+        3) Luego el resto
+        4) Dentro de cada grupo: más nuevos primero (id desc)
+
+    Nota MVP:
+    - "Con historias" = existe al menos 1 historia del comercio.
+    - "Con publicaciones" = existe al menos 1 publicación del comercio.
     """
 
     query = db.query(Comercio).filter(Comercio.activo == True)
@@ -118,8 +131,29 @@ def listar_comercios_activos(
         if q_normalizada:
             query = query.filter(Comercio.nombre.ilike(f"%{q_normalizada}%"))
 
-    # Orden estable: más nuevos primero
-    query = query.order_by(Comercio.id.desc())
+    # Flags de actividad (EXISTS correlacionado)
+    tiene_historias = (
+        db.query(Historia.id)
+        .filter(Historia.comercio_id == Comercio.id)
+        .exists()
+    )
+
+    tiene_publicaciones = (
+        db.query(Publicacion.id)
+        .filter(Publicacion.comercio_id == Comercio.id)
+        .exists()
+    )
+
+    # Normalizamos a 1/0 para ordenar
+    score_historias = case((tiene_historias, 1), else_=0)
+    score_publicaciones = case((tiene_publicaciones, 1), else_=0)
+
+    # Orden inteligente
+    query = query.order_by(
+        score_historias.desc(),
+        score_publicaciones.desc(),
+        Comercio.id.desc(),
+    )
 
     # Paginado
     query = query.offset(offset).limit(limit)

@@ -38,6 +38,7 @@ class UsuarioResponse(BaseModel):
     email: EmailStr
 
     # Campos agregados para MiPlaza
+    avatar_url: Optional[str] = None  # ETAPA 49
     modo_activo: str
     onboarding_completo: bool
     provincia: Optional[str] = None
@@ -57,6 +58,7 @@ class UsuarioOnboarding(BaseModel):
     provincia: str
     ciudad: str
 
+
 # ---------------------------------
 # Schema para cambio de modo
 # ---------------------------------
@@ -65,3 +67,15 @@ class UsuarioCambioModo(BaseModel):
     Datos requeridos para cambiar el modo activo del usuario.
     """
     modo: str
+
+
+# ---------------------------------
+# Schema para actualizar avatar (ETAPA 49)
+# ---------------------------------
+class UsuarioAvatarUpdate(BaseModel):
+    """
+    Datos requeridos para actualizar la foto de perfil del usuario.
+
+    - avatar_url: URL pública devuelta por /media/upload
+    """
+    avatar_url: str

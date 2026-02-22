@@ -30,6 +30,10 @@ class Usuario(Base):
     # Campos agregados para MiPlaza
     # -----------------------------
 
+    # URL de la foto de perfil (ETAPA 49)
+    # Nullable para no romper usuarios existentes
+    avatar_url = Column(String(255), nullable=True)
+
     # Modo activo del usuario dentro de la plataforma
     # Valores esperados:
     # - "usuario"     → consumidor
@@ -71,8 +75,6 @@ class Usuario(Base):
     # -------------------------
     # Vistas de historias (ETAPA 43)
     # -------------------------
-    # - Relación hacia historias_vistas
-    # - sin back_populates en este paso (lo conectamos luego)
     historias_vistas = relationship(
         "HistoriaVista",
         lazy="selectin",

@@ -3335,3 +3335,43 @@ Resultado:
 Explorar funciona como módulo autónomo.
 Arquitectura estable.
 Etapa cerrada con cambios estructurales controlados.
+
+================================================================================
+CIERRE REAL — ETAPA 49: Upload real de imágenes en Perfil (Avatar usuario + Portada comercio)
+================================================================================
+
+Commit ancla (pendiente de generar): (COMPLETAR DESPUÉS DEL COMMIT)
+Fecha: 2026-02-21
+
+OBJETIVO (cumplido)
+- Permitir subir imágenes reales desde la UI (selector + drag & drop), persistiendo en filesystem del backend y guardando la URL en BD.
+- Resolver avatar del usuario (perfil) y portada de comercio (form crear/editar) sin depender de pegar URLs manuales.
+
+BACKEND (sin cambios estructurales nuevos)
+- Se reutiliza el módulo ya existente:
+  - POST /media/upload (protegido con JWT)
+  - Serving estático de /uploads
+- Observación: respuestas 304 Not Modified en logs de /uploads son normales (caché del navegador).
+
+FRONTEND
+1) Avatar usuario (Perfil)
+- UI de avatar con preview + drag & drop + click para seleccionar imagen.
+- Flujo:
+  - upload a /media/upload
+  - persistencia en BD por endpoint de usuario (/usuarios/me/avatar)
+- Persistencia verificada (reload + reinicio del proyecto mantiene avatar).
+
+2) Portada comercio (Perfil → Mis comercios → Crear/Editar)
+- El campo “Portada URL” se mejora con:
+  - selector de imagen + drag & drop
+  - preview inmediato
+  - al subir, se setea automáticamente createForm.portada_url con la URL devuelta por /media/upload
+- Se mantiene fallback “Portada URL (opcional)” por compatibilidad.
+
+ARCHIVOS MODIFICADOS (ETAPA 49)
+- frontend/src/pages/ProfilePage.jsx
+
+RESULTADO
+- Avatar y portadas se cargan con imágenes reales desde UI.
+- Persistencia real en BD y filesystem.
+- Arquitectura respetada (frontend no inventa estado: sube media, guarda URL, y refresca desde backend donde corresponde).

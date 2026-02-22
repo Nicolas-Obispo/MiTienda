@@ -3,21 +3,15 @@
  * ----------------
  * ETAPA 39 (Perfil de usuario) - Guardados
  * ETAPA 45 (Orden UX navegación) - Admin: "Mis comercios" + acciones (Crear / Editar / Desactivar)
- *
- * Objetivo:
- * - Mantener: publicaciones guardadas del usuario (GET /publicaciones/guardadas)
- * - Agregar arriba: "Mis comercios" (GET /comercios/mis)
- * - Acciones admin:
- *   - Crear comercio (POST /comercios)
- *   - Editar comercio (PUT /comercios/{id})
- *   - Desactivar comercio (DELETE /comercios/{id})
+ * ETAPA 49 (Avatar usuario) - Subida real + drag & drop + persistencia en BD
+ * ETAPA 49 (Portada comercio) - Upload real + drag & drop + botón "Seleccionar imagen"
  *
  * Regla de oro:
  * - El frontend NO inventa estado de negocio.
  * - Solo consume backend y renderiza.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import PublicacionCard from "../components/PublicacionCard";
 import {
@@ -35,9 +29,271 @@ import {
 } from "../services/comercios_service";
 
 export default function ProfilePage() {
+  // =====================================================
+  // Helpers generales (token + base URL)
+  // =====================================================
+  function getToken() {
+    // En el proyecto se mencionó "access_token" (ETAPA 36).
+    // Dejo fallback por si en algún punto quedó "token".
+    return (
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("token") ||
+      ""
+    );
+  }
+
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+  // =====================================================
+  // ETAPA 49 — Estado: Avatar usuario
+  // =====================================================
+  const [usuarioMe, setUsuarioMe] = useState(null); // { id, email, avatar_url, ... }
+  const [isLoadingMe, setIsLoadingMe] = useState(true);
+  const [avatarErrorMessage, setAvatarErrorMessage] = useState("");
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isDragOverAvatar, setIsDragOverAvatar] = useState(false);
+
+  const fileInputRef = useRef(null);
+
   // ==========================
+  // ETAPA 49 — Portada comercio (upload real)
+  // ==========================
+  const [isUploadingPortada, setIsUploadingPortada] = useState(false);
+  const [isDragOverPortada, setIsDragOverPortada] = useState(false);
+  const [portadaErrorMessage, setPortadaErrorMessage] = useState("");
+
+  const portadaFileInputRef = useRef(null);
+
+  async function loadUsuarioMe() {
+    try {
+      setIsLoadingMe(true);
+      setAvatarErrorMessage("");
+
+      const token = getToken();
+      if (!token) {
+        // Perfil es ruta protegida, pero por las dudas:
+        setUsuarioMe(null);
+        return;
+      }
+
+      const resp = await fetch(`${API_BASE_URL}/usuarios/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!resp.ok) {
+        // Si algo falla, no rompemos la página.
+        // AuthContext ya maneja 401 en otros lugares, acá solo mostramos error suave.
+        const msg = `No se pudo cargar tu perfil (status ${resp.status}).`;
+        throw new Error(msg);
+      }
+
+      const data = await resp.json();
+      setUsuarioMe(data);
+    } catch (error) {
+      setUsuarioMe(null);
+      setAvatarErrorMessage(
+        error.message || "Error desconocido cargando tu perfil."
+      );
+    } finally {
+      setIsLoadingMe(false);
+    }
+  }
+
+  async function uploadMedia(file) {
+    // Subida real al backend (/media/upload) con JWT.
+    const token = getToken();
+    if (!token) throw new Error("No hay sesión activa (token).");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const resp = await fetch(`${API_BASE_URL}/media/upload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // NO seteamos Content-Type: el browser arma el boundary
+      },
+      body: formData,
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(
+        `Error subiendo imagen (status ${resp.status}): ${text || "sin detalle"}`
+      );
+    }
+
+    const data = await resp.json();
+    if (!data?.url) throw new Error("Upload ok pero no vino url.");
+    return data.url;
+  }
+
+  async function updateUsuarioAvatar(avatarUrl) {
+    // Persiste avatar_url en BD
+    const token = getToken();
+    if (!token) throw new Error("No hay sesión activa (token).");
+
+    const resp = await fetch(`${API_BASE_URL}/usuarios/me/avatar`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ avatar_url: avatarUrl }),
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(
+        `Error guardando avatar (status ${resp.status}): ${text || "sin detalle"}`
+      );
+    }
+
+    return await resp.json(); // UsuarioResponse actualizado
+  }
+
+  function isValidImageFile(file) {
+    if (!file) return false;
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    return allowed.includes(file.type);
+  }
+
+  async function handleAvatarFile(file) {
+    try {
+      setAvatarErrorMessage("");
+
+      if (!file) return;
+      if (!isValidImageFile(file)) {
+        throw new Error("Formato inválido. Usá JPG, PNG o WEBP.");
+      }
+
+      setIsUploadingAvatar(true);
+
+      // 1) Upload físico a /media/upload → devuelve URL pública
+      const url = await uploadMedia(file);
+
+      // 2) Persistimos avatar_url en BD
+      const updatedUser = await updateUsuarioAvatar(url);
+
+      // 3) Refrescamos estado local (para ver el cambio inmediato)
+      setUsuarioMe(updatedUser);
+    } catch (error) {
+      setAvatarErrorMessage(
+        error.message || "Error desconocido actualizando el avatar."
+      );
+    } finally {
+      setIsUploadingAvatar(false);
+      setIsDragOverAvatar(false);
+
+      // Resetea input para permitir subir el mismo archivo 2 veces si quiere
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  // =====================================================
+  // ETAPA 49 — Portada comercio (UX mejorada)
+  // =====================================================
+  function handlePortadaClick() {
+    if (isUploadingPortada) return;
+    portadaFileInputRef.current?.click();
+  }
+
+  function handlePortadaDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isUploadingPortada) return;
+    setIsDragOverPortada(true);
+  }
+
+  function handlePortadaDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOverPortada(false);
+  }
+
+  async function handlePortadaFile(file) {
+    try {
+      setPortadaErrorMessage("");
+
+      if (!file) return;
+      if (!isValidImageFile(file)) {
+        throw new Error("Formato inválido. Usá JPG, PNG o WEBP.");
+      }
+
+      setIsUploadingPortada(true);
+
+      // 1) Upload físico a /media/upload → devuelve URL pública
+      const url = await uploadMedia(file);
+
+      // 2) Seteamos el campo portada_url del form (estado real para el submit)
+      setCreateForm((prev) => ({
+        ...prev,
+        portada_url: url,
+      }));
+    } catch (error) {
+      setPortadaErrorMessage(
+        error.message || "Error desconocido subiendo la portada."
+      );
+    } finally {
+      setIsUploadingPortada(false);
+      setIsDragOverPortada(false);
+
+      // Permite elegir el mismo archivo 2 veces
+      if (portadaFileInputRef.current) portadaFileInputRef.current.value = "";
+    }
+  }
+
+  function handlePortadaInputChange(e) {
+    const file = e.target.files?.[0];
+    handlePortadaFile(file);
+  }
+
+  function handlePortadaDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isUploadingPortada) return;
+
+    const file = e.dataTransfer?.files?.[0];
+    handlePortadaFile(file);
+  }
+
+  function handleAvatarInputChange(e) {
+    const file = e.target.files?.[0];
+    handleAvatarFile(file);
+  }
+
+  function handleAvatarClick() {
+    if (isUploadingAvatar) return;
+    fileInputRef.current?.click();
+  }
+
+  function handleAvatarDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isUploadingAvatar) return;
+    setIsDragOverAvatar(true);
+  }
+
+  function handleAvatarDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOverAvatar(false);
+  }
+
+  function handleAvatarDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isUploadingAvatar) return;
+
+    const file = e.dataTransfer?.files?.[0];
+    handleAvatarFile(file);
+  }
+
+  // ==========================================================
   // Estado: Guardados
-  // ==========================
+  // ==========================================================
   const [isLoading, setIsLoading] = useState(true);
   const [publicaciones, setPublicaciones] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
@@ -53,9 +309,9 @@ export default function ProfilePage() {
     setter((prev) => ({ ...prev, [pubId]: value }));
   }
 
-  // ==========================
+  // ==========================================================
   // Estado: Mis comercios (admin)
-  // ==========================
+  // ==========================================================
   const [isLoadingComercios, setIsLoadingComercios] = useState(true);
   const [misComercios, setMisComercios] = useState([]);
   const [comerciosErrorMessage, setComerciosErrorMessage] = useState("");
@@ -191,6 +447,10 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
+    // ETAPA 49: cargamos /usuarios/me para mostrar avatar actual
+    loadUsuarioMe();
+
+    // Lo existente
     loadMisComercios();
     loadGuardadas();
   }, []);
@@ -316,12 +576,20 @@ export default function ProfilePage() {
       // Payload limpio: strings vacíos -> null donde aplica
       const payload = {
         ...createForm,
-        direccion: createForm.direccion?.trim() ? createForm.direccion.trim() : null,
+        direccion: createForm.direccion?.trim()
+          ? createForm.direccion.trim()
+          : null,
         whatsapp: createForm.whatsapp?.trim() ? createForm.whatsapp.trim() : null,
-        instagram: createForm.instagram?.trim() ? createForm.instagram.trim() : null,
+        instagram: createForm.instagram?.trim()
+          ? createForm.instagram.trim()
+          : null,
         maps_url: createForm.maps_url?.trim() ? createForm.maps_url.trim() : null,
-        portada_url: createForm.portada_url?.trim() ? createForm.portada_url.trim() : null,
-        descripcion: createForm.descripcion?.trim() ? createForm.descripcion.trim() : "",
+        portada_url: createForm.portada_url?.trim()
+          ? createForm.portada_url.trim()
+          : null,
+        descripcion: createForm.descripcion?.trim()
+          ? createForm.descripcion.trim()
+          : "",
       };
 
       // ✅ Si estamos editando, hacemos PUT. Si no, POST.
@@ -370,9 +638,10 @@ export default function ProfilePage() {
       setComercioLock(comercioId, false);
     }
   }
-      // =====================================================
-    // ETAPA 45 — Acciones admin: Reactivar comercio
-    // =====================================================
+
+  // =====================================================
+  // ETAPA 45 — Acciones admin: Reactivar comercio
+  // =====================================================
   async function handleReactivarComercio(comercioId) {
     if (!comercioId) return;
     if (isActingComercioById[comercioId]) return;
@@ -395,6 +664,8 @@ export default function ProfilePage() {
     }
   }
 
+  const avatarUrl = usuarioMe?.avatar_url || "";
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <main className="mx-auto max-w-3xl px-4 py-8">
@@ -404,6 +675,94 @@ export default function ProfilePage() {
           <p className="mt-1 text-sm text-gray-400">
             Admin (mis comercios) + mis publicaciones guardadas.
           </p>
+
+          {/* ========================= */}
+          {/* ETAPA 49 — Avatar usuario */}
+          {/* ========================= */}
+          <div className="mt-4 rounded-2xl border border-gray-800 bg-gray-950 p-4">
+            <div className="flex items-center gap-4">
+              {/* Preview / Dropzone */}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={handleAvatarClick}
+                onDragOver={handleAvatarDragOver}
+                onDragLeave={handleAvatarDragLeave}
+                onDrop={handleAvatarDrop}
+                className={[
+                  "relative h-16 w-16 rounded-full border overflow-hidden",
+                  "flex items-center justify-center",
+                  isDragOverAvatar ? "border-green-400" : "border-gray-700",
+                  "bg-gray-900",
+                  isUploadingAvatar
+                    ? "opacity-70 cursor-not-allowed"
+                    : "cursor-pointer",
+                ].join(" ")}
+                title="Click para elegir imagen o arrastrá una foto acá"
+              >
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Avatar"
+                    className="h-full w-full object-cover"
+                    draggable={false}
+                  />
+                ) : (
+                  <span className="text-xs text-gray-300">Sin foto</span>
+                )}
+
+                {isUploadingAvatar && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span className="text-xs">Subiendo...</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1">
+                <p className="font-semibold">Foto de perfil</p>
+                <p className="mt-1 text-sm text-gray-400">
+                  Click para elegir imagen, o arrastrá y soltá una foto. Formatos:
+                  JPG / PNG / WEBP.
+                </p>
+
+                {/* Botón explícito */}
+                <button
+                  type="button"
+                  onClick={handleAvatarClick}
+                  disabled={isUploadingAvatar}
+                  className="mt-2 rounded-xl bg-white text-black px-3 py-2 text-xs font-semibold disabled:opacity-60"
+                >
+                  {isUploadingAvatar ? "Subiendo..." : "Seleccionar imagen"}
+                </button>
+
+                {/* Input real oculto */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleAvatarInputChange}
+                  className="hidden"
+                />
+
+                {/* Email (info) */}
+                <p className="mt-2 text-xs text-gray-500">
+                  {isLoadingMe
+                    ? "Cargando usuario..."
+                    : usuarioMe?.email
+                    ? `Sesión: ${usuarioMe.email}`
+                    : "No se pudo cargar el usuario."}
+                </p>
+
+                {avatarErrorMessage && (
+                  <div className="mt-3 rounded-xl border border-red-900 bg-red-950/40 p-3">
+                    <p className="text-sm text-red-100 break-words">
+                      {avatarErrorMessage}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ===================================================== */}
@@ -449,7 +808,9 @@ export default function ProfilePage() {
               {createErrorMessage && (
                 <div className="mt-3 rounded-xl border border-red-900 bg-red-950/40 p-4">
                   <p className="font-semibold text-red-200">Error</p>
-                  <p className="mt-2 text-red-100 break-words">{createErrorMessage}</p>
+                  <p className="mt-2 text-red-100 break-words">
+                    {createErrorMessage}
+                  </p>
                 </div>
               )}
 
@@ -513,15 +874,107 @@ export default function ProfilePage() {
                   />
                 </div>
 
+                {/* ========================= */}
+                {/* ETAPA 49 — Portada comercio */}
+                {/* ========================= */}
                 <div>
-                  <label className="text-xs text-gray-400">Portada URL</label>
-                  <input
-                    name="portada_url"
-                    value={createForm.portada_url}
-                    onChange={handleCreateInputChange}
-                    className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
-                    placeholder="https://..."
-                  />
+                  <label className="text-xs text-gray-400">Portada (imagen)</label>
+
+                  {/* Dropzone + Preview */}
+                  <div className="mt-2 flex items-center gap-3">
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={handlePortadaClick}
+                      onDragOver={handlePortadaDragOver}
+                      onDragLeave={handlePortadaDragLeave}
+                      onDrop={handlePortadaDrop}
+                      className={[
+                        "relative h-14 w-14 rounded-xl border overflow-hidden",
+                        "flex items-center justify-center",
+                        isDragOverPortada ? "border-green-400" : "border-gray-700",
+                        "bg-gray-900",
+                        isUploadingPortada
+                          ? "opacity-70 cursor-not-allowed"
+                          : "cursor-pointer",
+                      ].join(" ")}
+                      title="Click para elegir imagen o arrastrá una foto acá"
+                    >
+                      {createForm.portada_url ? (
+                        <img
+                          src={createForm.portada_url}
+                          alt="Portada"
+                          className="h-full w-full object-cover"
+                          draggable={false}
+                        />
+                      ) : (
+                        <span className="text-[10px] text-gray-300 text-center px-1">
+                          Sin portada
+                        </span>
+                      )}
+
+                      {isUploadingPortada && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <span className="text-[10px]">Subiendo...</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Texto + botón (click grande) */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={handlePortadaClick}
+                      className="flex-1 cursor-pointer select-none"
+                      title="Click para seleccionar imagen"
+                    >
+                      <p className="text-sm text-gray-300">
+                        Click o arrastrar para subir. (JPG / PNG / WEBP)
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handlePortadaClick();
+                        }}
+                        disabled={isUploadingPortada}
+                        className="mt-2 rounded-xl bg-white text-black px-3 py-2 text-xs font-semibold disabled:opacity-60"
+                      >
+                        {isUploadingPortada ? "Subiendo..." : "Seleccionar imagen"}
+                      </button>
+
+                      {/* Input file oculto */}
+                      <input
+                        ref={portadaFileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handlePortadaInputChange}
+                        className="hidden"
+                      />
+
+                      {portadaErrorMessage && (
+                        <p className="mt-2 text-xs text-red-200 break-words">
+                          {portadaErrorMessage}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Fallback: URL manual */}
+                  <div className="mt-3">
+                    <label className="text-xs text-gray-500">
+                      Portada URL (opcional)
+                    </label>
+                    <input
+                      name="portada_url"
+                      value={createForm.portada_url}
+                      onChange={handleCreateInputChange}
+                      className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
+                      placeholder="https://... o /uploads/..."
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -612,23 +1065,31 @@ export default function ProfilePage() {
           {!isLoadingComercios && comerciosErrorMessage && (
             <div className="mt-3 rounded-2xl border border-red-900 bg-red-950/40 p-5">
               <p className="font-semibold text-red-200">Error (Mis comercios)</p>
-              <p className="mt-2 text-red-100 break-words">{comerciosErrorMessage}</p>
-            </div>
-          )}
-
-          {/* Empty */}
-          {!isLoadingComercios && !comerciosErrorMessage && misComercios.length === 0 && (
-            <div className="mt-3 rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center">
-              <p className="text-gray-200 font-semibold">Todavía no tenés comercios</p>
-              <p className="mt-2 text-gray-400 text-sm">
-                Creá uno con el botón “Crear comercio”.
+              <p className="mt-2 text-red-100 break-words">
+                {comerciosErrorMessage}
               </p>
             </div>
           )}
 
+          {/* Empty */}
+          {!isLoadingComercios &&
+            !comerciosErrorMessage &&
+            misComercios.length === 0 && (
+              <div className="mt-3 rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center">
+                <p className="text-gray-200 font-semibold">
+                  Todavía no tenés comercios
+                </p>
+                <p className="mt-2 text-gray-400 text-sm">
+                  Creá uno con el botón “Crear comercio”.
+                </p>
+              </div>
+            )}
+
           {/* OK */}
-          {!isLoadingComercios && !comerciosErrorMessage && misComercios.length > 0 && (
-            <div className="mt-3 space-y-3">
+          {!isLoadingComercios &&
+            !comerciosErrorMessage &&
+            misComercios.length > 0 && (
+              <div className="mt-3 space-y-3">
               {misComercios.map((c) => {
                 const isActing = Boolean(isActingComercioById[c.id]);
 
@@ -650,7 +1111,7 @@ export default function ProfilePage() {
                           {c.activo ? "Activo" : "Inactivo"} · ID {c.id}
                         </p>
                       </Link>
-                      
+
                       {/* Acciones admin */}
                       <div className="flex flex-col items-end gap-2">
                         <button
@@ -685,7 +1146,6 @@ export default function ProfilePage() {
                           </button>
                         )}
                       </div>
-
                     </div>
                   </div>
                 );
