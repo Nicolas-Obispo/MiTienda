@@ -3597,5 +3597,17 @@ Todo resuelto en backend.
 Frontend solo renderiza.
 
 ================================================================================
-FIN ETAPA 51
+ETAPA 52 — Provider LOCAL real (Embeddings Semánticos Reales)
 ================================================================================
+
+Se implementa LocalEmbeddingProvider usando sentence-transformers
+(modelo all-MiniLM-L6-v2).
+
+- Integración en embedding_factory.
+- Activación por .env (EMBEDDINGS_PROVIDER=local).
+- Persistencia real en comercios_embeddings.
+- Arquitectura desacoplada validada.
+- Sin vendor lock-in.
+- Preparado para futura extracción como microservicio.
+
+Estado: CIERRE REAL ETAPA 52.
