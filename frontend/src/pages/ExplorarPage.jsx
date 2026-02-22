@@ -2,18 +2,20 @@
  * ExplorarPage.jsx
  * ----------------
  * ETAPA 48 — Explorar (Discovery de comercios activos)
+ * ETAPA 50 — IA v1 (MVP):
+ * - smart=true cuando hay búsqueda (q)
+ * - Indicador visual: "✨ Modo IA"
  *
- * Objetivo:
- * - Listar comercios activos aunque no tengan publicaciones
- * - Búsqueda simple por nombre (q)
- * - Paginado MVP (limit/offset con botón "Cargar más")
+ * ETAPA 50.3 — UX:
+ * - Search as you type (debounce)
+ * - Reset automático al borrar el input
  *
  * Reglas de oro:
  * - El frontend no inventa estado
  * - Todo sale del backend (/comercios/activos)
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { listarComerciosActivos } from "../services/comercios_service";
 import { useNavigate } from "react-router-dom";
 
@@ -33,28 +35,51 @@ export default function ExplorarPage() {
 
   const navigate = useNavigate();
 
+  // Debounce timer
+  const debounceRef = useRef(null);
+
+  /**
+   * _normalizarBusqueda
+   * - Evita enviar strings vacíos al backend
+   * - Devuelve null si no hay búsqueda real
+   */
+  function _normalizarBusqueda(valor) {
+    if (!valor) return null;
+    const t = valor.trim();
+    return t ? t : null;
+  }
+
+  /**
+   * _usarModoIA
+   * - UX: solo activamos IA cuando hay búsqueda real (q)
+   */
+  function _usarModoIA(q) {
+    return Boolean(q);
+  }
+
   /**
    * cargarPrimerPagina
    * - Resetea lista y offset
    */
-  async function cargarPrimerPagina(q) {
+  async function cargarPrimerPagina(qRaw) {
     setCargando(true);
     setError("");
+
+    const q = _normalizarBusqueda(qRaw);
+    const smart = _usarModoIA(q);
 
     try {
       const data = await listarComerciosActivos({
         q,
+        smart,
         limit,
         offset: 0,
       });
 
-      // data debe ser array (ComercioResponse[])
       const lista = Array.isArray(data) ? data : [];
 
       setComercios(lista);
       setOffset(lista.length);
-
-      // Si viene menos que limit, asumimos que no hay más
       setHayMas(lista.length === limit);
     } catch (e) {
       setError(e?.message || "Error al cargar comercios");
@@ -77,9 +102,13 @@ export default function ExplorarPage() {
     setCargando(true);
     setError("");
 
+    const q = _normalizarBusqueda(busqueda);
+    const smart = _usarModoIA(q);
+
     try {
       const data = await listarComerciosActivos({
-        q: busqueda,
+        q,
+        smart,
         limit,
         offset,
       });
@@ -88,7 +117,6 @@ export default function ExplorarPage() {
 
       setComercios((prev) => [...prev, ...lista]);
       setOffset((prev) => prev + lista.length);
-
       setHayMas(lista.length === limit);
     } catch (e) {
       setError(e?.message || "Error al cargar más comercios");
@@ -108,12 +136,47 @@ export default function ExplorarPage() {
 
   /**
    * handleBuscar
-   * Ejecuta búsqueda y resetea paginado
+   * - Se mantiene por compatibilidad UX (botón), pero ya no es necesario
    */
   async function handleBuscar(e) {
     e.preventDefault();
     await cargarPrimerPagina(busqueda);
   }
+
+  /**
+   * ETAPA 50.3 — Search as you type (debounce)
+   * - Cuando cambia busqueda:
+   *   - si está vacía -> resetea lista completa
+   *   - si tiene texto -> busca automáticamente con debounce
+   */
+  useEffect(() => {
+    // Cancelar timer anterior si existe
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    const q = _normalizarBusqueda(busqueda);
+
+    // Si no hay búsqueda, volvemos a listar todo automáticamente
+    if (!q) {
+      debounceRef.current = setTimeout(() => {
+        cargarPrimerPagina(null);
+      }, 200); // rápido para sentir reset inmediato
+      return () => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+      };
+    }
+
+    // Si hay búsqueda, debounce para no spamear backend
+    debounceRef.current = setTimeout(() => {
+      cargarPrimerPagina(q);
+    }, 350);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busqueda]);
 
   /**
    * irAPerfilComercio
@@ -124,9 +187,20 @@ export default function ExplorarPage() {
     navigate(`/comercios/${comercioId}`);
   }
 
+  const qUI = _normalizarBusqueda(busqueda);
+  const modoIAActivo = _usarModoIA(qUI);
+
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-xl font-semibold">Explorar</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold">Explorar</h1>
+
+        {modoIAActivo ? (
+          <span className="text-xs rounded-full border px-3 py-1">
+            ✨ Modo IA
+          </span>
+        ) : null}
+      </div>
 
       <form onSubmit={handleBuscar} className="flex gap-2">
         <input
@@ -139,6 +213,7 @@ export default function ExplorarPage() {
           type="submit"
           disabled={cargando}
           className="rounded-xl px-4 py-2 border"
+          title="Opcional: también podés escribir y buscar automático"
         >
           Buscar
         </button>
@@ -164,7 +239,6 @@ export default function ExplorarPage() {
             className="w-full text-left rounded-2xl border p-3 hover:bg-black/5"
           >
             <div className="flex items-start gap-3">
-              {/* Portada (si existe) */}
               {c.portada_url ? (
                 <img
                   src={c.portada_url}

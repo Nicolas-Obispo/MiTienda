@@ -3375,3 +3375,30 @@ RESULTADO
 - Avatar y portadas se cargan con imágenes reales desde UI.
 - Persistencia real en BD y filesystem.
 - Arquitectura respetada (frontend no inventa estado: sube media, guarda URL, y refresca desde backend donde corresponde).
+
+## ETAPA 50 — IA v1 (Búsqueda Inteligente MVP) ✅ CIERRE REAL
+
+**Objetivo:** Mejorar la relevancia de resultados en Explorar sin usar API externa y sin romper el endpoint existente.
+
+### Backend
+- Se extendió `GET /comercios/activos` con query param opcional `smart=true|false`.
+- `smart=false` (default): mantiene el orden inteligente existente (historias/publicaciones primero, luego más nuevos).
+- `smart=true`: ranking inteligente keyword (IA v1 rule-based) por score ponderado usando:
+  - nombre / descripción / (rubro si existe) / ciudad / provincia
+  - bonus por señales reales (historias/publicaciones)
+  - orden final: score DESC, luego id DESC
+- Paginado MVP en modo smart: ventana ampliada + ranking en Python + slice por offset/limit.
+
+**Archivos:**
+- `backend/app/routers/comercios_routers.py`
+- `backend/app/services/comercios_services.py`
+
+### Frontend
+- Explorar activa `smart=true` automáticamente cuando hay búsqueda real (q).
+- Se agregó indicador visible: **✨ Modo IA** (solo cuando hay búsqueda).
+- UX mejorada: búsqueda automática mientras escribe (debounce) + reset automático al borrar input.
+
+**Archivos:**
+- `frontend/src/pages/ExplorarPage.jsx`
+- `frontend/src/services/comercios_service.js`
+

@@ -8,6 +8,10 @@ Este router:
 - Usa JWT existente
 - Llama a services
 - NO contiene lógica de negocio
+
+ETAPA 50 (IA v1 - MVP):
+- Se agrega modo de búsqueda "smart" (ranking inteligente basado en keywords)
+- El router SOLO expone el flag y delega todo al service
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -83,23 +87,35 @@ def listar_comercios_endpoint(
 
 
 # ============================================================
-# Explorar comercios (público) - ETAPA 48
+# Explorar comercios (público) - ETAPA 48 + ETAPA 50 (smart)
 # ============================================================
 
 @router.get("/activos", response_model=list[ComercioResponse])
 def listar_comercios_activos_endpoint(
-    q: str | None = Query(default=None, description="Búsqueda por nombre (contiene)"),
+    q: str | None = Query(
+        default=None,
+        description="Búsqueda por nombre (contiene). En modo smart, se usa como query base para ranking."
+    ),
+    smart: bool = Query(
+        default=False,
+        description="Si true, aplica ranking inteligente (IA v1 keyword) en el orden de resultados."
+    ),
     limit: int = Query(default=20, ge=1, le=100, description="Tamaño de página (1..100)"),
     offset: int = Query(default=0, ge=0, description="Offset para paginado"),
     db: Session = Depends(get_db),
 ):
     """
     Endpoint público para pantalla Explorar.
+
     - Devuelve SOLO comercios activos
-    - Soporta búsqueda simple por nombre (q)
+    - Soporta búsqueda por q
     - Soporta paginado (limit/offset)
+
+    ETAPA 50:
+    - smart=false (default): comportamiento clásico (orden actual del service)
+    - smart=true: ordenado por score (ranking inteligente basado en keywords)
     """
-    return listar_comercios_activos(db, q=q, limit=limit, offset=offset)
+    return listar_comercios_activos(db, q=q, smart=smart, limit=limit, offset=offset)
 
 
 # ============================================================
