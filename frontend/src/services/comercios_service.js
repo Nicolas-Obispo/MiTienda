@@ -3,6 +3,7 @@
  * --------------------
  * ETAPA 40 — Perfil de comercio
  * ETAPA 45 — Admin (mis comercios)
+ * ETAPA 48 — Explorar (comercios activos)
  *
  * Responsabilidad:
  * - Llamadas HTTP relacionadas a comercios y su perfil
@@ -15,7 +16,12 @@
  * ETAPA 45 (admin):
  * - GET /comercios/mis
  * - POST /comercios
+ * - PUT /comercios/{comercio_id}
  * - DELETE /comercios/{comercio_id}
+ * - POST /comercios/{comercio_id}/reactivar
+ *
+ * ETAPA 48 (explorar):
+ * - GET /comercios/activos?q=&limit=&offset=
  */
 
 import { httpGet, httpPost, httpDelete, httpPut } from "./http_service";
@@ -45,6 +51,50 @@ export async function getPublicacionesDeComercio(comercioId) {
 export async function getHistoriasDeComercio(comercioId) {
   if (!comercioId) throw new Error("comercioId es requerido");
   return httpGet(`/historias/comercios/${comercioId}`);
+}
+
+/**
+ * listarComerciosActivos
+ * ----------------------
+ * ETAPA 48
+ * Lista comercios activos para pantalla Explorar (público).
+ *
+ * NO requiere JWT.
+ * Endpoint: GET /comercios/activos?q=&limit=&offset=
+ */
+export async function listarComerciosActivos({
+  q = null,
+  limit = 20,
+  offset = 0,
+} = {}) {
+  // Validaciones defensivas (MVP)
+  if (limit === null || limit === undefined) throw new Error("limit es requerido");
+  if (offset === null || offset === undefined) throw new Error("offset es requerido");
+
+  const limitNumber = Number(limit);
+  const offsetNumber = Number(offset);
+
+  if (Number.isNaN(limitNumber) || limitNumber < 1) {
+    throw new Error("limit debe ser un número >= 1");
+  }
+
+  if (Number.isNaN(offsetNumber) || offsetNumber < 0) {
+    throw new Error("offset debe ser un número >= 0");
+  }
+
+  const params = new URLSearchParams();
+  params.set("limit", String(limitNumber));
+  params.set("offset", String(offsetNumber));
+
+  if (q !== null && q !== undefined) {
+    const qNormalizada = String(q).trim();
+    if (qNormalizada.length > 0) {
+      params.set("q", qNormalizada);
+    }
+  }
+
+  const queryString = params.toString();
+  return httpGet(`/comercios/activos?${queryString}`);
 }
 
 /**

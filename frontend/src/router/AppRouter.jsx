@@ -9,6 +9,7 @@ import FeedPage from "../pages/FeedPage";
 import RankingPage from "../pages/RankingPage";
 import ProfilePage from "../pages/ProfilePage";
 import PerfilComercioPage from "../pages/PerfilComercioPage";
+import ExplorarPage from "../pages/ExplorarPage"; // ETAPA 48
 
 // Layout
 import MainLayout from "../layouts/MainLayout";
@@ -40,7 +41,7 @@ function getStoredToken() {
     }
   } catch (_) {}
 
-  // sessionStorage (por si tu implementación lo usa)
+  // sessionStorage
   try {
     for (const k of keys) {
       const v = window?.sessionStorage?.getItem(k);
@@ -53,10 +54,6 @@ function getStoredToken() {
 
 /**
  * getIsAuthenticated
- * Unifica el criterio:
- * - Si el contexto ya sabe (estaAutenticado boolean), usamos eso.
- * - Si NO está listo todavía, usamos token desde el contexto.
- * - Si el contexto todavía no cargó nada, usamos token desde storage.
  */
 function getIsAuthenticated(auth) {
   if (typeof auth?.estaAutenticado === "boolean") return auth.estaAutenticado;
@@ -126,6 +123,18 @@ export default function AppRouter() {
             element={
               <ProtectedRoute>
                 <RankingPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ============================= */}
+          {/* ETAPA 48 — EXPLORAR */}
+          {/* ============================= */}
+          <Route
+            path="/explorar"
+            element={
+              <ProtectedRoute>
+                <ExplorarPage />
               </ProtectedRoute>
             }
           />

@@ -72,7 +72,7 @@ def obtener_comercio_por_id(
 
 
 # ============================================================
-# Listar comercios activos
+# Listar comercios activos (existente: con filtros ciudad/rubro)
 # ============================================================
 
 def listar_comercios(
@@ -87,6 +87,42 @@ def listar_comercios(
 
     if rubro_id:
         query = query.filter(Comercio.rubro_id == rubro_id)
+
+    return query.all()
+
+
+# ============================================================
+# Listar comercios activos (ETAPA 48: Explorar)
+# ============================================================
+
+def listar_comercios_activos(
+    db: Session,
+    q: str | None = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> list[Comercio]:
+    """
+    Lista comercios activos para pantalla Explorar.
+
+    Reglas:
+    - Solo activo=True
+    - Búsqueda simple por nombre (contiene, case-insensitive)
+    - Paginado por limit/offset
+    """
+
+    query = db.query(Comercio).filter(Comercio.activo == True)
+
+    # Búsqueda MVP: por nombre
+    if q:
+        q_normalizada = q.strip()
+        if q_normalizada:
+            query = query.filter(Comercio.nombre.ilike(f"%{q_normalizada}%"))
+
+    # Orden estable: más nuevos primero
+    query = query.order_by(Comercio.id.desc())
+
+    # Paginado
+    query = query.offset(offset).limit(limit)
 
     return query.all()
 

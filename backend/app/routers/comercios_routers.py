@@ -10,7 +10,7 @@ Este router:
 - NO contiene lógica de negocio
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 # DB
@@ -33,6 +33,7 @@ from app.schemas.comercios_schemas import (
 from app.services.comercios_services import (
     crear_comercio,
     listar_comercios,
+    listar_comercios_activos,
     obtener_comercio_por_id,
     actualizar_comercio,
     desactivar_comercio,
@@ -82,6 +83,26 @@ def listar_comercios_endpoint(
 
 
 # ============================================================
+# Explorar comercios (público) - ETAPA 48
+# ============================================================
+
+@router.get("/activos", response_model=list[ComercioResponse])
+def listar_comercios_activos_endpoint(
+    q: str | None = Query(default=None, description="Búsqueda por nombre (contiene)"),
+    limit: int = Query(default=20, ge=1, le=100, description="Tamaño de página (1..100)"),
+    offset: int = Query(default=0, ge=0, description="Offset para paginado"),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint público para pantalla Explorar.
+    - Devuelve SOLO comercios activos
+    - Soporta búsqueda simple por nombre (q)
+    - Soporta paginado (limit/offset)
+    """
+    return listar_comercios_activos(db, q=q, limit=limit, offset=offset)
+
+
+# ============================================================
 # Mis comercios (del usuario logueado)
 # ============================================================
 @router.get("/mis", response_model=list[ComercioResponse])
@@ -104,7 +125,6 @@ def listar_mis_comercios_endpoint(
     )
 
     return comercios
-
 
 
 # ============================================================
@@ -180,6 +200,7 @@ def desactivar_comercio_endpoint(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(e)
         )
+
 
 # ============================================================
 # Reactivar comercio

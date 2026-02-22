@@ -7,7 +7,7 @@ import { useAuth } from "../context/useAuth";
  * Layout principal (UI + navegación).
  *
  * - Sin sesión: Inicio | Login
- * - Con sesión: Inicio | Feed | Ranking | Perfil | Cerrar sesión
+ * - Con sesión: Inicio | Feed | Ranking | Explorar | Perfil | Cerrar sesión
  * - ✅ Muestra quién está logueado:
  *    - email (si existe)
  *    - sino ID (si existe)
@@ -76,6 +76,14 @@ export default function MainLayout() {
                   className="text-gray-300 hover:text-white hover:underline"
                 >
                   Ranking
+                </Link>
+
+                {/* ETAPA 48 — Explorar */}
+                <Link
+                  to="/explorar"
+                  className="text-gray-300 hover:text-white hover:underline"
+                >
+                  Explorar
                 </Link>
 
                 <Link

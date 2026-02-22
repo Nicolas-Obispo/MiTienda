@@ -3253,3 +3253,85 @@ Se mantiene arquitectura actual.
 Resultado:
 Sistema consistente.
 Etapa cerrada sin modificaciones estructurales.
+
+
+## ETAPA 48 — Explorar Comercios (Discovery)
+
+Tipo: Nueva funcionalidad estructural (backend + frontend)  
+Estado: CIERRE REAL  
+
+OBJETIVO
+
+Agregar una pantalla "Explorar" que permita:
+
+1) Listar comercios activos aunque no tengan publicaciones.  
+2) Permitir búsqueda simple por nombre.  
+3) Permitir navegación directa al perfil del comercio.  
+
+Sin modificar el comportamiento del Feed ni de la HistoriasBar.
+
+
+IMPLEMENTACIÓN REALIZADA
+
+BACKEND
+
+Nuevo endpoint público:
+
+GET /comercios/activos?q=&limit=&offset=
+
+Características:
+- Devuelve SOLO comercios con activo = True.
+- Búsqueda simple por nombre (ilike, contiene).
+- Paginado por limit y offset.
+- No requiere JWT.
+- No altera comportamiento de /comercios existente.
+
+Service agregado:
+- listar_comercios_activos(...) en comercios_services.py
+
+
+FRONTEND
+
+Nueva página:
+- ExplorarPage.jsx
+
+Nueva ruta protegida:
+- /explorar
+
+Nueva opción en menú principal:
+- Link “Explorar” agregado en MainLayout.jsx
+
+Nuevo service:
+- listarComerciosActivos() en comercios_service.js
+  - Consume GET /comercios/activos
+  - Construye query params (q, limit, offset)
+  - No requiere token
+
+Comportamiento:
+- Carga inicial sin filtro.
+- Búsqueda resetea paginado.
+- Botón “Cargar más” implementa paginado incremental.
+- Navegación a PerfilComercioPage funcional.
+
+
+ANÁLISIS ARQUITECTÓNICO
+
+- No se modifica Feed.
+- No se modifica Ranking.
+- No se modifica HistoriasBar.
+- No se altera lógica de autenticación.
+- No se rompe arquitectura por capas.
+- El frontend no inventa estado.
+- Toda la lógica de filtrado y paginado se resuelve en backend.
+
+
+DECISIÓN
+
+Se agrega capacidad de discovery independiente del Feed.
+Se mantiene consistencia con ETAPA 47.
+No se altera comportamiento previo del sistema.
+
+Resultado:
+Explorar funciona como módulo autónomo.
+Arquitectura estable.
+Etapa cerrada con cambios estructurales controlados.
