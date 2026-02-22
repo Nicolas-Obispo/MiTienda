@@ -94,11 +94,15 @@ def listar_comercios_endpoint(
 def listar_comercios_activos_endpoint(
     q: str | None = Query(
         default=None,
-        description="Búsqueda por nombre (contiene). En modo smart, se usa como query base para ranking."
+        description="Búsqueda por nombre (contiene). En modo smart o semantic, se usa como query base para ranking."
     ),
     smart: bool = Query(
         default=False,
         description="Si true, aplica ranking inteligente (IA v1 keyword) en el orden de resultados."
+    ),
+    smart_semantic: bool = Query(
+        default=False,
+        description="Si true, aplica ranking semántico (IA v2 embeddings) en el orden de resultados."
     ),
     limit: int = Query(default=20, ge=1, le=100, description="Tamaño de página (1..100)"),
     offset: int = Query(default=0, ge=0, description="Offset para paginado"),
@@ -112,10 +116,21 @@ def listar_comercios_activos_endpoint(
     - Soporta paginado (limit/offset)
 
     ETAPA 50:
-    - smart=false (default): comportamiento clásico (orden actual del service)
-    - smart=true: ordenado por score (ranking inteligente basado en keywords)
+    - smart=false (default): comportamiento clásico
+    - smart=true: ranking IA v1 (keyword)
+
+    ETAPA 51:
+    - smart_semantic=true: ranking IA v2 (embeddings)
     """
-    return listar_comercios_activos(db, q=q, smart=smart, limit=limit, offset=offset)
+
+    return listar_comercios_activos(
+        db,
+        q=q,
+        smart=smart,
+        smart_semantic=smart_semantic,
+        limit=limit,
+        offset=offset
+    )
 
 
 # ============================================================

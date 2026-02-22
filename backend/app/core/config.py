@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
+    # --------------------------
+    # 🤖 Configuración IA
+    # --------------------------
+    EMBEDDINGS_PROVIDER: str = "simulated"
+
     class Config:
         env_file = ".env"
 

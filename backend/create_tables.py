@@ -24,6 +24,7 @@ from app.models.rubros_models import Rubro
 from app.models.secciones_models import Seccion
 from app.models.historias_models import Historia
 from app.models.historias_vistas_models import HistoriaVista  # ← ETAPA 43
+from app.models.comercios_embeddings_models import ComercioEmbedding  # ← ETAPA 51
 
 print("Creando tablas...")
 Base.metadata.create_all(bind=engine)

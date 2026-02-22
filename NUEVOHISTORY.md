@@ -3402,3 +3402,200 @@ RESULTADO
 - `frontend/src/pages/ExplorarPage.jsx`
 - `frontend/src/services/comercios_service.js`
 
+# NUEVOHISTORY.md
+# Historial oficial del proyecto MiTienda / MiPlaza
+# Backend FastAPI + Frontend React
+# Arquitectura por capas estricta
+# Estado sincronizado por etapas cerradas
+
+================================================================================
+ETAPA 51 — IA v2 (Embeddings Semánticos + Arquitectura Reutilizable) ✅ CIERRE REAL
+================================================================================
+
+Fecha: 2026-02-22
+
+OBJETIVO
+Implementar búsqueda semántica basada en embeddings,
+sin depender de API externa obligatoria,
+y diseñar una arquitectura IA desacoplada y reutilizable.
+
+-------------------------------------------------------------------------------
+ARQUITECTURA IA (NUEVA CAPA)
+-------------------------------------------------------------------------------
+
+Se crea nueva capa técnica reusable:
+
+backend/app/ai/
+
+Componentes:
+
+- embedding_provider.py
+  → Interfaz abstracta EmbeddingProvider.
+  → Define método embed_text(text: str) -> List[float].
+
+- providers/simulated_provider.py
+  → SimulatedEmbeddingProvider.
+  → 0 dependencias externas.
+  → Genera vectores determinísticos por hashing (sha256).
+  → Permite validar arquitectura sin costo.
+
+- embedding_factory.py
+  → get_embedding_provider()
+  → Lee settings.EMBEDDINGS_PROVIDER
+  → Devuelve provider activo (default: "simulated")
+
+CONFIGURACIÓN GLOBAL
+
+Se agrega en config.py:
+
+    EMBEDDINGS_PROVIDER: str = "simulated"
+
+Permite cambiar motor IA desde .env sin tocar código:
+
+    EMBEDDINGS_PROVIDER=local
+    EMBEDDINGS_PROVIDER=openai
+    EMBEDDINGS_PROVIDER=remote
+
+-------------------------------------------------------------------------------
+PERSISTENCIA DE EMBEDDINGS
+-------------------------------------------------------------------------------
+
+Nueva tabla:
+
+    comercios_embeddings
+
+Estructura:
+
+- id (PK)
+- comercio_id (FK UNIQUE)
+- vector (TEXT JSON serializado)
+- model_version (int)
+- created_at
+- updated_at
+
+Relación 1 a 1:
+
+    Comercio.embedding
+
+Service nuevo:
+
+backend/app/services/comercios_embeddings_services.py
+
+Funciones principales:
+
+- upsert_embedding_comercio()
+- obtener_embedding_comercio()
+- obtener_vector_embedding_comercio()
+
+Regla:
+
+- Se genera/actualiza embedding automáticamente
+  al crear o editar comercio.
+
+-------------------------------------------------------------------------------
+EXPLORAR — IA v2 (Ranking Semántico)
+-------------------------------------------------------------------------------
+
+Endpoint extendido:
+
+GET /comercios/activos
+
+Nuevo flag:
+
+    smart_semantic=true
+
+Modos disponibles:
+
+1) Clásico
+   smart=false, smart_semantic=false
+
+2) IA v1 keyword
+   smart=true
+
+3) IA v2 semantic
+   smart_semantic=true
+
+Implementación:
+
+- Embedding de la query
+- Similaridad coseno contra embeddings persistidos
+- Ranking por similitud DESC + id DESC
+- Paginado sobre ranking final
+
+Mantiene compatibilidad total con IA v1.
+
+-------------------------------------------------------------------------------
+ARCHIVOS NUEVOS
+-------------------------------------------------------------------------------
+
+backend/app/models/comercios_embeddings_models.py
+backend/app/ai/embedding_provider.py
+backend/app/ai/embedding_factory.py
+backend/app/ai/providers/simulated_provider.py
+backend/app/services/comercios_embeddings_services.py
+
+-------------------------------------------------------------------------------
+ARCHIVOS MODIFICADOS
+-------------------------------------------------------------------------------
+
+backend/app/models/comercios_models.py
+backend/create_tables.py
+backend/app/core/config.py
+backend/app/services/comercios_services.py
+backend/app/routers/comercios_routers.py
+
+-------------------------------------------------------------------------------
+TESTS REALIZADOS
+-------------------------------------------------------------------------------
+
+✔ Tabla creada correctamente
+✔ Relación 1 a 1 validada (sin duplicados)
+✔ Embedding generado al crear comercio
+✔ Embedding actualizado al editar comercio
+✔ Endpoint responde 200 en:
+
+    /activos
+    /activos?smart=true
+    /activos?smart_semantic=true
+
+✔ Arquitectura desacoplada validada
+
+-------------------------------------------------------------------------------
+ESTADO FINAL ETAPA 51
+-------------------------------------------------------------------------------
+
+✔ Persistencia real de embeddings
+✔ Arquitectura IA pluggable
+✔ Ranking semántico funcional (provider simulated)
+✔ Sin dependencia obligatoria de OpenAI
+✔ Sin romper IA v1 ni comportamiento clásico
+✔ Listo para escalar a provider LOCAL / OPENAI / REMOTE
+
+================================================================================
+PRÓXIMA ETAPA — ETAPA 52
+================================================================================
+
+OBJETIVO A — Activar provider LOCAL real (modelo open-source)
+
+- Implementar LocalEmbeddingProvider
+- Mantener Simulated como fallback
+- Switch por .env sin romper arquitectura
+- Sin dependencia obligatoria externa
+
+OBJETIVO B — Ranking híbrido
+
+Combinar:
+
+- Similaridad embeddings (semantic)
+- Señales reales:
+  - historias activas
+  - publicaciones
+  - likes
+  - guardados
+
+Todo resuelto en backend.
+Frontend solo renderiza.
+
+================================================================================
+FIN ETAPA 51
+================================================================================

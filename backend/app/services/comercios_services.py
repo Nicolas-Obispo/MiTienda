@@ -17,14 +17,20 @@ ETAPA 50 (IA v1 - MVP):
 
 from __future__ import annotations
 
+import json
+import math
+
 from sqlalchemy import case, or_
 from sqlalchemy.orm import Session
+
+from app.models.comercios_embeddings_models import ComercioEmbedding
 
 from app.models.comercios_models import Comercio
 from app.models.historias_models import Historia
 from app.models.publicaciones_models import Publicacion
 from app.models.usuarios_models import Usuario
 from app.schemas.comercios_schemas import ComercioCreate, ComercioUpdate
+from app.services.comercios_embeddings_services import upsert_embedding_comercio
 
 
 # ============================================================
@@ -126,6 +132,36 @@ def _calcular_score_comercio(
 
     return score
 
+# ============================================================
+# Helpers internos (ETAPA 51 - similitud embeddings)
+# ============================================================
+
+def _cosine_similarity(a: list[float], b: list[float]) -> float:
+    """
+    Similaridad coseno entre dos vectores.
+
+    - Devuelve valor en [-1..1]
+    - Si algún vector es nulo/degenerado, devuelve -1 para mandarlo al final
+    """
+    if not a or not b:
+        return -1.0
+
+    if len(a) != len(b):
+        return -1.0
+
+    dot = 0.0
+    na = 0.0
+    nb = 0.0
+
+    for i in range(len(a)):
+        dot += a[i] * b[i]
+        na += a[i] * a[i]
+        nb += b[i] * b[i]
+
+    if na <= 0.0 or nb <= 0.0:
+        return -1.0
+
+    return dot / (math.sqrt(na) * math.sqrt(nb))
 
 # ============================================================
 # Crear comercio
@@ -163,6 +199,7 @@ def crear_comercio(
     db.add(comercio)
     db.commit()
     db.refresh(comercio)
+    upsert_embedding_comercio(db=db, comercio=comercio)
 
     return comercio
 
@@ -206,10 +243,74 @@ def listar_comercios(
 # Listar comercios activos (ETAPA 48: Explorar) + ETAPA 49 + ETAPA 50 (smart)
 # ============================================================
 
+    # ============================================================
+    # SEMANTIC MODE (ETAPA 51) - embeddings
+    # ============================================================
+    # Si smart_semantic=True pero no hay query real, no tiene sentido rankear por embeddings.
+    # En ese caso, volvemos al modo clásico para mantener UX estable.
+    if smart_semantic and q_normalizada:
+        # Import local para evitar acoplar imports globales si mañana cambiamos providers
+        from app.ai.embedding_factory import get_embedding_provider
+
+        provider = get_embedding_provider()
+
+        # Embedding de la query
+        query_texto = _normalizar_texto(q_normalizada)
+        query_vector = provider.embed_text(query_texto)
+
+        # Ventana de candidatos (MVP): trae recientes y rankea por similitud
+        fetch_size = (offset + limit) * 5
+        if fetch_size < 50:
+            fetch_size = 50
+        if fetch_size > 500:
+            fetch_size = 500
+
+        candidatos: list[Comercio] = (
+            query
+            .order_by(Comercio.id.desc())
+            .limit(fetch_size)
+            .all()
+        )
+
+        if not candidatos:
+            return []
+
+        comercio_ids = [c.id for c in candidatos]
+
+        # Traemos embeddings en batch (1 query)
+        rows = (
+            db.query(ComercioEmbedding.comercio_id, ComercioEmbedding.vector)
+            .filter(ComercioEmbedding.comercio_id.in_(comercio_ids))
+            .all()
+        )
+
+        embeddings_map: dict[int, list[float]] = {}
+        for comercio_id, vector_str in rows:
+            try:
+                embeddings_map[comercio_id] = json.loads(vector_str)
+            except Exception:
+                # Si hay vector corrupto, lo ignoramos (queda al final)
+                continue
+
+        # Scoring por similitud coseno
+        scored: list[tuple[float, int, Comercio]] = []
+        for c in candidatos:
+            vec = embeddings_map.get(c.id)
+            sim = _cosine_similarity(query_vector, vec) if vec else -1.0
+            scored.append((sim, c.id, c))
+
+        # Orden: similitud DESC, id DESC
+        scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+
+        # Paginado sobre ranking final
+        pagina = scored[offset: offset + limit]
+        return [item[2] for item in pagina]
+
 def listar_comercios_activos(
     db: Session,
     q: str | None = None,
     smart: bool = False,
+    smart_semantic: bool = False,
     limit: int = 20,
     offset: int = 0,
 ) -> list[Comercio]:
@@ -395,6 +496,7 @@ def actualizar_comercio(
 
     db.commit()
     db.refresh(comercio)
+    upsert_embedding_comercio(db=db, comercio=comercio)
 
     return comercio
 

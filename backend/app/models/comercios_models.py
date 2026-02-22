@@ -107,3 +107,13 @@ class Comercio(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+    # -------------------------
+    # Embedding IA (1 a 1)
+    # -------------------------
+    embedding = relationship(
+        "ComercioEmbedding",
+        back_populates="comercio",
+        uselist=False,
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
