@@ -34,31 +34,77 @@ def _build_texto_comercio(comercio: Comercio) -> str:
     """
     Construye un texto representativo del comercio para embeddings.
 
-    Regla:
+    Reglas:
     - No depende del motor IA (solo arma texto)
-    - Mantener estable para evitar cambios bruscos en embeddings
+    - Mantener estructura estable para evitar cambios bruscos en embeddings
+    - Usar etiquetas semánticas simples para dar más contexto al modelo
     """
     partes: List[str] = []
 
-    # Datos principales
-    if getattr(comercio, "nombre", None):
-        partes.append(str(comercio.nombre))
-    if getattr(comercio, "descripcion", None):
-        partes.append(str(comercio.descripcion))
+    nombre = str(getattr(comercio, "nombre", "") or "").strip()
+    descripcion = str(getattr(comercio, "descripcion", "") or "").strip()
+    ciudad = str(getattr(comercio, "ciudad", "") or "").strip()
+    provincia = str(getattr(comercio, "provincia", "") or "").strip()
+    direccion = str(getattr(comercio, "direccion", "") or "").strip()
 
-    # Ubicación
-    if getattr(comercio, "ciudad", None):
-        partes.append(str(comercio.ciudad))
-    if getattr(comercio, "provincia", None):
-        partes.append(str(comercio.provincia))
-
-    # Rubro (si existe relación)
+    rubro_nombre = ""
     rubro_obj = getattr(comercio, "rubro", None)
     if rubro_obj is not None and getattr(rubro_obj, "nombre", None):
-        partes.append(str(rubro_obj.nombre))
+        rubro_nombre = str(rubro_obj.nombre).strip()
 
-    # Unificamos en un solo texto
-    return " | ".join([p.strip() for p in partes if p and p.strip()])
+    # ---------------------------
+    # Identidad principal
+    # ---------------------------
+    if nombre:
+        partes.append(f"nombre del comercio: {nombre}")
+
+    if rubro_nombre:
+        partes.append(f"rubro del comercio: {rubro_nombre}")
+
+    if descripcion:
+        partes.append(f"descripción del comercio: {descripcion}")
+
+    # ---------------------------
+    # Ubicación
+    # ---------------------------
+    if ciudad:
+        partes.append(f"ciudad: {ciudad}")
+
+    if provincia:
+        partes.append(f"provincia: {provincia}")
+
+    if direccion:
+        partes.append(f"dirección: {direccion}")
+
+    # ---------------------------
+    # Texto resumen adicional
+    # ---------------------------
+    resumen_partes: List[str] = []
+
+    if nombre:
+        resumen_partes.append(nombre)
+
+    if rubro_nombre:
+        resumen_partes.append(f"es un comercio del rubro {rubro_nombre}")
+
+    if descripcion:
+        resumen_partes.append(descripcion)
+
+    if ciudad and provincia:
+        resumen_partes.append(f"ubicado en {ciudad}, {provincia}")
+    elif ciudad:
+        resumen_partes.append(f"ubicado en {ciudad}")
+    elif provincia:
+        resumen_partes.append(f"ubicado en {provincia}")
+
+    if direccion:
+        resumen_partes.append(f"dirección {direccion}")
+
+    if resumen_partes:
+        partes.append("resumen: " + ". ".join(resumen_partes))
+
+    # Unificamos en un solo texto estable
+    return " | ".join([p for p in partes if p])
 
 
 def _serializar_vector(vector: List[float]) -> str:

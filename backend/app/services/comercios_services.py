@@ -13,6 +13,10 @@ ETAPA 50 (IA v1 - MVP):
 - Se agrega modo "smart" para /comercios/activos:
   - smart=False: mantiene el orden inteligente existente (historias/publicaciones)
   - smart=True: aplica ranking keyword (score) SIN IA externa, y pagina sobre ese ranking
+
+ETAPA 53.1:
+- Se mejora smart_semantic=True para que rankee sobre un pool amplio de comercios activos
+  sin depender del filtro previo por nombre.
 """
 
 from __future__ import annotations
@@ -24,7 +28,6 @@ from sqlalchemy import case, or_
 from sqlalchemy.orm import Session
 
 from app.models.comercios_embeddings_models import ComercioEmbedding
-
 from app.models.comercios_models import Comercio
 from app.models.historias_models import Historia
 from app.models.publicaciones_models import Publicacion
@@ -132,6 +135,7 @@ def _calcular_score_comercio(
 
     return score
 
+
 # ============================================================
 # Helpers internos (ETAPA 51 - similitud embeddings)
 # ============================================================
@@ -162,6 +166,7 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
         return -1.0
 
     return dot / (math.sqrt(na) * math.sqrt(nb))
+
 
 # ============================================================
 # Crear comercio
@@ -241,15 +246,64 @@ def listar_comercios(
 
 # ============================================================
 # Listar comercios activos (ETAPA 48: Explorar) + ETAPA 49 + ETAPA 50 (smart)
+# + ETAPA 53.1 (smart_semantic sin filtro previo por nombre)
 # ============================================================
 
+def listar_comercios_activos(
+    db: Session,
+    q: str | None = None,
+    smart: bool = False,
+    smart_semantic: bool = False,
+    limit: int = 20,
+    offset: int = 0,
+) -> list[Comercio]:
+    """
+    Lista comercios activos para pantalla Explorar.
+
+    Reglas base:
+    - Solo activo=True
+    - Soporta q (búsqueda)
+    - Soporta paginado (limit/offset)
+
+    Modo clásico (smart=False) - mantiene ETAPA 49:
+        1) Comercios con historias primero
+        2) Luego comercios con publicaciones
+        3) Luego el resto
+        4) Dentro de cada grupo: más nuevos primero (id desc)
+
+    Modo smart (smart=True) - ETAPA 50 (IA v1 keyword):
+        - Aplica ranking por score usando:
+          nombre + descripcion + rubro (si existe) + ciudad/provincia
+        - Bonus pequeño por señales reales (historias/publicaciones)
+        - Orden final: score DESC, luego id DESC
+        - Paginado se aplica sobre el ranking calculado (no sobre SQL directo)
+
+    Modo smart_semantic (ETAPA 53.1):
+        - Usa embeddings para rankear comercios activos
+        - NO depende del filtro previo por nombre
+        - Orden final: similitud DESC, luego id DESC
+        - Paginado se aplica sobre el ranking calculado
+
+    Nota MVP:
+    - "Con historias" = existe al menos 1 historia del comercio.
+    - "Con publicaciones" = existe al menos 1 publicación del comercio.
+    """
+
+    query = db.query(Comercio).filter(Comercio.activo == True)
+
+    # Normalizamos q (si viene vacía, tratamos como cadena vacía)
+    q_normalizada = ""
+    if q:
+        q_normalizada = q.strip()
+    if not q_normalizada:
+        q_normalizada = ""
+
     # ============================================================
-    # SEMANTIC MODE (ETAPA 51) - embeddings
+    # SEMANTIC MODE (ETAPA 53.2 - primer híbrido)
     # ============================================================
     # Si smart_semantic=True pero no hay query real, no tiene sentido rankear por embeddings.
     # En ese caso, volvemos al modo clásico para mantener UX estable.
     if smart_semantic and q_normalizada:
-        # Import local para evitar acoplar imports globales si mañana cambiamos providers
         from app.ai.embedding_factory import get_embedding_provider
 
         provider = get_embedding_provider()
@@ -258,7 +312,8 @@ def listar_comercios(
         query_texto = _normalizar_texto(q_normalizada)
         query_vector = provider.embed_text(query_texto)
 
-        # Ventana de candidatos (MVP): trae recientes y rankea por similitud
+        # NO filtramos por nombre:
+        # usamos un pool amplio de comercios activos y rankeamos por similitud.
         fetch_size = (offset + limit) * 5
         if fetch_size < 50:
             fetch_size = 50
@@ -292,62 +347,70 @@ def listar_comercios(
                 # Si hay vector corrupto, lo ignoramos (queda al final)
                 continue
 
-        # Scoring por similitud coseno
+        # Señales reales en batch para este pool
+        comercios_con_historias = set(
+            row[0] for row in (
+                db.query(Historia.comercio_id)
+                .filter(Historia.comercio_id.in_(comercio_ids))
+                .distinct()
+                .all()
+            )
+        )
+
+        comercios_con_publicaciones = set(
+            row[0] for row in (
+                db.query(Publicacion.comercio_id)
+                .filter(Publicacion.comercio_id.in_(comercio_ids))
+                .distinct()
+                .all()
+            )
+        )
+
+        # Tokens de la query para bonus simples
+        tokens = _tokenizar(query_texto)
+
+        # Scoring híbrido inicial:
+        # - similitud embeddings como base
+        # - bonus textual por nombre/descripcion
+        # - bonus pequeño por historias/publicaciones
         scored: list[tuple[float, int, Comercio]] = []
         for c in candidatos:
             vec = embeddings_map.get(c.id)
             sim = _cosine_similarity(query_vector, vec) if vec else -1.0
-            scored.append((sim, c.id, c))
 
-        # Orden: similitud DESC, id DESC
+            nombre = _normalizar_texto(getattr(c, "nombre", None))
+            descripcion = _normalizar_texto(getattr(c, "descripcion", None))
+
+            bonus_textual = 0.0
+
+            # Match fuerte de query completa
+            if query_texto and query_texto in nombre:
+                bonus_textual += 0.35
+            if query_texto and query_texto in descripcion:
+                bonus_textual += 0.20
+
+            # Match por tokens
+            for t in tokens:
+                if t in nombre:
+                    bonus_textual += 0.08
+                if t in descripcion:
+                    bonus_textual += 0.04
+
+            bonus_senales = 0.0
+            if c.id in comercios_con_historias:
+                bonus_senales += 0.03
+            if c.id in comercios_con_publicaciones:
+                bonus_senales += 0.02
+
+            score_total = sim + bonus_textual + bonus_senales
+            scored.append((score_total, c.id, c))
+
+        # Orden: score_total DESC, id DESC
         scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
 
         # Paginado sobre ranking final
         pagina = scored[offset: offset + limit]
         return [item[2] for item in pagina]
-
-def listar_comercios_activos(
-    db: Session,
-    q: str | None = None,
-    smart: bool = False,
-    smart_semantic: bool = False,
-    limit: int = 20,
-    offset: int = 0,
-) -> list[Comercio]:
-    """
-    Lista comercios activos para pantalla Explorar.
-
-    Reglas base:
-    - Solo activo=True
-    - Soporta q (búsqueda)
-    - Soporta paginado (limit/offset)
-
-    Modo clásico (smart=False) - mantiene ETAPA 49:
-        1) Comercios con historias primero
-        2) Luego comercios con publicaciones
-        3) Luego el resto
-        4) Dentro de cada grupo: más nuevos primero (id desc)
-
-    Modo smart (smart=True) - ETAPA 50 (IA v1 keyword):
-        - Aplica ranking por score usando:
-          nombre + descripcion + rubro (si existe) + ciudad/provincia
-        - Bonus pequeño por señales reales (historias/publicaciones)
-        - Orden final: score DESC, luego id DESC
-        - Paginado se aplica sobre el ranking calculado (no sobre SQL directo)
-
-    Nota MVP:
-    - "Con historias" = existe al menos 1 historia del comercio.
-    - "Con publicaciones" = existe al menos 1 publicación del comercio.
-    """
-
-    query = db.query(Comercio).filter(Comercio.activo == True)
-
-    # Normalizamos q (si viene vacía, tratamos como None)
-    q_normalizada = ""
-    if q:
-        q_normalizada = q.strip()
-    if not q_normalizada:
-        q_normalizada = ""
 
     # ============================================================
     # SMART MODE (ETAPA 50)

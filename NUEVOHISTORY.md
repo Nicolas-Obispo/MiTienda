@@ -3611,3 +3611,146 @@ Se implementa LocalEmbeddingProvider usando sentence-transformers
 - Preparado para futura extracción como microservicio.
 
 Estado: CIERRE REAL ETAPA 52.
+
+## ETAPA 53 — Mejora inicial de ranking semántico (IA v2 optimizada)
+
+### Estado: CIERRE PARCIAL VALIDADO
+
+Se realiza una mejora estructural sobre el ranking semántico introducido en ETAPA 51, manteniendo la arquitectura desacoplada de la capa de IA.
+
+---
+
+### 🔧 Cambios implementados
+
+#### 1. Eliminación de limitación por filtro textual (backend)
+
+En `comercios_services.py`:
+
+- El modo `smart_semantic=true` deja de depender del filtro previo por nombre (`ILIKE`)
+- Se pasa a trabajar sobre un pool amplio de comercios activos
+- Se mantiene paginado posterior al ranking
+
+Impacto:
+- Permite descubrimiento real (no condicionado por coincidencia textual)
+- Base necesaria para personalización futura
+
+---
+
+#### 2. Introducción de scoring híbrido inicial
+
+En el bloque semántico:
+
+Se agrega un score combinado:
+
+- Similaridad coseno (embeddings) → base principal
+- Bonus textual:
+  - match en nombre
+  - match en descripción
+  - tokens de query
+- Bonus por señales reales:
+  - historias
+  - publicaciones
+
+Impacto:
+- Mejora relevancia sin romper arquitectura
+- Primer paso hacia ranking híbrido completo (ETAPA futura)
+
+---
+
+#### 3. Mejora del texto de embedding
+
+En `comercios_embeddings_services.py`:
+
+Se reemplaza `_build_texto_comercio()` por una versión enriquecida.
+
+Incluye:
+
+- nombre
+- rubro
+- descripción
+- ciudad
+- provincia
+- dirección
+- resumen semántico estructurado
+
+Ejemplo conceptual:
+
+nombre del comercio: kiosco Cofler | rubro del comercio: ... | descripción del comercio: ... | ciudad: Rafaela | provincia: Santa Fe | resumen: ...
+
+Impacto:
+- Mejora calidad semántica del embedding
+- Reduce ambigüedad en consultas abstractas (ej: "chocolate")
+
+---
+
+#### 4. Regeneración de embeddings existentes
+
+Se crea script:
+
+`backend/regenerar_embeddings.py`
+
+Funciones:
+
+- recorre todos los comercios
+- recalcula embeddings con nueva estructura
+- persiste con upsert
+
+Se resuelve problema de imports SQLAlchemy mediante carga explícita de modelos.
+
+Impacto:
+- Los cambios de embedding se reflejan en resultados reales
+- Evita inconsistencias entre datos viejos y lógica nueva
+
+---
+
+### 🧪 Validación funcional
+
+Consulta:
+
+GET /comercios/activos?q=chocolate&smart_semantic=true
+
+Resultados:
+
+- Antes:
+  - ranking pobre o vacío
+  - fuerte dependencia de coincidencia textual
+
+- Después:
+  - resultados semánticos reales
+  - mejora en posicionamiento de comercios relevantes
+  - caso validado:
+    - "kiosco Cofler" sube significativamente en ranking
+
+---
+
+### ⚠️ Observaciones
+
+- El modelo de embeddings (all-MiniLM-L6-v2) es generalista
+- En datasets pequeños, puede priorizar similitudes no ideales
+- El ranking aún no incorpora lógica fuerte de negocio (ej: intención de compra)
+
+---
+
+### 🧭 Próximos pasos
+
+- Ajuste de pesos en scoring híbrido
+- Incorporación de señales de usuario (ETAPA 54)
+- Perfilado semántico por usuario
+- Feed personalizado real
+
+---
+
+### 📌 Conclusión
+
+ETAPA 53 establece la base para un ranking semántico real:
+
+- desacoplado
+- extensible
+- reutilizable
+
+Se valida el pipeline completo:
+
+query → embedding → similitud → ranking → respuesta
+
+Queda listo para evolucionar hacia personalización avanzada.
+
