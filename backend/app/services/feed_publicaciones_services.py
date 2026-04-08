@@ -2,9 +2,11 @@
 """
 Service: Feed personalizado de Publicaciones
 
-- Calcula likes_count y liked_by_me en la misma query (sin EXISTS -> evita auto-correlation)
-- Score:
+- Calcula likes_count y liked_by_me en la misma query
+- Score base:
   score = likes_count + (guardados_count * 2) + bonus_recencia
+- ETAPA 54:
+  si el usuario tiene embedding, suma bonus por afinidad semántica
 """
 
 from datetime import datetime, timedelta
@@ -20,6 +22,29 @@ from app.services.publicaciones_services import (
     obtener_guardados_count,
     obtener_interacciones_count,
 )
+from app.services.usuarios_embeddings_services import obtener_vector_usuario
+from app.services.comercios_embeddings_services import obtener_vector_embedding_comercio
+
+
+def _calcular_similitud_coseno(vector_a: list, vector_b: list) -> float:
+    """
+    Calcula similitud coseno entre dos vectores.
+    """
+
+    if not vector_a or not vector_b:
+        return 0.0
+
+    if len(vector_a) != len(vector_b):
+        return 0.0
+
+    producto_punto = sum(a * b for a, b in zip(vector_a, vector_b))
+    norma_a = sum(a * a for a in vector_a) ** 0.5
+    norma_b = sum(b * b for b in vector_b) ** 0.5
+
+    if norma_a == 0 or norma_b == 0:
+        return 0.0
+
+    return producto_punto / (norma_a * norma_b)
 
 
 def obtener_feed_publicaciones(
@@ -33,6 +58,11 @@ def obtener_feed_publicaciones(
 
     ahora = datetime.utcnow()
 
+    # Embedding del usuario (si existe)
+    vector_usuario = None
+    if usuario_id is not None:
+        vector_usuario = obtener_vector_usuario(db=db, usuario_id=usuario_id)
+
     # Bonus por recencia
     bonus_recencia = case(
         (Publicacion.created_at >= ahora - timedelta(days=1), 3),
@@ -41,11 +71,10 @@ def obtener_feed_publicaciones(
         else_=0,
     )
 
-    # likes_count por publicación (vía LEFT JOIN)
+    # likes_count por publicación
     likes_count_expr = func.count(LikePublicacion.id)
 
-    # liked_by_me sin EXISTS (anti auto-correlation):
-    # si usuario_id coincide con un like de esa publicación => 1, sino 0
+    # liked_by_me real
     if usuario_id is None:
         liked_by_me_expr = literal(False).label("liked_by_me")
     else:
@@ -89,15 +118,32 @@ def obtener_feed_publicaciones(
             db,
             publicacion_id=publicacion.id,
         )
-
-        # ✅ FIX: likes_count real en response
         publicacion.likes_count = likes_count_val
-
-        # ✅ liked_by_me real en response
         publicacion.liked_by_me = bool(liked_by_me_val)
 
+        # Score base
         score = likes_count_val + (guardados_count_val * 2) + bonus_recencia_val
-        publicaciones_con_score.append((publicacion, score))
+
+        # Bonus semántico por afinidad usuario <-> comercio de la publicación
+        bonus_afinidad = 0.0
+
+        if vector_usuario:
+            vector_comercio = obtener_vector_embedding_comercio(
+                db=db,
+                comercio_id=publicacion.comercio_id,
+            )
+
+            if vector_comercio:
+                similitud = _calcular_similitud_coseno(
+                    vector_usuario,
+                    vector_comercio,
+                )
+
+                # Escalamos la similitud para que impacte en el ranking
+                bonus_afinidad = similitud * 10
+
+        score_total = score + bonus_afinidad
+        publicaciones_con_score.append((publicacion, score_total))
 
     publicaciones_con_score.sort(
         key=lambda item: (item[1], item[0].created_at),

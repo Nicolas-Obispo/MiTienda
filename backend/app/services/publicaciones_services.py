@@ -147,3 +147,48 @@ def obtener_interacciones_count(
     )
 
     return likes_count + guardados_count
+
+def obtener_publicaciones_interactuadas_por_usuario(
+    db: Session,
+    *,
+    usuario_id: int,
+):
+    """
+    Devuelve las publicaciones con las que el usuario interactuó
+    (likes + guardados).
+    """
+
+    # IDs de publicaciones con like
+    likes_ids = (
+        db.query(LikePublicacion.publicacion_id)
+        .filter(LikePublicacion.usuario_id == usuario_id)
+        .all()
+    )
+
+    # IDs de publicaciones guardadas
+    guardados_ids = (
+        db.query(PublicacionGuardada.publicacion_id)
+        .filter(PublicacionGuardada.usuario_id == usuario_id)
+        .all()
+    )
+
+    # Convertimos a set para evitar duplicados
+    publicaciones_ids = set()
+
+    for (pid,) in likes_ids:
+        publicaciones_ids.add(pid)
+
+    for (pid,) in guardados_ids:
+        publicaciones_ids.add(pid)
+
+    if not publicaciones_ids:
+        return []
+
+    # Traemos las publicaciones completas
+    publicaciones = (
+        db.query(Publicacion)
+        .filter(Publicacion.id.in_(publicaciones_ids))
+        .all()
+    )
+
+    return publicaciones

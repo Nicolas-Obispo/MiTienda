@@ -13,6 +13,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.models.likes_publicaciones_models import LikePublicacion
+from app.services.usuarios_embeddings_services import regenerar_y_guardar_embedding_usuario
 
 
 def toggle_like_publicacion(
@@ -41,6 +42,13 @@ def toggle_like_publicacion(
     if like_existente:
         db.delete(like_existente)
         db.commit()
+
+        # Recalcular embedding del usuario luego de eliminar el like
+        regenerar_y_guardar_embedding_usuario(
+            db=db,
+            usuario_id=usuario_id,
+        )
+
         return False
 
     nuevo_like = LikePublicacion(
@@ -50,5 +58,11 @@ def toggle_like_publicacion(
 
     db.add(nuevo_like)
     db.commit()
+
+    # Recalcular embedding del usuario luego de crear el like
+    regenerar_y_guardar_embedding_usuario(
+        db=db,
+        usuario_id=usuario_id,
+    )
 
     return True

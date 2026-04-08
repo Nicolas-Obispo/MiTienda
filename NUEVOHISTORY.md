@@ -3754,3 +3754,91 @@ query → embedding → similitud → ranking → respuesta
 
 Queda listo para evolucionar hacia personalización avanzada.
 
+## 🚀 ETAPA 54 — Personalización por usuario (CIERRE REAL)
+
+### 🎯 Objetivo
+Incorporar personalización real del feed basada en comportamiento del usuario utilizando embeddings semánticos.
+
+---
+
+### 🧠 Implementación
+
+#### 1. Embeddings de usuario
+- Nueva tabla: `usuarios_embeddings`
+- Relación 1 a 1 con usuario
+- Persistencia de vector + model_version
+
+#### 2. Service de embeddings de usuario
+- `guardar_embedding_usuario`
+- `obtener_embedding_usuario`
+- `obtener_vector_usuario`
+- `generar_embedding_usuario`
+- `regenerar_y_guardar_embedding_usuario`
+
+#### 3. Generación del embedding
+- Basado en interacciones:
+  - likes
+  - guardados
+- Estrategia:
+  - promedio de embeddings de comercios asociados a publicaciones
+
+#### 4. Actualización automática
+Integrado en:
+- `likes_publicaciones_services`
+- `publicaciones_guardadas_services`
+
+Cada interacción:
+→ recalcula embedding del usuario
+→ persiste en BD
+
+#### 5. Integración en Feed
+Archivo:
+- `feed_publicaciones_services.py`
+
+Se agrega:
+
+- cálculo de similitud coseno
+- bonus por afinidad semántica:
+
+
+---
+
+### ✅ Resultado
+
+- Feed personalizado por usuario
+- Diferenciación real entre usuarios
+- Sistema de recomendación funcional
+- IA integrada al producto (no aislada)
+
+---
+
+### 🧪 Validación
+
+Se verificó:
+
+- Usuarios con distintos comportamientos reciben feeds distintos
+- Cambios en likes/guardados impactan en ranking
+- Embeddings se actualizan correctamente en BD
+
+---
+
+### 🧠 Estado de arquitectura
+
+- IA desacoplada (app/ai)
+- Dominio independiente
+- Sin vendor lock-in
+- Sistema extensible y portable
+
+---
+
+### 📌 Conclusión
+
+Se completa la transición de:
+
+❌ ranking global  
+➡️  
+✅ ranking personalizado dinámico
+
+---
+
+### 🔒 Commit sugerido

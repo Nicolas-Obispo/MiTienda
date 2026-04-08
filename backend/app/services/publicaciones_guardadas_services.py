@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.models.publicaciones_guardadas_models import PublicacionGuardada
 from app.models.publicaciones_models import Publicacion
+from app.services.usuarios_embeddings_services import regenerar_y_guardar_embedding_usuario
 
 
 def guardar_publicacion(
@@ -50,8 +51,13 @@ def guardar_publicacion(
         db.refresh(guardado)
     except IntegrityError:
         db.rollback()
-        # Se produce cuando el usuario intenta guardar la misma publicación dos veces
         raise ValueError("La publicación ya está guardada")
+
+    # Recalcular embedding del usuario
+    regenerar_y_guardar_embedding_usuario(
+        db=db,
+        usuario_id=usuario_id
+    )
 
     return guardado
 
@@ -79,6 +85,12 @@ def quitar_publicacion_guardada(
 
     db.delete(guardado)
     db.commit()
+
+    # Recalcular embedding del usuario
+    regenerar_y_guardar_embedding_usuario(
+        db=db,
+        usuario_id=usuario_id
+    )
 
 
 def listar_publicaciones_guardadas(
