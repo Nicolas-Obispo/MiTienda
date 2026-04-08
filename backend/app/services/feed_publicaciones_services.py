@@ -2,11 +2,10 @@
 """
 Service: Feed personalizado de Publicaciones
 
-- Calcula likes_count y liked_by_me en la misma query
-- Score base:
-  score = likes_count + (guardados_count * 2) + bonus_recencia
-- ETAPA 54:
-  si el usuario tiene embedding, suma bonus por afinidad semántica
+ETAPA 55 FINAL:
+- sin N+1 en guardados
+- sin N+1 en embeddings de comercios
+- cálculo eficiente en memoria
 """
 
 from datetime import datetime, timedelta
@@ -19,18 +18,16 @@ from app.models.publicaciones_models import Publicacion
 from app.models.likes_publicaciones_models import LikePublicacion
 
 from app.services.publicaciones_services import (
-    obtener_guardados_count,
-    obtener_interacciones_count,
+    obtener_guardados_count_por_publicaciones,
+    obtener_interacciones_count_por_publicaciones,
 )
 from app.services.usuarios_embeddings_services import obtener_vector_usuario
-from app.services.comercios_embeddings_services import obtener_vector_embedding_comercio
+from app.services.comercios_embeddings_services import (
+    obtener_vectores_embeddings_comercios,
+)
 
 
 def _calcular_similitud_coseno(vector_a: list, vector_b: list) -> float:
-    """
-    Calcula similitud coseno entre dos vectores.
-    """
-
     if not vector_a or not vector_b:
         return 0.0
 
@@ -52,18 +49,22 @@ def obtener_feed_publicaciones(
     *,
     usuario_id: Optional[int] = None,
 ) -> List[Publicacion]:
-    """
-    Devuelve publicaciones para el feed personalizado.
-    """
 
     ahora = datetime.utcnow()
 
-    # Embedding del usuario (si existe)
+    # -------------------------------------
+    # Embedding usuario (1 sola vez)
+    # -------------------------------------
     vector_usuario = None
+    tiene_vector_usuario = False
+
     if usuario_id is not None:
         vector_usuario = obtener_vector_usuario(db=db, usuario_id=usuario_id)
+        tiene_vector_usuario = bool(vector_usuario)
 
-    # Bonus por recencia
+    # -------------------------------------
+    # Bonus recencia
+    # -------------------------------------
     bonus_recencia = case(
         (Publicacion.created_at >= ahora - timedelta(days=1), 3),
         (Publicacion.created_at >= ahora - timedelta(days=3), 2),
@@ -71,10 +72,8 @@ def obtener_feed_publicaciones(
         else_=0,
     )
 
-    # likes_count por publicación
     likes_count_expr = func.count(LikePublicacion.id)
 
-    # liked_by_me real
     if usuario_id is None:
         liked_by_me_expr = literal(False).label("liked_by_me")
     else:
@@ -102,36 +101,76 @@ def obtener_feed_publicaciones(
 
     resultados = query.all()
 
+    if not resultados:
+        return []
+
+    # -------------------------------------
+    # IDs base
+    # -------------------------------------
+    publicaciones_ids = [p.id for p, _, _, _ in resultados]
+    comercios_ids = [p.comercio_id for p, _, _, _ in resultados]
+
+    # -------------------------------------
+    # MAPAS BULK
+    # -------------------------------------
+
+    # likes
+    likes_count_map = {
+        p.id: int(likes_val or 0)
+        for p, likes_val, _, _ in resultados
+    }
+
+    # guardados (1 query)
+    guardados_count_map = obtener_guardados_count_por_publicaciones(
+        db=db,
+        publicaciones_ids=publicaciones_ids,
+    )
+
+    # interacciones (sin query extra)
+    interacciones_count_map = obtener_interacciones_count_por_publicaciones(
+        publicaciones_ids=publicaciones_ids,
+        likes_count_map=likes_count_map,
+        guardados_count_map=guardados_count_map,
+    )
+
+    # embeddings comercios (1 query 🔥)
+    vectores_comercios_map = {}
+
+    if tiene_vector_usuario:
+        vectores_comercios_map = obtener_vectores_embeddings_comercios(
+            db=db,
+            comercios_ids=comercios_ids,
+        )
+
+    # -------------------------------------
+    # ARMADO FINAL
+    # -------------------------------------
     publicaciones_con_score = []
 
     for publicacion, likes_val, bonus_val, liked_by_me_val in resultados:
-        likes_count_val = int(likes_val or 0)
+
+        likes_count_val = likes_count_map.get(publicacion.id, 0)
+        guardados_count_val = guardados_count_map.get(publicacion.id, 0)
+        interacciones_count_val = interacciones_count_map.get(publicacion.id, 0)
         bonus_recencia_val = int(bonus_val or 0)
 
-        guardados_count_val = obtener_guardados_count(
-            db,
-            publicacion_id=publicacion.id,
-        )
-
         publicacion.guardados_count = guardados_count_val
-        publicacion.interacciones_count = obtener_interacciones_count(
-            db,
-            publicacion_id=publicacion.id,
-        )
+        publicacion.interacciones_count = interacciones_count_val
         publicacion.likes_count = likes_count_val
         publicacion.liked_by_me = bool(liked_by_me_val)
 
         # Score base
-        score = likes_count_val + (guardados_count_val * 2) + bonus_recencia_val
+        score_base = (
+            likes_count_val
+            + (guardados_count_val * 2)
+            + bonus_recencia_val
+        )
 
-        # Bonus semántico por afinidad usuario <-> comercio de la publicación
+        # Afinidad IA
         bonus_afinidad = 0.0
 
-        if vector_usuario:
-            vector_comercio = obtener_vector_embedding_comercio(
-                db=db,
-                comercio_id=publicacion.comercio_id,
-            )
+        if tiene_vector_usuario:
+            vector_comercio = vectores_comercios_map.get(publicacion.comercio_id)
 
             if vector_comercio:
                 similitud = _calcular_similitud_coseno(
@@ -139,10 +178,9 @@ def obtener_feed_publicaciones(
                     vector_comercio,
                 )
 
-                # Escalamos la similitud para que impacte en el ranking
                 bonus_afinidad = similitud * 10
 
-        score_total = score + bonus_afinidad
+        score_total = score_base + bonus_afinidad
         publicaciones_con_score.append((publicacion, score_total))
 
     publicaciones_con_score.sort(

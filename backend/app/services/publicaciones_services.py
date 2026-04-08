@@ -6,9 +6,12 @@ Reglas:
 - Services = lógica de negocio
 - Sin HTTP (eso va en routers)
 - Acceso a DB explícito
+
+ETAPA 55:
+- Se agregan helpers bulk para evitar consultas N+1 en feed
 """
 
-from typing import List
+from typing import List, Dict
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -142,11 +145,76 @@ def obtener_interacciones_count(
     )
 
     guardados_count = obtener_guardados_count(
-        db,
+        db=db,
         publicacion_id=publicacion_id,
     )
 
     return likes_count + guardados_count
+
+
+def obtener_guardados_count_por_publicaciones(
+    db: Session,
+    *,
+    publicaciones_ids: List[int],
+) -> Dict[int, int]:
+    """
+    Devuelve un diccionario con cantidad de guardados por publicación.
+
+    Formato:
+    {
+        publicacion_id: guardados_count
+    }
+
+    Se usa para evitar consultas N+1 en el feed.
+    """
+
+    if not publicaciones_ids:
+        return {}
+
+    resultados = (
+        db.query(
+            PublicacionGuardada.publicacion_id,
+            func.count(PublicacionGuardada.id).label("guardados_count"),
+        )
+        .filter(PublicacionGuardada.publicacion_id.in_(publicaciones_ids))
+        .group_by(PublicacionGuardada.publicacion_id)
+        .all()
+    )
+
+    guardados_map = {publicacion_id: 0 for publicacion_id in publicaciones_ids}
+
+    for publicacion_id, guardados_count in resultados:
+        guardados_map[publicacion_id] = int(guardados_count or 0)
+
+    return guardados_map
+
+
+def obtener_interacciones_count_por_publicaciones(
+    *,
+    publicaciones_ids: List[int],
+    likes_count_map: Dict[int, int],
+    guardados_count_map: Dict[int, int],
+) -> Dict[int, int]:
+    """
+    Devuelve un diccionario con cantidad total de interacciones por publicación.
+
+    Interacciones = likes + guardados
+
+    Se apoya en mapas ya calculados para evitar nuevas queries.
+    """
+
+    if not publicaciones_ids:
+        return {}
+
+    interacciones_map = {}
+
+    for publicacion_id in publicaciones_ids:
+        likes_count = int(likes_count_map.get(publicacion_id, 0))
+        guardados_count = int(guardados_count_map.get(publicacion_id, 0))
+        interacciones_map[publicacion_id] = likes_count + guardados_count
+
+    return interacciones_map
+
 
 def obtener_publicaciones_interactuadas_por_usuario(
     db: Session,

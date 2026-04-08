@@ -3842,3 +3842,196 @@ Se completa la transición de:
 ---
 
 ### 🔒 Commit sugerido
+
+## 📦 ETAPA 55 — Optimización IA (Performance + Escalabilidad) ✅ CIERRE REAL
+
+### 🎯 Objetivo
+
+Optimizar el sistema de recomendación basado en embeddings sin modificar el comportamiento funcional del producto, eliminando costos innecesarios y consultas N+1.
+
+---
+
+### 🧠 Mejoras implementadas
+
+#### 1. Ventana de recálculo de embeddings de usuario
+
+Se introduce una política de actualización controlada:
+
+- No se recalcula el embedding si fue actualizado en los últimos 5 minutos
+- Se evita procesamiento innecesario en cada interacción
+
+Nuevo comportamiento:
+
+if embedding_reciente:
+    reutilizar
+else:
+    recalcular
+
+---
+
+#### 2. Centralización de la lógica de recálculo
+
+Archivo:
+- `usuarios_embeddings_services.py`
+
+Nueva función:
+
+- `regenerar_embedding_usuario_si_corresponde`
+
+Responsabilidad:
+
+- decidir cuándo recalcular
+- encapsular la lógica temporal
+- evitar duplicación en likes/guardados
+
+---
+
+#### 3. Optimización en likes y guardados
+
+Archivos:
+
+- `likes_publicaciones_services.py`
+- `publicaciones_guardadas_services.py`
+
+Cambio:
+
+Antes:
+regenerar_y_guardar_embedding_usuario(...)
+
+Ahora:
+regenerar_embedding_usuario_si_corresponde(...)
+
+Resultado:
+
+- menor carga de CPU
+- mismo comportamiento funcional
+
+---
+
+#### 4. Eliminación de N+1 en métricas del feed
+
+Archivo:
+- `publicaciones_services.py`
+
+Nuevas funciones:
+
+- `obtener_guardados_count_por_publicaciones`
+- `obtener_interacciones_count_por_publicaciones`
+
+Resultado:
+
+- 1 query en vez de múltiples por publicación
+- cálculo en memoria eficiente
+
+---
+
+#### 5. Eliminación de N+1 en embeddings de comercios
+
+Archivo:
+- `comercios_embeddings_services.py`
+
+Nueva función:
+
+- `obtener_vectores_embeddings_comercios`
+
+Formato:
+
+{
+    comercio_id: vector
+}
+
+Resultado:
+
+- 1 sola query para todos los embeddings
+- evita consultas por publicación
+
+---
+
+#### 6. Refactor completo del feed
+
+Archivo:
+- `feed_publicaciones_services.py`
+
+Mejoras:
+
+- obtención de embedding de usuario una sola vez
+- uso de mapas en memoria:
+  - likes
+  - guardados
+  - interacciones
+  - embeddings de comercios
+- eliminación total de N+1
+- cálculo de score optimizado
+
+---
+
+### ⚙️ Complejidad del sistema
+
+Antes:
+
+- O(N) queries por request
+- recalculado constante
+- alto costo de CPU
+
+Ahora:
+
+- O(1) queries principales
+- recalculado controlado
+- procesamiento eficiente en memoria
+
+---
+
+### 🚀 Resultado
+
+- Feed más rápido
+- Backend más eficiente
+- Sistema preparado para escalar
+- Base sólida para IA avanzada
+
+---
+
+### 🧩 Impacto en el producto
+
+- No cambia el comportamiento visible
+- Mejora rendimiento general
+- Permite mayor volumen de usuarios
+- Base para features futuras
+
+---
+
+### 🔮 Preparación para próximas etapas
+
+Esta etapa deja listo el sistema para:
+
+- ETAPA 56 — Ranking híbrido avanzado
+- ETAPA 57 — Perfilado avanzado de usuario
+- ETAPA 58 — Feed inteligente tipo "Para vos"
+- futura migración a procesamiento async (sin romper dominio)
+
+---
+
+### 🧱 Decisión arquitectónica clave
+
+Se mantiene:
+
+- IA desacoplada
+- dominio independiente del provider
+- backend como fuente de verdad
+- lógica centralizada en services
+
+---
+
+### 🏁 Estado final
+
+Sistema de recomendación:
+
+- optimizado
+- escalable
+- mantenible
+- listo para evolución
+
+---
+
+### 📌 Commit sugerido
+
+feat(ai): optimizacion del feed + eliminacion de N+1 + cache temporal de embeddings (CIERRE REAL ETAPA 55)

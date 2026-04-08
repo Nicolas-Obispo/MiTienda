@@ -6,17 +6,30 @@ Service encargado de gestionar los embeddings de usuario.
 Responsabilidades:
 - Crear o actualizar embeddings de usuario
 - Obtener embedding de un usuario
+- Generar embedding en base a interacciones
+- Decidir si corresponde recalcular o no según ventana temporal
 """
 
 import json
+from datetime import datetime, timedelta
+
 from sqlalchemy.orm import Session
 
 from app.models.usuarios_embeddings_models import UsuarioEmbedding
+from app.services.publicaciones_services import (
+    obtener_publicaciones_interactuadas_por_usuario,
+)
+from app.services.comercios_embeddings_services import (
+    obtener_vector_embedding_comercio,
+)
+
+# Ventana mínima para evitar recálculos innecesarios
+VENTANA_RECALCULO_MINUTOS = 5
 
 
 def obtener_embedding_usuario(db: Session, usuario_id: int):
     """
-    Obtiene el embedding de un usuario.
+    Obtiene el registro de embedding de un usuario.
     """
 
     return db.query(UsuarioEmbedding).filter(
@@ -57,6 +70,7 @@ def guardar_embedding_usuario(
 
     db.commit()
 
+
 def obtener_vector_usuario(db: Session, usuario_id: int):
     """
     Devuelve el vector del usuario ya deserializado (list).
@@ -68,9 +82,6 @@ def obtener_vector_usuario(db: Session, usuario_id: int):
         return None
 
     return json.loads(embedding.vector)
-
-from app.services.publicaciones_services import obtener_publicaciones_interactuadas_por_usuario
-from app.services.comercios_embeddings_services import obtener_vector_embedding_comercio
 
 
 def generar_embedding_usuario(db: Session, usuario_id: int):
@@ -117,6 +128,7 @@ def generar_embedding_usuario(db: Session, usuario_id: int):
 
     return vector_promedio
 
+
 def regenerar_y_guardar_embedding_usuario(
     db: Session,
     usuario_id: int,
@@ -142,3 +154,66 @@ def regenerar_y_guardar_embedding_usuario(
     )
 
     return vector
+
+
+def embedding_usuario_esta_reciente(
+    db: Session,
+    usuario_id: int,
+    ventana_minutos: int = VENTANA_RECALCULO_MINUTOS,
+) -> bool:
+    """
+    Devuelve True si el embedding del usuario fue actualizado
+    dentro de la ventana configurada.
+
+    Esto evita recalcular innecesariamente en cada interacción.
+    """
+
+    embedding = obtener_embedding_usuario(db=db, usuario_id=usuario_id)
+
+    if not embedding:
+        return False
+
+    # Si por algún motivo no existe updated_at, forzamos recálculo
+    if not getattr(embedding, "updated_at", None):
+        return False
+
+    ahora = datetime.utcnow()
+    limite_reciente = ahora - timedelta(minutes=ventana_minutos)
+
+    return embedding.updated_at >= limite_reciente
+
+
+def regenerar_embedding_usuario_si_corresponde(
+    db: Session,
+    usuario_id: int,
+    model_version: int = 1,
+    ventana_minutos: int = VENTANA_RECALCULO_MINUTOS,
+):
+    """
+    Recalcula el embedding del usuario solo si corresponde.
+
+    Reglas:
+    - Si no existe embedding -> recalcula
+    - Si existe pero está vencido -> recalcula
+    - Si existe y fue actualizado hace menos de X minutos -> reutiliza el actual
+
+    Esta función centraliza la decisión para que likes/guardados
+    no tengan lógica duplicada.
+    """
+
+    embedding_existente = obtener_embedding_usuario(db=db, usuario_id=usuario_id)
+
+    # Caso 1: existe y todavía está dentro de la ventana -> reutilizar
+    if embedding_existente and embedding_usuario_esta_reciente(
+        db=db,
+        usuario_id=usuario_id,
+        ventana_minutos=ventana_minutos,
+    ):
+        return json.loads(embedding_existente.vector)
+
+    # Caso 2: no existe o está vencido -> regenerar y persistir
+    return regenerar_y_guardar_embedding_usuario(
+        db=db,
+        usuario_id=usuario_id,
+        model_version=model_version,
+    )

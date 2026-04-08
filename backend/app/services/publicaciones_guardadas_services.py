@@ -6,6 +6,10 @@ Contiene toda la lógica de negocio:
 - Evitar duplicados
 - Quitar guardados
 - Listar publicaciones guardadas por usuario
+
+Optimización ETAPA 55:
+- Evita recalcular embedding innecesariamente
+- Usa ventana temporal (5 min)
 """
 
 from sqlalchemy.orm import Session
@@ -13,7 +17,9 @@ from sqlalchemy.exc import IntegrityError
 
 from app.models.publicaciones_guardadas_models import PublicacionGuardada
 from app.models.publicaciones_models import Publicacion
-from app.services.usuarios_embeddings_services import regenerar_y_guardar_embedding_usuario
+from app.services.usuarios_embeddings_services import (
+    regenerar_embedding_usuario_si_corresponde,
+)
 
 
 def guardar_publicacion(
@@ -53,8 +59,8 @@ def guardar_publicacion(
         db.rollback()
         raise ValueError("La publicación ya está guardada")
 
-    # Recalcular embedding del usuario
-    regenerar_y_guardar_embedding_usuario(
+    # ✅ ETAPA 55: recalcular SOLO si corresponde
+    regenerar_embedding_usuario_si_corresponde(
         db=db,
         usuario_id=usuario_id
     )
@@ -86,8 +92,8 @@ def quitar_publicacion_guardada(
     db.delete(guardado)
     db.commit()
 
-    # Recalcular embedding del usuario
-    regenerar_y_guardar_embedding_usuario(
+    # ✅ ETAPA 55: recalcular SOLO si corresponde
+    regenerar_embedding_usuario_si_corresponde(
         db=db,
         usuario_id=usuario_id
     )

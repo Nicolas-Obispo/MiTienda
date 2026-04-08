@@ -6,6 +6,10 @@ Reglas:
 - Like = señal de interés (NO social)
 - Toggle: si existe se elimina, si no existe se crea
 - Un like por usuario y publicación
+
+Optimización ETAPA 55:
+- Evita recalcular embedding innecesariamente
+- Usa ventana temporal (5 min)
 """
 
 from typing import Optional
@@ -13,7 +17,9 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.models.likes_publicaciones_models import LikePublicacion
-from app.services.usuarios_embeddings_services import regenerar_y_guardar_embedding_usuario
+from app.services.usuarios_embeddings_services import (
+    regenerar_embedding_usuario_si_corresponde
+)
 
 
 def toggle_like_publicacion(
@@ -43,8 +49,8 @@ def toggle_like_publicacion(
         db.delete(like_existente)
         db.commit()
 
-        # Recalcular embedding del usuario luego de eliminar el like
-        regenerar_y_guardar_embedding_usuario(
+        # ✅ ETAPA 55: recalcular SOLO si corresponde
+        regenerar_embedding_usuario_si_corresponde(
             db=db,
             usuario_id=usuario_id,
         )
@@ -59,8 +65,8 @@ def toggle_like_publicacion(
     db.add(nuevo_like)
     db.commit()
 
-    # Recalcular embedding del usuario luego de crear el like
-    regenerar_y_guardar_embedding_usuario(
+    # ✅ ETAPA 55: recalcular SOLO si corresponde
+    regenerar_embedding_usuario_si_corresponde(
         db=db,
         usuario_id=usuario_id,
     )
