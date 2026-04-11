@@ -389,36 +389,28 @@ export default function ProfilePage() {
   }
 
   // --------------------------
-  // Cargar guardados
+  // Cargar guardadoss
   // --------------------------
+  /**
+   * ETAPA 56 — FIX GUARDADOS
+   * ------------------------
+   * - El service ya devuelve publicaciones listas
+   * - NO re-normalizamos
+   * - Evita perder datos y desincronización
+   */
   async function loadGuardadas() {
     try {
       setIsLoading(true);
       setErrorMessage("");
 
-      const guardadasData = await fetchPublicacionesGuardadas();
+      const guardadas = await fetchPublicacionesGuardadas();
 
-      const guardadasItems = Array.isArray(guardadasData)
-        ? guardadasData
-        : guardadasData?.items || [];
-
-      // Normalizamos para que todas queden como publicaciones “guardadas por mí”
-      const normalized = guardadasItems
-        .map((g) => {
-          if (g && typeof g.id === "number") return g;
-          if (g?.publicacion && typeof g.publicacion.id === "number")
-            return g.publicacion;
-          return null;
-        })
-        .filter(Boolean)
-        .map((p) => ({
-          ...p,
-          guardada_by_me: true,
-        }));
-
-      setPublicaciones(normalized);
+      // Ya vienen listas para UI
+      setPublicaciones(Array.isArray(guardadas) ? guardadas : []);
     } catch (error) {
-      setErrorMessage(error.message || "Error desconocido cargando guardados.");
+      setErrorMessage(
+        error.message || "Error desconocido cargando guardados."
+      );
       setPublicaciones([]);
     } finally {
       setIsLoading(false);
@@ -1194,16 +1186,51 @@ export default function ProfilePage() {
         {/* Estado: OK */}
         {!isLoading && !errorMessage && publicaciones.length > 0 && (
           <div className="space-y-4">
-            {publicaciones.map((p) => (
-              <PublicacionCard
-                key={p.id}
-                pub={p}
-                isActingLike={Boolean(likeLocksMemo[p.id])}
-                isActingSave={Boolean(saveLocksMemo[p.id])}
-                onToggleLike={() => handleToggleLike(p.id)}
-                onToggleSave={() => handleToggleSave(p.id)}
-              />
-            ))}
+            /**
+            * ETAPA 56 — GRID TIPO INSTAGRAM (GUARDADOS)
+            * -----------------------------------------
+            * - Mobile first
+            * - Imagen protagonista
+            * - Preparado para video/carrusel
+            */
+
+            <div
+              className="
+                grid
+                grid-cols-3
+                sm:grid-cols-3
+                md:grid-cols-4
+                gap-1
+              "
+            >
+              {publicaciones.map((p) => (
+                <div
+                  key={p.id}
+                  className="relative aspect-square bg-gray-800 overflow-hidden"
+                >
+                  {/* IMAGEN PRINCIPAL */}
+                  {p.imagen_url ? (
+                    <img
+                      src={p.imagen_url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                      Sin imagen
+                    </div>
+                  )}
+
+                  {/* OVERLAY (hover desktop / futuro mobile tap) */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition flex items-center justify-center">
+                    <div className="text-xs text-white text-center">
+                      <p>❤️ {p.likes_count || 0}</p>
+                      <p>💾 {p.guardados_count || 0}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </main>

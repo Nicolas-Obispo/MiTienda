@@ -9,7 +9,8 @@ import FeedPage from "../pages/FeedPage";
 import RankingPage from "../pages/RankingPage";
 import ProfilePage from "../pages/ProfilePage";
 import PerfilComercioPage from "../pages/PerfilComercioPage";
-import ExplorarPage from "../pages/ExplorarPage"; // ETAPA 48
+import ExplorarPage from "../pages/ExplorarPage";
+import PublicacionDetallePage from "../pages/PublicacionDetallePage";
 
 // Layout
 import MainLayout from "../layouts/MainLayout";
@@ -33,7 +34,6 @@ function getStoredToken() {
     "mplaza_token",
   ];
 
-  // localStorage
   try {
     for (const k of keys) {
       const v = window?.localStorage?.getItem(k);
@@ -41,7 +41,6 @@ function getStoredToken() {
     }
   } catch (_) {}
 
-  // sessionStorage
   try {
     for (const k of keys) {
       const v = window?.sessionStorage?.getItem(k);
@@ -127,9 +126,6 @@ export default function AppRouter() {
             }
           />
 
-          {/* ============================= */}
-          {/* ETAPA 48 — EXPLORAR */}
-          {/* ============================= */}
           <Route
             path="/explorar"
             element={
@@ -153,6 +149,15 @@ export default function AppRouter() {
             element={
               <ProtectedRoute>
                 <PerfilComercioPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/publicaciones/:id"
+            element={
+              <ProtectedRoute>
+                <PublicacionDetallePage />
               </ProtectedRoute>
             }
           />

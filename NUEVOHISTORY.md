@@ -4035,3 +4035,91 @@ Sistema de recomendación:
 ### 📌 Commit sugerido
 
 feat(ai): optimizacion del feed + eliminacion de N+1 + cache temporal de embeddings (CIERRE REAL ETAPA 55)
+
+## ETAPA 56 — UI REAL + GRID + DETALLE
+
+### 🎯 Objetivo
+Transformar la app de una UI técnica a una experiencia visual tipo app real (estilo Instagram), manteniendo consistencia de estado entre Feed, Ranking y Perfil.
+
+---
+
+### 🧩 Cambios implementados
+
+#### 🔹 UI / UX
+- Conversión de Feed a grid tipo Instagram (2–3 columnas responsive)
+- Conversión de Ranking a grid visual
+- Refactor completo de ProfilePage a layout en grid
+- Rediseño de PublicacionCard:
+  - Modo compacto (grid)
+  - Modo completo (detalle)
+  - Imagen/video como elemento principal
+  - Overlay con acciones (like / guardar)
+- Eliminación de UI técnica (labels innecesarios, ruido visual)
+
+---
+
+#### 🔹 Navegación
+- Implementación de vista de detalle de publicación:
+  - Ruta: `/publicaciones/:id`
+  - Nueva página: `PublicacionDetallePage.jsx`
+- Integración de navegación:
+  - Click en card (grid) → abre detalle
+  - Botones internos (like/guardar/ver comercio) no rompen navegación
+
+---
+
+#### 🔹 Estado / Lógica (FIX CRÍTICO)
+- Refactor completo del sistema de guardados:
+  - Backend idempotente (no rompe por duplicados)
+  - Normalización consistente en frontend
+  - Sincronización correcta entre:
+    - Feed
+    - Ranking
+    - Perfil
+- Corrección de `guardada_by_me` en todas las vistas
+- Corrección de `guardados_count` en UI
+- Implementación estable de Optimistic UI con rollback seguro
+
+---
+
+#### 🔹 Integración de datos
+- Merge de datos entre:
+  - Ranking (orden)
+  - Feed (liked_by_me real)
+  - Guardados (estado usuario)
+- Resolución de desincronización entre endpoints
+
+---
+
+### ⚠️ Pendientes identificados
+
+#### Backend
+- Nombre real del comercio (evitar fallback "Comercio #ID")
+- Incorporación de `imagen_url` real en publicaciones
+
+#### UX / Producto
+- Mejora de pantalla de detalle (nivel app social real)
+- Implementación futura de:
+  - Carrusel de imágenes/videos
+  - Reels / contenido multimedia
+  - Mejora visual de historias
+
+---
+
+### 🧠 Decisión de producto
+Se prioriza experiencia de usuario y percepción de producto real por sobre optimizaciones técnicas adicionales (IA / ranking avanzado).
+
+---
+
+### 📌 Resultado
+La aplicación pasa de ser un prototipo técnico a una base sólida de producto visual, usable y escalable.
+
+✔ Navegación consistente  
+✔ Estado sincronizado  
+✔ UI moderna y limpia  
+✔ Base lista para features sociales reales  
+
+---
+
+### 🔒 Estado
+CIERRE REAL ETAPA 56

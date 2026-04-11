@@ -3,17 +3,20 @@ Servicios para manejar publicaciones guardadas.
 
 Contiene toda la lógica de negocio:
 - Guardar publicaciones
-- Evitar duplicados
+- Evitar duplicados sin romper frontend
 - Quitar guardados
 - Listar publicaciones guardadas por usuario
 
 Optimización ETAPA 55:
 - Evita recalcular embedding innecesariamente
 - Usa ventana temporal (5 min)
+
+ETAPA 56:
+- guardar_publicacion pasa a ser idempotente
+- Si ya existe el guardado, no tira error 400
 """
 
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 
 from app.models.publicaciones_guardadas_models import PublicacionGuardada
 from app.models.publicaciones_models import Publicacion
@@ -32,7 +35,8 @@ def guardar_publicacion(
 
     Validaciones:
     - La publicación debe existir
-    - No se puede guardar dos veces la misma publicación
+    - Si ya estaba guardada, devuelve el registro existente
+      (comportamiento idempotente para no romper frontend)
     """
 
     # Verificar que la publicación exista
@@ -45,21 +49,29 @@ def guardar_publicacion(
     if not publicacion:
         raise ValueError("La publicación no existe")
 
+    # Si ya estaba guardada, devolvemos el existente y NO rompemos
+    guardado_existente = (
+        db.query(PublicacionGuardada)
+        .filter(
+            PublicacionGuardada.usuario_id == usuario_id,
+            PublicacionGuardada.publicacion_id == publicacion_id
+        )
+        .first()
+    )
+
+    if guardado_existente:
+        return guardado_existente
+
     guardado = PublicacionGuardada(
         usuario_id=usuario_id,
         publicacion_id=publicacion_id
     )
 
     db.add(guardado)
+    db.commit()
+    db.refresh(guardado)
 
-    try:
-        db.commit()
-        db.refresh(guardado)
-    except IntegrityError:
-        db.rollback()
-        raise ValueError("La publicación ya está guardada")
-
-    # ✅ ETAPA 55: recalcular SOLO si corresponde
+    # Recalcular embedding solo si corresponde
     regenerar_embedding_usuario_si_corresponde(
         db=db,
         usuario_id=usuario_id
@@ -92,7 +104,7 @@ def quitar_publicacion_guardada(
     db.delete(guardado)
     db.commit()
 
-    # ✅ ETAPA 55: recalcular SOLO si corresponde
+    # Recalcular embedding solo si corresponde
     regenerar_embedding_usuario_si_corresponde(
         db=db,
         usuario_id=usuario_id

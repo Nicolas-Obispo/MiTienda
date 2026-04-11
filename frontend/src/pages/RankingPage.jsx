@@ -12,6 +12,10 @@
  * ETAPA 39 (Fix UI):
  * - Optimistic UI también para interacciones_count
  * - FIX BUG: Ranking no siempre trae liked_by_me real -> lo tomamos desde Feed por ID
+ *
+ * ETAPA 56:
+ * - Vista en grid
+ * - Cards compactas tipo app visual
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -58,13 +62,15 @@ export default function RankingPage() {
         ? rankingData
         : rankingData?.items || [];
 
-      const feedItems = Array.isArray(feedData) ? feedData : feedData?.items || [];
+      const feedItems = Array.isArray(feedData)
+        ? feedData
+        : feedData?.items || [];
 
       const guardadasItems = Array.isArray(guardadasData)
         ? guardadasData
         : guardadasData?.items || [];
 
-      // Map de liked_by_me desde Feed (fuente confiable del estado por usuario)
+      // Map de liked_by_me desde Feed
       const feedById = new Map(
         feedItems
           .filter((p) => p && typeof p.id === "number")
@@ -74,23 +80,17 @@ export default function RankingPage() {
       // Guardadas por usuario
       const guardadasSet = new Set(
         guardadasItems
-          .map((g) => g?.publicacion_id)
+          .map((g) => g?.id)
           .filter((id) => typeof id === "number")
       );
 
-      // Merge final:
-      // - orden y métricas base del ranking
-      // - liked_by_me desde feed (si existe ese id)
-      // - guardada_by_me desde guardadas
+      // Merge final
       const merged = rankingItems.map((p) => {
         const feedMatch = feedById.get(p.id);
 
         const likedByMe =
-          // preferimos el dato del feed si existe
           feedMatch?.liked_by_me ??
-          // fallback si ranking lo trae (por si a veces sí viene)
           p?.liked_by_me ??
-          // fallback adicional por si cambia el nombre
           p?.is_liked ??
           false;
 
@@ -115,11 +115,7 @@ export default function RankingPage() {
   }, []);
 
   /**
-   * Optimistic Like:
-   * - Toggle inmediato de liked_by_me
-   * - Ajusta likes_count +1 o -1
-   * - Ajusta interacciones_count +1 o -1
-   * - Si falla backend, revertimos
+   * Optimistic Like
    */
   async function handleToggleLike(pubId) {
     if (likeLocksMemo[pubId]) return;
@@ -162,11 +158,7 @@ export default function RankingPage() {
   }
 
   /**
-   * Optimistic Guardado:
-   * - Toggle inmediato de guardada_by_me
-   * - Ajusta guardados_count +1 o -1
-   * - Ajusta interacciones_count +1 o -1
-   * - Si falla backend, revertimos
+   * Optimistic Guardado
    */
   async function handleToggleSave(pubId) {
     if (saveLocksMemo[pubId]) return;
@@ -217,7 +209,7 @@ export default function RankingPage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto max-w-5xl px-4 py-8">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-white">Ranking</h1>
@@ -228,10 +220,10 @@ export default function RankingPage() {
 
         {/* Estado: Loading */}
         {isLoading && (
-          <div className="space-y-3">
-            <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-            <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-            <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-3">
+            <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
+            <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
+            <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
           </div>
         )}
 
@@ -255,7 +247,15 @@ export default function RankingPage() {
 
         {/* Estado: OK */}
         {!isLoading && !errorMessage && publicaciones.length > 0 && (
-          <div className="space-y-4">
+          <div
+            className="
+              grid
+              grid-cols-2
+              sm:grid-cols-3
+              md:grid-cols-3
+              gap-3
+            "
+          >
             {publicaciones.map((p, idx) => (
               <PublicacionCard
                 key={p.id}
@@ -266,6 +266,7 @@ export default function RankingPage() {
                 isActingSave={Boolean(saveLocksMemo[p.id])}
                 onToggleLike={() => handleToggleLike(p.id)}
                 onToggleSave={() => handleToggleSave(p.id)}
+                compact
               />
             ))}
           </div>

@@ -181,7 +181,7 @@ export default function FeedPage() {
 
       const guardadasSet = new Set(
         guardadasItems
-          .map((g) => g?.publicacion_id)
+          .map((g) => g?.id)
           .filter((id) => typeof id === "number")
       );
 
@@ -448,7 +448,15 @@ export default function FeedPage() {
 
         {/* OK */}
         {!isLoading && !errorMessage && publicaciones.length > 0 && (
-          <div className="space-y-4">
+          <div
+            className="
+              grid
+              grid-cols-2
+              sm:grid-cols-3
+              md:grid-cols-3
+              gap-3
+            "
+          >
             {publicaciones.map((p) => (
               <PublicacionCard
                 key={p.id}
@@ -457,6 +465,7 @@ export default function FeedPage() {
                 isActingSave={Boolean(saveLocksMemo[p.id])}
                 onToggleLike={() => handleToggleLike(p.id)}
                 onToggleSave={() => handleToggleSave(p.id)}
+                compact
               />
             ))}
           </div>
