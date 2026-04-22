@@ -6,6 +6,10 @@ Reglas:
 - Models = solo SQLAlchemy (sin lógica de negocio)
 - created_at / updated_at incluidos
 - Relaciones explícitas y consistentes
+
+ETAPA 57:
+- Se agrega imagen_url a Publicacion para permitir que
+  el backend persista y exponga imagen real al frontend.
 """
 
 from __future__ import annotations
@@ -60,12 +64,22 @@ class Publicacion(Base):
     )
 
     # -------------------------
-    # Contenido
+    # Contenido principal
     # -------------------------
     titulo = Column(String(120), nullable=False)
     descripcion = Column(Text, nullable=True)
 
+    # -------------------------
+    # Media de la publicación
+    # -------------------------
+    # ETAPA 57:
+    # URL real de imagen asociada a la publicación.
+    # Se deja nullable=True para no romper publicaciones existentes.
+    imagen_url = Column(String(500), nullable=True)
+
+    # -------------------------
     # Señales / control (NO social)
+    # -------------------------
     # Likes = señal de interés, no “me gusta social”
     is_activa = Column(Boolean, nullable=False, server_default="1")
 

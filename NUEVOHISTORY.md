@@ -4123,3 +4123,176 @@ La aplicación pasa de ser un prototipo técnico a una base sólida de producto 
 
 ### 🔒 Estado
 CIERRE REAL ETAPA 56
+
+# 🧾 NUEVOHISTORY.md — MiPlaza
+
+---
+
+## 🚀 ETAPA 57 — Publicaciones reales + UX consistente + interacción correcta
+
+### 📌 Objetivo
+Transformar las publicaciones en una experiencia real de producto:
+- Datos coherentes desde backend
+- Visualización clara en frontend
+- Interacciones reales (like / guardar)
+- Consistencia total de UI
+
+---
+
+## 🔧 Backend
+
+### ✔ Correcciones clave
+
+- Se reemplaza el uso de datos “crudos” por respuestas enriquecidas
+- Se crea helper `construir_publicacion_read` en router
+
+### ✔ Métricas correctas
+
+- `likes_count` → basado en relación `likes`
+- `guardados_count` → basado en relación `usuarios_que_la_guardaron`
+- `interacciones_count` → suma de ambas
+
+### ✔ Estado del usuario
+
+- `liked_by_me` calculado correctamente
+- `guardada_by_me` calculado correctamente
+- Uso de `obtener_usuario_actual_opcional`
+
+🔴 Se corrige bug crítico:
+> el detalle ya no permite duplicar likes (antes podía mostrar 3 likes con 2 usuarios)
+
+---
+
+## 🧠 Schemas
+
+### PublicacionRead
+
+Se agregan:
+
+- `imagen_url`
+- `comercio_nombre`
+- `liked_by_me`
+- `guardada_by_me`
+
+👉 Se elimina dependencia del frontend en fallback tipo `Comercio #ID`
+
+---
+
+## 🎨 Frontend
+
+### ✔ Detalle de publicación
+
+- Se prioriza contenido visual (imagen/video)
+- Se mejora jerarquía:
+  - título protagonista
+  - descripción secundaria
+- Se corrige carga con token (clave para estado real)
+
+### ✔ Interacciones
+
+- Like y Guardar funcionan correctamente
+- Se implementa optimistic UI
+- Se agrega rollback en caso de error
+
+### ✔ Componente reutilizable
+
+Se crea:
+
+frontend/src/components/InteraccionButton.jsx
+
+#### Función
+
+- Unificar UI de:
+  - ❤️ Like
+  - ⭐ Guardar
+
+#### Beneficios
+
+- Consistencia visual
+- Reutilización en toda la app
+- Escalabilidad futura
+
+### ✔ Migración de UI
+
+Se reemplazan botones en:
+
+- PublicacionDetallePage
+- PublicacionCard (modo compacto y completo)
+
+### ✔ Mejora visual clave
+
+- Estilo tipo Instagram:
+  - icono cambia color (no el botón completo)
+- Estados:
+  - inactivo → gris
+  - activo → rojo / amarillo
+- Versión compacta:
+  - botones circulares perfectos (no ovalados)
+
+---
+
+## 🧩 Media (imágenes reales)
+
+- Se integra upload desde frontend
+- Se utiliza endpoint `/media/upload`
+- Se reemplaza input URL por:
+  - selección de archivo local
+  - base para drag & drop futuro
+
+---
+
+## 🧠 Arquitectura (regla de oro respetada)
+
+✔ Backend:
+- resuelve lógica de negocio
+- calcula métricas
+- determina estado del usuario
+
+✔ Frontend:
+- renderiza
+- ejecuta acciones
+- NO inventa estado
+
+---
+
+## ⚠️ Decisiones de producto
+
+- 🔥 interacciones se mantienen visibles (evaluación futura)
+- botones unificados como estándar global
+- se prioriza experiencia real antes que IA
+
+---
+
+## 📊 Resultado de la etapa
+
+Antes:
+- datos inconsistentes
+- likes incorrectos
+- UI desalineada
+- experiencia tipo mock
+
+Ahora:
+- comportamiento real de app
+- coherencia total backend/frontend
+- base sólida para escalar
+
+---
+
+## 🔒 Cierre de etapa
+
+CIERRE REAL ETAPA 57 – Publicaciones reales + UX consistente + interacción correcta
+
+---
+
+## 🚀 Próxima etapa sugerida
+
+### ETAPA 58 — Experiencia de usuario real
+
+Foco:
+
+1. Feed más atractivo (orden, densidad, contenido)
+2. Detalle tipo scroll/swipe (estilo TikTok/IG)
+3. Perfil usuario más claro
+4. Explorar con descubrimiento real
+
+👉 Prioridad: PRODUCTO antes que IA

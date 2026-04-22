@@ -1,7 +1,14 @@
 // frontend/src/components/PublicacionCard.jsx
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import InteraccionButton from "./InteraccionButton";
 
+/*
+====================================================
+BADGE DE MÉTRICA
+- Se usa para mostrar métricas resumidas
+====================================================
+*/
 function MetricBadge({ label, value, icon }) {
   return (
     <div className="inline-flex items-center rounded-full border border-gray-800 bg-gray-900 px-3 py-1 text-xs text-gray-200">
@@ -14,44 +21,19 @@ function MetricBadge({ label, value, icon }) {
   );
 }
 
-function ActionButton({
-  children,
-  onClick,
-  disabled,
-  variant = "neutral",
-  title,
-}) {
-  const base =
-    "inline-flex items-center justify-center rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold border transition select-none";
-  const styles = {
-    neutral: "bg-gray-900 text-gray-200 border-gray-800 hover:bg-gray-800",
-    active:
-      "bg-green-950/40 text-green-300 border-green-800 hover:bg-green-950/60",
-  };
-
-  return (
-    <button
-      type="button"
-      className={[
-        base,
-        styles[variant],
-        disabled ? "opacity-50 cursor-not-allowed" : "",
-      ].join(" ")}
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-    >
-      {children}
-    </button>
-  );
-}
-
+/*
+====================================================
+HELPERS DE NORMALIZACIÓN
+====================================================
+*/
 function getNombreComercio(pub) {
   return (
     pub?.comercio_nombre ||
     pub?.nombre_comercio ||
     pub?.comercio?.nombre ||
-    (typeof pub?.comercio_id === "number" ? `Comercio #${pub.comercio_id}` : "Comercio")
+    (typeof pub?.comercio_id === "number"
+      ? `Comercio #${pub.comercio_id}`
+      : "Comercio")
   );
 }
 
@@ -68,6 +50,7 @@ function getMediaUrl(pub) {
 
 function esVideo(url) {
   if (!url || typeof url !== "string") return false;
+
   return [".mp4", ".webm", ".ogg", ".mov"].some((ext) =>
     url.toLowerCase().includes(ext)
   );
@@ -85,9 +68,6 @@ export default function PublicacionCard({
 }) {
   const navigate = useNavigate();
 
-  const likeVariant = pub?.liked_by_me ? "active" : "neutral";
-  const saveVariant = pub?.guardada_by_me ? "active" : "neutral";
-
   const showRank = Number.isInteger(rankIndex);
   const showInteracciones =
     typeof pub?.interacciones_count === "number" && pub.interacciones_count >= 0;
@@ -101,11 +81,22 @@ export default function PublicacionCard({
   const mediaUrl = getMediaUrl(pub);
   const mediaEsVideo = esVideo(mediaUrl);
 
+  /*
+  ====================================================
+  NAVEGACIÓN A DETALLE
+  ====================================================
+  */
   function irADetallePublicacion() {
     if (!pub?.id) return;
     navigate(`/publicaciones/${pub.id}`);
   }
 
+  /*
+  ====================================================
+  HANDLERS DE BOTONES
+  - Frenan propagación para no abrir el detalle
+  ====================================================
+  */
   function handleLikeClick(e) {
     e.stopPropagation();
     onToggleLike?.();
@@ -123,7 +114,7 @@ export default function PublicacionCard({
     return (
       <article
         onClick={irADetallePublicacion}
-        className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 cursor-pointer"
+        className="cursor-pointer overflow-hidden rounded-2xl border border-gray-800 bg-gray-950"
         title="Ver publicación"
       >
         <div className="relative aspect-square bg-black">
@@ -148,6 +139,7 @@ export default function PublicacionCard({
             </div>
           )}
 
+          {/* BADGES SUPERIORES */}
           <div className="pointer-events-none absolute left-2 top-2 flex items-center gap-2">
             {showRank ? (
               <span className="rounded-full border border-black/30 bg-black/60 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
@@ -162,8 +154,10 @@ export default function PublicacionCard({
             ) : null}
           </div>
 
+          {/* DEGRADÉ INFERIOR */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
 
+          {/* INFO + ACCIONES */}
           <div className="absolute inset-x-0 bottom-0 p-3">
             <div className="flex items-end justify-between gap-2">
               <div className="min-w-0">
@@ -182,46 +176,43 @@ export default function PublicacionCard({
                 ) : null}
               </div>
 
-              <div className="flex shrink-0 flex-col gap-2">
-                <button
-                  type="button"
+              {/* 
+              ============================================
+              ACCIONES COMPACTAS
+              - Círculo perfecto
+              - Solo icono
+              ============================================
+              */}
+              <div
+                className="flex shrink-0 flex-col gap-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <InteraccionButton
+                  type="like"
+                  active={Boolean(pub?.liked_by_me)}
                   onClick={handleLikeClick}
                   disabled={Boolean(isActingLike)}
-                  className={[
-                    "rounded-full border px-2.5 py-1 text-[11px] font-semibold backdrop-blur-sm transition",
-                    pub?.liked_by_me
-                      ? "border-green-700 bg-green-950/70 text-green-300"
-                      : "border-white/20 bg-black/50 text-white",
-                    isActingLike ? "opacity-50 cursor-not-allowed" : "",
-                  ].join(" ")}
-                  title="Dar/Quitar like"
-                >
-                  {pub?.liked_by_me ? "👍" : "🤍"}
-                </button>
+                  label=""
+                  iconOnly={true}
+                />
 
-                <button
-                  type="button"
+                <InteraccionButton
+                  type="guardar"
+                  active={Boolean(pub?.guardada_by_me)}
                   onClick={handleSaveClick}
                   disabled={Boolean(isActingSave)}
-                  className={[
-                    "rounded-full border px-2.5 py-1 text-[11px] font-semibold backdrop-blur-sm transition",
-                    pub?.guardada_by_me
-                      ? "border-green-700 bg-green-950/70 text-green-300"
-                      : "border-white/20 bg-black/50 text-white",
-                    isActingSave ? "opacity-50 cursor-not-allowed" : "",
-                  ].join(" ")}
-                  title="Guardar/Quitar de guardados"
-                >
-                  {pub?.guardada_by_me ? "⭐" : "☆"}
-                </button>
+                  label=""
+                  iconOnly={true}
+                />
               </div>
             </div>
           </div>
         </div>
 
+        {/* MÉTRICAS INFERIORES */}
         <div className="flex items-center justify-between gap-2 px-3 py-2">
           <div className="flex items-center gap-2 text-[11px] text-gray-400">
-            <span>👍 {pub?.likes_count ?? 0}</span>
+            <span>❤️ {pub?.likes_count ?? 0}</span>
             <span>⭐ {pub?.guardados_count ?? 0}</span>
           </div>
 
@@ -231,7 +222,7 @@ export default function PublicacionCard({
               onClick={(e) => e.stopPropagation()}
               className="text-[11px] text-gray-300 hover:text-white"
             >
-              Ver mas
+              Ver más
             </Link>
           ) : null}
         </div>
@@ -240,10 +231,11 @@ export default function PublicacionCard({
   }
 
   // =====================================================
-  // MODO COMPLETO — para detalle / otras pantallas
+  // MODO COMPLETO — para perfil / otras pantallas
   // =====================================================
   return (
     <article className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-950">
+      {/* HEADER */}
       <header className="flex items-center justify-between gap-3 p-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -253,7 +245,7 @@ export default function PublicacionCard({
               </span>
             ) : null}
 
-            <h2 className="truncate text-sm sm:text-base font-semibold text-white">
+            <h2 className="truncate text-sm font-semibold text-white sm:text-base">
               {nombreComercio}
             </h2>
           </div>
@@ -279,19 +271,13 @@ export default function PublicacionCard({
             {headerRightBadgeText}
           </div>
         ) : (
-          <div
-            className={[
-              "shrink-0 rounded-full px-3 py-1 text-xs font-semibold border",
-              pub?.liked_by_me
-                ? "bg-green-950/40 text-green-300 border-green-800"
-                : "bg-gray-900 text-gray-300 border-gray-800",
-            ].join(" ")}
-          >
-            {pub?.liked_by_me ? "Te gustó" : "Publicación"}
+          <div className="shrink-0 rounded-full border border-gray-800 bg-gray-900 px-3 py-1 text-xs font-semibold text-gray-300">
+            Publicación
           </div>
         )}
       </header>
 
+      {/* MEDIA */}
       <div className="border-y border-gray-800 bg-black">
         {mediaUrl ? (
           mediaEsVideo ? (
@@ -315,46 +301,52 @@ export default function PublicacionCard({
         )}
       </div>
 
+      {/* INFO */}
       <div className="p-4">
         {pub?.descripcion ? (
-          <p className="text-sm text-gray-200 leading-relaxed">
+          <p className="text-sm leading-relaxed text-gray-200">
             {pub.descripcion}
           </p>
         ) : (
           <p className="text-sm italic text-gray-500">Sin descripción.</p>
         )}
 
+        {/* ACCIONES */}
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <ActionButton
-            variant={likeVariant}
-            disabled={Boolean(isActingLike)}
+          <InteraccionButton
+            type="like"
+            active={Boolean(pub?.liked_by_me)}
             onClick={onToggleLike}
-            title="Dar/Quitar like"
-          >
-            {isActingLike
-              ? "Procesando..."
-              : pub?.liked_by_me
-              ? "👍 Te gustó"
-              : "👍 Me gusta"}
-          </ActionButton>
+            disabled={Boolean(isActingLike)}
+            label={
+              isActingLike
+                ? "Procesando..."
+                : pub?.liked_by_me
+                ? "Te gusta"
+                : "Me gusta"
+            }
+          />
 
-          <ActionButton
-            variant={saveVariant}
-            disabled={Boolean(isActingSave)}
+          <InteraccionButton
+            type="guardar"
+            active={Boolean(pub?.guardada_by_me)}
             onClick={onToggleSave}
-            title="Guardar/Quitar de guardados"
-          >
-            {isActingSave
-              ? "Procesando..."
-              : pub?.guardada_by_me
-              ? "⭐ Guardada"
-              : "⭐ Guardar"}
-          </ActionButton>
+            disabled={Boolean(isActingSave)}
+            label={
+              isActingSave
+                ? "Procesando..."
+                : pub?.guardada_by_me
+                ? "Guardada"
+                : "Guardar"
+            }
+          />
         </div>
 
+        {/* MÉTRICAS */}
         <footer className="mt-4 flex flex-wrap items-center gap-2">
-          <MetricBadge label="Likes" value={pub?.likes_count} icon="👍" />
+          <MetricBadge label="Likes" value={pub?.likes_count} icon="❤️" />
           <MetricBadge label="Guardados" value={pub?.guardados_count} icon="⭐" />
+
           {showInteracciones ? (
             <MetricBadge
               label="Interacciones"
@@ -362,16 +354,6 @@ export default function PublicacionCard({
               icon="🔥"
             />
           ) : null}
-          <MetricBadge
-            label="Liked"
-            value={pub?.liked_by_me ? "Sí" : "No"}
-            icon="📌"
-          />
-          <MetricBadge
-            label="Guardada"
-            value={pub?.guardada_by_me ? "Sí" : "No"}
-            icon="💾"
-          />
         </footer>
       </div>
     </article>

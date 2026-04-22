@@ -5,12 +5,16 @@
  * ETAPA 45 — Admin (mis comercios)
  * ETAPA 48 — Explorar (comercios activos)
  * ETAPA 50 — IA v1 (smart search)
+ * ETAPA 57 — Crear publicaciones desde frontend
  *
  * Responsabilidad:
  * - Llamadas HTTP relacionadas a comercios y su perfil
  *
  * ETAPA 50:
  * - GET /comercios/activos?q=&smart=&limit=&offset=
+ *
+ * ETAPA 57:
+ * - Se agrega creación real de publicaciones para un comercio
  */
 
 import { httpGet, httpPost, httpDelete, httpPut } from "./http_service";
@@ -29,6 +33,69 @@ export async function getComercioById(comercioId) {
 export async function getPublicacionesDeComercio(comercioId) {
   if (!comercioId) throw new Error("comercioId es requerido");
   return httpGet(`/publicaciones/comercios/${comercioId}`);
+}
+
+/**
+ * crearPublicacionDeComercio
+ * --------------------------
+ * ETAPA 57
+ *
+ * Crea una publicación real para un comercio usando el backend existente.
+ *
+ * Payload esperado:
+ * {
+ *   titulo: string,
+ *   descripcion?: string,
+ *   imagen_url?: string,
+ *   seccion_id?: number | null,
+ *   is_activa?: boolean
+ * }
+ *
+ * Nota:
+ * - Usamos token porque crear publicación requiere sesión.
+ * - Mantenemos la validación mínima del payload.
+ */
+export async function crearPublicacionDeComercio(comercioId, payload) {
+  const token = localStorage.getItem("access_token");
+  if (!token) throw new Error("No hay sesión activa.");
+
+  if (!comercioId) throw new Error("comercioId es requerido");
+
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload es requerido");
+  }
+
+  const payloadNormalizado = {
+    titulo: String(payload.titulo || "").trim(),
+    descripcion: String(payload.descripcion || "").trim() || null,
+    imagen_url: String(payload.imagen_url || "").trim() || null,
+    seccion_id:
+      payload.seccion_id === "" ||
+      payload.seccion_id === undefined ||
+      payload.seccion_id === null
+        ? null
+        : Number(payload.seccion_id),
+    is_activa:
+      typeof payload.is_activa === "boolean" ? payload.is_activa : true,
+  };
+
+  if (!payloadNormalizado.titulo) {
+    throw new Error("El título es obligatorio.");
+  }
+
+  /*
+  ====================================================
+  IMPORTANTE
+  - Seguimos el patrón REST ya usado en el proyecto:
+    /publicaciones/comercios/{comercioId}
+  - Si en Swagger el POST exacto difiere, ajustamos solo esta línea.
+  ====================================================
+  */
+  return httpPost(
+    `/publicaciones/comercios/${comercioId}`,
+    payloadNormalizado,
+    token
+  );
 }
 
 /**

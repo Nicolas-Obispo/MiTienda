@@ -9,11 +9,16 @@ Reglas:
 
 ETAPA 55:
 - Se agregan helpers bulk para evitar consultas N+1 en feed
+
+ETAPA 57:
+- Se fuerza la carga del comercio relacionado en detalle/listados
+  para poder exponer nombre real del comercio al frontend
+- Se guarda imagen_url al crear publicaciones
 """
 
-from typing import List, Dict
+from typing import List, Dict, Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 
 from app.models.publicaciones_models import Publicacion
@@ -35,6 +40,9 @@ def crear_publicacion(
     """
     Crea una nueva publicación para un comercio.
     El comercio_id viene del contexto (no del body).
+
+    ETAPA 57:
+    - Se persiste imagen_url si viene informada.
     """
 
     nueva_publicacion = Publicacion(
@@ -42,6 +50,7 @@ def crear_publicacion(
         titulo=publicacion_in.titulo,
         descripcion=publicacion_in.descripcion,
         seccion_id=publicacion_in.seccion_id,
+        imagen_url=publicacion_in.imagen_url,  # <- guardamos la URL real de la imagen
         is_activa=publicacion_in.is_activa,
     )
 
@@ -63,10 +72,16 @@ def listar_publicaciones_por_comercio(
 ) -> List[Publicacion]:
     """
     Devuelve todas las publicaciones de un comercio.
+
+    ETAPA 57:
+    - Se agrega joinedload del comercio para que la publicación
+      ya salga con la relación cargada y el frontend pueda usar
+      el nombre real si el schema/router lo expone.
     """
 
     return (
         db.query(Publicacion)
+        .options(joinedload(Publicacion.comercio))
         .filter(Publicacion.comercio_id == comercio_id)
         .order_by(Publicacion.created_at.desc())
         .all()
@@ -81,13 +96,18 @@ def obtener_publicacion_por_id_y_sumar_view(
     db: Session,
     *,
     publicacion_id: int,
-) -> Publicacion:
+) -> Optional[Publicacion]:
     """
     Obtiene una publicación por ID e incrementa su contador de vistas.
+
+    ETAPA 57:
+    - Se agrega joinedload del comercio para que el detalle también
+      llegue con la relación lista y se pueda mostrar nombre real.
     """
 
     publicacion = (
         db.query(Publicacion)
+        .options(joinedload(Publicacion.comercio))
         .filter(
             Publicacion.id == publicacion_id,
             Publicacion.is_activa.is_(True),
@@ -98,11 +118,24 @@ def obtener_publicacion_por_id_y_sumar_view(
     if not publicacion:
         return None
 
+    # --------------------------------------------------
+    # Incremento real de views
+    # --------------------------------------------------
     publicacion.views_count += 1
     db.commit()
-    db.refresh(publicacion)
 
-    return publicacion
+    # --------------------------------------------------
+    # Releemos la publicación con el comercio cargado
+    # para devolver un objeto fresco y consistente
+    # --------------------------------------------------
+    publicacion_actualizada = (
+        db.query(Publicacion)
+        .options(joinedload(Publicacion.comercio))
+        .filter(Publicacion.id == publicacion_id)
+        .first()
+    )
+
+    return publicacion_actualizada
 
 
 # --------------------------------------------------
@@ -224,23 +257,33 @@ def obtener_publicaciones_interactuadas_por_usuario(
     """
     Devuelve las publicaciones con las que el usuario interactuó
     (likes + guardados).
+
+    ETAPA 57:
+    - Se agrega joinedload del comercio para que cualquier vista
+      posterior tenga acceso al nombre real del comercio.
     """
 
+    # --------------------------------------------------
     # IDs de publicaciones con like
+    # --------------------------------------------------
     likes_ids = (
         db.query(LikePublicacion.publicacion_id)
         .filter(LikePublicacion.usuario_id == usuario_id)
         .all()
     )
 
+    # --------------------------------------------------
     # IDs de publicaciones guardadas
+    # --------------------------------------------------
     guardados_ids = (
         db.query(PublicacionGuardada.publicacion_id)
         .filter(PublicacionGuardada.usuario_id == usuario_id)
         .all()
     )
 
+    # --------------------------------------------------
     # Convertimos a set para evitar duplicados
+    # --------------------------------------------------
     publicaciones_ids = set()
 
     for (pid,) in likes_ids:
@@ -252,9 +295,12 @@ def obtener_publicaciones_interactuadas_por_usuario(
     if not publicaciones_ids:
         return []
 
-    # Traemos las publicaciones completas
+    # --------------------------------------------------
+    # Traemos las publicaciones completas + comercio cargado
+    # --------------------------------------------------
     publicaciones = (
         db.query(Publicacion)
+        .options(joinedload(Publicacion.comercio))
         .filter(Publicacion.id.in_(publicaciones_ids))
         .all()
     )
