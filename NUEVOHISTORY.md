@@ -4296,3 +4296,439 @@ Foco:
 4. Explorar con descubrimiento real
 
 👉 Prioridad: PRODUCTO antes que IA
+
+---
+
+# ETAPA 58 — Exploración real + UX pública inicial ✅ CIERRE REAL
+
+## Objetivo de la etapa
+
+Convertir MiPlaza en una app más usable desde el punto de vista de producto, permitiendo que usuarios no registrados puedan explorar comercios y publicaciones, pero sin permitirles interactuar hasta iniciar sesión.
+
+También se corrigieron problemas de datos reales en publicaciones y se avanzó en la experiencia visual del feed y perfiles.
+
+---
+
+## Cambios principales implementados
+
+### 1. Feed principal con experiencia vertical
+
+Se modificó el comportamiento visual del Feed principal para acercarlo a una experiencia tipo app moderna.
+
+Cambios realizados:
+
+- El Feed dejó de funcionar como cuadrícula principal.
+- Se transformó en una experiencia vertical tipo reels/publicaciones grandes.
+- Las publicaciones ahora tienen más protagonismo visual.
+- Las imágenes se muestran más grandes y mejor integradas.
+- Las acciones de like y guardar quedan disponibles en la publicación.
+- Se eliminó el texto visual de “Procesando...” al interactuar.
+- Se incorporaron micro-animaciones:
+  - Like con efecto de latido.
+  - Guardar con efecto bounce.
+
+Archivos modificados:
+
+- `frontend/src/pages/FeedPage.jsx`
+- `frontend/src/components/PublicacionCard.jsx`
+- `frontend/src/components/InteraccionButton.jsx`
+
+---
+
+### 2. Historias no fijas en pantalla
+
+Se corrigió el comportamiento de la barra de historias en Feed.
+
+Antes:
+
+- Las historias quedaban fijas arriba al hacer scroll.
+
+Ahora:
+
+- Las historias permanecen en su lugar natural.
+- Al deslizar hacia abajo, desaparecen como parte del contenido.
+- Se evita que ocupen pantalla mientras el usuario explora publicaciones.
+
+Archivo modificado:
+
+- `frontend/src/pages/FeedPage.jsx`
+
+---
+
+### 3. Perfil de comercio en cuadrícula
+
+Se ajustó el perfil público del comercio para que las publicaciones se vean como galería tipo Instagram.
+
+Cambios realizados:
+
+- Las publicaciones del comercio se muestran en cuadrícula.
+- Desde la cuadrícula solo se ven métricas.
+- No se permite interactuar directamente desde la cuadrícula.
+- Para dar like o guardar, el usuario debe entrar al detalle de la publicación.
+- Se eliminó el texto innecesario “Comercio” sobre cada card.
+- Se mejoró la visualización de descripción/título en las publicaciones compactas.
+
+Archivo modificado:
+
+- `frontend/src/pages/PerfilComercioPage.jsx`
+- `frontend/src/components/PublicacionCard.jsx`
+
+---
+
+### 4. Portada real del comercio en perfil
+
+Se corrigió el avatar/círculo del perfil de comercio.
+
+Antes:
+
+- Se mostraba solo la inicial del comercio.
+
+Ahora:
+
+- Si el comercio tiene imagen de portada, se muestra esa imagen.
+- Si no existe imagen, recién ahí se usa la inicial como fallback.
+
+Archivo modificado:
+
+- `frontend/src/pages/PerfilComercioPage.jsx`
+
+---
+
+### 5. Explorar público sin login
+
+Se modificó el sistema de rutas para permitir que usuarios no autenticados puedan explorar la app.
+
+Ahora, sin iniciar sesión, el usuario puede:
+
+- Entrar a `Explorar`.
+- Ver comercios.
+- Entrar al perfil de un comercio.
+- Ver publicaciones.
+- Entrar al detalle de una publicación.
+
+Pero no puede:
+
+- Dar like.
+- Guardar publicaciones.
+- Crear historias.
+- Crear publicaciones.
+- Acceder a Feed personalizado.
+- Acceder a Ranking.
+- Acceder a Perfil.
+
+Archivos modificados:
+
+- `frontend/src/router/AppRouter.jsx`
+- `frontend/src/layouts/MainLayout.jsx`
+
+---
+
+### 6. Redirección automática para visitantes
+
+Se incorporó una regla de producto para usuarios no registrados:
+
+- El usuario puede explorar durante 5 minutos.
+- Luego se lo redirige automáticamente a Login/Registro.
+
+Objetivo:
+
+- Permitir descubrimiento inicial.
+- Incentivar registro después de probar la app.
+- Evitar bloquear el valor de entrada desde el inicio.
+
+Archivo modificado:
+
+- `frontend/src/router/AppRouter.jsx`
+
+---
+
+### 7. Bloqueo correcto de interacciones sin login
+
+Se corrigió el error donde un visitante podía intentar interactuar y la app terminaba mostrando errores 401.
+
+Antes:
+
+- Al intentar dar like o guardar sin sesión, podía aparecer:
+  - `HTTP 401 - Not authenticated`
+  - Pantalla de error
+  - Experiencia rota
+
+Ahora:
+
+- Si el usuario intenta interactuar sin sesión:
+  - Se lo redirige a Login.
+  - Se muestra intención clara de que debe iniciar sesión.
+  - No se llama al backend innecesariamente.
+  - No se rompe la pantalla.
+
+Archivos modificados:
+
+- `frontend/src/pages/PerfilComercioPage.jsx`
+- `frontend/src/pages/PublicacionDetallePage.jsx`
+
+---
+
+### 8. Home más real de producto
+
+Se mejoró la pantalla inicial.
+
+Antes:
+
+- Mostraba bloques técnicos como “Feed” e “Historias”.
+- Tenía textos de etapa/desarrollo.
+- No comunicaba bien el producto.
+
+Ahora:
+
+- Se muestra MiPlaza como producto.
+- Se usa el mensaje:
+  “MiPlaza es tu vidriera digital: te acercamos los comercios, productos y ofertas de tu zona en un solo lugar.”
+- Se agregan CTAs claros:
+  - Explorar comercios.
+  - Iniciar sesión o registrarme.
+  - Ir al Feed si ya hay sesión.
+
+Archivo modificado:
+
+- `frontend/src/pages/Home.jsx`
+
+---
+
+### 9. Layout general ajustado
+
+Se corrigió el layout general para que el ancho de pantalla no se rompa entre vistas.
+
+Problema detectado:
+
+- Algunas pantallas como Explorar y Ranking comenzaron a ocupar demasiado ancho.
+- Feed y Perfil tenían layout propio.
+
+Solución:
+
+- Se ajustó `MainLayout.jsx`.
+- Se diferenciaron páginas con layout propio de páginas con contenedor centrado.
+- Se respetó enfoque mobile-first.
+
+Archivo modificado:
+
+- `frontend/src/layouts/MainLayout.jsx`
+
+---
+
+### 10. Corrección de nombre real del comercio en publicaciones
+
+Se corrigió el problema donde el detalle de publicación mostraba “Comercio” en lugar del nombre real del negocio.
+
+Problema detectado:
+
+- El frontend recibía:
+  `comercio_nombre: null`
+- El schema de Pydantic estaba usando `validation_alias=AliasPath("comercio", "nombre")`.
+- Eso impedía tomar correctamente el valor manual enviado por el router.
+
+Solución:
+
+- Se corrigió `PublicacionRead`.
+- `comercio_nombre` ahora se toma directamente desde el router.
+- El backend puede devolver correctamente el nombre real del comercio, por ejemplo:
+  `Claudio y Claudia`.
+
+Archivos modificados:
+
+- `backend/app/routers/publicaciones_routers.py`
+- `backend/app/schemas/publicaciones_schemas.py`
+- `frontend/src/pages/PublicacionDetallePage.jsx`
+
+---
+
+## Observaciones técnicas importantes
+
+### Error detectado en edición de comercio
+
+Durante la etapa se detectó un error pendiente en la edición de comercios:
+
+`HTTP 422 - maps_url: Input should be a valid URL`
+
+Causa:
+
+- El campo `maps_url` espera una URL válida.
+- En algunos casos se está enviando una dirección textual, por ejemplo:
+  `Lavalle 100, Rafaela, Santa Fe`
+
+Decisión:
+
+- Este error queda pendiente para resolver en la próxima etapa.
+- Se debe separar correctamente:
+  - `direccion`: dirección física del comercio.
+  - `maps_url`: enlace real de Google Maps.
+
+---
+
+## Estado actual del producto al cierre de ETAPA 58
+
+MiPlaza ya permite:
+
+- Explorar comercios sin iniciar sesión.
+- Entrar a perfiles de comercios.
+- Ver publicaciones.
+- Ver detalle de publicaciones.
+- Mostrar nombres reales de comercios en publicaciones.
+- Usar Feed visual más moderno.
+- Mantener interacciones protegidas por sesión.
+- Evitar errores 401 visibles al visitante.
+- Mantener el backend como fuente de verdad.
+
+La app avanza desde prototipo funcional hacia producto usable real.
+
+---
+
+## Cierre conceptual de la etapa
+
+En dos palabras:
+
+**Exploración real**
+
+---
+
+# Próxima etapa
+
+# ETAPA 59 — Registro + administración de publicaciones + pulido visual
+
+## Objetivo general
+
+Mejorar el acceso de nuevos usuarios, completar acciones básicas del dueño del comercio y pulir pantallas clave de administración/perfil.
+
+---
+
+## Pendientes definidos para ETAPA 59
+
+### 1. Registro de usuarios
+
+Implementar acceso visible al registro.
+
+Pendientes:
+
+- Agregar botón inicial para registrarse.
+- Crear pantalla de registro.
+- Conectar registro con backend existente.
+- Definir flujo post-registro:
+  - ir a Login
+  - o iniciar sesión automáticamente si corresponde
+
+Archivos esperados:
+
+- `frontend/src/pages/RegisterPage.jsx` o equivalente
+- `frontend/src/router/AppRouter.jsx`
+- `frontend/src/layouts/MainLayout.jsx`
+- services de auth si hace falta
+
+---
+
+### 2. Mejorar Login
+
+Pendientes:
+
+- Sacar textos técnicos o tips innecesarios.
+- Mejorar estética.
+- Mostrar opción clara:
+  - Iniciar sesión
+  - Registrarme
+- Mostrar mensajes útiles si el usuario viene de una interacción bloqueada.
+
+Archivo esperado:
+
+- `frontend/src/pages/Login.jsx`
+
+---
+
+### 3. Permitir borrar publicaciones propias
+
+Agregar acción para que el dueño del comercio pueda eliminar publicaciones.
+
+Pendientes:
+
+- Backend:
+  - endpoint para borrar/desactivar publicación.
+  - preferentemente soft delete usando `is_activa = False`.
+- Frontend:
+  - botón eliminar publicación solo para dueño.
+  - confirmación antes de borrar.
+  - refrescar cuadrícula luego de eliminar.
+- Mantener regla:
+  - solo dueño del comercio puede borrar sus publicaciones.
+
+Archivos posibles:
+
+- `backend/app/routers/publicaciones_routers.py`
+- `backend/app/services/publicaciones_services.py`
+- `frontend/src/pages/PerfilComercioPage.jsx`
+- `frontend/src/pages/PublicacionDetallePage.jsx`
+
+---
+
+### 4. Mejorar pantalla Mi Perfil
+
+Pendientes visuales:
+
+- Pulir sección de foto de perfil.
+- Mejorar cards de “Mis comercios”.
+- Agregar imagen/portada pequeña del comercio en cada card.
+- Mejorar separación entre datos y acciones.
+- Evitar apariencia demasiado administrativa.
+- Mantener mobile-first.
+
+Archivo esperado:
+
+- `frontend/src/pages/ProfilePage.jsx`
+
+---
+
+### 5. Mejorar edición de comercio
+
+Pendientes:
+
+- Corregir error de `maps_url`.
+- Separar claramente:
+  - Dirección física.
+  - Link de Google Maps.
+- Validar en frontend antes de enviar.
+- Si `maps_url` no es URL válida, enviar `null` o no enviarlo.
+- Mejorar UI del formulario de edición.
+
+Archivo esperado:
+
+- `frontend/src/pages/ProfilePage.jsx`
+- posiblemente schemas/services backend si corresponde
+
+---
+
+### 6. Pulido visual general
+
+Pendientes:
+
+- Mejorar pantallas mostradas:
+  - Mi Perfil
+  - Mis comercios
+  - Editar comercio
+  - Login
+  - Registro
+- Dejar estilos más consistentes con MiPlaza.
+- Evitar textos técnicos.
+- Reforzar identidad de producto.
+- Mantener diseño pensado para celulares.
+
+---
+
+## Foco estratégico de ETAPA 59
+
+La etapa 59 no debe volver a IA todavía.
+
+Prioridad:
+
+1. Registro
+2. Login más claro
+3. Administración básica de publicaciones
+4. Mejoras visuales de perfil/comercio
+5. Corrección de edición de comercio
+
+La IA sigue pausada hasta que el producto base sea más completo y usable.

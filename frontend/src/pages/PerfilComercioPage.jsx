@@ -1,32 +1,38 @@
 /**
  * PerfilComercioPage.jsx
  * -----------------------
- * ETAPA 40 — Perfil de comercio (40.1 UI + 40.2 Data básica)
- * ETAPA 42 — Crear historia desde UI (solo dueño)
+ * ETAPA 58
+ * - Perfil de comercio mantiene vista tipo perfil/Instagram
+ * - Publicaciones del comercio en cuadrícula
+ * - Feed principal queda vertical, pero el comercio queda como galería
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+
 import PublicacionCard from "../components/PublicacionCard";
 import CrearHistoriaModal from "../components/CrearHistoriaModal";
+
 import {
   getComercioById,
   getHistoriasDeComercio,
   getPublicacionesDeComercio,
   crearPublicacionDeComercio,
 } from "../services/comercios_service";
+
 import {
   fetchPublicacionesGuardadas,
   toggleLikePublicacion,
   guardarPublicacion,
   quitarPublicacionGuardada,
 } from "../services/feed_service";
+
 import { useAuth } from "../context/useAuth";
 
 export default function CommerceProfilePage() {
   const { id } = useParams();
   const comercioId = Number(id);
-
+  const navigate = useNavigate();
   const { usuario, user } = useAuth();
   const usuarioActivo = usuario || user || null;
 
@@ -37,36 +43,18 @@ export default function CommerceProfilePage() {
   const [historias, setHistorias] = useState([]);
   const [publicaciones, setPublicaciones] = useState([]);
 
-  // Modal crear historia (ETAPA 42)
   const [isCrearHistoriaOpen, setIsCrearHistoriaOpen] = useState(false);
-
-  // Modal crear publicación (ETAPA 57)
   const [isCrearPublicacionOpen, setIsCrearPublicacionOpen] = useState(false);
 
-  /*
-  ====================================================
-  FORMULARIO CREAR PUBLICACIÓN
-  - Estado local del modal
-  - En el próximo paso lo conectamos al backend real
-  ====================================================
-  */
   const [publicacionForm, setPublicacionForm] = useState({
     titulo: "",
     descripcion: "",
     imagen_url: "",
   });
 
-  /*
-  ====================================================
-  ARCHIVO DE IMAGEN SELECCIONADO
-  - Guarda la imagen real (no URL)
-  ====================================================
-  */
   const [imagenFile, setImagenFile] = useState(null);
-
   const [isCreatingPublicacion, setIsCreatingPublicacion] = useState(false);
 
-  // Locks por publicación (like/guardar)
   const [likeLocks, setLikeLocks] = useState({});
   const [saveLocks, setSaveLocks] = useState({});
 
@@ -77,8 +65,6 @@ export default function CommerceProfilePage() {
     setter((prev) => ({ ...prev, [pubId]: value }));
   }
 
-  // ✅ Determina si el comercio es “mío”
-  // Intentamos campos comunes: owner_user_id / usuario_id / propietario_id
   function esComercioMio(comercioData, userData) {
     if (!comercioData || !userData) return false;
 
@@ -88,8 +74,7 @@ export default function CommerceProfilePage() {
       comercioData.propietario_id ??
       null;
 
-    const userId =
-      userData.id ?? userData.user_id ?? userData.usuario_id ?? null;
+    const userId = userData.id ?? userData.user_id ?? userData.usuario_id ?? null;
 
     if (comercioOwner == null || userId == null) return false;
 
@@ -97,6 +82,10 @@ export default function CommerceProfilePage() {
   }
 
   const puedoCrearHistoria = esComercioMio(comercio, usuarioActivo);
+
+  function getAccessToken() {
+    return localStorage.getItem("access_token");
+  }
 
   async function loadAll() {
     if (!comercioId || Number.isNaN(comercioId)) {
@@ -109,12 +98,14 @@ export default function CommerceProfilePage() {
       setIsLoading(true);
       setErrorMessage("");
 
+      const token = getAccessToken();
+
       const [comercioData, publicacionesData, historiasData, guardadasData] =
         await Promise.all([
           getComercioById(comercioId),
           getPublicacionesDeComercio(comercioId),
           getHistoriasDeComercio(comercioId),
-          fetchPublicacionesGuardadas(),
+          token ? fetchPublicacionesGuardadas() : Promise.resolve([]),
         ]);
 
       const pubs = Array.isArray(publicacionesData)
@@ -131,13 +122,13 @@ export default function CommerceProfilePage() {
 
       const guardadasSet = new Set(
         guardadasItems
-          .map((g) => g?.publicacion_id)
+          .map((g) => g?.id ?? g?.publicacion_id)
           .filter((pid) => typeof pid === "number")
       );
 
       const mergedPubs = pubs.map((p) => ({
         ...p,
-        guardada_by_me: guardadasSet.has(p.id),
+        guardada_by_me: Boolean(p.guardada_by_me) || guardadasSet.has(p.id),
       }));
 
       setComercio(comercioData);
@@ -171,20 +162,15 @@ export default function CommerceProfilePage() {
     }
   }
 
-    /*
-  ====================================================
-  REFRESH DE PUBLICACIONES
-  - Se usa después de crear una publicación nueva
-  - Mantiene sincronizada la UI con backend
-  ====================================================
-  */
   async function refreshPublicaciones() {
     if (!comercioId || Number.isNaN(comercioId)) return;
 
     try {
+      const token = getAccessToken();
+
       const [publicacionesData, guardadasData] = await Promise.all([
         getPublicacionesDeComercio(comercioId),
-        fetchPublicacionesGuardadas(),
+        token ? fetchPublicacionesGuardadas() : Promise.resolve([]),
       ]);
 
       const pubs = Array.isArray(publicacionesData)
@@ -197,13 +183,13 @@ export default function CommerceProfilePage() {
 
       const guardadasSet = new Set(
         guardadasItems
-          .map((g) => g?.publicacion_id)
+          .map((g) => g?.id ?? g?.publicacion_id)
           .filter((pid) => typeof pid === "number")
       );
 
       const mergedPubs = pubs.map((p) => ({
         ...p,
-        guardada_by_me: guardadasSet.has(p.id),
+        guardada_by_me: Boolean(p.guardada_by_me) || guardadasSet.has(p.id),
       }));
 
       setPublicaciones(mergedPubs);
@@ -212,13 +198,32 @@ export default function CommerceProfilePage() {
     }
   }
 
-
   useEffect(() => {
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comercioId]);
 
+  function usuarioDebeLoguearse() {
+  const token = localStorage.getItem("access_token");
+
+  if (!token) {
+    navigate("/login", {
+      replace: false,
+      state: {
+        message:
+          "Para poder interactuar con la app, debes iniciá sesión.",
+      },
+    });
+
+    return true;
+  }
+
+  return false;
+}
+
   async function handleToggleLike(pubId) {
+    if (usuarioDebeLoguearse()) return;
+
     if (likeLocksMemo[pubId]) return;
 
     setLock(setLikeLocks, pubId, true);
@@ -251,6 +256,9 @@ export default function CommerceProfilePage() {
   }
 
   async function handleToggleSave(pubId) {
+
+    if (usuarioDebeLoguearse()) return;
+
     if (saveLocksMemo[pubId]) return;
 
     setLock(setSaveLocks, pubId, true);
@@ -293,11 +301,6 @@ export default function CommerceProfilePage() {
     await refreshHistorias();
   }
 
-    /*
-  ====================================================
-  HELPERS DEL MODAL CREAR PUBLICACIÓN
-  ====================================================
-  */
   function handleChangePublicacionForm(event) {
     const { name, value } = event.target;
 
@@ -307,26 +310,13 @@ export default function CommerceProfilePage() {
     }));
   }
 
-    /*
-  ====================================================
-  SELECCIÓN DE IMAGEN
-  - Guarda archivo en memoria
-  ====================================================
-  */
   function handleSelectImagenPublicacion(event) {
     const file = event.target.files?.[0];
-
     if (!file) return;
-
     setImagenFile(file);
   }
 
   function handleCloseCrearPublicacion() {
-    /*
-    -----------------------------------------------
-    Cerramos modal y limpiamos formulario
-    -----------------------------------------------
-    */
     setIsCrearPublicacionOpen(false);
 
     setPublicacionForm({
@@ -334,21 +324,11 @@ export default function CommerceProfilePage() {
       descripcion: "",
       imagen_url: "",
     });
+
+    setImagenFile(null);
   }
 
-    /*
-  ====================================================
-  SUBMIT CREAR PUBLICACIÓN
-  - Conecta el modal con el backend real
-  - Usa el endpoint que ya funciona en Swagger
-  ====================================================
-  */
   async function handleSubmitCrearPublicacion() {
-    /*
-    -----------------------------------------------
-    Validación mínima de frontend
-    -----------------------------------------------
-    */
     if (!publicacionForm.titulo.trim()) {
       setErrorMessage("El título de la publicación es obligatorio.");
       return;
@@ -358,11 +338,6 @@ export default function CommerceProfilePage() {
       setIsCreatingPublicacion(true);
       setErrorMessage("");
 
-      /*
-      ====================================================
-      UPLOAD DE IMAGEN (si existe)
-      ====================================================
-      */
       let imagenUrlFinal = null;
 
       if (imagenFile) {
@@ -378,13 +353,11 @@ export default function CommerceProfilePage() {
             body: formData,
           });
 
-          // ⚠️ Validación importante
           if (!response.ok) {
             throw new Error("Error al subir la imagen");
           }
 
           const data = await response.json();
-
           imagenUrlFinal = data.url;
         } catch (error) {
           setErrorMessage(error.message || "Error subiendo la imagen.");
@@ -392,11 +365,6 @@ export default function CommerceProfilePage() {
         }
       }
 
-      /*
-      -----------------------------------------------
-      Crear publicación real en backend
-      -----------------------------------------------
-      */
       await crearPublicacionDeComercio(comercioId, {
         titulo: publicacionForm.titulo,
         descripcion: publicacionForm.descripcion,
@@ -405,57 +373,29 @@ export default function CommerceProfilePage() {
         is_activa: true,
       });
 
-      /*
-      -----------------------------------------------
-      Limpiar estado de imagen
-      -----------------------------------------------
-      */
-      setImagenFile(null);
-
-      /*
-      -----------------------------------------------
-      Cerrar modal + limpiar form
-      -----------------------------------------------
-      */
       handleCloseCrearPublicacion();
-
-      /*
-      -----------------------------------------------
-      Refrescar publicaciones (clave)
-      -----------------------------------------------
-      */
       await refreshPublicaciones();
-
     } catch (error) {
       setErrorMessage(error.message || "Error al crear la publicación.");
     } finally {
       setIsCreatingPublicacion(false);
     }
   }
-  return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <main className="mx-auto max-w-3xl px-4 py-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-white">
-            Perfil de comercio
-          </h1>
-          <p className="mt-1 text-sm text-gray-400">
-            Comercio ID:{" "}
-            <span className="text-gray-200 font-semibold">{id}</span>
-          </p>
-        </div>
 
-        {/* Loading */}
+  return (
+    <div className="min-h-screen bg-gray-950 text-white">
+      <main className="mx-auto max-w-5xl px-4 py-6">
         {isLoading && (
-          <div className="space-y-3">
-            <div className="h-24 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-            <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-            <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
+          <div className="space-y-4">
+            <div className="h-40 rounded-3xl border border-gray-800 bg-gray-900 animate-pulse" />
+            <div className="grid grid-cols-3 gap-2">
+              <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-900 animate-pulse" />
+              <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-900 animate-pulse" />
+              <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-900 animate-pulse" />
+            </div>
           </div>
         )}
 
-        {/* Error */}
         {!isLoading && errorMessage && (
           <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
             <p className="font-semibold text-red-200">Error</p>
@@ -463,129 +403,103 @@ export default function CommerceProfilePage() {
           </div>
         )}
 
-        {/* Contenido */}
         {!isLoading && !errorMessage && (
           <>
-            {/* Card Comercio */}
-            <section className="rounded-2xl border border-gray-800 bg-gray-950 p-5">
-              <h2 className="text-lg font-semibold text-white">
-                {comercio?.nombre ?? "Comercio"}
-              </h2>
+            <section className="rounded-3xl border border-gray-800 bg-gray-900 p-5 sm:p-6">
+              <div className="flex items-start gap-4">
+                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-gray-700 bg-gray-950 sm:h-24 sm:w-24">
+                  {comercio?.portada_url ||
+                  comercio?.imagen_url ||
+                  comercio?.logo_url ||
+                  comercio?.foto_url ? (
+                    <img
+                      src={
+                        comercio?.portada_url ||
+                        comercio?.imagen_url ||
+                        comercio?.logo_url ||
+                        comercio?.foto_url
+                      }
+                      alt={comercio?.nombre || "Comercio"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-white">
+                      {(comercio?.nombre || "C").slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                </div>
 
-              <div className="mt-2 text-sm text-gray-300 space-y-1">
-                {comercio?.descripcion && (
-                  <p className="text-gray-200">{comercio.descripcion}</p>
-                )}
+                <div className="min-w-0 flex-1">
+                  <h1 className="truncate text-2xl font-bold text-white">
+                    {comercio?.nombre ?? "Comercio"}
+                  </h1>
 
-                <p className="text-gray-400">
-                  Estado:{" "}
-                  <span className="text-gray-200 font-semibold">
-                    {comercio?.is_activo ? "Activo" : "Inactivo"}
-                  </span>
-                </p>
+                  {comercio?.descripcion ? (
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-300">
+                      {comercio.descripcion}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-500">
+                      Este comercio todavía no agregó descripción.
+                    </p>
+                  )}
 
-                {/* Debug suave para que veas si el backend manda owner */}
-                {(comercio?.owner_user_id ??
-                  comercio?.usuario_id ??
-                  comercio?.propietario_id) != null ? (
-                  <p className="text-xs text-gray-500">
-                    Owner:{" "}
-                    {String(
-                      comercio?.owner_user_id ??
-                        comercio?.usuario_id ??
-                        comercio?.propietario_id
-                    )}
-                  </p>
-                ) : null}
+                  <div className="mt-4 flex flex-wrap gap-3 text-sm text-gray-300">
+                    <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
+                      {publicaciones.length} publicaciones
+                    </span>
+
+                    <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
+                      {historias.length} historias
+                    </span>
+
+                    <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
+                      {comercio?.is_activo ? "Activo" : "Inactivo"}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </section>
 
-            {/* Historias */}
-            <section className="mt-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-white">Historias</h3>
-
-                {/* ✅ Botón crear historia SOLO si es mío */}
-                {puedoCrearHistoria ? (
+              {puedoCrearHistoria && (
+                <div className="mt-5 flex flex-wrap gap-3">
                   <button
                     type="button"
-                    className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:opacity-90"
+                    className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:opacity-90"
                     onClick={() => setIsCrearHistoriaOpen(true)}
                   >
                     + Historia
                   </button>
-                ) : (
-                  <span className="text-xs text-white/60">
-                    (Solo el dueño puede publicar historias)
-                  </span>
-                )}
-              </div>
 
-              {historias.length === 0 ? (
-                <div className="mt-3 rounded-2xl border border-gray-800 bg-gray-950 p-5">
-                  <p className="text-gray-300">No hay historias todavía.</p>
-                </div>
-              ) : (
-                <div className="mt-3 space-y-2">
-                  {historias.map((h) => (
-                    <div
-                      key={h.id}
-                      className="rounded-2xl border border-gray-800 bg-gray-950 p-4"
-                    >
-                      <p className="text-sm text-gray-200 font-semibold">
-                        Historia #{h.id}
-                      </p>
-
-                      {h.media_url ? (
-                        <p className="mt-1 text-sm text-gray-300 break-words">
-                          {h.media_url}
-                        </p>
-                      ) : (
-                        <p className="mt-1 text-sm text-gray-500">
-                          (Sin media_url)
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {/* Publicaciones */}
-            <section className="mt-6">
-
-              {/* 
-              ============================================
-              HEADER PUBLICACIONES
-              - Título + botón crear publicación
-              - Igual lógica que historias
-              ============================================
-              */}
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-white">
-                  Publicaciones
-                </h3>
-
-                {/* Botón crear publicación SOLO si es mi comercio */}
-                {puedoCrearHistoria ? (
                   <button
                     type="button"
-                    className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:opacity-90"
+                    className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:opacity-90"
                     onClick={() => setIsCrearPublicacionOpen(true)}
                   >
                     + Publicación
                   </button>
-                ) : null}
+                </div>
+              )}
+            </section>
+
+            <section className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-base font-semibold text-white">
+                  Publicaciones
+                </h2>
+
+                <span className="text-xs text-gray-500">
+                  Vista en cuadrícula
+                </span>
               </div>
 
               {publicaciones.length === 0 ? (
-                <div className="mt-3 rounded-2xl border border-gray-800 bg-gray-950 p-5">
+                <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
                   <p className="text-gray-300">
                     Este comercio no tiene publicaciones todavía.
                   </p>
                 </div>
               ) : (
-                <div className="mt-3 space-y-4">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:gap-3">
                   {publicaciones.map((p) => (
                     <PublicacionCard
                       key={p.id}
@@ -595,45 +509,33 @@ export default function CommerceProfilePage() {
                       isActingSave={Boolean(saveLocksMemo[p.id])}
                       onToggleLike={() => handleToggleLike(p.id)}
                       onToggleSave={() => handleToggleSave(p.id)}
+                      compact
                     />
                   ))}
                 </div>
               )}
             </section>
 
-            {/* Modal Crear Historia */}
             <CrearHistoriaModal
               isOpen={isCrearHistoriaOpen}
               comercioId={comercioId}
               onClose={() => setIsCrearHistoriaOpen(false)}
               onCreated={handleHistoriaCreated}
             />
-            {/* 
-            ====================================================
-            MODAL CREAR PUBLICACIÓN
-            - Formulario visual real
-            - Todavía NO conectado al backend
-            - Próximo paso: submit real
-            ====================================================
-            */}
+
             {isCrearPublicacionOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
                 <div className="w-full max-w-lg rounded-2xl border border-gray-700 bg-gray-900 p-6">
-
-                  {/* Header del modal */}
                   <div className="mb-5">
                     <h3 className="text-lg font-semibold text-white">
                       Crear publicación
                     </h3>
                     <p className="mt-1 text-sm text-gray-400">
-                      Completá los datos para publicar contenido en este comercio.
+                      Completá los datos para publicar en este contenido.
                     </p>
                   </div>
 
-                  {/* Formulario */}
                   <div className="space-y-4">
-
-                    {/* Campo título */}
                     <div>
                       <label className="mb-1 block text-sm font-medium text-gray-200">
                         Título
@@ -648,7 +550,6 @@ export default function CommerceProfilePage() {
                       />
                     </div>
 
-                    {/* Campo descripción */}
                     <div>
                       <label className="mb-1 block text-sm font-medium text-gray-200">
                         Descripción
@@ -663,10 +564,9 @@ export default function CommerceProfilePage() {
                       />
                     </div>
 
-                    {/* Campo imagen_url */}
                     <div>
                       <label className="mb-1 block text-sm font-medium text-gray-200">
-                        URL de imagen
+                        Imagen
                       </label>
                       <input
                         type="file"
@@ -675,13 +575,15 @@ export default function CommerceProfilePage() {
                         onChange={handleSelectImagenPublicacion}
                         className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-1 file:text-sm file:font-semibold file:text-black"
                       />
-                      <p className="mt-1 text-xs text-gray-500">
-                        En el próximo paso lo conectamos con el guardado real en backend.
-                      </p>
+
+                      {imagenFile ? (
+                        <p className="mt-1 text-xs text-gray-400">
+                          Imagen seleccionada: {imagenFile.name}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
 
-                  {/* Footer del modal */}
                   <div className="mt-6 grid grid-cols-2 gap-3">
                     <button
                       type="button"

@@ -2,14 +2,11 @@
  * InteraccionButton.jsx
  * ----------------------
  * Componente reutilizable para:
- * - Like (corazón)
- * - Guardar (estrella)
- *
- * OBJETIVO:
- * - Unificar UI en toda la app
- * - Permitir modo normal y modo iconOnly
- * - En modo iconOnly, el botón debe ser perfectamente circular
+ * - Like (corazón) → animación latido
+ * - Guardar (estrella) → animación bounce
  */
+
+import { useState } from "react";
 
 export default function InteraccionButton({
   active = false,
@@ -30,12 +27,14 @@ export default function InteraccionButton({
       activeColor: "text-red-500",
       inactiveColor: "text-gray-300",
       borderActive: "border-red-500",
+      animation: "animate-like",
     },
     guardar: {
       icon: "★",
       activeColor: "text-yellow-400",
       inactiveColor: "text-gray-300",
       borderActive: "border-yellow-500",
+      animation: "animate-save",
     },
   };
 
@@ -43,9 +42,28 @@ export default function InteraccionButton({
 
   /*
   ====================================================
+  ESTADO DE ANIMACIÓN
+  ====================================================
+  */
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  function handleClick(e) {
+    if (disabled) return;
+
+    // Ejecuta acción original
+    onClick?.(e);
+
+    // Dispara animación
+    setIsAnimating(true);
+
+    setTimeout(() => {
+      setIsAnimating(false);
+    }, 300);
+  }
+
+  /*
+  ====================================================
   ESTILO BASE
-  - iconOnly: círculo perfecto
-  - normal: botón con texto
   ====================================================
   */
   const baseClass = iconOnly
@@ -58,27 +76,57 @@ export default function InteraccionButton({
     `;
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`
-        ${baseClass}
-        ${active ? cfg.borderActive : "border-gray-700"}
-        ${disabled ? "cursor-not-allowed opacity-60" : "hover:bg-gray-800"}
-      `}
-    >
-      {/* ICONO */}
-      <span
-        className={`leading-none transition ${
-          iconOnly ? "text-lg" : "text-xl"
-        } ${active ? cfg.activeColor : cfg.inactiveColor}`}
-      >
-        {cfg.icon}
-      </span>
+    <>
+      {/* ESTILOS DE ANIMACIÓN INLINE */}
+      <style>
+        {`
+          @keyframes likePop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+          }
 
-      {/* TEXTO SOLO SI NO ES iconOnly */}
-      {!iconOnly && <span className="text-white">{label}</span>}
-    </button>
+          @keyframes saveBounce {
+            0% { transform: translateY(0); }
+            40% { transform: translateY(-6px); }
+            100% { transform: translateY(0); }
+          }
+
+          .animate-like {
+            animation: likePop 0.3s ease;
+          }
+
+          .animate-save {
+            animation: saveBounce 0.3s ease;
+          }
+        `}
+      </style>
+
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={disabled}
+        className={`
+          ${baseClass}
+          ${active ? cfg.borderActive : "border-gray-700"}
+          ${disabled ? "cursor-not-allowed opacity-60" : "hover:bg-gray-800"}
+        `}
+      >
+        {/* ICONO */}
+        <span
+          className={`
+            leading-none transition
+            ${iconOnly ? "text-lg" : "text-xl"}
+            ${active ? cfg.activeColor : cfg.inactiveColor}
+            ${isAnimating ? cfg.animation : ""}
+          `}
+        >
+          {cfg.icon}
+        </span>
+
+        {/* TEXTO SOLO SI NO ES iconOnly */}
+        {!iconOnly && <span className="text-white">{label}</span>}
+      </button>
+    </>
   );
 }

@@ -3,37 +3,22 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import InteraccionButton from "./InteraccionButton";
 
-/*
-====================================================
-BADGE DE MÉTRICA
-- Se usa para mostrar métricas resumidas
-====================================================
-*/
 function MetricBadge({ label, value, icon }) {
   return (
     <div className="inline-flex items-center rounded-full border border-gray-800 bg-gray-900 px-3 py-1 text-xs text-gray-200">
-      <span className="mr-1" aria-hidden="true">
-        {icon}
-      </span>
+      <span className="mr-1" aria-hidden="true">{icon}</span>
       <span className="mr-1 text-gray-400">{label}</span>
       <span className="font-semibold text-white">{value ?? 0}</span>
     </div>
   );
 }
 
-/*
-====================================================
-HELPERS DE NORMALIZACIÓN
-====================================================
-*/
 function getNombreComercio(pub) {
   return (
     pub?.comercio_nombre ||
     pub?.nombre_comercio ||
     pub?.comercio?.nombre ||
-    (typeof pub?.comercio_id === "number"
-      ? `Comercio #${pub.comercio_id}`
-      : "Comercio")
+    "Perfil"
   );
 }
 
@@ -42,7 +27,6 @@ function getMediaUrl(pub) {
     pub?.imagen_url ||
     pub?.media_url ||
     pub?.foto_url ||
-    pub?.portada_url ||
     pub?.thumbnail_url ||
     ""
   );
@@ -50,7 +34,6 @@ function getMediaUrl(pub) {
 
 function esVideo(url) {
   if (!url || typeof url !== "string") return false;
-
   return [".mp4", ".webm", ".ogg", ".mov"].some((ext) =>
     url.toLowerCase().includes(ext)
   );
@@ -65,6 +48,7 @@ export default function PublicacionCard({
   rankIndex = null,
   headerRightBadgeText = null,
   compact = false,
+  compactActions = false,
 }) {
   const navigate = useNavigate();
 
@@ -81,22 +65,11 @@ export default function PublicacionCard({
   const mediaUrl = getMediaUrl(pub);
   const mediaEsVideo = esVideo(mediaUrl);
 
-  /*
-  ====================================================
-  NAVEGACIÓN A DETALLE
-  ====================================================
-  */
   function irADetallePublicacion() {
     if (!pub?.id) return;
     navigate(`/publicaciones/${pub.id}`);
   }
 
-  /*
-  ====================================================
-  HANDLERS DE BOTONES
-  - Frenan propagación para no abrir el detalle
-  ====================================================
-  */
   function handleLikeClick(e) {
     e.stopPropagation();
     onToggleLike?.();
@@ -107,9 +80,6 @@ export default function PublicacionCard({
     onToggleSave?.();
   }
 
-  // =====================================================
-  // MODO COMPACTO — para Feed / Ranking en grid
-  // =====================================================
   if (compact) {
     return (
       <article
@@ -129,7 +99,7 @@ export default function PublicacionCard({
             ) : (
               <img
                 src={mediaUrl}
-                alt={pub?.titulo || nombreComercio}
+                alt={pub?.titulo || pub?.descripcion || "Publicación"}
                 className="h-full w-full object-cover"
               />
             )
@@ -139,103 +109,72 @@ export default function PublicacionCard({
             </div>
           )}
 
-          {/* BADGES SUPERIORES */}
-          <div className="pointer-events-none absolute left-2 top-2 flex items-center gap-2">
-            {showRank ? (
+          {showRank ? (
+            <div className="pointer-events-none absolute left-2 top-2">
               <span className="rounded-full border border-black/30 bg-black/60 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
                 #{rankIndex + 1}
               </span>
-            ) : null}
+            </div>
+          ) : null}
 
-            {headerRightBadgeText ? (
-              <span className="rounded-full border border-black/30 bg-black/60 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-                {headerRightBadgeText}
-              </span>
-            ) : null}
-          </div>
-
-          {/* DEGRADÉ INFERIOR */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
 
-          {/* INFO + ACCIONES */}
           <div className="absolute inset-x-0 bottom-0 p-3">
             <div className="flex items-end justify-between gap-2">
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">
-                  {nombreComercio}
-                </p>
-
                 {pub?.descripcion ? (
-                  <p className="mt-1 line-clamp-2 text-xs text-white/80">
+                  <p className="line-clamp-2 text-xs font-medium text-white/90">
                     {pub.descripcion}
                   </p>
                 ) : pub?.titulo ? (
-                  <p className="mt-1 line-clamp-2 text-xs text-white/80">
+                  <p className="line-clamp-2 text-xs font-medium text-white/90">
                     {pub.titulo}
                   </p>
                 ) : null}
               </div>
 
-              {/* 
-              ============================================
-              ACCIONES COMPACTAS
-              - Círculo perfecto
-              - Solo icono
-              ============================================
-              */}
-              <div
-                className="flex shrink-0 flex-col gap-2"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <InteraccionButton
-                  type="like"
-                  active={Boolean(pub?.liked_by_me)}
-                  onClick={handleLikeClick}
-                  disabled={Boolean(isActingLike)}
-                  label=""
-                  iconOnly={true}
-                />
+              {compactActions ? (
+                <div
+                  className="flex shrink-0 flex-col gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <InteraccionButton
+                    type="like"
+                    active={Boolean(pub?.liked_by_me)}
+                    onClick={handleLikeClick}
+                    disabled={Boolean(isActingLike)}
+                    label=""
+                    iconOnly
+                  />
 
-                <InteraccionButton
-                  type="guardar"
-                  active={Boolean(pub?.guardada_by_me)}
-                  onClick={handleSaveClick}
-                  disabled={Boolean(isActingSave)}
-                  label=""
-                  iconOnly={true}
-                />
-              </div>
+                  <InteraccionButton
+                    type="guardar"
+                    active={Boolean(pub?.guardada_by_me)}
+                    onClick={handleSaveClick}
+                    disabled={Boolean(isActingSave)}
+                    label=""
+                    iconOnly
+                  />
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
 
-        {/* MÉTRICAS INFERIORES */}
         <div className="flex items-center justify-between gap-2 px-3 py-2">
           <div className="flex items-center gap-2 text-[11px] text-gray-400">
             <span>❤️ {pub?.likes_count ?? 0}</span>
             <span>⭐ {pub?.guardados_count ?? 0}</span>
           </div>
 
-          {comercioId ? (
-            <Link
-              to={`/comercios/${comercioId}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-[11px] text-gray-300 hover:text-white"
-            >
-              Ver más
-            </Link>
-          ) : null}
+          <span className="text-[11px] text-gray-500">Ver</span>
         </div>
       </article>
     );
   }
 
-  // =====================================================
-  // MODO COMPLETO — para perfil / otras pantallas
-  // =====================================================
   return (
-    <article className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-950">
-      {/* HEADER */}
+    <article className="overflow-hidden rounded-3xl border border-gray-800 bg-gray-950">
       <header className="flex items-center justify-between gap-3 p-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -245,23 +184,19 @@ export default function PublicacionCard({
               </span>
             ) : null}
 
-            <h2 className="truncate text-sm font-semibold text-white sm:text-base">
-              {nombreComercio}
+            <h2 className="truncate text-base font-semibold text-white sm:text-lg">
+              {pub?.titulo || nombreComercio}
             </h2>
           </div>
 
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-400">
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400">
             {comercioId ? (
               <Link
                 to={`/comercios/${comercioId}`}
-                className="inline-flex items-center rounded-md border border-gray-800 bg-gray-900 px-2 py-0.5 text-gray-300 hover:bg-gray-800 hover:text-white"
+                className="inline-flex items-center rounded-md border border-gray-800 bg-gray-900 px-2 py-1 text-gray-300 hover:bg-gray-800 hover:text-white"
               >
-                Ver comercio
+                Ver perfil
               </Link>
-            ) : null}
-
-            {pub?.titulo ? (
-              <span className="truncate text-gray-500">{pub.titulo}</span>
             ) : null}
           </div>
         </div>
@@ -270,28 +205,26 @@ export default function PublicacionCard({
           <div className="shrink-0 rounded-full border border-gray-800 bg-gray-900 px-3 py-1 text-xs font-semibold text-gray-300">
             {headerRightBadgeText}
           </div>
-        ) : (
-          <div className="shrink-0 rounded-full border border-gray-800 bg-gray-900 px-3 py-1 text-xs font-semibold text-gray-300">
-            Publicación
-          </div>
-        )}
+        ) : null}
       </header>
 
-      {/* MEDIA */}
-      <div className="border-y border-gray-800 bg-black">
+      <div
+        className="cursor-pointer border-y border-gray-800 bg-black"
+        onClick={irADetallePublicacion}
+      >
         {mediaUrl ? (
           mediaEsVideo ? (
             <video
               src={mediaUrl}
               controls
               playsInline
-              className="h-auto max-h-[70vh] w-full object-cover"
+              className="max-h-[78vh] w-full object-contain"
             />
           ) : (
             <img
               src={mediaUrl}
-              alt={pub?.titulo || nombreComercio}
-              className="h-auto max-h-[70vh] w-full object-cover"
+              alt={pub?.titulo || pub?.descripcion || "Publicación"}
+              className="max-h-[78vh] w-full object-contain"
             />
           )
         ) : (
@@ -301,17 +234,15 @@ export default function PublicacionCard({
         )}
       </div>
 
-      {/* INFO */}
       <div className="p-4">
         {pub?.descripcion ? (
-          <p className="text-sm leading-relaxed text-gray-200">
+          <p className="text-base leading-relaxed text-gray-100">
             {pub.descripcion}
           </p>
         ) : (
           <p className="text-sm italic text-gray-500">Sin descripción.</p>
         )}
 
-        {/* ACCIONES */}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <InteraccionButton
             type="like"
@@ -319,9 +250,7 @@ export default function PublicacionCard({
             onClick={onToggleLike}
             disabled={Boolean(isActingLike)}
             label={
-              isActingLike
-                ? "Procesando..."
-                : pub?.liked_by_me
+              pub?.liked_by_me
                 ? "Te gusta"
                 : "Me gusta"
             }
@@ -333,16 +262,13 @@ export default function PublicacionCard({
             onClick={onToggleSave}
             disabled={Boolean(isActingSave)}
             label={
-              isActingSave
-                ? "Procesando..."
-                : pub?.guardada_by_me
+              pub?.guardada_by_me
                 ? "Guardada"
                 : "Guardar"
             }
           />
         </div>
 
-        {/* MÉTRICAS */}
         <footer className="mt-4 flex flex-wrap items-center gap-2">
           <MetricBadge label="Likes" value={pub?.likes_count} icon="❤️" />
           <MetricBadge label="Guardados" value={pub?.guardados_count} icon="⭐" />

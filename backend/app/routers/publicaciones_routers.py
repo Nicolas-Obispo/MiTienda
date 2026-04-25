@@ -1,21 +1,9 @@
 # app/routers/publicaciones_routers.py
-"""
-Router HTTP: Publicaciones
-
-Reglas:
-- Routers = solo HTTP
-- Sin lógica de negocio
-- Llaman a services
-
-ETAPA 57:
-- Se enriquecen las respuestas con métricas calculadas
-- Se calcula liked_by_me real
-- Se calcula guardada_by_me real
-"""
 
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.auth import obtener_usuario_actual_opcional
@@ -37,29 +25,39 @@ router = APIRouter(
 )
 
 
-# --------------------------------------------------
-# Helper interno del router
-# --------------------------------------------------
+def obtener_nombre_comercio(db: Session, publicacion) -> Optional[str]:
+    """
+    Obtiene el nombre real del comercio asociado a la publicación.
+
+    Primero intenta usar la relación ORM.
+    Si no funciona, consulta directo a la tabla comercios por comercio_id.
+    """
+
+    comercio_relacionado = getattr(publicacion, "comercio", None)
+
+    if comercio_relacionado is not None:
+        nombre = getattr(comercio_relacionado, "nombre", None)
+        if nombre:
+            return nombre
+
+    comercio_id = getattr(publicacion, "comercio_id", None)
+
+    if comercio_id is None:
+        return None
+
+    nombre = db.execute(
+        text("SELECT nombre FROM comercios WHERE id = :comercio_id"),
+        {"comercio_id": int(comercio_id)},
+    ).scalar_one_or_none()
+
+    return nombre
+
 
 def construir_publicacion_read(
+    db: Session,
     publicacion,
     usuario_actual: Optional[Usuario] = None,
 ) -> PublicacionRead:
-    """
-    Construye manualmente la respuesta PublicacionRead
-    agregando métricas calculadas y estado real del usuario actual.
-
-    Esto permite que el frontend reciba:
-    - likes_count real
-    - guardados_count real
-    - interacciones_count real
-    - liked_by_me real
-    - guardada_by_me real
-    """
-
-    # -----------------------------------------------
-    # Métricas calculadas
-    # -----------------------------------------------
     likes = publicacion.likes or []
     guardados = publicacion.usuarios_que_la_guardaron or []
 
@@ -67,18 +65,8 @@ def construir_publicacion_read(
     guardados_count = len(guardados)
     interacciones_count = likes_count + guardados_count
 
-    # -----------------------------------------------
-    # Nombre real del comercio
-    # -----------------------------------------------
-    comercio_nombre = (
-        publicacion.comercio.nombre
-        if getattr(publicacion, "comercio", None) is not None
-        else None
-    )
+    comercio_nombre = obtener_nombre_comercio(db, publicacion)
 
-    # -----------------------------------------------
-    # Estado real del usuario actual
-    # -----------------------------------------------
     liked_by_me = False
     guardada_by_me = False
 
@@ -93,12 +81,10 @@ def construir_publicacion_read(
             for guardado in guardados
         )
 
-    # -----------------------------------------------
-    # Respuesta final serializada
-    # -----------------------------------------------
-    publicacion_read = PublicacionRead(
+    return PublicacionRead(
         id=publicacion.id,
         comercio_id=publicacion.comercio_id,
+        comercio_nombre=comercio_nombre,
         titulo=publicacion.titulo,
         descripcion=publicacion.descripcion,
         seccion_id=publicacion.seccion_id,
@@ -106,21 +92,12 @@ def construir_publicacion_read(
         is_activa=publicacion.is_activa,
         created_at=publicacion.created_at,
         updated_at=publicacion.updated_at,
-        comercio_nombre=comercio_nombre,
         likes_count=likes_count,
         guardados_count=guardados_count,
         interacciones_count=interacciones_count,
         liked_by_me=liked_by_me,
+        guardada_by_me=guardada_by_me,
     )
-
-    # --------------------------------------------------
-    # Campo adicional no declarado en schema original
-    # Lo agregamos dinámicamente para que el frontend
-    # pueda usarlo si ya lo espera.
-    # --------------------------------------------------
-    setattr(publicacion_read, "guardada_by_me", guardada_by_me)
-
-    return publicacion_read
 
 
 @router.post(
@@ -134,10 +111,6 @@ def crear_publicacion_endpoint(
     db: Session = Depends(get_db),
     usuario_actual: Optional[Usuario] = Depends(obtener_usuario_actual_opcional),
 ):
-    """
-    Crea una publicación para un comercio.
-    """
-
     publicacion = crear_publicacion(
         db,
         comercio_id=comercio_id,
@@ -145,7 +118,8 @@ def crear_publicacion_endpoint(
     )
 
     return construir_publicacion_read(
-        publicacion,
+        db=db,
+        publicacion=publicacion,
         usuario_actual=usuario_actual,
     )
 
@@ -159,10 +133,6 @@ def listar_publicaciones_por_comercio_endpoint(
     db: Session = Depends(get_db),
     usuario_actual: Optional[Usuario] = Depends(obtener_usuario_actual_opcional),
 ):
-    """
-    Lista publicaciones de un comercio.
-    """
-
     publicaciones = listar_publicaciones_por_comercio(
         db,
         comercio_id=comercio_id,
@@ -170,7 +140,8 @@ def listar_publicaciones_por_comercio_endpoint(
 
     return [
         construir_publicacion_read(
-            publicacion,
+            db=db,
+            publicacion=publicacion,
             usuario_actual=usuario_actual,
         )
         for publicacion in publicaciones
@@ -186,10 +157,6 @@ def obtener_publicacion_detalle_endpoint(
     db: Session = Depends(get_db),
     usuario_actual: Optional[Usuario] = Depends(obtener_usuario_actual_opcional),
 ):
-    """
-    Devuelve el detalle de una publicación e incrementa su contador de vistas.
-    """
-
     publicacion = obtener_publicacion_por_id_y_sumar_view(
         db,
         publicacion_id=publicacion_id,
@@ -199,6 +166,7 @@ def obtener_publicacion_detalle_endpoint(
         raise HTTPException(status_code=404, detail="Publicación no encontrada")
 
     return construir_publicacion_read(
-        publicacion,
+        db=db,
+        publicacion=publicacion,
         usuario_actual=usuario_actual,
     )

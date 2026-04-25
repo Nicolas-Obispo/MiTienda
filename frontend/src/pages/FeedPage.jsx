@@ -1,13 +1,10 @@
 /**
  * FeedPage.jsx
  * ----------------
- * ETAPA 33: Like + Guardar/Quitar (optimistic UI)
- * ETAPA 39: Optimistic también en interacciones_count
- * ETAPA 41: Historias (barra + viewer tipo Instagram)
- * ETAPA 43: Marcar historia como vista al abrir el viewer (primera historia)
- * ETAPA 44 (parcial): Autoplay entre comercios (cuando termina un comercio, pasa al siguiente)
- * ETAPA 44: Visto/No visto REAL (backend devuelve vista_by_me)
- * ETAPA 47: Barra de historias desde backend (/historias/bar)
+ * ETAPA 58: Feed híbrido recomendado
+ * - Home / Feed: scroll vertical tipo reels
+ * - Explorar: mantiene grid de discovery
+ * - Backend sigue siendo fuente de verdad
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -35,43 +32,27 @@ export default function FeedPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // -----------------------------
-  // Estado principal del Feed
-  // -----------------------------
   const [isLoading, setIsLoading] = useState(true);
   const [publicaciones, setPublicaciones] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // -----------------------------
-  // Estado de Historias (Barra)
-  // -----------------------------
   const [historiasItems, setHistoriasItems] = useState([]);
   const [historiasErrorMessage, setHistoriasErrorMessage] = useState("");
 
-  // -----------------------------
-  // Estado del Viewer (Modal)
-  // -----------------------------
   const [viewerIsOpen, setViewerIsOpen] = useState(false);
   const [viewerTitulo, setViewerTitulo] = useState("Historias");
   const [viewerHistorias, setViewerHistorias] = useState([]);
 
-  // Evita marcar vista 2 veces por la misma apertura
   const ultimaHistoriaVistaMarcadaRef = useRef(null);
-
-  // ✅ Autoplay entre comercios (cola/orden)
   const viewerComercioIdRef = useRef(null);
-  const historiasOrdenRef = useRef([]); // [{ comercioId, nombre }]
+  const historiasOrdenRef = useRef([]);
 
-  // Locks por publicación (like/guardar)
   const [likeLocks, setLikeLocks] = useState({});
   const [saveLocks, setSaveLocks] = useState({});
 
   const likeLocksMemo = useMemo(() => likeLocks, [likeLocks]);
   const saveLocksMemo = useMemo(() => saveLocks, [saveLocks]);
 
-  // -----------------------------
-  // Helpers
-  // -----------------------------
   function setLock(setter, pubId, value) {
     setter((prev) => ({ ...prev, [pubId]: value }));
   }
@@ -84,13 +65,11 @@ export default function FeedPage() {
     viewerComercioIdRef.current = null;
   }
 
-  // Si cambia la ruta con el viewer abierto, cerramos (evita modal “colgado”)
   useEffect(() => {
     if (viewerIsOpen) cerrarViewer();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  // ✅ Mantener el orden actual de la barra para autoplay
   useEffect(() => {
     historiasOrdenRef.current = (historiasItems || []).map((i) => ({
       comercioId: i.comercioId,
@@ -98,14 +77,11 @@ export default function FeedPage() {
     }));
   }, [historiasItems]);
 
-  /**
-   * Preload de imágenes en background (no bloquea UI).
-   * - Evita pantalla negra en la primer historia cuando se abre por primera vez.
-   */
   function preloadHistoriasImages(historias, max = 10) {
     if (!Array.isArray(historias) || historias.length === 0) return;
 
     const urls = [];
+
     for (const h of historias) {
       const url = h?.media_url;
       if (url && typeof url === "string") {
@@ -130,12 +106,6 @@ export default function FeedPage() {
     }
   }
 
-  /**
-   * ETAPA 47:
-   * Carga la barra directamente desde backend (/historias/bar).
-   * - Público + token opcional.
-   * - Devuelve items listos: { comercioId, nombre, thumbnailUrl, cantidad, pendientes }
-   */
   async function loadHistoriasBar() {
     try {
       setHistoriasErrorMessage("");
@@ -150,19 +120,10 @@ export default function FeedPage() {
     }
   }
 
-  /**
-   * ETAPA 47:
-   * Refresca la barra desde backend.
-   * - Se usa después de marcar vista para que aro/contador se actualicen sin parches.
-   */
   async function refrescarItemHistoriasComercio() {
-    // Refresco simple y seguro: backend es fuente de verdad.
     await loadHistoriasBar();
   }
 
-  // -----------------------------
-  // Carga inicial del Feed
-  // -----------------------------
   async function loadFeed() {
     try {
       setIsLoading(true);
@@ -191,8 +152,6 @@ export default function FeedPage() {
       }));
 
       setPublicaciones(merged);
-
-      // Historias (no bloquea el feed) — ETAPA 47: desde backend
       loadHistoriasBar();
     } catch (error) {
       setErrorMessage(error?.message || "Error desconocido cargando el feed.");
@@ -209,9 +168,6 @@ export default function FeedPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // -----------------------------
-  // Historias: autoplay siguiente comercio
-  // -----------------------------
   async function abrirSiguienteComercioHistorias() {
     try {
       const orden = historiasOrdenRef.current || [];
@@ -237,21 +193,19 @@ export default function FeedPage() {
       const list = Array.isArray(historias) ? historias : [];
 
       if (list.length === 0) {
-        // Si justo ese comercio quedó sin historias, saltamos al siguiente
         viewerComercioIdRef.current = nextId;
         return abrirSiguienteComercioHistorias();
       }
 
       preloadHistoriasImages(list, 3);
 
-      // Abrimos el siguiente grupo
       viewerComercioIdRef.current = nextId;
       setViewerTitulo(nextTitulo);
       setViewerHistorias(list);
       setViewerIsOpen(true);
 
-      // Marcar vista de primera historia (sin bloquear)
       const primeraHistoriaId = list?.[0]?.id ?? null;
+
       if (
         typeof primeraHistoriaId === "number" &&
         ultimaHistoriaVistaMarcadaRef.current !== primeraHistoriaId
@@ -260,10 +214,7 @@ export default function FeedPage() {
 
         setTimeout(() => {
           marcarHistoriaVista(primeraHistoriaId)
-            .then(() => {
-              // ETAPA 47: refresca la barra desde backend (fuente de verdad)
-              refrescarItemHistoriasComercio();
-            })
+            .then(() => refrescarItemHistoriasComercio())
             .catch(() => {});
         }, 0);
       }
@@ -272,9 +223,6 @@ export default function FeedPage() {
     }
   }
 
-  // -----------------------------
-  // Historias: click en burbuja
-  // -----------------------------
   async function handleClickHistoriaComercio(comercioId) {
     try {
       const item = historiasItems.find((i) => i.comercioId === comercioId);
@@ -290,14 +238,11 @@ export default function FeedPage() {
 
       preloadHistoriasImages(list, 3);
 
-      // ✅ set comercio actual (para autoplay)
       viewerComercioIdRef.current = comercioId;
-
       setViewerTitulo(titulo);
       setViewerHistorias(list);
       setViewerIsOpen(true);
 
-      // ETAPA 43/44: marcar vista (primera historia) sin bloquear UI
       const primeraHistoriaId = list?.[0]?.id ?? null;
 
       if (
@@ -308,10 +253,7 @@ export default function FeedPage() {
 
         setTimeout(() => {
           marcarHistoriaVista(primeraHistoriaId)
-            .then(() => {
-              // ETAPA 47: refresca la barra desde backend (fuente de verdad)
-              refrescarItemHistoriasComercio();
-            })
+            .then(() => refrescarItemHistoriasComercio())
             .catch(() => {});
         }, 0);
       }
@@ -320,9 +262,6 @@ export default function FeedPage() {
     }
   }
 
-  // -----------------------------
-  // Interacciones: Like
-  // -----------------------------
   async function handleToggleLike(pubId) {
     if (likeLocksMemo[pubId]) return;
 
@@ -355,9 +294,6 @@ export default function FeedPage() {
     }
   }
 
-  // -----------------------------
-  // Interacciones: Guardar/Quitar
-  // -----------------------------
   async function handleToggleSave(pubId) {
     if (saveLocksMemo[pubId]) return;
 
@@ -397,15 +333,11 @@ export default function FeedPage() {
     }
   }
 
-  // -----------------------------
-  // Render
-  // -----------------------------
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <main className="mx-auto max-w-3xl px-4 py-8">
-        {/* Barra de Historias */}
+    <div className="min-h-screen bg-gray-950 text-white">
+      <main className="mx-auto max-w-2xl px-3 py-4 sm:px-4 sm:py-6">
         {!isLoading && !errorMessage && (
-          <div className="mb-4">
+          <div className="-mx-3 mb-4 border-b border-gray-800 bg-gray-950 px-3 py-3 sm:-mx-4 sm:px-4">
             <HistoriasBar
               items={historiasItems}
               onClickComercio={handleClickHistoriaComercio}
@@ -419,16 +351,13 @@ export default function FeedPage() {
           </div>
         )}
 
-        {/* Loading */}
         {isLoading && (
-          <div className="space-y-3">
-            <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-            <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-            <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
+          <div className="space-y-4">
+            <div className="h-[70vh] rounded-3xl border border-gray-800 bg-gray-900 animate-pulse" />
+            <div className="h-[70vh] rounded-3xl border border-gray-800 bg-gray-900 animate-pulse" />
           </div>
         )}
 
-        {/* Error */}
         {!isLoading && errorMessage && (
           <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
             <p className="font-semibold text-red-200">Error</p>
@@ -436,43 +365,45 @@ export default function FeedPage() {
           </div>
         )}
 
-        {/* Vacío */}
         {!isLoading && !errorMessage && publicaciones.length === 0 && (
-          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center">
-            <p className="text-gray-200 font-semibold">No hay publicaciones</p>
-            <p className="mt-2 text-gray-400 text-sm">
+          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6 text-center">
+            <p className="font-semibold text-gray-200">No hay publicaciones</p>
+            <p className="mt-2 text-sm text-gray-400">
               Cuando existan publicaciones activas, aparecerán acá.
             </p>
           </div>
         )}
 
-        {/* OK */}
         {!isLoading && !errorMessage && publicaciones.length > 0 && (
-          <div
-            className="
-              grid
-              grid-cols-2
-              sm:grid-cols-3
-              md:grid-cols-3
-              gap-3
-            "
-          >
+          <section className="space-y-6">
             {publicaciones.map((p) => (
-              <PublicacionCard
+              <article
                 key={p.id}
-                pub={p}
-                isActingLike={Boolean(likeLocksMemo[p.id])}
-                isActingSave={Boolean(saveLocksMemo[p.id])}
-                onToggleLike={() => handleToggleLike(p.id)}
-                onToggleSave={() => handleToggleSave(p.id)}
-                compact
-              />
+                className="
+                  min-h-[72vh]
+                  scroll-mt-24
+                  rounded-3xl
+                  border
+                  border-gray-800
+                  bg-gray-900
+                  shadow-xl
+                  overflow-hidden
+                "
+              >
+                <PublicacionCard
+                  pub={p}
+                  isActingLike={Boolean(likeLocksMemo[p.id])}
+                  isActingSave={Boolean(saveLocksMemo[p.id])}
+                  onToggleLike={() => handleToggleLike(p.id)}
+                  onToggleSave={() => handleToggleSave(p.id)}
+                  compactActions={true}
+                />
+              </article>
             ))}
-          </div>
+          </section>
         )}
       </main>
 
-      {/* Viewer tipo Instagram */}
       <HistoriasViewer
         isOpen={viewerIsOpen}
         onClose={cerrarViewer}

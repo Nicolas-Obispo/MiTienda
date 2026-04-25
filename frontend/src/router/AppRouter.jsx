@@ -1,6 +1,7 @@
 // frontend/src/router/AppRouter.jsx
 
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 // Páginas
 import Home from "../pages/Home";
@@ -18,11 +19,6 @@ import MainLayout from "../layouts/MainLayout";
 // Auth
 import { useAuth } from "../context/useAuth";
 
-/**
- * getStoredToken
- * Lee un token directamente desde storage para evitar el "rebote"
- * en pestañas nuevas (antes de que el AuthContext se hidrate).
- */
 function getStoredToken() {
   const keys = [
     "token",
@@ -51,9 +47,6 @@ function getStoredToken() {
   return null;
 }
 
-/**
- * getIsAuthenticated
- */
 function getIsAuthenticated(auth) {
   if (typeof auth?.estaAutenticado === "boolean") return auth.estaAutenticado;
 
@@ -64,9 +57,6 @@ function getIsAuthenticated(auth) {
   return Boolean(tokenFromStorage);
 }
 
-/**
- * ProtectedRoute
- */
 function ProtectedRoute({ children }) {
   const auth = useAuth();
   const isAuthenticated = getIsAuthenticated(auth);
@@ -78,9 +68,6 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-/**
- * PublicOnlyRoute
- */
 function PublicOnlyRoute({ children }) {
   const auth = useAuth();
   const isAuthenticated = getIsAuthenticated(auth);
@@ -88,6 +75,36 @@ function PublicOnlyRoute({ children }) {
   if (isAuthenticated) {
     return <Navigate to="/feed" replace />;
   }
+
+  return children;
+}
+
+/**
+ * GuestExploreRoute
+ * -----------------
+ * Permite explorar sin sesión, pero después de 5 minutos
+ * redirige al usuario a login/registro.
+ */
+function GuestExploreRoute({ children }) {
+  const auth = useAuth();
+  const navigate = useNavigate();
+  const isAuthenticated = getIsAuthenticated(auth);
+
+  useEffect(() => {
+    if (isAuthenticated) return;
+
+    const timer = setTimeout(() => {
+      navigate("/login", {
+        replace: true,
+        state: {
+          message:
+            "Para seguir explorando y guardar publicaciones, iniciá sesión o registrate.",
+        },
+      });
+    }, 5 * 60 * 1000);
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, navigate]);
 
   return children;
 }
@@ -129,9 +146,9 @@ export default function AppRouter() {
           <Route
             path="/explorar"
             element={
-              <ProtectedRoute>
+              <GuestExploreRoute>
                 <ExplorarPage />
-              </ProtectedRoute>
+              </GuestExploreRoute>
             }
           />
 
@@ -147,18 +164,18 @@ export default function AppRouter() {
           <Route
             path="/comercios/:id"
             element={
-              <ProtectedRoute>
+              <GuestExploreRoute>
                 <PerfilComercioPage />
-              </ProtectedRoute>
+              </GuestExploreRoute>
             }
           />
 
           <Route
             path="/publicaciones/:id"
             element={
-              <ProtectedRoute>
+              <GuestExploreRoute>
                 <PublicacionDetallePage />
-              </ProtectedRoute>
+              </GuestExploreRoute>
             }
           />
 
