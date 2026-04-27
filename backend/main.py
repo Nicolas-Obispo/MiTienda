@@ -25,21 +25,25 @@ from app.routers.media_routers import router as media_router
 from fastapi.staticfiles import StaticFiles
 import os
 
-
-
 app = FastAPI(
     title="MiTienda API",
     version="1.0"
 )
 
+# ------------------------------
+# CORS (CORREGIDO PARA PC + CELULAR)
+# ------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_origin_regex=r"http://192\.168\.\d+\.\d+:5173",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.get("/")
 def home():
@@ -48,25 +52,21 @@ def home():
 # ------------------------------
 # Configuración carpeta uploads
 # ------------------------------
-
-# Ruta absoluta a la carpeta uploads dentro del backend
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
-
-# Si la carpeta no existe, la creamos automáticamente
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Montamos la carpeta como estático en /uploads
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-
-# ✅ Registrar routers
+# ------------------------------
+# Registrar routers
+# ------------------------------
 app.include_router(productos_routers)
 app.include_router(usuarios_routers)
 app.include_router(comercios_router)
 app.include_router(rubros_routers)
 app.include_router(secciones_router)
 
-# ✅ IMPORTANTE: guardadas antes que publicaciones (evita choque /publicaciones/{id})
+# IMPORTANTE: guardadas antes que publicaciones
 app.include_router(publicaciones_guardadas_router)
 app.include_router(publicaciones_router)
 
@@ -75,4 +75,3 @@ app.include_router(likes_publicaciones_router)
 app.include_router(ranking_publicaciones_router)
 app.include_router(feed_publicaciones_router)
 app.include_router(media_router)
-

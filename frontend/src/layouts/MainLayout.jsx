@@ -36,8 +36,6 @@ export default function MainLayout() {
   /*
   ====================================================
   CONTROL DE ANCHO POR PÁGINA
-  - Feed y Perfil ya manejan su layout interno
-  - El resto usa contenedor centrado
   ====================================================
   */
   const paginasConLayoutPropio = ["/feed", "/perfil"];
@@ -60,12 +58,36 @@ export default function MainLayout() {
               MiPlaza
             </Link>
 
-            {/* SIEMPRE visible */}
+            {/* EXPLORAR */}
             <Link
               to="/explorar"
-              className="text-sm font-semibold text-gray-300 hover:text-white"
+              className={`text-sm font-semibold ${
+                location.pathname.startsWith("/explorar")
+                  ? "text-purple-300"
+                  : "text-gray-300 hover:text-white"
+              }`}
             >
               Explorar
+            </Link>
+
+            {/* MI ESPACIO */}
+            <Link
+              to={estaAutenticado ? "/perfil" : "/registro"}
+              state={
+                estaAutenticado
+                  ? undefined
+                  : {
+                      message:
+                        "Creá tu cuenta para tener tu espacio en MiPlaza y mostrar lo que hacés.",
+                    }
+              }
+              className={`text-sm font-semibold ${
+                location.pathname.startsWith("/perfil")
+                  ? "text-purple-300"
+                  : "text-gray-300 hover:text-white"
+              }`}
+            >
+              Mi espacio
             </Link>
 
             {/* SOLO con sesión */}
@@ -73,23 +95,24 @@ export default function MainLayout() {
               <>
                 <Link
                   to="/feed"
-                  className="text-sm text-gray-300 hover:text-white"
+                  className={`text-sm ${
+                    location.pathname.startsWith("/feed")
+                      ? "text-purple-300"
+                      : "text-gray-300 hover:text-white"
+                  }`}
                 >
                   Feed
                 </Link>
 
                 <Link
                   to="/ranking"
-                  className="text-sm text-gray-300 hover:text-white"
+                  className={`text-sm ${
+                    location.pathname.startsWith("/ranking")
+                      ? "text-purple-300"
+                      : "text-gray-300 hover:text-white"
+                  }`}
                 >
                   Ranking
-                </Link>
-
-                <Link
-                  to="/perfil"
-                  className="text-sm text-gray-300 hover:text-white"
-                >
-                  Perfil
                 </Link>
               </>
             )}

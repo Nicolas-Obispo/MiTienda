@@ -15,6 +15,7 @@
  */
 
 import React from "react";
+import { getMediaUrlFromAny } from "../utils/mediaUrl";
 
 /**
  * @typedef {Object} HistoriaComercioItem
@@ -60,6 +61,11 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
             );
 
             const tienePendientes = pendientes > 0;
+            const thumbnailUrl = getMediaUrlFromAny({
+              thumbnailUrl: item?.thumbnailUrl,
+              thumbnail_url: item?.thumbnailUrl,
+              imagen_url: item?.thumbnailUrl,
+            });
 
             // UX:
             // - aro verde si tiene pendientes
@@ -84,9 +90,9 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
                 <div className="relative">
                   <div className={`rounded-full p-[2px] ${aroClass}`}>
                     <div className="h-14 w-14 overflow-hidden rounded-full bg-white/10">
-                      {item.thumbnailUrl ? (
+                      {thumbnailUrl ? (
                         <img
-                          src={item.thumbnailUrl}
+                          src={thumbnailUrl}
                           alt={item.nombre}
                           className="h-full w-full object-cover"
                           loading="lazy"

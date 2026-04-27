@@ -4732,3 +4732,24 @@ Prioridad:
 5. Corrección de edición de comercio
 
 La IA sigue pausada hasta que el producto base sea más completo y usable.
+
+# ETAPA 59 — Base Producto (CIERRE REAL)
+
+## 🎯 Objetivo de la etapa
+
+Transformar MiPlaza de una app funcional a un **producto usable**, mejorando:
+
+- Conversión (Home + CTAs)
+- Flujo de usuario (explorador vs publicador)
+- Claridad conceptual (espacio vs comercio)
+- UX general (perfil, navegación, acciones)
+- Control real de contenido (eliminar publicaciones)
+
+---
+
+## 🧭 CAMBIO DE ENFOQUE (DECISIÓN CLAVE)
+
+Se prioriza:
+
+```txt
+Producto usable > mejoras técnicas de IA

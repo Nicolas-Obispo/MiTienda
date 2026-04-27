@@ -13,6 +13,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import PublicacionCard from "../components/PublicacionCard";
 import HistoriasBar from "../components/HistoriasBar";
 import HistoriasViewer from "../components/HistoriasViewer";
+import { getMediaUrlFromAny } from "../utils/mediaUrl";
 
 import {
   fetchFeedPublicaciones,
@@ -83,7 +84,7 @@ export default function FeedPage() {
     const urls = [];
 
     for (const h of historias) {
-      const url = h?.media_url;
+      const url = getMediaUrlFromAny(h);
       if (url && typeof url === "string") {
         urls.push(url);
         if (urls.length >= max) break;
@@ -152,6 +153,8 @@ export default function FeedPage() {
       }));
 
       setPublicaciones(merged);
+
+      // Cargamos historias aparte, sin frenar el Feed.
       loadHistoriasBar();
     } catch (error) {
       setErrorMessage(error?.message || "Error desconocido cargando el feed.");
@@ -167,6 +170,7 @@ export default function FeedPage() {
     loadFeed();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   async function abrirSiguienteComercioHistorias() {
     try {

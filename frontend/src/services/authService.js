@@ -4,7 +4,7 @@
  * - Centralizar toda la comunicación de autenticación con el backend
  */
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 export async function loginUsuario({ email, password }) {
   try {
@@ -62,4 +62,46 @@ export async function getMe(tokenJWT) {
   }
 
   return response.json();
+}
+
+/**
+ * registrarUsuario
+ * Responsabilidad:
+ * - Enviar los datos de registro al backend
+ * - Crear un nuevo usuario usando el endpoint real /usuarios/registrar
+ *
+ * Nota:
+ * - Por ahora solo registra.
+ * - El login automático después del registro lo manejaremos desde la pantalla Registro.jsx.
+ */
+export async function registrarUsuario({ email, password }) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/usuarios/registrar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      let mensaje = "No se pudo registrar el usuario";
+
+      try {
+        const data = await response.json();
+
+        if (data?.detail) {
+          mensaje = Array.isArray(data.detail)
+            ? data.detail.map((item) => item.msg).join(". ")
+            : String(data.detail);
+        }
+      } catch {
+        // Si el backend no devuelve JSON, dejamos el mensaje genérico.
+      }
+
+      throw new Error(mensaje);
+    }
+
+    return response.json();
+  } catch (error) {
+    throw new Error(error.message || "Error al registrar usuario");
+  }
 }

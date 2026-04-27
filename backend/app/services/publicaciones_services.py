@@ -82,7 +82,10 @@ def listar_publicaciones_por_comercio(
     return (
         db.query(Publicacion)
         .options(joinedload(Publicacion.comercio))
-        .filter(Publicacion.comercio_id == comercio_id)
+        .filter(
+            Publicacion.comercio_id == comercio_id,
+            Publicacion.is_activa.is_(True),
+        )
         .order_by(Publicacion.created_at.desc())
         .all()
     )
@@ -306,3 +309,38 @@ def obtener_publicaciones_interactuadas_por_usuario(
     )
 
     return publicaciones
+
+# --------------------------------------------------
+# Eliminación lógica de publicaciones
+# --------------------------------------------------
+
+def desactivar_publicacion(
+    db: Session,
+    *,
+    publicacion_id: int,
+) -> Optional[Publicacion]:
+    """
+    Desactiva una publicación.
+
+    Importante:
+    - No borra físicamente el registro.
+    - Solo marca is_activa = False.
+    - Esto permite ocultarla ahora y recuperarla más adelante
+      desde una futura sección de Papelera / Reciclaje.
+    """
+
+    publicacion = (
+        db.query(Publicacion)
+        .filter(Publicacion.id == publicacion_id)
+        .first()
+    )
+
+    if not publicacion:
+        return None
+
+    publicacion.is_activa = False
+
+    db.commit()
+    db.refresh(publicacion)
+
+    return publicacion

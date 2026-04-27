@@ -598,7 +598,7 @@ export default function ProfilePage() {
       setShowCreateForm(false);
       handleResetForm();
     } catch (error) {
-      setCreateErrorMessage(error.message || "Error procesando el comercio.");
+      setCreateErrorMessage(error.message || "Error procesando tu espacio.");
     } finally {
       setIsCreatingComercio(false);
     }
@@ -612,7 +612,7 @@ export default function ProfilePage() {
     if (isActingComercioById[comercioId]) return;
 
     const ok = window.confirm(
-      "¿Seguro que querés desactivar este comercio? (Se puede reactivar en una etapa futura)"
+      "¿Seguro que querés desactivar este espacio? (Se puede reactivar en una etapa futura)"
     );
     if (!ok) return;
 
@@ -663,9 +663,9 @@ export default function ProfilePage() {
       <main className="mx-auto max-w-3xl px-4 py-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-white">Mi Perfil</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Mi espacio</h1>
           <p className="mt-1 text-sm text-gray-400">
-            Admin (mis comercios) + mis publicaciones guardadas.
+            Gestioná tus espacios y lo que guardaste.
           </p>
 
           {/* ========================= */}
@@ -762,7 +762,7 @@ export default function ProfilePage() {
         {/* ===================================================== */}
         <div className="mb-8">
           <div className="flex items-end justify-between gap-3">
-            <h2 className="text-lg font-semibold">Mis comercios</h2>
+            <h2 className="text-lg font-semibold">Tus espacios</h2>
 
             <button
               type="button"
@@ -782,7 +782,7 @@ export default function ProfilePage() {
               }}
               className="rounded-xl border border-gray-800 bg-gray-950 px-4 py-2 text-sm hover:border-gray-700"
             >
-              {showCreateForm ? "Cerrar" : "Crear comercio"}
+              {showCreateForm ? "Cerrar" : "Crear tu espacio"}
             </button>
           </div>
 
@@ -790,7 +790,7 @@ export default function ProfilePage() {
           {showCreateForm && (
             <div className="mt-4 rounded-2xl border border-gray-800 bg-gray-950 p-5">
               <p className="font-semibold">
-                {editingComercioId ? "Editar comercio" : "Nuevo comercio"}
+                {editingComercioId ? "Editar espacio" : "Crear tu espacio"}
               </p>
 
               <p className="mt-1 text-sm text-gray-400">
@@ -809,13 +809,13 @@ export default function ProfilePage() {
               <form onSubmit={handleCrearComercioSubmit} className="mt-4 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-gray-400">Nombre *</label>
+                    <label className="text-xs text-gray-400">Nombre de tu espacio *</label>
                     <input
                       name="nombre"
                       value={createForm.nombre}
                       onChange={handleCreateInputChange}
                       className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
-                      placeholder="Ej: Comercio Test"
+                      placeholder="Ej: Tienda & accesorios RAFAELA"
                     />
                   </div>
 
@@ -988,7 +988,7 @@ export default function ProfilePage() {
                       value={createForm.instagram}
                       onChange={handleCreateInputChange}
                       className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
-                      placeholder="@mi_comercio"
+                      placeholder="@tu_espacio"
                     />
                   </div>
                 </div>
@@ -1067,13 +1067,27 @@ export default function ProfilePage() {
           {!isLoadingComercios &&
             !comerciosErrorMessage &&
             misComercios.length === 0 && (
-              <div className="mt-3 rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center">
-                <p className="text-gray-200 font-semibold">
-                  Todavía no tenés comercios
+              <div className="mt-3 rounded-2xl border border-purple-900 bg-purple-950/30 p-6 text-center">
+                <p className="text-lg font-bold text-purple-100">
+                  Creá tu espacio en MiPlaza
                 </p>
-                <p className="mt-2 text-gray-400 text-sm">
-                  Creá uno con el botón “Crear comercio”.
+
+                <p className="mt-2 text-sm leading-6 text-purple-100/80">
+                  Mostrá tu negocio, servicio o profesión a personas de tu zona.
+                  Publicá contenido, compartí novedades y hacé que te descubran.
                 </p>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateErrorMessage("");
+                    handleResetForm();
+                    setShowCreateForm(true);
+                  }}
+                  className="mt-4 rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500"
+                >
+                  Crear tu espacio
+                </button>
               </div>
             )}
 
@@ -1082,67 +1096,88 @@ export default function ProfilePage() {
             !comerciosErrorMessage &&
             misComercios.length > 0 && (
               <div className="mt-3 space-y-3">
-              {misComercios.map((c) => {
-                const isActing = Boolean(isActingComercioById[c.id]);
+                {misComercios.map((c) => {
+                  const isActing = Boolean(isActingComercioById[c.id]);
 
-                return (
-                  <div
-                    key={c.id}
-                    className="rounded-2xl border border-gray-800 bg-gray-950 p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <Link
-                        to={`/comercios/${c.id}`}
-                        className="block hover:opacity-90"
-                      >
-                        <p className="font-semibold text-white">{c.nombre}</p>
-                        <p className="mt-1 text-sm text-gray-400">
-                          {(c.ciudad || "Ciudad") + ", " + (c.provincia || "Provincia")}
-                        </p>
-                        <p className="mt-2 text-xs text-gray-500">
-                          {c.activo ? "Activo" : "Inactivo"} · ID {c.id}
-                        </p>
-                      </Link>
-
-                      {/* Acciones admin */}
-                      <div className="flex flex-col items-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleEditarComercio(c)}
-                          disabled={isActing}
-                          className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-xs hover:border-gray-700 disabled:opacity-50"
-                          title="Editar comercio"
-                        >
-                          Editar
-                        </button>
-
-                        {c.activo ? (
-                          <button
-                            type="button"
-                            onClick={() => handleDesactivarComercio(c.id)}
-                            disabled={isActing}
-                            className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-xs hover:border-gray-700 disabled:opacity-50"
-                            title="Desactivar comercio"
-                          >
-                            {isActing ? "Procesando..." : "Desactivar"}
-                          </button>
+                  return (
+                    <div
+                      key={c.id}
+                      className="rounded-2xl border border-gray-800 bg-gray-950 overflow-hidden"
+                    >
+                      {/* PORTADA */}
+                      <div className="h-32 bg-gray-800">
+                        {c.portada_url ? (
+                          <img
+                            src={c.portada_url}
+                            alt="Portada"
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleReactivarComercio(c.id)}
-                            disabled={isActing}
-                            className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-xs hover:border-gray-700 disabled:opacity-50"
-                            title="Reactivar comercio"
-                          >
-                            {isActing ? "Procesando..." : "Activar"}
-                          </button>
+                          <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                            Sin portada
+                          </div>
                         )}
                       </div>
+
+                      {/* CONTENIDO */}
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-white">{c.nombre}</p>
+
+                            <p className="mt-1 text-sm text-gray-400">
+                              {(c.ciudad || "Ciudad") + ", " + (c.provincia || "Provincia")}
+                            </p>
+
+                            <p className="mt-2 text-xs text-gray-500">
+                              {c.activo ? "Activo" : "Inactivo"}
+                            </p>
+                          </div>
+
+                          {/* ACCIONES */}
+                          <div className="flex flex-col items-end gap-2">
+                            <Link
+                              to={`/comercios/${c.id}`}
+                              className="rounded-xl bg-white text-black px-3 py-1.5 text-xs font-semibold hover:opacity-90"
+                            >
+                              Ver espacio
+                            </Link>
+
+                            <button
+                              type="button"
+                              onClick={() => handleEditarComercio(c)}
+                              disabled={isActing}
+                              className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs hover:border-gray-700 disabled:opacity-50"
+                            >
+                              Editar
+                            </button>
+
+                            {c.activo ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDesactivarComercio(c.id)}
+                                disabled={isActing}
+                                className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs hover:border-gray-700 disabled:opacity-50"
+                              >
+                                {isActing ? "Procesando..." : "Desactivar"}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleReactivarComercio(c.id)}
+                                disabled={isActing}
+                                className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs hover:border-gray-700 disabled:opacity-50"
+                              >
+                                {isActing ? "Procesando..." : "Activar"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
           )}
         </div>
 

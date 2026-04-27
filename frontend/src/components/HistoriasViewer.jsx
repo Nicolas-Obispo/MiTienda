@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { getMediaUrlFromAny } from "../utils/mediaUrl";
 
 const DURACION_MS_DEFAULT = 4500;
 
@@ -116,11 +117,11 @@ export default function HistoriasViewer({
   }, [isOpen, indexActual, historiasList.length, limpiarRaf]);
 
   const historiaActual = historiasList[indexActual];
+  const historiaMediaUrl = getMediaUrlFromAny(historiaActual);
 
-  // Fix cache: si ya está cargada, activar mediaLista
   useEffect(() => {
     if (!isOpen) return;
-    if (!historiaActual?.media_url) return;
+    if (!historiaMediaUrl) return;
 
     const t = setTimeout(() => {
       const el = imgRef.current;
@@ -130,7 +131,7 @@ export default function HistoriasViewer({
     }, 0);
 
     return () => clearTimeout(t);
-  }, [isOpen, historiaActual?.media_url, cycleKey, indexActual]);
+  }, [isOpen, historiaMediaUrl, cycleKey, indexActual]);
 
   // Timer RAF: solo cuando mediaLista=true
   useEffect(() => {
@@ -231,11 +232,11 @@ export default function HistoriasViewer({
       </div>
 
       <div className="absolute inset-0 z-10 flex items-center justify-center">
-        {historiaActual?.media_url ? (
+        {historiaMediaUrl ? (
           <img
             ref={imgRef}
-            key={`${cycleKey}-${indexActual}-${historiaActual.media_url}`}
-            src={historiaActual.media_url}
+            key={`${cycleKey}-${indexActual}-${historiaMediaUrl}`}
+            src={historiaMediaUrl}
             alt={`Historia ${historiaActual.id}`}
             className="h-full w-full object-contain"
             draggable="false"

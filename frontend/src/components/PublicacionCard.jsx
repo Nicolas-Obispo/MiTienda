@@ -2,6 +2,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import InteraccionButton from "./InteraccionButton";
+import { getMediaUrlFromAny } from "../utils/mediaUrl";
 
 function MetricBadge({ label, value, icon }) {
   return (
@@ -23,13 +24,7 @@ function getNombreComercio(pub) {
 }
 
 function getMediaUrl(pub) {
-  return (
-    pub?.imagen_url ||
-    pub?.media_url ||
-    pub?.foto_url ||
-    pub?.thumbnail_url ||
-    ""
-  );
+  return getMediaUrlFromAny(pub);
 }
 
 function esVideo(url) {

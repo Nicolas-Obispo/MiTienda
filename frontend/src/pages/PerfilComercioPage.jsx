@@ -12,6 +12,8 @@ import { useParams, useNavigate } from "react-router-dom";
 
 import PublicacionCard from "../components/PublicacionCard";
 import CrearHistoriaModal from "../components/CrearHistoriaModal";
+import { MessageCircle, Camera, MapPin } from "lucide-react";
+import { getMediaUrlFromAny } from "../utils/mediaUrl";
 
 import {
   getComercioById,
@@ -82,6 +84,7 @@ export default function CommerceProfilePage() {
   }
 
   const puedoCrearHistoria = esComercioMio(comercio, usuarioActivo);
+  const comercioImagenUrl = getMediaUrlFromAny(comercio);
 
   function getAccessToken() {
     return localStorage.getItem("access_token");
@@ -405,20 +408,15 @@ export default function CommerceProfilePage() {
 
         {!isLoading && !errorMessage && (
           <>
-            <section className="rounded-3xl border border-gray-800 bg-gray-900 p-5 sm:p-6">
+            <section className="relative rounded-3xl border border-gray-800 bg-gray-900 p-5 sm:p-6">
+              <span className="absolute right-6 top-6 rounded-full border border-gray-700 bg-gray-950 px-3 py-1 text-xs text-gray-300">
+                {comercio?.is_activo ? "Activo" : "Inactivo"}
+              </span>
               <div className="flex items-start gap-4">
                 <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-gray-700 bg-gray-950 sm:h-24 sm:w-24">
-                  {comercio?.portada_url ||
-                  comercio?.imagen_url ||
-                  comercio?.logo_url ||
-                  comercio?.foto_url ? (
+                  {comercioImagenUrl ? (
                     <img
-                      src={
-                        comercio?.portada_url ||
-                        comercio?.imagen_url ||
-                        comercio?.logo_url ||
-                        comercio?.foto_url
-                      }
+                      src={comercioImagenUrl}
                       alt={comercio?.nombre || "Comercio"}
                       className="h-full w-full object-cover"
                     />
@@ -444,18 +442,67 @@ export default function CommerceProfilePage() {
                     </p>
                   )}
 
-                  <div className="mt-4 flex flex-wrap gap-3 text-sm text-gray-300">
-                    <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
-                      {publicaciones.length} publicaciones
-                    </span>
+                  <div className="mt-4 flex items-center justify-between">
+                    
+                    {/* IZQUIERDA */}
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-300">
 
-                    <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
-                      {historias.length} historias
-                    </span>
+                      {/* PUBLICACIONES */}
+                      <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
+                        {publicaciones.length} publicaciones
+                      </span>
 
-                    <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
-                      {comercio?.is_activo ? "Activo" : "Inactivo"}
-                    </span>
+                      {/* SEGUIDORES */}
+                      <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
+                        {comercio?.seguidores_count ?? 0} seguidores
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                  {/* INFO DEL ESPACIO */}
+                  <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
+
+                    {/* WHATSAPP */}
+                    {comercio?.whatsapp && (
+                      <a
+                        href={`https://wa.me/${String(comercio.whatsapp).replace(/\D/g, "")}?text=Hola%2C%20te%20encontré%20en%20MiPlaza%20y%20quiero%20consultarte`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-4 py-2 text-xs font-semibold text-green-400 hover:bg-gray-900"
+                      >
+                        <MessageCircle size={14} />
+                        WhatsApp
+                      </a>
+                    )}
+
+                    {/* INSTAGRAM */}
+                    {comercio?.instagram && (
+                      <a
+                        href={`https://instagram.com/${String(comercio.instagram).replace("@", "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-4 py-2 text-xs font-semibold text-pink-400 hover:bg-gray-900"
+                      >
+                        <Camera size={14} />
+                        Instagram
+                      </a>
+                    )}
+
+                    {/* MAPS */}
+                    {comercio?.maps_url && (
+                      <a
+                        href={comercio.maps_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-4 py-2 text-xs font-semibold text-blue-400 hover:bg-gray-900"
+                      >
+                        <MapPin size={14} />
+                        Cómo llegar
+                      </a>
+                    )}
+
                   </div>
                 </div>
               </div>
@@ -477,6 +524,14 @@ export default function CommerceProfilePage() {
                   >
                     + Publicación
                   </button>
+
+                  <button
+                    type="button"
+                     className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:opacity-90"
+                  >
+                    Estadísticas
+                  </button>
+
                 </div>
               )}
             </section>

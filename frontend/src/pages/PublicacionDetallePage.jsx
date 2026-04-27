@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { httpGet } from "../services/http_service";
 import InteraccionButton from "../components/InteraccionButton";
+import { useAuth } from "../context/useAuth";
+import { getMediaUrlFromAny } from "../utils/mediaUrl";
 import {
   toggleLikePublicacion,
   guardarPublicacion,
@@ -12,6 +14,9 @@ export default function PublicacionDetallePage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const { usuario, user } = useAuth();
+  const usuarioActivo = usuario || user || null;
+
   const [isLoading, setIsLoading] = useState(true);
   const [publicacion, setPublicacion] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -20,6 +25,7 @@ export default function PublicacionDetallePage() {
   const [guardada, setGuardada] = useState(false);
   const [isActingLike, setIsActingLike] = useState(false);
   const [isActingSave, setIsActingSave] = useState(false);
+  const [esDuenoComercio, setEsDuenoComercio] = useState(false);
 
   function usuarioDebeLoguearse() {
     const token = localStorage.getItem("access_token");
@@ -48,14 +54,28 @@ export default function PublicacionDetallePage() {
     );
   }
 
+  function esPublicacionMia(pub, userData) {
+    if (!pub || !userData) return false;
+
+    const owner =
+      pub.owner_user_id ??
+      pub.usuario_id ??
+      pub.user_id ??
+      null;
+
+    const userId =
+      userData.id ??
+      userData.user_id ??
+      userData.usuario_id ??
+      null;
+
+    if (owner == null || userId == null) return false;
+
+    return Number(owner) === Number(userId);
+  }
+
   function getMediaUrl(pub) {
-    return (
-      pub?.imagen_url ||
-      pub?.media_url ||
-      pub?.foto_url ||
-      pub?.thumbnail_url ||
-      ""
-    );
+    return getMediaUrlFromAny(pub);
   }
 
   function esVideo(url) {
@@ -73,6 +93,34 @@ export default function PublicacionDetallePage() {
 
       const token = localStorage.getItem("access_token");
       const data = await httpGet(`/publicaciones/${id}`, token);
+
+      // 🔥 NUEVO: verificar si el comercio es mío
+    if (data?.comercio_id && usuarioActivo) {
+      try {
+        const comercioData = await httpGet(
+          `/comercios/${data.comercio_id}`,
+          token
+        );
+
+        const owner =
+          comercioData.owner_user_id ??
+          comercioData.usuario_id ??
+          comercioData.propietario_id ??
+          null;
+
+        const userId =
+          usuarioActivo.id ??
+          usuarioActivo.user_id ??
+          usuarioActivo.usuario_id ??
+          null;
+
+        setEsDuenoComercio(
+          owner != null && userId != null && Number(owner) === Number(userId)
+        );
+      } catch {
+        setEsDuenoComercio(false);
+      }
+    }
 
       console.log("DATA PUBLICACION DETALLE:", data);
 
@@ -163,6 +211,43 @@ export default function PublicacionDetallePage() {
       setIsActingSave(false);
     }
   }
+
+  async function handleEliminarPublicacion() {
+    if (!publicacion) return;
+
+    const confirmar = window.confirm(
+      "¿Seguro que querés eliminar esta publicación?"
+    );
+
+    if (!confirmar) return;
+
+    try {
+      const token = localStorage.getItem("access_token");
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/publicaciones/${publicacion.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al eliminar la publicación");
+      }
+
+      if (comercioId) {
+        navigate(`/comercios/${comercioId}`);
+      } else {
+        navigate("/feed");
+      }
+    } catch (error) {
+      setErrorMessage(error.message || "Error eliminando la publicación.");
+    }
+  }
+
 
   const mediaUrl = getMediaUrl(publicacion);
   const mediaEsVideo = esVideo(mediaUrl);
@@ -259,10 +344,23 @@ export default function PublicacionDetallePage() {
                 />
               </div>
 
-              <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-                <span>❤️ {publicacion?.likes_count ?? 0}</span>
-                <span>⭐ {publicacion?.guardados_count ?? 0}</span>
-                <span>🔥 {publicacion?.interacciones_count ?? 0}</span>
+              <div className="flex items-center justify-between text-sm text-gray-400">
+                <div className="flex flex-wrap gap-4">
+                  <span>❤️ {publicacion?.likes_count ?? 0}</span>
+                  <span>⭐ {publicacion?.guardados_count ?? 0}</span>
+                  <span>🔥 {publicacion?.interacciones_count ?? 0}</span>
+                </div>
+
+                {esDuenoComercio && (
+                  <button
+                    type="button"
+                    onClick={handleEliminarPublicacion}
+                    className="rounded-full border border-white-800 bg-950/40 px-3 py-1 text-xs font-semibold text-r-300 hover:bg-red-900/40"
+                    title="Eliminar publicación"
+                  >
+                    🗑️
+                  </button>
+                )}
               </div>
             </div>
           </article>

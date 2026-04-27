@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-route
 // Páginas
 import Home from "../pages/Home";
 import Login from "../pages/Login";
+import Registro from "../pages/Registro";
 import FeedPage from "../pages/FeedPage";
 import RankingPage from "../pages/RankingPage";
 import ProfilePage from "../pages/ProfilePage";
@@ -121,6 +122,15 @@ export default function AppRouter() {
             element={
               <PublicOnlyRoute>
                 <Login />
+              </PublicOnlyRoute>
+            }
+          />
+
+          <Route
+            path="/registro"
+            element={
+              <PublicOnlyRoute>
+                <Registro />
               </PublicOnlyRoute>
             }
           />

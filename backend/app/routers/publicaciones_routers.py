@@ -13,10 +13,12 @@ from app.schemas.publicaciones_schemas import (
     PublicacionCreate,
     PublicacionRead,
 )
+
 from app.services.publicaciones_services import (
     crear_publicacion,
     listar_publicaciones_por_comercio,
     obtener_publicacion_por_id_y_sumar_view,
+    desactivar_publicacion,
 )
 
 router = APIRouter(
@@ -170,3 +172,34 @@ def obtener_publicacion_detalle_endpoint(
         publicacion=publicacion,
         usuario_actual=usuario_actual,
     )
+
+@router.delete(
+    "/{publicacion_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def eliminar_publicacion_endpoint(
+    publicacion_id: int,
+    db: Session = Depends(get_db),
+    usuario_actual: Optional[Usuario] = Depends(obtener_usuario_actual_opcional),
+):
+    """
+    Desactiva una publicación.
+
+    Importante:
+    - No borra físicamente.
+    - Marca is_activa = False.
+    - Más adelante permitirá restaurarla desde Papelera / Reciclaje.
+    """
+
+    publicacion = desactivar_publicacion(
+        db=db,
+        publicacion_id=publicacion_id,
+    )
+
+    if not publicacion:
+        raise HTTPException(
+            status_code=404,
+            detail="Publicación no encontrada",
+        )
+
+    return None

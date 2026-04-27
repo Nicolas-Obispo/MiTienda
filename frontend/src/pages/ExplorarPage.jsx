@@ -16,6 +16,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { listarComerciosActivos } from "../services/comercios_service";
 import { useNavigate } from "react-router-dom";
+import { getMediaUrlFromAny } from "../utils/mediaUrl";
 
 export default function ExplorarPage() {
   const [busqueda, setBusqueda] = useState("");
@@ -168,7 +169,7 @@ export default function ExplorarPage() {
         </div>
       )}
 
-      {/* GRID DE COMERCIOS (CAMBIO PRINCIPAL) */}
+      {/* GRID DE COMERCIOS */}
       <div
         className="
           grid 
@@ -178,39 +179,43 @@ export default function ExplorarPage() {
           gap-3
         "
       >
-        {comercios.map((c) => (
-          <div
-            key={c.id}
-            onClick={() => irAPerfilComercio(c.id)}
-            className="cursor-pointer group"
-          >
-            {/* IMAGEN */}
-            <div className="w-full aspect-square rounded-xl overflow-hidden border bg-gray-100">
-              {c.portada_url ? (
-                <img
-                  src={c.portada_url}
-                  alt={c.nombre}
-                  className="w-full h-full object-cover group-hover:scale-105 transition"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs">
-                  Sin imagen
-                </div>
-              )}
-            </div>
+        {comercios.map((c) => {
+          const comercioImagenUrl = getMediaUrlFromAny(c);
 
-            {/* INFO */}
-            <div className="mt-1 px-1">
-              <p className="text-sm font-medium truncate">
-                {c.nombre || "Comercio"}
-              </p>
+          return (
+            <div
+              key={c.id}
+              onClick={() => irAPerfilComercio(c.id)}
+              className="cursor-pointer group"
+            >
+              {/* IMAGEN */}
+              <div className="w-full aspect-square rounded-xl overflow-hidden border bg-gray-100">
+                {comercioImagenUrl ? (
+                  <img
+                    src={comercioImagenUrl}
+                    alt={c.nombre || "Comercio"}
+                    className="w-full h-full object-cover group-hover:scale-105 transition"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs">
+                    Sin imagen
+                  </div>
+                )}
+              </div>
 
-              <p className="text-xs opacity-70 truncate">
-                {c.ciudad || "Ciudad"}
-              </p>
+              {/* INFO */}
+              <div className="mt-1 px-1">
+                <p className="text-sm font-medium truncate">
+                  {c.nombre || "Comercio"}
+                </p>
+
+                <p className="text-xs opacity-70 truncate">
+                  {c.ciudad || "Ciudad"}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* SIN RESULTADOS */}

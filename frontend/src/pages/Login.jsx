@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { loginUsuario } from "../services/authService";
 import { useAuth } from "../context/useAuth";
 
@@ -22,6 +22,7 @@ export default function Login() {
   // Estados del formulario
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mostrarPassword, setMostrarPassword] = useState(false);
 
   // Estados UI
   const [errorMensaje, setErrorMensaje] = useState("");
@@ -32,6 +33,8 @@ export default function Login() {
 
   // Navegación
   const navigate = useNavigate();
+  const location = useLocation();
+  const mensajeContextual = location.state?.message || "";
 
   /**
    * manejarSubmitLogin
@@ -67,6 +70,11 @@ export default function Login() {
           <p className="mt-1 text-sm text-gray-400">
             Accedé para ver tu feed personalizado.
           </p>
+          {mensajeContextual && (
+            <div className="mt-4 rounded-xl border border-purple-900 bg-purple-950/40 p-3">
+              <p className="text-sm text-purple-100">{mensajeContextual}</p>
+            </div>
+          )}
         </div>
 
         <form onSubmit={manejarSubmitLogin} className="space-y-4">
@@ -88,14 +96,25 @@ export default function Login() {
             <label className="block text-sm text-gray-300 mb-1">
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-              className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600"
-            />
+
+            <div className="relative">
+              <input
+                type={mostrarPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 pr-10 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600"
+              />
+
+              <button
+                type="button"
+                onClick={() => setMostrarPassword(!mostrarPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+              >
+                {mostrarPassword ? "🙉" : "🙈"}
+              </button>
+            </div>
           </div>
 
           {/* Error */}
@@ -117,9 +136,21 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="mt-4 text-xs text-gray-500">
-          Tip: si venías con un token viejo, al loguearte de nuevo se reemplaza.
-        </p>
+        <div className="mt-4 space-y-2">
+          <p className="text-xs text-gray-500">
+            Tip: si venías con un token viejo, al loguearte de nuevo se reemplaza.
+          </p>
+
+          <p className="text-sm text-gray-400">
+            ¿No tenés cuenta?{" "}
+            <Link
+              to="/registro"
+              className="font-medium text-purple-400 hover:text-purple-300"
+            >
+              Crear cuenta
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
