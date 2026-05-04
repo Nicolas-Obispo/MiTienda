@@ -59,7 +59,20 @@ export default function Registro() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4">
+    <div className="min-h-[calc(100vh-px)] flex flex-col items-center justify-center px-4">
+
+      {/* LOGO ARRIBA */}
+      <div className="mb-0 animate-logo">
+        <div className="h-80 w-80 overflow-hidden rounded-full bg-gray-950 flex items-center justify-center">
+          <img
+            src="/logo_miplaza.png"
+            alt="MiPlaza"
+            className="h-full w-full object-contain p-4"
+          />
+        </div>
+      </div>
+
+     {/* FORMULARIO */}
       <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-950 p-6 shadow-sm">
         <div className="mb-5">
           <h2 className="text-2xl font-semibold">Crear cuenta</h2>

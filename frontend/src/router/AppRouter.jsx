@@ -13,6 +13,7 @@ import ProfilePage from "../pages/ProfilePage";
 import PerfilComercioPage from "../pages/PerfilComercioPage";
 import ExplorarPage from "../pages/ExplorarPage";
 import PublicacionDetallePage from "../pages/PublicacionDetallePage";
+import VerSeguidosPage from "../pages/VerSeguidosPage";
 
 // Layout
 import MainLayout from "../layouts/MainLayout";
@@ -149,6 +150,15 @@ export default function AppRouter() {
             element={
               <ProtectedRoute>
                 <RankingPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/ver-seguidos"
+            element={
+              <ProtectedRoute>
+                <VerSeguidosPage />
               </ProtectedRoute>
             }
           />

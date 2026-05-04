@@ -2,18 +2,24 @@
  * ProfilePage.jsx
  * ----------------
  * ETAPA 39 (Perfil de usuario) - Guardados
- * ETAPA 45 (Orden UX navegación) - Admin: "Mis comercios" + acciones (Crear / Editar / Desactivar)
+ * ETAPA 45 (Orden UX navegación) - Admin: espacios publicadores + acciones (Crear / Editar / Desactivar)
  * ETAPA 49 (Avatar usuario) - Subida real + drag & drop + persistencia en BD
- * ETAPA 49 (Portada comercio) - Upload real + drag & drop + botón "Seleccionar imagen"
+ * ETAPA 49 (Portada espacio) - Upload real + drag & drop + botón "Seleccionar imagen"
+ * ETAPA 59.1 (Corrección conceptual) - "Mi perfil" como pantalla general del usuario.
  *
  * Regla de oro:
  * - El frontend NO inventa estado de negocio.
  * - Solo consume backend y renderiza.
+ *
+ * Decisión de producto:
+ * - Usuario = cuenta de acceso.
+ * - Mi perfil = pantalla personal del usuario dentro de MiPlaza.
+ * - Tus espacios = negocios, servicios o perfiles públicos que ese usuario administra.
+ * - Backend mantiene "comercios" por compatibilidad técnica.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import PublicacionCard from "../components/PublicacionCard";
 import {
   fetchPublicacionesGuardadas,
   toggleLikePublicacion,
@@ -33,8 +39,6 @@ export default function ProfilePage() {
   // Helpers generales (token + base URL)
   // =====================================================
   function getToken() {
-    // En el proyecto se mencionó "access_token" (ETAPA 36).
-    // Dejo fallback por si en algún punto quedó "token".
     return (
       localStorage.getItem("access_token") ||
       localStorage.getItem("token") ||
@@ -45,9 +49,9 @@ export default function ProfilePage() {
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   // =====================================================
-  // ETAPA 49 — Estado: Avatar usuario
+  // Estado: Perfil personal del usuario
   // =====================================================
-  const [usuarioMe, setUsuarioMe] = useState(null); // { id, email, avatar_url, ... }
+  const [usuarioMe, setUsuarioMe] = useState(null);
   const [isLoadingMe, setIsLoadingMe] = useState(true);
   const [avatarErrorMessage, setAvatarErrorMessage] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -55,9 +59,9 @@ export default function ProfilePage() {
 
   const fileInputRef = useRef(null);
 
-  // ==========================
-  // ETAPA 49 — Portada comercio (upload real)
-  // ==========================
+  // =====================================================
+  // Estado: Portada de espacio
+  // =====================================================
   const [isUploadingPortada, setIsUploadingPortada] = useState(false);
   const [isDragOverPortada, setIsDragOverPortada] = useState(false);
   const [portadaErrorMessage, setPortadaErrorMessage] = useState("");
@@ -71,7 +75,6 @@ export default function ProfilePage() {
 
       const token = getToken();
       if (!token) {
-        // Perfil es ruta protegida, pero por las dudas:
         setUsuarioMe(null);
         return;
       }
@@ -83,10 +86,7 @@ export default function ProfilePage() {
       });
 
       if (!resp.ok) {
-        // Si algo falla, no rompemos la página.
-        // AuthContext ya maneja 401 en otros lugares, acá solo mostramos error suave.
-        const msg = `No se pudo cargar tu perfil (status ${resp.status}).`;
-        throw new Error(msg);
+        throw new Error(`No se pudo cargar tu perfil (status ${resp.status}).`);
       }
 
       const data = await resp.json();
@@ -102,7 +102,6 @@ export default function ProfilePage() {
   }
 
   async function uploadMedia(file) {
-    // Subida real al backend (/media/upload) con JWT.
     const token = getToken();
     if (!token) throw new Error("No hay sesión activa (token).");
 
@@ -113,7 +112,6 @@ export default function ProfilePage() {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        // NO seteamos Content-Type: el browser arma el boundary
       },
       body: formData,
     });
@@ -121,7 +119,9 @@ export default function ProfilePage() {
     if (!resp.ok) {
       const text = await resp.text();
       throw new Error(
-        `Error subiendo imagen (status ${resp.status}): ${text || "sin detalle"}`
+        `Error subiendo imagen (status ${resp.status}): ${
+          text || "sin detalle"
+        }`
       );
     }
 
@@ -131,7 +131,6 @@ export default function ProfilePage() {
   }
 
   async function updateUsuarioAvatar(avatarUrl) {
-    // Persiste avatar_url en BD
     const token = getToken();
     if (!token) throw new Error("No hay sesión activa (token).");
 
@@ -147,11 +146,13 @@ export default function ProfilePage() {
     if (!resp.ok) {
       const text = await resp.text();
       throw new Error(
-        `Error guardando avatar (status ${resp.status}): ${text || "sin detalle"}`
+        `Error guardando avatar (status ${resp.status}): ${
+          text || "sin detalle"
+        }`
       );
     }
 
-    return await resp.json(); // UsuarioResponse actualizado
+    return await resp.json();
   }
 
   function isValidImageFile(file) {
@@ -171,13 +172,9 @@ export default function ProfilePage() {
 
       setIsUploadingAvatar(true);
 
-      // 1) Upload físico a /media/upload → devuelve URL pública
       const url = await uploadMedia(file);
-
-      // 2) Persistimos avatar_url en BD
       const updatedUser = await updateUsuarioAvatar(url);
 
-      // 3) Refrescamos estado local (para ver el cambio inmediato)
       setUsuarioMe(updatedUser);
     } catch (error) {
       setAvatarErrorMessage(
@@ -187,76 +184,8 @@ export default function ProfilePage() {
       setIsUploadingAvatar(false);
       setIsDragOverAvatar(false);
 
-      // Resetea input para permitir subir el mismo archivo 2 veces si quiere
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  }
-
-  // =====================================================
-  // ETAPA 49 — Portada comercio (UX mejorada)
-  // =====================================================
-  function handlePortadaClick() {
-    if (isUploadingPortada) return;
-    portadaFileInputRef.current?.click();
-  }
-
-  function handlePortadaDragOver(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isUploadingPortada) return;
-    setIsDragOverPortada(true);
-  }
-
-  function handlePortadaDragLeave(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOverPortada(false);
-  }
-
-  async function handlePortadaFile(file) {
-    try {
-      setPortadaErrorMessage("");
-
-      if (!file) return;
-      if (!isValidImageFile(file)) {
-        throw new Error("Formato inválido. Usá JPG, PNG o WEBP.");
-      }
-
-      setIsUploadingPortada(true);
-
-      // 1) Upload físico a /media/upload → devuelve URL pública
-      const url = await uploadMedia(file);
-
-      // 2) Seteamos el campo portada_url del form (estado real para el submit)
-      setCreateForm((prev) => ({
-        ...prev,
-        portada_url: url,
-      }));
-    } catch (error) {
-      setPortadaErrorMessage(
-        error.message || "Error desconocido subiendo la portada."
-      );
-    } finally {
-      setIsUploadingPortada(false);
-      setIsDragOverPortada(false);
-
-      // Permite elegir el mismo archivo 2 veces
-      if (portadaFileInputRef.current) portadaFileInputRef.current.value = "";
-    }
-  }
-
-  function handlePortadaInputChange(e) {
-    const file = e.target.files?.[0];
-    handlePortadaFile(file);
-  }
-
-  function handlePortadaDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isUploadingPortada) return;
-
-    const file = e.dataTransfer?.files?.[0];
-    handlePortadaFile(file);
   }
 
   function handleAvatarInputChange(e) {
@@ -291,14 +220,77 @@ export default function ProfilePage() {
     handleAvatarFile(file);
   }
 
+  // =====================================================
+  // Portada de espacio
+  // =====================================================
+  function handlePortadaClick() {
+    if (isUploadingPortada) return;
+    portadaFileInputRef.current?.click();
+  }
+
+  function handlePortadaDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isUploadingPortada) return;
+    setIsDragOverPortada(true);
+  }
+
+  function handlePortadaDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOverPortada(false);
+  }
+
+  async function handlePortadaFile(file) {
+    try {
+      setPortadaErrorMessage("");
+
+      if (!file) return;
+      if (!isValidImageFile(file)) {
+        throw new Error("Formato inválido. Usá JPG, PNG o WEBP.");
+      }
+
+      setIsUploadingPortada(true);
+
+      const url = await uploadMedia(file);
+
+      setCreateForm((prev) => ({
+        ...prev,
+        portada_url: url,
+      }));
+    } catch (error) {
+      setPortadaErrorMessage(
+        error.message || "Error desconocido subiendo la portada."
+      );
+    } finally {
+      setIsUploadingPortada(false);
+      setIsDragOverPortada(false);
+
+      if (portadaFileInputRef.current) portadaFileInputRef.current.value = "";
+    }
+  }
+
+  function handlePortadaInputChange(e) {
+    const file = e.target.files?.[0];
+    handlePortadaFile(file);
+  }
+
+  function handlePortadaDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isUploadingPortada) return;
+
+    const file = e.dataTransfer?.files?.[0];
+    handlePortadaFile(file);
+  }
+
   // ==========================================================
-  // Estado: Guardados
+  // Estado: Publicaciones guardadas
   // ==========================================================
   const [isLoading, setIsLoading] = useState(true);
   const [publicaciones, setPublicaciones] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Locks por publicación
   const [likeLocks, setLikeLocks] = useState({});
   const [saveLocks, setSaveLocks] = useState({});
 
@@ -310,17 +302,15 @@ export default function ProfilePage() {
   }
 
   // ==========================================================
-  // Estado: Mis comercios (admin)
+  // Estado: Espacios administrados
   // ==========================================================
   const [isLoadingComercios, setIsLoadingComercios] = useState(true);
   const [misComercios, setMisComercios] = useState([]);
   const [comerciosErrorMessage, setComerciosErrorMessage] = useState("");
 
-  // Locks / estado para acciones admin
   const [isCreatingComercio, setIsCreatingComercio] = useState(false);
-  const [isActingComercioById, setIsActingComercioById] = useState({}); // { [id]: true/false }
+  const [isActingComercioById, setIsActingComercioById] = useState({});
 
-  // Form crear/editar (simple, mínimo viable)
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingComercioId, setEditingComercioId] = useState(null);
   const [createErrorMessage, setCreateErrorMessage] = useState("");
@@ -341,13 +331,10 @@ export default function ProfilePage() {
     setIsActingComercioById((prev) => ({ ...prev, [comercioId]: value }));
   }
 
-  // --------------------------
-  // Helpers form
-  // --------------------------
   function handleResetForm() {
-    // Resetea modo edición + form (evita quedar "pegado" en editar)
     setEditingComercioId(null);
     setCreateErrorMessage("");
+    setPortadaErrorMessage("");
     setCreateForm({
       nombre: "",
       descripcion: "",
@@ -362,15 +349,11 @@ export default function ProfilePage() {
     });
   }
 
-  /**
-   * Inicia edición de un comercio:
-   * - Precarga el formulario con datos reales del item listado
-   * - Abre el form en modo edición
-   */
   function handleEditarComercio(comercio) {
     if (!comercio?.id) return;
 
     setCreateErrorMessage("");
+    setPortadaErrorMessage("");
     setEditingComercioId(comercio.id);
     setShowCreateForm(true);
 
@@ -388,16 +371,6 @@ export default function ProfilePage() {
     });
   }
 
-  // --------------------------
-  // Cargar guardadoss
-  // --------------------------
-  /**
-   * ETAPA 56 — FIX GUARDADOS
-   * ------------------------
-   * - El service ya devuelve publicaciones listas
-   * - NO re-normalizamos
-   * - Evita perder datos y desincronización
-   */
   async function loadGuardadas() {
     try {
       setIsLoading(true);
@@ -405,7 +378,6 @@ export default function ProfilePage() {
 
       const guardadas = await fetchPublicacionesGuardadas();
 
-      // Ya vienen listas para UI
       setPublicaciones(Array.isArray(guardadas) ? guardadas : []);
     } catch (error) {
       setErrorMessage(
@@ -417,9 +389,6 @@ export default function ProfilePage() {
     }
   }
 
-  // --------------------------
-  // Cargar mis comercios
-  // --------------------------
   async function loadMisComercios() {
     try {
       setIsLoadingComercios(true);
@@ -430,7 +399,7 @@ export default function ProfilePage() {
       setMisComercios(items);
     } catch (error) {
       setComerciosErrorMessage(
-        error.message || "Error desconocido cargando tus comercios."
+        error.message || "Error desconocido cargando tus espacios."
       );
       setMisComercios([]);
     } finally {
@@ -439,17 +408,11 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    // ETAPA 49: cargamos /usuarios/me para mostrar avatar actual
     loadUsuarioMe();
-
-    // Lo existente
     loadMisComercios();
     loadGuardadas();
   }, []);
 
-  /**
-   * Optimistic Like
-   */
   async function handleToggleLike(pubId) {
     if (likeLocksMemo[pubId]) return;
 
@@ -464,17 +427,14 @@ export default function ProfilePage() {
         const nextLiked = !p.liked_by_me;
         const delta = nextLiked ? 1 : -1;
 
-        const nextLikesCount = Math.max(0, (p.likes_count || 0) + delta);
-        const nextInteraccionesCount = Math.max(
-          0,
-          (p.interacciones_count || 0) + delta
-        );
-
         return {
           ...p,
           liked_by_me: nextLiked,
-          likes_count: nextLikesCount,
-          interacciones_count: nextInteraccionesCount,
+          likes_count: Math.max(0, (p.likes_count || 0) + delta),
+          interacciones_count: Math.max(
+            0,
+            (p.interacciones_count || 0) + delta
+          ),
         };
       })
     );
@@ -489,9 +449,6 @@ export default function ProfilePage() {
     }
   }
 
-  /**
-   * Optimistic Guardado
-   */
   async function handleToggleSave(pubId) {
     if (saveLocksMemo[pubId]) return;
 
@@ -509,17 +466,14 @@ export default function ProfilePage() {
         prev.map((p) => {
           if (p.id !== pubId) return p;
 
-          const nextGuardadosCount = Math.max(0, (p.guardados_count || 0) + 1);
-          const nextInteraccionesCount = Math.max(
-            0,
-            (p.interacciones_count || 0) + 1
-          );
-
           return {
             ...p,
             guardada_by_me: true,
-            guardados_count: nextGuardadosCount,
-            interacciones_count: nextInteraccionesCount,
+            guardados_count: Math.max(0, (p.guardados_count || 0) + 1),
+            interacciones_count: Math.max(
+              0,
+              (p.interacciones_count || 0) + 1
+            ),
           };
         })
       );
@@ -540,7 +494,7 @@ export default function ProfilePage() {
   }
 
   // =====================================================
-  // ETAPA 45 — Crear / Editar comercio
+  // Crear / Editar espacio
   // =====================================================
   function handleCreateInputChange(e) {
     const { name, value } = e.target;
@@ -560,22 +514,28 @@ export default function ProfilePage() {
       setCreateErrorMessage("");
       setIsCreatingComercio(true);
 
-      if (!createForm.nombre.trim()) throw new Error("El nombre es obligatorio.");
+      if (!createForm.nombre.trim()) {
+        throw new Error("El nombre es obligatorio.");
+      }
+
       if (!createForm.provincia.trim() || !createForm.ciudad.trim()) {
         throw new Error("Provincia y ciudad son obligatorias.");
       }
 
-      // Payload limpio: strings vacíos -> null donde aplica
       const payload = {
         ...createForm,
         direccion: createForm.direccion?.trim()
           ? createForm.direccion.trim()
           : null,
-        whatsapp: createForm.whatsapp?.trim() ? createForm.whatsapp.trim() : null,
+        whatsapp: createForm.whatsapp?.trim()
+          ? createForm.whatsapp.trim()
+          : null,
         instagram: createForm.instagram?.trim()
           ? createForm.instagram.trim()
           : null,
-        maps_url: createForm.maps_url?.trim() ? createForm.maps_url.trim() : null,
+        maps_url: createForm.maps_url?.trim()
+          ? createForm.maps_url.trim()
+          : null,
         portada_url: createForm.portada_url?.trim()
           ? createForm.portada_url.trim()
           : null,
@@ -584,17 +544,14 @@ export default function ProfilePage() {
           : "",
       };
 
-      // ✅ Si estamos editando, hacemos PUT. Si no, POST.
       if (editingComercioId) {
         await actualizarComercio(editingComercioId, payload);
       } else {
         await crearComercio(payload);
       }
 
-      // Refrescamos desde backend (estado real)
       await loadMisComercios();
 
-      // Cerramos form y reseteamos
       setShowCreateForm(false);
       handleResetForm();
     } catch (error) {
@@ -604,15 +561,12 @@ export default function ProfilePage() {
     }
   }
 
-  // =====================================================
-  // ETAPA 45 — Desactivar comercio
-  // =====================================================
   async function handleDesactivarComercio(comercioId) {
     if (!comercioId) return;
     if (isActingComercioById[comercioId]) return;
 
     const ok = window.confirm(
-      "¿Seguro que querés desactivar este espacio? (Se puede reactivar en una etapa futura)"
+      "¿Seguro que querés desactivar este espacio? Podrás reactivarlo más adelante."
     );
     if (!ok) return;
 
@@ -621,24 +575,21 @@ export default function ProfilePage() {
       setComercioLock(comercioId, true);
 
       await desactivarComercio(comercioId);
-
-      // Refrescamos desde backend (estado real)
       await loadMisComercios();
     } catch (error) {
-      setComerciosErrorMessage(error.message || "Error desactivando el comercio.");
+      setComerciosErrorMessage(
+        error.message || "Error desactivando el espacio."
+      );
     } finally {
       setComercioLock(comercioId, false);
     }
   }
 
-  // =====================================================
-  // ETAPA 45 — Acciones admin: Reactivar comercio
-  // =====================================================
   async function handleReactivarComercio(comercioId) {
     if (!comercioId) return;
     if (isActingComercioById[comercioId]) return;
 
-    const ok = window.confirm("¿Querés reactivar este comercio?");
+    const ok = window.confirm("¿Querés reactivar este espacio?");
     if (!ok) return;
 
     try {
@@ -646,11 +597,11 @@ export default function ProfilePage() {
       setComercioLock(comercioId, true);
 
       await reactivarComercio(comercioId);
-
-      // Refrescamos desde backend (estado real)
       await loadMisComercios();
     } catch (error) {
-      setComerciosErrorMessage(error.message || "Error reactivando el comercio.");
+      setComerciosErrorMessage(
+        error.message || "Error reactivando el espacio."
+      );
     } finally {
       setComercioLock(comercioId, false);
     }
@@ -661,19 +612,21 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <main className="mx-auto max-w-3xl px-4 py-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-white">Mi espacio</h1>
+        {/* ===================================================== */}
+        {/* Header: Mi perfil */}
+        {/* ===================================================== */}
+        <section className="mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-white">
+            Mi perfil
+          </h1>
+
           <p className="mt-1 text-sm text-gray-400">
-            Gestioná tus espacios y lo que guardaste.
+            Gestioná tu actividad, tus espacios y tus publicaciones guardadas.
           </p>
 
-          {/* ========================= */}
-          {/* ETAPA 49 — Avatar usuario */}
-          {/* ========================= */}
+          {/* Perfil personal */}
           <div className="mt-4 rounded-2xl border border-gray-800 bg-gray-950 p-4">
             <div className="flex items-center gap-4">
-              {/* Preview / Dropzone */}
               <div
                 role="button"
                 tabIndex={0}
@@ -695,7 +648,7 @@ export default function ProfilePage() {
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
-                    alt="Avatar"
+                    alt="Foto de perfil"
                     className="h-full w-full object-cover"
                     draggable={false}
                   />
@@ -711,23 +664,23 @@ export default function ProfilePage() {
               </div>
 
               <div className="flex-1">
-                <p className="font-semibold">Foto de perfil</p>
+                <p className="font-semibold">Perfil personal</p>
+
                 <p className="mt-1 text-sm text-gray-400">
-                  Click para elegir imagen, o arrastrá y soltá una foto. Formatos:
-                  JPG / PNG / WEBP.
+                  Este es tu perfil dentro de MiPlaza. Podés explorar,
+                  guardar publicaciones, seguir espacios y también administrar
+                  tus propios espacios.
                 </p>
 
-                {/* Botón explícito */}
                 <button
                   type="button"
                   onClick={handleAvatarClick}
                   disabled={isUploadingAvatar}
                   className="mt-2 rounded-xl bg-white text-black px-3 py-2 text-xs font-semibold disabled:opacity-60"
                 >
-                  {isUploadingAvatar ? "Subiendo..." : "Seleccionar imagen"}
+                  {isUploadingAvatar ? "Subiendo..." : "Cambiar foto"}
                 </button>
 
-                {/* Input real oculto */}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -736,7 +689,6 @@ export default function ProfilePage() {
                   className="hidden"
                 />
 
-                {/* Email (info) */}
                 <p className="mt-2 text-xs text-gray-500">
                   {isLoadingMe
                     ? "Cargando usuario..."
@@ -755,14 +707,19 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* ===================================================== */}
-        {/* Sección: Mis comercios (admin) */}
+        {/* Sección: Tus espacios */}
         {/* ===================================================== */}
-        <div className="mb-8">
+        <section className="mb-8">
           <div className="flex items-end justify-between gap-3">
-            <h2 className="text-lg font-semibold">Tus espacios</h2>
+            <div>
+              <h2 className="text-lg font-semibold">Tus espacios</h2>
+              <p className="mt-1 text-sm text-gray-400">
+                Estos son los espacios publicos que administrás.
+              </p>
+            </div>
 
             <button
               type="button"
@@ -771,10 +728,7 @@ export default function ProfilePage() {
                 setShowCreateForm((prev) => {
                   const next = !prev;
 
-                  // Si lo abrimos para crear, aseguramos modo "crear"
                   if (next) handleResetForm();
-
-                  // Si lo cerramos, limpiamos también
                   if (!next) handleResetForm();
 
                   return next;
@@ -782,19 +736,19 @@ export default function ProfilePage() {
               }}
               className="rounded-xl border border-gray-800 bg-gray-950 px-4 py-2 text-sm hover:border-gray-700"
             >
-              {showCreateForm ? "Cerrar" : "Crear tu espacio"}
+              {showCreateForm ? "Cerrar" : "Crear espacio"}
             </button>
           </div>
 
-          {/* Form crear/editar */}
           {showCreateForm && (
             <div className="mt-4 rounded-2xl border border-gray-800 bg-gray-950 p-5">
               <p className="font-semibold">
-                {editingComercioId ? "Editar espacio" : "Crear tu espacio"}
+                {editingComercioId ? "Editar espacio" : "Crear espacio"}
               </p>
 
               <p className="mt-1 text-sm text-gray-400">
-                Versión simple (ETAPA 45). Luego lo mejoramos con UI dedicada.
+                Creá un espacio para mostrar un negocio, servicio, profesión o
+                emprendimiento.
               </p>
 
               {createErrorMessage && (
@@ -809,13 +763,15 @@ export default function ProfilePage() {
               <form onSubmit={handleCrearComercioSubmit} className="mt-4 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-gray-400">Nombre de tu espacio *</label>
+                    <label className="text-xs text-gray-400">
+                      Nombre del espacio *
+                    </label>
                     <input
                       name="nombre"
                       value={createForm.nombre}
                       onChange={handleCreateInputChange}
                       className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
-                      placeholder="Ej: Tienda & accesorios RAFAELA"
+                      placeholder="Ej: Kiosco Centro, Estudio Jurídico, Ferretería..."
                     />
                   </div>
 
@@ -862,17 +818,13 @@ export default function ProfilePage() {
                     onChange={handleCreateInputChange}
                     className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
                     rows={3}
-                    placeholder="Breve descripción..."
+                    placeholder="Contá brevemente qué ofrece este espacio..."
                   />
                 </div>
 
-                {/* ========================= */}
-                {/* ETAPA 49 — Portada comercio */}
-                {/* ========================= */}
                 <div>
-                  <label className="text-xs text-gray-400">Portada (imagen)</label>
+                  <label className="text-xs text-gray-400">Portada</label>
 
-                  {/* Dropzone + Preview */}
                   <div className="mt-2 flex items-center gap-3">
                     <div
                       role="button"
@@ -895,7 +847,7 @@ export default function ProfilePage() {
                       {createForm.portada_url ? (
                         <img
                           src={createForm.portada_url}
-                          alt="Portada"
+                          alt="Portada del espacio"
                           className="h-full w-full object-cover"
                           draggable={false}
                         />
@@ -912,7 +864,6 @@ export default function ProfilePage() {
                       )}
                     </div>
 
-                    {/* Texto + botón (click grande) */}
                     <div
                       role="button"
                       tabIndex={0}
@@ -921,7 +872,8 @@ export default function ProfilePage() {
                       title="Click para seleccionar imagen"
                     >
                       <p className="text-sm text-gray-300">
-                        Click o arrastrar para subir. (JPG / PNG / WEBP)
+                        Click o arrastrar para subir. Formatos: JPG / PNG /
+                        WEBP.
                       </p>
 
                       <button
@@ -937,7 +889,6 @@ export default function ProfilePage() {
                         {isUploadingPortada ? "Subiendo..." : "Seleccionar imagen"}
                       </button>
 
-                      {/* Input file oculto */}
                       <input
                         ref={portadaFileInputRef}
                         type="file"
@@ -954,10 +905,9 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {/* Fallback: URL manual */}
                   <div className="mt-3">
                     <label className="text-xs text-gray-500">
-                      Portada URL (opcional)
+                      Portada URL opcional
                     </label>
                     <input
                       name="portada_url"
@@ -1045,7 +995,6 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Loading */}
           {isLoadingComercios && (
             <div className="mt-3 space-y-2">
               <div className="h-16 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
@@ -1053,28 +1002,27 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Error */}
           {!isLoadingComercios && comerciosErrorMessage && (
             <div className="mt-3 rounded-2xl border border-red-900 bg-red-950/40 p-5">
-              <p className="font-semibold text-red-200">Error (Mis comercios)</p>
+              <p className="font-semibold text-red-200">Error</p>
               <p className="mt-2 text-red-100 break-words">
                 {comerciosErrorMessage}
               </p>
             </div>
           )}
 
-          {/* Empty */}
           {!isLoadingComercios &&
             !comerciosErrorMessage &&
             misComercios.length === 0 && (
               <div className="mt-3 rounded-2xl border border-purple-900 bg-purple-950/30 p-6 text-center">
                 <p className="text-lg font-bold text-purple-100">
-                  Creá tu espacio en MiPlaza
+                  Todavía no creaste espacios
                 </p>
 
                 <p className="mt-2 text-sm leading-6 text-purple-100/80">
-                  Mostrá tu negocio, servicio o profesión a personas de tu zona.
-                  Publicá contenido, compartí novedades y hacé que te descubran.
+                  Podés usar MiPlaza solo para explorar, guardar publicaciones e
+                  interactuar. Cuando quieras mostrar un negocio, servicio o
+                  profesión, creá tu primer espacio.
                 </p>
 
                 <button
@@ -1086,188 +1034,171 @@ export default function ProfilePage() {
                   }}
                   className="mt-4 rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500"
                 >
-                  Crear tu espacio
+                  Crear espacio
                 </button>
               </div>
             )}
 
-          {/* OK */}
           {!isLoadingComercios &&
             !comerciosErrorMessage &&
             misComercios.length > 0 && (
-              <div className="mt-3 space-y-3">
-                {misComercios.map((c) => {
-                  const isActing = Boolean(isActingComercioById[c.id]);
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {misComercios.map((c) => {
+                    const isActing = Boolean(isActingComercioById[c.id]);
 
-                  return (
-                    <div
-                      key={c.id}
-                      className="rounded-2xl border border-gray-800 bg-gray-950 overflow-hidden"
-                    >
-                      {/* PORTADA */}
-                      <div className="h-32 bg-gray-800">
-                        {c.portada_url ? (
-                          <img
-                            src={c.portada_url}
-                            alt="Portada"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                            Sin portada
-                          </div>
-                        )}
-                      </div>
-
-                      {/* CONTENIDO */}
-                      <div className="p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-semibold text-white">{c.nombre}</p>
-
-                            <p className="mt-1 text-sm text-gray-400">
-                              {(c.ciudad || "Ciudad") + ", " + (c.provincia || "Provincia")}
-                            </p>
-
-                            <p className="mt-2 text-xs text-gray-500">
-                              {c.activo ? "Activo" : "Inactivo"}
-                            </p>
-                          </div>
-
-                          {/* ACCIONES */}
-                          <div className="flex flex-col items-end gap-2">
-                            <Link
-                              to={`/comercios/${c.id}`}
-                              className="rounded-xl bg-white text-black px-3 py-1.5 text-xs font-semibold hover:opacity-90"
-                            >
-                              Ver espacio
-                            </Link>
-
-                            <button
-                              type="button"
-                              onClick={() => handleEditarComercio(c)}
-                              disabled={isActing}
-                              className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs hover:border-gray-700 disabled:opacity-50"
-                            >
-                              Editar
-                            </button>
-
-                            {c.activo ? (
-                              <button
-                                type="button"
-                                onClick={() => handleDesactivarComercio(c.id)}
-                                disabled={isActing}
-                                className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs hover:border-gray-700 disabled:opacity-50"
-                              >
-                                {isActing ? "Procesando..." : "Desactivar"}
-                              </button>
+                    return (
+                      <div
+                        key={c.id}
+                        className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-950"
+                      >
+                        {/* PORTADA */}
+                        <Link to={`/comercios/${c.id}`}>
+                          <div className="aspect-square bg-gray-800">
+                            {c.portada_url ? (
+                              <img
+                                src={c.portada_url}
+                                alt="Portada del espacio"
+                                className="w-full h-full object-cover"
+                              />
                             ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleReactivarComercio(c.id)}
-                                disabled={isActing}
-                                className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs hover:border-gray-700 disabled:opacity-50"
-                              >
-                                {isActing ? "Procesando..." : "Activar"}
-                              </button>
+                              <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                Sin portada
+                              </div>
                             )}
                           </div>
+                        </Link>
+
+                        {/* NOMBRE */}
+                        <div className="p-2">
+                          <p className="truncate text-xs font-semibold text-white">
+                            {c.nombre}
+                          </p>
+                        </div>
+
+                        {/* BADGE ESTADO */}
+                        <span className="absolute top-2 left-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px]">
+                          {c.activo ? "🟢Activo" : "🔴Pausado"}
+                        </span>
+
+                        {/* ACCIONES */}
+                        <div className="absolute top-2 right-2 flex flex-col gap-1">
+                          <button
+                            onClick={() => handleEditarComercio(c)}
+                            disabled={isActing}
+                            className="bg-black/70 text-[10px] px-2 py-1 rounded"
+                          >
+                            Editar
+                          </button>
+
+                          {c.activo ? (
+                            <button
+                              onClick={() => handleDesactivarComercio(c.id)}
+                              disabled={isActing}
+                              className="bg-black/70 text-[10px] px-2 py-1 rounded"
+                            >
+                              {isActing ? "..." : "Pausar"}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleReactivarComercio(c.id)}
+                              disabled={isActing}
+                              className="bg-black/70 text-[10px] px-2 py-1 rounded"
+                            >
+                              {isActing ? "..." : "Activar"}
+                            </button>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
+            )}
+        </section>
+
+        {/* ===================================================== */}
+        {/* Sección: Publicaciones guardadas */}
+        {/* ===================================================== */}
+        <section>
+          <div className="mb-3">
+            <h2 className="text-lg font-semibold">Publicaciones guardadas</h2>
+            <p className="mt-1 text-sm text-gray-400">
+              Contenido que guardaste desde Feed, Ranking o Explorador.
+            </p>
+          </div>
+
+          {isLoading && (
+            <div className="space-y-3">
+              <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
+              <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
+              <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
+            </div>
           )}
-        </div>
 
-        {/* ===================================================== */}
-        {/* Sección: Guardados (lo existente) */}
-        {/* ===================================================== */}
+          {!isLoading && errorMessage && (
+            <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
+              <p className="font-semibold text-red-200">Error</p>
+              <p className="mt-2 text-red-100 break-words">{errorMessage}</p>
 
-        {/* Estado: Loading */}
-        {isLoading && (
-          <div className="space-y-3">
-            <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-            <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-            <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-          </div>
-        )}
+              <p className="mt-3 text-sm text-gray-200">
+                Si ves <b>401</b>, verificá que exista{" "}
+                <code className="bg-gray-800 px-1 rounded">access_token</code>{" "}
+                en localStorage.
+              </p>
+            </div>
+          )}
 
-        {/* Estado: Error */}
-        {!isLoading && errorMessage && (
-          <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
-            <p className="font-semibold text-red-200">Error</p>
-            <p className="mt-2 text-red-100 break-words">{errorMessage}</p>
+          {!isLoading && !errorMessage && publicaciones.length === 0 && (
+            <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center">
+              <p className="text-gray-200 font-semibold">
+                No tenés publicaciones guardadas
+              </p>
+              <p className="mt-2 text-gray-400 text-sm">
+                Guardá publicaciones desde el Feed o Ranking y van a aparecer
+                acá.
+              </p>
+            </div>
+          )}
 
-            <p className="mt-3 text-sm text-gray-200">
-              Si ves <b>401</b>, verificá que exista{" "}
-              <code className="bg-gray-800 px-1 rounded">access_token</code> en
-              localStorage.
-            </p>
-          </div>
-        )}
+          {!isLoading && !errorMessage && publicaciones.length > 0 && (
+            <div className="space-y-4">
+              <div
+                className="
+                  grid
+                  grid-cols-3
+                  sm:grid-cols-3
+                  md:grid-cols-4
+                  gap-1
+                "
+              >
+                {publicaciones.map((p) => (
+                  <div
+                    key={p.id}
+                    className="relative aspect-square bg-gray-800 overflow-hidden"
+                  >
+                    {p.imagen_url ? (
+                      <img
+                        src={p.imagen_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                        Sin imagen
+                      </div>
+                    )}
 
-        {/* Estado: Vacío */}
-        {!isLoading && !errorMessage && publicaciones.length === 0 && (
-          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center">
-            <p className="text-gray-200 font-semibold">No tenés guardados</p>
-            <p className="mt-2 text-gray-400 text-sm">
-              Guardá publicaciones desde el Feed o Ranking y van a aparecer acá.
-            </p>
-          </div>
-        )}
-
-        {/* Estado: OK */}
-        {!isLoading && !errorMessage && publicaciones.length > 0 && (
-          <div className="space-y-4">
-            /**
-            * ETAPA 56 — GRID TIPO INSTAGRAM (GUARDADOS)
-            * -----------------------------------------
-            * - Mobile first
-            * - Imagen protagonista
-            * - Preparado para video/carrusel
-            */
-
-            <div
-              className="
-                grid
-                grid-cols-3
-                sm:grid-cols-3
-                md:grid-cols-4
-                gap-1
-              "
-            >
-              {publicaciones.map((p) => (
-                <div
-                  key={p.id}
-                  className="relative aspect-square bg-gray-800 overflow-hidden"
-                >
-                  {/* IMAGEN PRINCIPAL */}
-                  {p.imagen_url ? (
-                    <img
-                      src={p.imagen_url}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                      Sin imagen
-                    </div>
-                  )}
-
-                  {/* OVERLAY (hover desktop / futuro mobile tap) */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition flex items-center justify-center">
-                    <div className="text-xs text-white text-center">
-                      <p>❤️ {p.likes_count || 0}</p>
-                      <p>💾 {p.guardados_count || 0}</p>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition flex items-center justify-center">
+                      <div className="text-xs text-white text-center">
+                        <p>❤️ {p.likes_count || 0}</p>
+                        <p>💾 {p.guardados_count || 0}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </section>
       </main>
     </div>
   );

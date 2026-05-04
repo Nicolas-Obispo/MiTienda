@@ -19,6 +19,9 @@ from app.routers.ranking_publicaciones_routers import router as ranking_publicac
 from app.routers.feed_publicaciones_routers import router as feed_publicaciones_router
 from app.routers.media_routers import router as media_router
 
+# 🔥 ETAPA 60 — Seguidores
+from app.routers.seguidores_routers import router as seguidores_router
+
 # ------------------------------
 # Soporte para archivos estáticos (uploads)
 # ------------------------------
@@ -75,3 +78,6 @@ app.include_router(likes_publicaciones_router)
 app.include_router(ranking_publicaciones_router)
 app.include_router(feed_publicaciones_router)
 app.include_router(media_router)
+
+# 🔥 ETAPA 60 — Seguidores (al final, no rompe nada existente)
+app.include_router(seguidores_router)

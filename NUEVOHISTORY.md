@@ -4735,21 +4735,308 @@ La IA sigue pausada hasta que el producto base sea más completo y usable.
 
 # ETAPA 59 — Base Producto (CIERRE REAL)
 
-## 🎯 Objetivo de la etapa
+## Objetivo
 
-Transformar MiPlaza de una app funcional a un **producto usable**, mejorando:
-
-- Conversión (Home + CTAs)
-- Flujo de usuario (explorador vs publicador)
-- Claridad conceptual (espacio vs comercio)
-- UX general (perfil, navegación, acciones)
-- Control real de contenido (eliminar publicaciones)
+Transformar MiPlaza en una experiencia de producto más usable, clara y coherente, priorizando flujo de usuario, conversión, administración básica del contenido y lenguaje de producto.
 
 ---
 
-## 🧭 CAMBIO DE ENFOQUE (DECISIÓN CLAVE)
+## Cambios principales
 
-Se prioriza:
+### Registro de usuarios en frontend
 
-```txt
-Producto usable > mejoras técnicas de IA
+Se conectó el flujo de registro desde el frontend usando el backend existente.
+
+Archivos trabajados:
+
+- `frontend/src/services/authService.js`
+- `frontend/src/pages/Registro.jsx`
+- `frontend/src/router/AppRouter.jsx`
+- `frontend/src/pages/Login.jsx`
+
+Cambios realizados:
+
+- Se agregó función `registrarUsuario()` en `authService.js`.
+- Se creó pantalla `Registro.jsx`.
+- Se agregó ruta `/registro`.
+- Se conectó Login → Registro.
+- Se agregó login automático luego del registro.
+- Se agregaron campos vacíos con placeholders correctos.
+- Se evitó autocompletado automático del navegador en registro.
+- Se agregó botón para ver/ocultar contraseña en Login y Registro.
+
+---
+
+## Home y conversión
+
+Archivo trabajado:
+
+- `frontend/src/pages/Home.jsx`
+
+Cambios realizados:
+
+- Se mejoró el copy principal.
+- Se reemplazó lenguaje centrado solo en comercios por un concepto más amplio:
+  - negocios
+  - servicios
+  - profesionales
+- Se ajustaron CTAs:
+  - explorar sin registrarse
+  - crear cuenta gratis
+- Se reforzó la idea de MiPlaza como vidriera digital local.
+
+---
+
+## Nuevo concepto de producto: Mi espacio
+
+Se definió que MiPlaza no debe hablar solamente de “comercios”, porque también puede incluir profesionales, servicios y actividades independientes.
+
+Decisión de producto:
+
+- UI visible: usar “Mi espacio”, “Crear tu espacio”, “Tus espacios”.
+- Código interno: mantener por ahora nombres técnicos existentes como `comercio`, `comercios_service`, `/comercios`, para evitar romper arquitectura.
+
+Concepto definido:
+
+- Un solo usuario y contraseña.
+- Dos usos principales:
+  - consumidor
+  - publicador
+- El acceso superior se presenta como “Mi espacio”.
+
+---
+
+## Navbar
+
+Archivo trabajado:
+
+- `frontend/src/layouts/MainLayout.jsx`
+
+Cambios realizados:
+
+- Se agregó botón superior “Mi espacio”.
+- Si el usuario no está logueado, “Mi espacio” lleva a `/registro`.
+- Si el usuario está logueado, “Mi espacio” lleva a `/perfil`.
+- Se eliminó el botón visible “Perfil” para evitar duplicación conceptual.
+- Se agregó estado activo por ruta:
+  - Explorar
+  - Mi espacio
+  - Feed
+  - Ranking
+
+---
+
+## Pantalla Mi espacio
+
+Archivo trabajado:
+
+- `frontend/src/pages/ProfilePage.jsx`
+
+Cambios realizados:
+
+- Se cambió copy visible:
+  - “Mi Perfil” → “Mi espacio”
+  - “Mis comercios” → “Tus espacios”
+  - “Crear comercio” → “Crear tu espacio”
+  - “Nuevo comercio” → “Crear tu espacio”
+  - “Editar comercio” → “Editar espacio”
+- Se mejoró el estado vacío cuando el usuario todavía no tiene espacios.
+- Se agregó mensaje más cálido para invitar a crear el espacio.
+- Se mejoraron cards visuales de los espacios creados.
+- Se mantuvo la lógica interna basada en `misComercios` para no romper el sistema.
+
+Pendiente detectado:
+
+- La pantalla `/perfil` todavía necesita una mejora visual y conceptual más profunda porque mezcla:
+  - perfil personal
+  - Mi espacio
+  - Tus espacios
+  - foto de perfil
+  - guardados
+
+Queda pendiente ordenar mejor esa pantalla en una etapa futura.
+
+---
+
+## Perfil público del espacio
+
+Archivo trabajado:
+
+- `frontend/src/pages/PerfilComercioPage.jsx`
+
+Cambios realizados:
+
+- Se agregó sección visible de datos reales ya cargados al crear el espacio:
+  - WhatsApp
+  - Instagram
+  - Google Maps
+  - Dirección / ciudad
+- Se agregó apertura de WhatsApp con mensaje precargado:
+  - “Hola, te encontré en MiPlaza y quiero consultarte”
+- Se agregó apertura externa de Instagram.
+- Se agregó apertura externa de Maps.
+- Se instaló `lucide-react` para usar iconos visuales.
+- Se usaron iconos genéricos en lugar de logos oficiales.
+- Se mantuvo diseño simple con chips, porque visualmente quedó más limpio.
+
+---
+
+## Métricas y acciones del perfil público
+
+Archivo trabajado:
+
+- `frontend/src/pages/PerfilComercioPage.jsx`
+
+Cambios realizados:
+
+- Se quitó el contador de historias del header público.
+- Se agregó contador de seguidores como base visual inicial:
+  - por ahora usa `comercio?.seguidores_count ?? 0`
+- Se separó el estado Activo/Inactivo para que no se mezcle con métricas.
+- Se decidió que “Estadísticas” es una acción del dueño, no una métrica.
+- Se ubicó “Estadísticas” junto a acciones del dueño:
+  - + Historia
+  - + Publicación
+  - Estadísticas
+
+Pendiente:
+
+- Seguidores todavía no son reales.
+- Estadísticas todavía no está conectada a una pantalla real.
+
+---
+
+## Detalle de publicación
+
+Archivo trabajado:
+
+- `frontend/src/pages/PublicacionDetallePage.jsx`
+
+Cambios realizados:
+
+- Se agregó detección de dueño para poder mostrar acciones de administración.
+- Como el detalle de publicación no trae `owner_user_id`, se resolvió verificando si el comercio asociado pertenece al usuario logueado.
+- Se agregó botón de eliminar publicación visible solo para el dueño del espacio.
+- Se ajustó el botón de eliminar para que tenga estilo uniforme con el resto de la UI.
+
+---
+
+## Eliminación segura de publicaciones
+
+Se implementó eliminación lógica, no eliminación física.
+
+Decisión:
+
+- Eliminar publicación = marcar `is_activa = False`.
+
+Motivo:
+
+- Evita pérdida definitiva de datos.
+- Permite futura papelera.
+- Mantiene integridad con likes, guardados y métricas.
+- Evita romper relaciones existentes.
+
+---
+
+## Backend: eliminar publicación
+
+Archivos trabajados:
+
+- `backend/app/services/publicaciones_services.py`
+- `backend/app/routers/publicaciones_routers.py`
+
+Cambios realizados:
+
+### Service
+
+Se agregó función:
+
+```python
+desactivar_publicacion()
+
+## ETAPA 60 — Sistema de Seguidores + Ver Seguidos
+
+### Backend
+
+- Implementación del modelo de seguidores (usuario → espacio)
+- Lógica de negocio en `seguidores_services.py`:
+  - seguir_espacio (idempotente)
+  - dejar_de_seguir_espacio (idempotente)
+  - usuario_sigue_espacio
+  - contar_seguidores
+  - listar_espacios_seguidos_por_usuario (JOIN con comercios)
+
+- Endpoints en `seguidores_routers.py`:
+  - POST /seguidores/espacios/{comercio_id}
+  - DELETE /seguidores/espacios/{comercio_id}
+  - GET /seguidores/espacios/{comercio_id}/estado
+  - GET /seguidores/espacios/{comercio_id}/contador
+  - GET /seguidores/mis-espacios
+
+- Corrección de serialización:
+  - Se evita devolver modelos SQLAlchemy directamente
+  - Se construye respuesta manual para evitar RecursionError
+  - Se usa `portada_url` como imagen del espacio (consistente con el resto del sistema)
+
+---
+
+### Frontend
+
+- Service `seguidores_service.js`:
+  - seguirEspacio
+  - dejarDeSeguirEspacio
+  - obtenerEstadoSeguimiento
+  - obtenerMisEspaciosSeguidos
+
+- Integración en Perfil de Espacio:
+  - Botón dinámico "Seguir / Siguiendo"
+  - Toggle de estado conectado al backend
+  - Oculto en espacios propios
+  - Ubicación del botón ajustada a la derecha del header
+
+---
+
+### Nueva funcionalidad: Ver Seguidos
+
+- Nueva página: `VerSeguidosPage.jsx`
+  - Lista en columna
+  - Imagen de portada a la izquierda
+  - Nombre + descripción a la derecha
+  - Navegación al perfil del espacio
+
+- Nueva ruta protegida:
+  - `/ver-seguidos`
+
+- Integración en navegación:
+  - Menú actualizado:
+    Feed → Mi Perfil → Ranking → Ver seguidos → Explorar
+
+---
+
+### UI / UX
+
+- Ajustes de layout en perfil de espacio:
+  - Alineación de botones
+  - Mejora de distribución visual
+- Consistencia visual entre feed, explorar y seguidos
+- Integración de branding:
+  - Logo en header
+  - Logo en login/registro
+  - Favicon personalizado
+
+---
+
+### Fixes técnicos
+
+- Corrección de error `S is not defined` en frontend
+- Corrección de CORS para pruebas en red local (celular)
+- Corrección de `RecursionError` en FastAPI
+- Corrección de atributo inexistente `imagen_url` → uso de `portada_url`
+
+---
+
+### Resultado
+
+- Sistema completo de seguidores funcional
+- Usuario puede seguir espacios y verlos en una lista dedicada
+- Base sólida para features sociales (followers, feed personalizado, etc.)

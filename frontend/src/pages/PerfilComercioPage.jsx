@@ -29,6 +29,12 @@ import {
   quitarPublicacionGuardada,
 } from "../services/feed_service";
 
+import {
+  seguirEspacio,
+  dejarDeSeguirEspacio,
+  obtenerEstadoSeguimiento,
+} from "../services/seguidores_service";
+
 import { useAuth } from "../context/useAuth";
 
 export default function CommerceProfilePage() {
@@ -59,6 +65,9 @@ export default function CommerceProfilePage() {
 
   const [likeLocks, setLikeLocks] = useState({});
   const [saveLocks, setSaveLocks] = useState({});
+
+  const [siguiendo, setSiguiendo] = useState(false);
+  const [isLoadingFollow, setIsLoadingFollow] = useState(false);
 
   const likeLocksMemo = useMemo(() => likeLocks, [likeLocks]);
   const saveLocksMemo = useMemo(() => saveLocks, [saveLocks]);
@@ -137,6 +146,22 @@ export default function CommerceProfilePage() {
       setComercio(comercioData);
       setHistorias(hist);
       setPublicaciones(mergedPubs);
+
+            // ETAPA 60 — Cargamos estado real de seguimiento solo si hay sesión.
+      try {
+        if (token) {
+          const estadoSeguimiento = await obtenerEstadoSeguimiento(comercioId);
+
+          setSiguiendo(Boolean(estadoSeguimiento.siguiendo));
+
+          setComercio((prev) => ({
+            ...prev,
+            seguidores_count: estadoSeguimiento.seguidores_count,
+          }));
+        }
+      } catch (error) {
+        // No rompemos la pantalla si falla el estado de seguimiento.
+      }
     } catch (error) {
       setErrorMessage(
         error.message || "Error desconocido cargando perfil del comercio."
@@ -255,6 +280,42 @@ export default function CommerceProfilePage() {
       setErrorMessage(error.message || "Error al togglear like.");
     } finally {
       setLock(setLikeLocks, pubId, false);
+    }
+  }
+
+
+    // =====================================================
+  // ETAPA 60 — Seguir / dejar de seguir espacio
+  // =====================================================
+  async function handleToggleFollow() {
+    if (usuarioDebeLoguearse()) return;
+
+    if (isLoadingFollow) return;
+
+    try {
+      setIsLoadingFollow(true);
+
+      if (siguiendo) {
+        await dejarDeSeguirEspacio(comercioId);
+        setSiguiendo(false);
+      } else {
+        await seguirEspacio(comercioId);
+        setSiguiendo(true);
+      }
+
+      // Refrescamos estado y contador real desde backend.
+      const estadoSeguimiento = await obtenerEstadoSeguimiento(comercioId);
+
+      setSiguiendo(Boolean(estadoSeguimiento.siguiendo));
+
+      setComercio((prev) => ({
+        ...prev,
+        seguidores_count: estadoSeguimiento.seguidores_count,
+      }));
+    } catch (error) {
+      setErrorMessage(error.message || "Error al seguir/dejar de seguir.");
+    } finally {
+      setIsLoadingFollow(false);
     }
   }
 
@@ -409,9 +470,40 @@ export default function CommerceProfilePage() {
         {!isLoading && !errorMessage && (
           <>
             <section className="relative rounded-3xl border border-gray-800 bg-gray-900 p-5 sm:p-6">
-              <span className="absolute right-6 top-6 rounded-full border border-gray-700 bg-gray-950 px-3 py-1 text-xs text-gray-300">
-                {comercio?.is_activo ? "Activo" : "Inactivo"}
-              </span>
+              
+              {esComercioMio(comercio, usuarioActivo) && (
+                <span className="absolute right-3 top-3 rounded-full border border-gray-700 bg-gray-950 px-1 py-1 text-xs text-gray-300">
+                  {comercio?.is_activo === false ? "🔴" : "🟢"}
+                </span>
+              )}
+              
+              <div className="flex items-start justify-between">
+  
+            {/* IZQUIERDA (todo tu contenido actual) */}
+            <div>
+              {/* nombre, descripción, etc */}
+            </div>
+
+            {/* DERECHA (botón) */}
+            {!esComercioMio(comercio, usuarioActivo) && (
+              <button
+                type="button"
+                onClick={handleToggleFollow}
+                className={`rounded-xl px-1.5 py- text-xs font-semibold transition ${
+                  siguiendo
+                    ? "border border-gray-700 bg-gray-800 text-white"
+                    : "bg-white text-black"
+                }`}
+              >
+                {siguiendo ? "Siguiendo" : "+Seguir"}
+              </button>
+            )}
+
+          </div>
+
+
+
+
               <div className="flex items-start gap-4">
                 <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-gray-700 bg-gray-950 sm:h-24 sm:w-24">
                   {comercioImagenUrl ? (
@@ -426,12 +518,12 @@ export default function CommerceProfilePage() {
                     </div>
                   )}
                 </div>
-
-                <div className="min-w-0 flex-1">
-                  <h1 className="truncate text-2xl font-bold text-white">
+                  
+                <div className="min-w-0 flex-1 text-left">
+                  <h1 className="text-2xl font-bold leading-tight text-white sm:truncate">
                     {comercio?.nombre ?? "Comercio"}
                   </h1>
-
+                  
                   {comercio?.descripcion ? (
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-300">
                       {comercio.descripcion}
@@ -442,27 +534,22 @@ export default function CommerceProfilePage() {
                     </p>
                   )}
 
-                  <div className="mt-4 flex items-center justify-between">
+                  <div className="mt-10 -ml-24 flex items-center gap-1 flex-nowrap">
                     
-                    {/* IZQUIERDA */}
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-300">
+                    {/* PUBLICACIONES */}
+                    <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1 text-xs">
+                      {publicaciones.length} publicaciones
+                    </span>
 
-                      {/* PUBLICACIONES */}
-                      <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
-                        {publicaciones.length} publicaciones
-                      </span>
-
-                      {/* SEGUIDORES */}
-                      <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1">
-                        {comercio?.seguidores_count ?? 0} seguidores
-                      </span>
-
-                    </div>
+                    {/* SEGUIDORES */}
+                    <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1 text-xs">
+                      {comercio?.seguidores_count ?? 0} seguidores
+                    </span>
 
                   </div>
 
                   {/* INFO DEL ESPACIO */}
-                  <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
+                  <div className="mt-4 -ml-24 flex items-center gap-1 flex-nowrap">
 
                     {/* WHATSAPP */}
                     {comercio?.whatsapp && (
@@ -470,7 +557,7 @@ export default function CommerceProfilePage() {
                         href={`https://wa.me/${String(comercio.whatsapp).replace(/\D/g, "")}?text=Hola%2C%20te%20encontré%20en%20MiPlaza%20y%20quiero%20consultarte`}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-4 py-2 text-xs font-semibold text-green-400 hover:bg-gray-900"
+                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-2 py-1 text-[10px] font-semibold text-green-400 hover:bg-gray-900"
                       >
                         <MessageCircle size={14} />
                         WhatsApp
@@ -483,7 +570,7 @@ export default function CommerceProfilePage() {
                         href={`https://instagram.com/${String(comercio.instagram).replace("@", "")}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-4 py-2 text-xs font-semibold text-pink-400 hover:bg-gray-900"
+                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-2 py-1 text-[10px] font-semibold text-pink-400 hover:bg-gray-900"
                       >
                         <Camera size={14} />
                         Instagram
@@ -496,7 +583,7 @@ export default function CommerceProfilePage() {
                         href={comercio.maps_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-4 py-2 text-xs font-semibold text-blue-400 hover:bg-gray-900"
+                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-2 py-1 text-[10px] font-semibold text-blue-400 hover:bg-gray-900"
                       >
                         <MapPin size={14} />
                         Cómo llegar
@@ -508,10 +595,10 @@ export default function CommerceProfilePage() {
               </div>
 
               {puedoCrearHistoria && (
-                <div className="mt-5 flex flex-wrap gap-3">
+                <div className="mt-4 -ml-3 flex items-center gap-4 flex-nowrap">
                   <button
                     type="button"
-                    className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:opacity-90"
+                    className="rounded-xl bg-white px-2 py-1 text-sm font-semibold text-gray-900 hover:opacity-90"
                     onClick={() => setIsCrearHistoriaOpen(true)}
                   >
                     + Historia
@@ -519,7 +606,7 @@ export default function CommerceProfilePage() {
 
                   <button
                     type="button"
-                    className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:opacity-90"
+                    className="rounded-xl bg-white px-2 py-1 text-sm font-semibold text-gray-900 hover:opacity-90"
                     onClick={() => setIsCrearPublicacionOpen(true)}
                   >
                     + Publicación
@@ -527,7 +614,7 @@ export default function CommerceProfilePage() {
 
                   <button
                     type="button"
-                     className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:opacity-90"
+                     className="rounded-xl bg-white px-2 py-1 text-sm font-semibold text-gray-900 hover:opacity-90"
                   >
                     Estadísticas
                   </button>
