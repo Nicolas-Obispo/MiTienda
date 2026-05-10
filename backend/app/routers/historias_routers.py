@@ -35,6 +35,7 @@ from app.services.historias_services import (
     listar_historias_bar,
 )
 from app.services.historias_vistas_services import marcar_historia_como_vista
+from app.services.historias_likes_services import toggle_like_historia
 
 router = APIRouter(
     prefix="/historias",
@@ -136,6 +137,41 @@ def marcar_historia_vista_endpoint(
             usuario_id=usuario_actual.id,
         )
         return {"ok": True}
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+
+# ------------------------------------------------------------------
+# LIKES DE HISTORIAS (ETAPA 61)
+# ------------------------------------------------------------------
+
+@router.post(
+    "/{historia_id}/likes",
+    status_code=status.HTTP_200_OK,
+)
+def toggle_like_historia_endpoint(
+    historia_id: int,
+    db: Session = Depends(get_db),
+    usuario_actual=Depends(obtener_usuario_actual),
+):
+    """
+    Toggle like de historia.
+
+    Reglas:
+    - 1 usuario -> 1 like máximo por historia.
+    - Si ya existe -> elimina like.
+    - Si no existe -> crea like.
+    """
+
+    try:
+        return toggle_like_historia(
+            db,
+            historia_id=historia_id,
+            usuario_id=usuario_actual.id,
+        )
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

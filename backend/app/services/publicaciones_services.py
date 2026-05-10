@@ -64,6 +64,30 @@ def crear_publicacion(
 # --------------------------------------------------
 # Listados de publicaciones
 # --------------------------------------------------
+def listar_publicaciones_activas(
+    db: Session,
+    *,
+    limit: int = 40,
+    offset: int = 0,
+) -> List[Publicacion]:
+    """
+    Devuelve publicaciones activas para exploración pública.
+
+    Importante:
+    - No requiere usuario autenticado.
+    - Solo devuelve publicaciones activas.
+    - Se usa en Explorar > Publicaciones.
+    """
+
+    return (
+        db.query(Publicacion)
+        .options(joinedload(Publicacion.comercio))
+        .filter(Publicacion.is_activa.is_(True))
+        .order_by(Publicacion.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
 def listar_publicaciones_por_comercio(
     db: Session,

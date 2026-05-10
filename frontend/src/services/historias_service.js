@@ -126,3 +126,15 @@ export async function marcarHistoriaVista(historiaId) {
     auth: true,
   });
 }
+
+export async function toggleLikeHistoria(historiaId) {
+  if (!historiaId) {
+    throw new Error("toggleLikeHistoria: historiaId es requerido");
+  }
+
+  return requestJson(`/historias/${historiaId}/likes`, {
+    method: "POST",
+    body: null,
+    auth: true,
+  });
+}

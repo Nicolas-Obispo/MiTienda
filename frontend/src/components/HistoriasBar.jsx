@@ -67,11 +67,12 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
               imagen_url: item?.thumbnailUrl,
             });
 
-            // UX:
-            // - aro verde si tiene pendientes
-            // - aro gris si ya está visto
+            // UX MiPlaza:
+            // - historias nuevas → degradado naranja oficial
+            // - historias vistas → aro gris/translúcido
+
             const aroClass = tienePendientes
-              ? "ring-2 ring-green-500"
+              ? "bg-gradient-to-tr from-orange-500 via-orange-400 to-amber-400"
               : "ring-2 ring-white/30";
 
             return (

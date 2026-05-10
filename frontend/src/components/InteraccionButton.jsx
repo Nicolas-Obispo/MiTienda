@@ -72,7 +72,7 @@ export default function InteraccionButton({
       rounded-full border transition
     `
     : `
-      inline-flex items-center gap-2 rounded-full border px-4 py-2 transition
+      inline-flex items-center gap-1 rounded-full border px-2 py-1 transition
     `;
 
   return (

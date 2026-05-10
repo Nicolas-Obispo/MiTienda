@@ -87,7 +87,9 @@ export default function PublicacionCard({
             mediaEsVideo ? (
               <video
                 src={mediaUrl}
+                autoPlay
                 muted
+                loop
                 playsInline
                 className="h-full w-full object-cover"
               />
@@ -211,10 +213,13 @@ export default function PublicacionCard({
           mediaEsVideo ? (
             <video
               src={mediaUrl}
-              controls
+              autoPlay
+              muted
+              loop
               playsInline
+              controls
               className="max-h-[78vh] w-full object-contain"
-            />
+/>
           ) : (
             <img
               src={mediaUrl}

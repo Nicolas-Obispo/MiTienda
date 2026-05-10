@@ -16,6 +16,7 @@ from app.schemas.publicaciones_schemas import (
 
 from app.services.publicaciones_services import (
     crear_publicacion,
+    listar_publicaciones_activas,
     listar_publicaciones_por_comercio,
     obtener_publicacion_por_id_y_sumar_view,
     desactivar_publicacion,
@@ -101,6 +102,39 @@ def construir_publicacion_read(
         guardada_by_me=guardada_by_me,
     )
 
+@router.get(
+    "/",
+    response_model=List[PublicacionRead],
+)
+def listar_publicaciones_activas_endpoint(
+    limit: int = 40,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    usuario_actual: Optional[Usuario] = Depends(obtener_usuario_actual_opcional),
+):
+    """
+    Listado público de publicaciones activas.
+
+    Importante:
+    - No requiere login.
+    - Permite explorar publicaciones sin sesión.
+    - Las interacciones siguen protegidas.
+    """
+
+    publicaciones = listar_publicaciones_activas(
+        db=db,
+        limit=limit,
+        offset=offset,
+    )
+
+    return [
+        construir_publicacion_read(
+            db=db,
+            publicacion=publicacion,
+            usuario_actual=usuario_actual,
+        )
+        for publicacion in publicaciones
+    ]
 
 @router.post(
     "/comercios/{comercio_id}",

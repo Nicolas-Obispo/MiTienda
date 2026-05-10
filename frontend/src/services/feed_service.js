@@ -93,6 +93,48 @@ function normalizarPublicacionGuardada(item) {
 }
 
 /**
+ * completarPublicacionGuardada
+ * Si la guardada viene incompleta, busca el detalle real de la publicación.
+ *
+ * IMPORTANTE:
+ * - Esto corrige el caso donde Perfil muestra "Sin imagen"
+ * - No inventa imagen en frontend
+ * - Solo completa datos reales desde backend
+ */
+async function completarPublicacionGuardada(publicacionNormalizada, token) {
+  if (!publicacionNormalizada?.id) return null;
+
+  const tieneImagen =
+    Boolean(publicacionNormalizada.imagen_url) ||
+    Boolean(publicacionNormalizada.media_url) ||
+    Boolean(publicacionNormalizada.archivo_url) ||
+    Boolean(publicacionNormalizada.url);
+
+  if (tieneImagen) {
+    return publicacionNormalizada;
+  }
+
+  try {
+    const detalle = await httpGet(
+      `/publicaciones/${publicacionNormalizada.id}`,
+      token
+    );
+
+    return {
+      ...detalle,
+      id: detalle?.id ?? publicacionNormalizada.id,
+      publicacion_id:
+        detalle?.id ??
+        publicacionNormalizada.publicacion_id ??
+        publicacionNormalizada.id,
+      guardada_by_me: true,
+    };
+  } catch {
+    return publicacionNormalizada;
+  }
+}
+
+/**
  * fetchFeedPublicaciones
  * Backend:
  * - GET /feed/publicaciones
@@ -147,6 +189,10 @@ export async function quitarPublicacionGuardada(publicacionId) {
  * - id = id de publicación
  * - publicacion_id = id de publicación
  * - guardada_by_me = true
+ *
+ * FIX:
+ * - Si la respuesta viene incompleta y no trae imagen,
+ *   se completa con GET /publicaciones/{id}
  */
 export async function fetchPublicacionesGuardadas() {
   const token = getAccessToken();
@@ -154,7 +200,15 @@ export async function fetchPublicacionesGuardadas() {
 
   const lista = normalizarListaRespuesta(data);
 
-  return lista.map(normalizarPublicacionGuardada).filter(Boolean);
+  const normalizadas = lista.map(normalizarPublicacionGuardada).filter(Boolean);
+
+  const completas = await Promise.all(
+    normalizadas.map((publicacion) =>
+      completarPublicacionGuardada(publicacion, token)
+    )
+  );
+
+  return completas.filter(Boolean);
 }
 
 /**
@@ -165,5 +219,25 @@ export async function fetchPublicacionesGuardadas() {
 export async function fetchRankingPublicaciones() {
   const token = getAccessToken();
   const data = await httpGet("/ranking/publicaciones", token);
+  return normalizarListaRespuesta(data);
+}
+
+/**
+ * fetchPublicacionesPublicas
+ * Backend:
+ * - GET /publicaciones/
+ *
+ * Importante:
+ * - No requiere sesión.
+ * - Se usa en Explorar > Publicaciones.
+ */
+export async function fetchPublicacionesPublicas({
+  limit = 40,
+  offset = 0,
+} = {}) {
+  const data = await httpGet(
+    `/publicaciones/?limit=${limit}&offset=${offset}`
+  );
+
   return normalizarListaRespuesta(data);
 }

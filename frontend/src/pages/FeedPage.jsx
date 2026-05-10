@@ -43,8 +43,10 @@ export default function FeedPage() {
   const [viewerIsOpen, setViewerIsOpen] = useState(false);
   const [viewerTitulo, setViewerTitulo] = useState("Historias");
   const [viewerHistorias, setViewerHistorias] = useState([]);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   const ultimaHistoriaVistaMarcadaRef = useRef(null);
+  const historiasPendientesRef = useRef(new Set());
   const viewerComercioIdRef = useRef(null);
   const historiasOrdenRef = useRef([]);
 
@@ -58,7 +60,9 @@ export default function FeedPage() {
     setter((prev) => ({ ...prev, [pubId]: value }));
   }
 
-  function cerrarViewer() {
+  async function cerrarViewer() {
+    await loadHistoriasBar();
+
     setViewerIsOpen(false);
     setViewerHistorias([]);
     setViewerTitulo("Historias");
@@ -122,6 +126,13 @@ export default function FeedPage() {
   }
 
   async function refrescarItemHistoriasComercio() {
+    // IMPORTANTE:
+    // No refrescar mientras el viewer está abierto,
+    // porque cambia el orden/estado de historias
+    // y rompe la navegación automática.
+
+    if (viewerIsOpen) return;
+
     await loadHistoriasBar();
   }
 
@@ -168,6 +179,15 @@ export default function FeedPage() {
 
   useEffect(() => {
     loadFeed();
+
+    const shouldShowWelcome =
+      sessionStorage.getItem("show_miplaza_welcome") === "true";
+
+    if (shouldShowWelcome) {
+      setShowWelcomeModal(true);
+      sessionStorage.removeItem("show_miplaza_welcome");
+    }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -207,23 +227,46 @@ export default function FeedPage() {
       setViewerTitulo(nextTitulo);
       setViewerHistorias(list);
       setViewerIsOpen(true);
-
-      const primeraHistoriaId = list?.[0]?.id ?? null;
-
-      if (
-        typeof primeraHistoriaId === "number" &&
-        ultimaHistoriaVistaMarcadaRef.current !== primeraHistoriaId
-      ) {
-        ultimaHistoriaVistaMarcadaRef.current = primeraHistoriaId;
-
-        setTimeout(() => {
-          marcarHistoriaVista(primeraHistoriaId)
-            .then(() => refrescarItemHistoriasComercio())
-            .catch(() => {});
-        }, 0);
-      }
     } catch {
       cerrarViewer();
+    }
+  }
+
+  async function abrirAnteriorComercioHistorias() {
+    try {
+      const orden = historiasOrdenRef.current || [];
+      const actualId = viewerComercioIdRef.current;
+
+      if (!actualId || orden.length === 0) {
+        return;
+      }
+
+      const idx = orden.findIndex((x) => x.comercioId === actualId);
+      const prev = idx > 0 ? orden[idx - 1] : null;
+
+      if (!prev) {
+        return;
+      }
+
+      const prevId = prev.comercioId;
+      const prevTitulo = prev.nombre || `Comercio ${prevId}`;
+
+      const historias = await fetchHistoriasPorComercio(prevId);
+      const list = Array.isArray(historias) ? historias : [];
+
+      if (list.length === 0) {
+        viewerComercioIdRef.current = prevId;
+        return abrirAnteriorComercioHistorias();
+      }
+
+      preloadHistoriasImages(list, 3);
+
+      viewerComercioIdRef.current = prevId;
+      setViewerTitulo(prevTitulo);
+      setViewerHistorias(list);
+      setViewerIsOpen(true);
+    } catch {
+      // silencioso
     }
   }
 
@@ -247,20 +290,6 @@ export default function FeedPage() {
       setViewerHistorias(list);
       setViewerIsOpen(true);
 
-      const primeraHistoriaId = list?.[0]?.id ?? null;
-
-      if (
-        typeof primeraHistoriaId === "number" &&
-        ultimaHistoriaVistaMarcadaRef.current !== primeraHistoriaId
-      ) {
-        ultimaHistoriaVistaMarcadaRef.current = primeraHistoriaId;
-
-        setTimeout(() => {
-          marcarHistoriaVista(primeraHistoriaId)
-            .then(() => refrescarItemHistoriasComercio())
-            .catch(() => {});
-        }, 0);
-      }
     } catch {
       navigate(`/comercios/${comercioId}`);
     }
@@ -337,6 +366,27 @@ export default function FeedPage() {
     }
   }
 
+  async function handleHistoriaVisible(historiaId) {
+    if (typeof historiaId !== "number") return;
+
+    if (ultimaHistoriaVistaMarcadaRef.current === historiaId) return;
+
+    ultimaHistoriaVistaMarcadaRef.current = historiaId;
+
+    // Evita requests duplicados simultáneos
+    if (historiasPendientesRef.current.has(historiaId)) return;
+
+    historiasPendientesRef.current.add(historiaId);
+
+    try {
+      await marcarHistoriaVista(historiaId);
+    } catch {
+      // silencioso
+    } finally {
+      historiasPendientesRef.current.delete(historiaId);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <main className="mx-auto max-w-2xl px-3 py-4 sm:px-4 sm:py-6">
@@ -408,10 +458,115 @@ export default function FeedPage() {
         )}
       </main>
 
+        {showWelcomeModal && (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-orange-500/30 bg-gray-950 shadow-2xl">
+        
+    {/* Header visual */}
+    <div className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300 px-6 py-8 text-center">
+        <div className="absolute inset-0 opacity-10">
+          <div className="h-full w-full bg-[radial-gradient(circle_at_top_right,white,transparent_45%)]" />
+        </div>
+
+      <h2
+        className="
+          relative
+          -mt-3
+          text-5xl
+          font-black
+          tracking-tight
+          text-white
+          drop-shadow-lg
+        "
+      style={{
+        fontFamily: "'Nunito', sans-serif",
+        fontWeight: 900,
+      }}
+      >
+        ¡Bienvenido!
+      </h2>
+
+      <div className="mt-4 relative mx-auto flex h58 w-58 items-center justify-center overflow-hidden rounded-full bg-gray-950 ring-4 ring-white/40 shadow-4xl">
+        <img
+          src="/logo_miplaza.png"
+          alt="MiPlaza"
+          className="h-full w-full object-contain p-5"
+        />
+      </div>
+
+    </div>
+
+      {/* Contenido */}
+      <div className="px-6 py-6 text-center">
+        <p
+          className="
+            relative
+            -mt-3
+            text-2xl
+            font-black
+            tracking-tight
+            text-white
+            drop-shadow-lg
+          "
+          style={{
+            fontFamily: "'Nunito', sans-serif",
+            fontWeight: 800,
+          }}
+        >
+          Tu vidriera digital
+        </p>
+
+          <p className="mt-2 text-sm leading-7 text-gray-300">
+            Descubrí comercios, servicios profesionales y espacios cerca tuyo.
+          </p>
+
+          <p className="mt-3 text-sm leading-7 text-gray-400">
+            Explorá publicaciones, mirá historias, guardá lo que te interesa,
+            seguí espacios y encontrá nuevas oportunidades en tu ciudad.
+          </p>
+
+          <div className="mt-6 rounded-2xl border border-amber-300/20 bg-amber-200/10 p-4 backdrop-blur-sm">
+            <p className="text-sm text-orange-200">
+              MiPlaza no solo conecta personas, negocios y oportunidades en un solo lugar.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowWelcomeModal(false)}
+            className="
+              mt-7
+              w-full
+              rounded-2xl
+              bg-gradient-to-r
+              from-orange-500
+              via-orange-400
+              to-amber-300
+              px-4
+              py-3
+              text-sm
+              font-black
+              text-white
+              shadow-xl
+              transition
+              hover:scale-[1.02]
+              hover:opacity-95
+              active:scale-[0.99]
+            "
+          >
+            Empezar a explorar
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+
       <HistoriasViewer
         isOpen={viewerIsOpen}
         onClose={cerrarViewer}
         onEnd={abrirSiguienteComercioHistorias}
+        onPrevious={abrirAnteriorComercioHistorias}
+        onHistoriaVisible={handleHistoriaVisible}
         historias={viewerHistorias}
         titulo={viewerTitulo}
       />

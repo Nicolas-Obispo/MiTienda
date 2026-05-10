@@ -20,7 +20,8 @@ export default function Registro() {
   const [password, setPassword] = useState("");
   const [confirmarPassword, setConfirmarPassword] = useState("");
   const [mostrarPassword, setMostrarPassword] = useState(false);
-  const [mostrarConfirmarPassword, setMostrarConfirmarPassword] = useState(false);
+  const [mostrarConfirmarPassword, setMostrarConfirmarPassword] =
+    useState(false);
 
   const [errorMensaje, setErrorMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -49,7 +50,10 @@ export default function Registro() {
       // 3. Guardamos token globalmente.
       login(token);
 
-      // 4. Redirigimos al feed.
+      // 4. Activamos onboarding.
+      sessionStorage.setItem("show_miplaza_welcome", "true");
+
+      // 5. Redirigimos al feed.
       navigate("/feed");
     } catch (error) {
       setErrorMensaje(error.message || "Error al registrar usuario.");
@@ -60,10 +64,9 @@ export default function Registro() {
 
   return (
     <div className="min-h-[calc(100vh-px)] flex flex-col items-center justify-center px-4">
-
       {/* LOGO ARRIBA */}
       <div className="mb-0 animate-logo">
-        <div className="h-80 w-80 overflow-hidden rounded-full bg-gray-950 flex items-center justify-center">
+        <div className="flex h-80 w-80 items-center justify-center overflow-hidden rounded-full bg-gray-950">
           <img
             src="/logo_miplaza.png"
             alt="MiPlaza"
@@ -72,12 +75,14 @@ export default function Registro() {
         </div>
       </div>
 
-     {/* FORMULARIO */}
+      {/* FORMULARIO */}
       <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-950 p-6 shadow-sm">
         <div className="mb-5">
           <h2 className="text-2xl font-semibold">Crear cuenta</h2>
+
           <p className="mt-1 text-sm text-gray-400">
-            Registrate para guardar publicaciones, dar like y personalizar tu experiencia.
+            Registrate para guardar publicaciones, dar like y personalizar tu
+            experiencia.
           </p>
         </div>
 
@@ -88,7 +93,10 @@ export default function Registro() {
         >
           {/* Email */}
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Email</label>
+            <label className="mb-1 block text-sm text-gray-300">
+              Email
+            </label>
+
             <input
               type="email"
               autoComplete="new-email"
@@ -96,13 +104,27 @@ export default function Registro() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="tuemail@dominio.com"
-              className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600"
+              className="
+                w-full
+                rounded-xl
+                border
+                border-gray-700
+                bg-gray-900
+                px-3
+                py-2
+                text-sm
+                text-white
+                placeholder:text-gray-500
+                focus:outline-none
+                focus:ring-2
+                focus:ring-orange-500
+              "
             />
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm text-gray-300 mb-1">
+            <label className="mb-1 block text-sm text-gray-300">
               Contraseña
             </label>
 
@@ -115,13 +137,35 @@ export default function Registro() {
                 required
                 minLength={6}
                 placeholder="Mínimo 6 caracteres"
-                className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 pr-10 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                className="
+                  w-full
+                  rounded-xl
+                  border
+                  border-gray-700
+                  bg-gray-900
+                  px-3
+                  py-2
+                  pr-10
+                  text-sm
+                  text-white
+                  placeholder:text-gray-500
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-orange-500
+                "
               />
 
               <button
                 type="button"
                 onClick={() => setMostrarPassword(!mostrarPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                className="
+                  absolute
+                  right-2
+                  top-1/2
+                  -translate-y-1/2
+                  text-gray-400
+                  hover:text-white
+                "
               >
                 {mostrarPassword ? "🙉" : "🙈"}
               </button>
@@ -130,7 +174,7 @@ export default function Registro() {
 
           {/* Confirmar Password */}
           <div>
-            <label className="block text-sm text-gray-300 mb-1">
+            <label className="mb-1 block text-sm text-gray-300">
               Confirmar contraseña
             </label>
 
@@ -143,7 +187,22 @@ export default function Registro() {
                 required
                 minLength={6}
                 placeholder="Repetí tu contraseña"
-                className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 pr-10 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                className="
+                  w-full
+                  rounded-xl
+                  border
+                  border-gray-700
+                  bg-gray-900
+                  px-3
+                  py-2
+                  pr-10
+                  text-sm
+                  text-white
+                  placeholder:text-gray-500
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-orange-500
+                "
               />
 
               <button
@@ -151,7 +210,14 @@ export default function Registro() {
                 onClick={() =>
                   setMostrarConfirmarPassword(!mostrarConfirmarPassword)
                 }
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                className="
+                  absolute
+                  right-2
+                  top-1/2
+                  -translate-y-1/2
+                  text-gray-400
+                  hover:text-white
+                "
               >
                 {mostrarConfirmarPassword ? "🙉" : "🙈"}
               </button>
@@ -161,7 +227,7 @@ export default function Registro() {
           {/* Error */}
           {errorMensaje && (
             <div className="rounded-xl border border-red-900 bg-red-950/40 p-3">
-              <p className="text-sm text-red-200 break-words">
+              <p className="break-words text-sm text-red-200">
                 {errorMensaje}
               </p>
             </div>
@@ -171,7 +237,23 @@ export default function Registro() {
           <button
             type="submit"
             disabled={cargando}
-            className="w-full rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold hover:bg-purple-500 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="
+              w-full
+              rounded-xl
+              bg-gradient-to-r
+              from-orange-500
+              via-orange-400
+              to-amber-400
+              px-4
+              py-2
+              text-sm
+              font-bold
+              text-white
+              transition
+              hover:opacity-90
+              disabled:cursor-not-allowed
+              disabled:opacity-60
+            "
           >
             {cargando ? "Creando cuenta..." : "Crear cuenta"}
           </button>
@@ -179,9 +261,10 @@ export default function Registro() {
 
         <p className="mt-4 text-sm text-gray-400">
           ¿Ya tenés cuenta?{" "}
+
           <Link
             to="/login"
-            className="font-medium text-purple-400 hover:text-purple-300"
+            className="font-medium text-orange-400 hover:text-amber-300"
           >
             Iniciá sesión
           </Link>

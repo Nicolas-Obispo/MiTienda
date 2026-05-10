@@ -16,13 +16,22 @@ router = APIRouter(
 
 # Extensiones MIME permitidas (MVP)
 ALLOWED_CONTENT_TYPES = {
+    # Imágenes
     "image/jpeg": ".jpg",
     "image/png": ".png",
     "image/webp": ".webp",
+
+    # Videos
+    "video/mp4": ".mp4",
+    "video/webm": ".webm",
+    "video/ogg": ".ogg",
+    "video/quicktime": ".mov",
 }
 
-# Tamaño máximo (MVP) -> 5MB
-MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024
+# Tamaño máximo (MVP)
+# - Imágenes y videos comparten el mismo endpoint.
+# - Subimos el límite porque un video corto pesa más que una imagen.
+MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024
 
 
 def _get_upload_dir() -> str:

@@ -5040,3 +5040,349 @@ desactivar_publicacion()
 - Sistema completo de seguidores funcional
 - Usuario puede seguir espacios y verlos en una lista dedicada
 - Base sólida para features sociales (followers, feed personalizado, etc.)
+
+# ETAPA 61 — Identidad Social y Onboarding
+
+## Objetivo
+
+Consolidar la experiencia social y visual de MiPlaza para que el producto empiece a sentirse como una plataforma moderna real, mejorando historias, onboarding, branding visual e interacciones sociales.
+
+---
+
+# FRONTEND
+
+## Historias — mejoras UX/social
+
+### Historias con video
+
+Se agregó soporte completo para historias en formato video:
+
+- reproducción automática
+- reproducción dentro del viewer fullscreen
+- soporte:
+  - mp4
+  - webm
+  - ogg
+  - mov/quicktime
+
+### Corrección viewer fullscreen
+
+Se corrigió:
+
+- videos pausados al abrir
+- navegación cortada entre historias
+- transición automática entre comercios
+- persistencia de navegación
+
+Ahora:
+
+- abre y reproduce automáticamente
+- pasa automáticamente al siguiente comercio
+- mantiene experiencia tipo Instagram/TikTok
+
+---
+
+## Historias — visualización social real
+
+### Sistema de vistas reales
+
+Se consolidó el sistema:
+
+- `vista_by_me`
+- persistencia backend
+- aro visual:
+  - naranja = historias pendientes
+  - gris = historias ya vistas
+
+Tanto en:
+
+- Feed
+- Perfil del espacio
+
+### Corrección loops de vistas
+
+Se evitó spam de requests:
+
+```python
+POST /historias/{id}/vistas
+```
+
+usando:
+
+```js
+useRef()
+```
+
+para lock local de historias ya procesadas.
+
+---
+
+## Historias dentro del perfil del espacio
+
+Se integró el sistema de historias directamente en:
+
+```text
+PerfilComercioPage.jsx
+```
+
+Ahora:
+
+- el avatar del espacio muestra aro de historias
+- click en avatar abre viewer fullscreen
+- reutiliza el mismo viewer del feed
+- mantiene likes/vistas/navegación
+
+---
+
+## Bloqueo de historias sin login
+
+Se implementó:
+
+- usuarios no registrados:
+  - pueden explorar perfiles
+  - NO pueden abrir historias
+
+Comportamiento:
+
+- click en historias
+→ flujo de login/registro
+
+---
+
+# Likes en historias
+
+## Backend
+
+Se agregó soporte persistente para:
+
+- likes de historias
+- `liked_by_me`
+- estado social real
+
+Preparado para:
+
+- analytics futuros
+- panel administración
+- actividad del espacio
+- métricas sociales
+
+---
+
+## Viewer social interactivo
+
+Se implementó UX moderna:
+
+### Hover corazón
+
+- corazón grande transparente
+- aparece al mover mouse
+
+### Like animado
+
+Flujo:
+
+```text
+hover
+→ click
+→ corazón se pinta rojo
+→ late
+→ cae diagonal hacia esquina inferior izquierda
+→ queda corazón persistente abajo
+```
+
+### Unlike
+
+Click en corazón inferior:
+
+- elimina like
+- vuelve estado inicial
+
+---
+
+# Branding visual MiPlaza
+
+## Paleta oficial definida
+
+Se consolidó identidad visual:
+
+### Colores oficiales
+
+- naranja vibrante
+- amber cálido
+- azul oscuro/gris azulado
+- fondos oscuros suaves
+
+Se evitó:
+
+- verde como color principal
+- negro absoluto agresivo
+
+---
+
+## Historias
+
+Los aros de historias migraron:
+
+```text
+verde → naranja MiPlaza
+```
+
+manteniendo coherencia visual con el branding.
+
+---
+
+# Onboarding de bienvenida
+
+## Modal onboarding
+
+Después del registro:
+
+```text
+registro
+→ login automático
+→ Feed
+→ onboarding MiPlaza
+```
+
+Se implementó modal visual moderno:
+
+- branding MiPlaza
+- logo real
+- paleta oficial
+- explicación breve del producto
+- CTA:
+  - “Empezar a explorar”
+
+---
+
+## Persistencia onboarding
+
+Implementado usando:
+
+```js
+sessionStorage
+```
+
+para evitar:
+
+- duplicaciones
+- loops
+- problemas de navegación
+
+---
+
+# Tipografía / identidad
+
+## Fuentes evaluadas
+
+Se investigó branding tipográfico del logo MiPlaza.
+
+Fuentes identificadas como cercanas:
+
+- Nunito Black / ExtraBold
+- Poppins Black
+- Montserrat Rounded
+
+Se adoptó:
+
+```text
+Nunito
+```
+
+para onboarding y branding visual.
+
+---
+
+# Mejoras UX generales
+
+## Navegación historias
+
+Se corrigió:
+
+- volver a historia anterior
+- volver al comercio anterior
+- navegación lateral
+- conflicto con botón cerrar
+
+---
+
+## Viewer
+
+Se corrigió:
+
+- overlays bloqueando clicks
+- navegación automática
+- persistencia visual
+- preload de imágenes
+
+---
+
+# Arquitectura
+
+## Reutilización correcta
+
+Se evitó duplicar lógica entre:
+
+- Feed
+- Perfil del comercio
+
+Ambos reutilizan:
+
+```text
+HistoriasViewer
+historias_service
+fetchHistoriasPorComercio
+marcarHistoriaVista
+```
+
+manteniendo:
+
+- backend como fuente de verdad
+- arquitectura desacoplada
+- estado persistido real
+
+---
+
+# Resultado de producto
+
+MiPlaza ya comienza a sentirse como:
+
+- una app social real
+- una plataforma moderna
+- una vidriera digital viva
+- una experiencia integrada y coherente
+
+La etapa consolidó:
+
+- identidad visual
+- interacción emocional
+- onboarding
+- branding
+- experiencia social
+- consistencia UX
+
+---
+
+# Próximas etapas sugeridas
+
+## ETAPA 62 — Actividad y métricas sociales
+
+Posibles objetivos:
+
+- panel de actividad del espacio
+- analytics:
+  - likes historias
+  - vistas historias
+  - publicaciones
+  - seguidores
+- notificaciones
+- actividad reciente
+- insights básicos
+
+---
+
+# Commit sugerido
+
+```bash
+git commit -m "feat(producto): identidad social + onboarding + historias interactivas (CIERRE REAL ETAPA 61)"
+```

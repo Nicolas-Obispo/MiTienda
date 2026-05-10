@@ -52,6 +52,9 @@ class HistoriaRead(HistoriaBase):
 
     # NUEVO — estado real por usuario
     vista_by_me: bool = False
+        # ETAPA 61 — Likes de historias
+    likes_count: int = 0
+    liked_by_me: bool = False
 
     class Config:
         orm_mode = True

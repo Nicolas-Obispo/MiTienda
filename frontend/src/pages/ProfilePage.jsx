@@ -20,6 +20,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { getMediaUrlFromAny } from "../utils/mediaUrl";
 import {
   fetchPublicacionesGuardadas,
   toggleLikePublicacion,
@@ -1170,31 +1171,36 @@ export default function ProfilePage() {
                   gap-1
                 "
               >
-                {publicaciones.map((p) => (
-                  <div
-                    key={p.id}
-                    className="relative aspect-square bg-gray-800 overflow-hidden"
-                  >
-                    {p.imagen_url ? (
-                      <img
-                        src={p.imagen_url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                        Sin imagen
-                      </div>
-                    )}
+                {publicaciones.map((p) => {
+                  const publicacionImagenUrl = getMediaUrlFromAny(p);
 
-                    <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition flex items-center justify-center">
-                      <div className="text-xs text-white text-center">
-                        <p>❤️ {p.likes_count || 0}</p>
-                        <p>💾 {p.guardados_count || 0}</p>
+                  return (
+                    <Link
+                      key={p.id}
+                      to={`/publicaciones/${p.id}`}
+                      className="relative aspect-square bg-gray-800 overflow-hidden block"
+                    >
+                      {publicacionImagenUrl ? (
+                        <img
+                          src={publicacionImagenUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                          Sin imagen
+                        </div>
+                      )}
+
+                      <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition flex items-center justify-center">
+                        <div className="text-xs text-white text-center">
+                          <p>❤️ {p.likes_count || 0}</p>
+                          <p>💾 {p.guardados_count || 0}</p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}

@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.models.historias_models import Historia
 from app.models.historias_vistas_models import HistoriaVista
+from app.models.historias_likes_models import HistoriaLike
 from app.schemas.historias_schemas import HistoriaCreate
 from app.models.comercios_models import Comercio
 
@@ -78,12 +79,14 @@ def listar_historias_activas_por_comercio(
         .all()
     )
 
-    # Si no hay usuario autenticado, devolvemos sin modificar
+    # Si no hay usuario autenticado, devolvemos estado público
     if not usuario_id:
         for h in historias:
             h.vista_by_me = False
+            h.likes_count = len(h.likes or [])
+            h.liked_by_me = False
         return historias
-
+    
     # Obtener IDs de historias vistas por el usuario
     vistas_ids = (
         db.query(HistoriaVista.historia_id)
@@ -91,12 +94,22 @@ def listar_historias_activas_por_comercio(
         .all()
     )
 
-    # Convertimos lista de tuplas a set de ids
-    vistas_set = {row[0] for row in vistas_ids}
+    # Obtener IDs de historias likeadas por el usuario
+    likes_ids = (
+        db.query(HistoriaLike.historia_id)
+        .filter(HistoriaLike.usuario_id == usuario_id)
+        .all()
+    )
 
-    # Marcamos cada historia
+    # Convertimos listas de tuplas a set de ids
+    vistas_set = {row[0] for row in vistas_ids}
+    likes_set = {row[0] for row in likes_ids}
+
+    # Marcamos cada historia con estado real por usuario
     for h in historias:
         h.vista_by_me = h.id in vistas_set
+        h.likes_count = len(h.likes or [])
+        h.liked_by_me = h.id in likes_set
 
     return historias
 

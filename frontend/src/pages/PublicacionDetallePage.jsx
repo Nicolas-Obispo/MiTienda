@@ -27,6 +27,10 @@ export default function PublicacionDetallePage() {
   const [isActingSave, setIsActingSave] = useState(false);
   const [esDuenoComercio, setEsDuenoComercio] = useState(false);
 
+  const [mostrarConfirmacionEliminar, setMostrarConfirmacionEliminar] =
+    useState(false);
+  const [isDeletingPublicacion, setIsDeletingPublicacion] = useState(false);
+
   function usuarioDebeLoguearse() {
     const token = localStorage.getItem("access_token");
 
@@ -95,32 +99,32 @@ export default function PublicacionDetallePage() {
       const data = await httpGet(`/publicaciones/${id}`, token);
 
       // 🔥 NUEVO: verificar si el comercio es mío
-    if (data?.comercio_id && usuarioActivo) {
-      try {
-        const comercioData = await httpGet(
-          `/comercios/${data.comercio_id}`,
-          token
-        );
+      if (data?.comercio_id && usuarioActivo) {
+        try {
+          const comercioData = await httpGet(
+            `/comercios/${data.comercio_id}`,
+            token
+          );
 
-        const owner =
-          comercioData.owner_user_id ??
-          comercioData.usuario_id ??
-          comercioData.propietario_id ??
-          null;
+          const owner =
+            comercioData.owner_user_id ??
+            comercioData.usuario_id ??
+            comercioData.propietario_id ??
+            null;
 
-        const userId =
-          usuarioActivo.id ??
-          usuarioActivo.user_id ??
-          usuarioActivo.usuario_id ??
-          null;
+          const userId =
+            usuarioActivo.id ??
+            usuarioActivo.user_id ??
+            usuarioActivo.usuario_id ??
+            null;
 
-        setEsDuenoComercio(
-          owner != null && userId != null && Number(owner) === Number(userId)
-        );
-      } catch {
-        setEsDuenoComercio(false);
+          setEsDuenoComercio(
+            owner != null && userId != null && Number(owner) === Number(userId)
+          );
+        } catch {
+          setEsDuenoComercio(false);
+        }
       }
-    }
 
       console.log("DATA PUBLICACION DETALLE:", data);
 
@@ -129,7 +133,22 @@ export default function PublicacionDetallePage() {
       setGuardada(Boolean(data?.guardada_by_me));
     } catch (error) {
       setPublicacion(null);
-      setErrorMessage(error?.message || "Error cargando la publicación.");
+
+      const mensaje = error?.message || "";
+
+      const publicacionNoDisponible =
+        mensaje.includes("404") ||
+        mensaje.toLowerCase().includes("not found") ||
+        mensaje.toLowerCase().includes("no encontrada") ||
+        mensaje.toLowerCase().includes("no existe");
+
+      if (publicacionNoDisponible) {
+        setErrorMessage(
+          "Lo siento, esta publicación ya no está disponible..."
+        );
+      } else {
+        setErrorMessage(mensaje || "Error cargando la publicación.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -212,16 +231,24 @@ export default function PublicacionDetallePage() {
     }
   }
 
-  async function handleEliminarPublicacion() {
+  function handleEliminarPublicacion() {
     if (!publicacion) return;
 
-    const confirmar = window.confirm(
-      "¿Seguro que querés eliminar esta publicación?"
-    );
+    setMostrarConfirmacionEliminar(true);
+  }
 
-    if (!confirmar) return;
+  function handleCancelarEliminarPublicacion() {
+    if (isDeletingPublicacion) return;
+
+    setMostrarConfirmacionEliminar(false);
+  }
+
+  async function handleConfirmarEliminarPublicacion() {
+    if (!publicacion || isDeletingPublicacion) return;
 
     try {
+      setIsDeletingPublicacion(true);
+
       const token = localStorage.getItem("access_token");
 
       const response = await fetch(
@@ -239,15 +266,17 @@ export default function PublicacionDetallePage() {
       }
 
       if (comercioId) {
-        navigate(`/comercios/${comercioId}`);
+        navigate(`/comercios/${comercioId}`, { replace: true });
       } else {
-        navigate("/feed");
+        navigate("/feed", { replace: true });
       }
     } catch (error) {
       setErrorMessage(error.message || "Error eliminando la publicación.");
+      setMostrarConfirmacionEliminar(false);
+    } finally {
+      setIsDeletingPublicacion(false);
     }
   }
-
 
   const mediaUrl = getMediaUrl(publicacion);
   const mediaEsVideo = esVideo(mediaUrl);
@@ -269,9 +298,14 @@ export default function PublicacionDetallePage() {
         )}
 
         {!isLoading && errorMessage && (
-          <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
-            <p className="font-semibold text-red-200">Error</p>
-            <p className="mt-2 break-words text-red-100">{errorMessage}</p>
+          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-8 text-center">
+            <div className="flex flex-col items-center justify-center gap-3">
+              <span className="text-4xl">😅</span>
+
+              <p className="text-sm text-gray-300 break-words">
+                {errorMessage}
+              </p>
+            </div>
           </div>
         )}
 
@@ -296,9 +330,13 @@ export default function PublicacionDetallePage() {
               {mediaUrl ? (
                 mediaEsVideo ? (
                   <video
+                    key={mediaUrl}
                     src={mediaUrl}
-                    controls
+                    autoPlay
+                    muted
+                    loop
                     playsInline
+                    controls
                     className="max-h-[80vh] w-full object-contain"
                   />
                 ) : (
@@ -366,6 +404,40 @@ export default function PublicacionDetallePage() {
           </article>
         )}
       </main>
+
+      {mostrarConfirmacionEliminar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-sm rounded-2xl border border-gray-800 bg-gray-950 p-5 shadow-xl">
+            <p className="text-lg font-semibold text-white">
+              Eliminar publicación
+            </p>
+
+            <p className="mt-2 text-sm text-gray-300">
+              ¿Seguro que querés eliminar esta publicación?
+            </p>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleCancelarEliminarPublicacion}
+                disabled={isDeletingPublicacion}
+                className="rounded-full border border-gray-700 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmarEliminarPublicacion}
+                disabled={isDeletingPublicacion}
+                className="rounded-full border border-red-800 bg-red-950/40 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-900/40 disabled:opacity-60"
+              >
+                {isDeletingPublicacion ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

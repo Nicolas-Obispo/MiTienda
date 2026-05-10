@@ -50,7 +50,7 @@ export default function MainLayout() {
                     : "text-gray-300 hover:text-white"
                 }`}
               >
-                Feed
+                🌎Feed
               </Link>
             )}
 
@@ -84,22 +84,23 @@ export default function MainLayout() {
                     : "text-gray-300 hover:text-white"
                 }`}
               >
-                Ranking
+                Tendencias
               </Link>
             )}
 
-            {/* VER SEGUIDOS */}
-            <Link
-              to="/ver-seguidos"
-              className={`text-sm ${
-                location.pathname.startsWith("/ver-seguidos")
-                  ? "text-purple-300"
-                  : "text-gray-300 hover:text-white"
-              }`}
-            >
-              Seguidos
-            </Link>
-
+            {/* VER SEGUIDOS - solo con sesión */}
+            {estaAutenticado && (
+              <Link
+                to="/ver-seguidos"
+                className={`text-sm ${
+                  location.pathname.startsWith("/ver-seguidos")
+                    ? "text-purple-300"
+                    : "text-gray-300 hover:text-white"
+                }`}
+              >
+                Seguidos
+              </Link>
+            )}
 
             {/* EXPLORAR */}
             <Link

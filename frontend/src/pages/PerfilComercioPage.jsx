@@ -7,20 +7,25 @@
  * - Feed principal queda vertical, pero el comercio queda como galería
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import PublicacionCard from "../components/PublicacionCard";
 import CrearHistoriaModal from "../components/CrearHistoriaModal";
+import HistoriasViewer from "../components/HistoriasViewer";
 import { MessageCircle, Camera, MapPin } from "lucide-react";
 import { getMediaUrlFromAny } from "../utils/mediaUrl";
 
 import {
   getComercioById,
-  getHistoriasDeComercio,
   getPublicacionesDeComercio,
   crearPublicacionDeComercio,
 } from "../services/comercios_service";
+
+import {
+  fetchHistoriasPorComercio,
+  marcarHistoriaVista,
+} from "../services/historias_service";
 
 import {
   fetchPublicacionesGuardadas,
@@ -49,6 +54,9 @@ export default function CommerceProfilePage() {
 
   const [comercio, setComercio] = useState(null);
   const [historias, setHistorias] = useState([]);
+  const [viewerIsOpen, setViewerIsOpen] = useState(false);
+  const [viewerHistorias, setViewerHistorias] = useState([]);
+  const ultimaHistoriaVistaMarcadaRef = useRef(null);
   const [publicaciones, setPublicaciones] = useState([]);
 
   const [isCrearHistoriaOpen, setIsCrearHistoriaOpen] = useState(false);
@@ -116,7 +124,7 @@ export default function CommerceProfilePage() {
         await Promise.all([
           getComercioById(comercioId),
           getPublicacionesDeComercio(comercioId),
-          getHistoriasDeComercio(comercioId),
+          fetchHistoriasPorComercio(comercioId),
           token ? fetchPublicacionesGuardadas() : Promise.resolve([]),
         ]);
 
@@ -178,7 +186,7 @@ export default function CommerceProfilePage() {
     if (!comercioId || Number.isNaN(comercioId)) return;
 
     try {
-      const historiasData = await getHistoriasDeComercio(comercioId);
+      const historiasData = await fetchHistoriasPorComercio(comercioId);
 
       const hist = Array.isArray(historiasData)
         ? historiasData
@@ -361,6 +369,39 @@ export default function CommerceProfilePage() {
     }
   }
 
+  async function handleHistoriaVisible(historiaId) {
+    if (typeof historiaId !== "number") return;
+
+    if (ultimaHistoriaVistaMarcadaRef.current === historiaId) {
+      return;
+    }
+
+    ultimaHistoriaVistaMarcadaRef.current = historiaId;
+
+    try {
+      await marcarHistoriaVista(historiaId);
+
+      setHistorias((prev) =>
+        prev.map((h) =>
+          h.id === historiaId
+            ? { ...h, vista_by_me: true }
+            : h
+        )
+      );
+    } catch {
+      // silencioso
+    }
+  }
+
+  function handleOpenHistorias() {
+    if (usuarioDebeLoguearse()) return;
+
+    if (!historias.length) return;
+
+    setViewerHistorias(historias);
+    setViewerIsOpen(true);
+  }
+
   async function handleHistoriaCreated() {
     await refreshHistorias();
   }
@@ -446,6 +487,10 @@ export default function CommerceProfilePage() {
     }
   }
 
+  const tieneHistoriasPendientes = historias.some(
+  (historia) => !Boolean(historia?.vista_by_me)
+  );
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <main className="mx-auto max-w-5xl px-4 py-6">
@@ -501,23 +546,43 @@ export default function CommerceProfilePage() {
 
           </div>
 
-
-
-
-              <div className="flex items-start gap-4">
-                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-gray-700 bg-gray-950 sm:h-24 sm:w-24">
-                  {comercioImagenUrl ? (
-                    <img
-                      src={comercioImagenUrl}
-                      alt={comercio?.nombre || "Comercio"}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-white">
-                      {(comercio?.nombre || "C").slice(0, 1).toUpperCase()}
-                    </div>
-                  )}
+          <div className="flex items-start gap-4">
+            <button
+              type="button"
+              onClick={handleOpenHistorias}
+              className={`
+                h-20
+                w-20
+                shrink-0
+                overflow-hidden
+                rounded-full
+                bg-gray-950
+                sm:h-24
+                sm:w-24
+                transition
+                ${
+                  historias.length > 0
+                    ? tieneHistoriasPendientes
+                      ? "bg-gradient-to-tr from-orange-500 via-orange-400 to-amber-400 p-[2px]"
+                      : "border-4 border-white/30"
+                    : "border border-gray-700"
+                }
+              `}
+            >
+            <div className="h-full w-full overflow-hidden rounded-full bg-gray-950">
+              {comercioImagenUrl ? (
+                <img
+                  src={comercioImagenUrl}
+                  alt={comercio?.nombre || "Comercio"}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-white">
+                  {(comercio?.nombre || "C").slice(0, 1).toUpperCase()}
                 </div>
+              )}
+            </div>
+            </button>
                   
                 <div className="min-w-0 flex-1 text-left">
                   <h1 className="text-2xl font-bold leading-tight text-white sm:truncate">
@@ -708,11 +773,20 @@ export default function CommerceProfilePage() {
 
                     <div>
                       <label className="mb-1 block text-sm font-medium text-gray-200">
-                        Imagen
+                        Imagen o video
                       </label>
+
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="
+                          image/jpeg,
+                          image/png,
+                          image/webp,
+                          video/mp4,
+                          video/webm,
+                          video/ogg,
+                          video/quicktime
+                        "
                         capture="environment"
                         onChange={handleSelectImagenPublicacion}
                         className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-1 file:text-sm file:font-semibold file:text-black"
@@ -720,7 +794,7 @@ export default function CommerceProfilePage() {
 
                       {imagenFile ? (
                         <p className="mt-1 text-xs text-gray-400">
-                          Imagen seleccionada: {imagenFile.name}
+                          Archivo seleccionado: {imagenFile.name}
                         </p>
                       ) : null}
                     </div>
@@ -749,6 +823,13 @@ export default function CommerceProfilePage() {
             )}
           </>
         )}
+        <HistoriasViewer
+          isOpen={viewerIsOpen}
+          onClose={() => setViewerIsOpen(false)}
+          onHistoriaVisible={handleHistoriaVisible}
+          historias={viewerHistorias}
+          titulo={comercio?.nombre || "Historias"}
+        />
       </main>
     </div>
   );

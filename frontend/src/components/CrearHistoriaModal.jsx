@@ -147,7 +147,7 @@ export default function CrearHistoriaModal({
         <div className="mb-3">
           <h2 className="text-lg font-semibold text-white">Nueva historia</h2>
           <p className="text-sm text-white/70">
-            Subí una imagen (requiere sesión) o pegá una URL (fallback).
+            Subí una imagen o video para compartir en tu historia.
           </p>
         </div>
 
@@ -155,12 +155,20 @@ export default function CrearHistoriaModal({
           {/* Upload archivo */}
           <div className="space-y-1">
             <label className="text-sm font-medium text-white">
-              Imagen (upload) *
+              Imagen o video
             </label>
 
             <input
               type="file"
-              accept="image/*"
+              accept="
+                image/jpeg,
+                image/png,
+                image/webp,
+                video/mp4,
+                video/webm,
+                video/ogg,
+                video/quicktime
+              "
               className="w-full rounded-xl border border-white/10 bg-gray-900 px-3 py-2 text-sm text-white file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-sm file:text-black"
               disabled={isSubmitting}
               onChange={(e) => {
@@ -174,7 +182,7 @@ export default function CrearHistoriaModal({
 
             {selectedFile ? (
               <p className="text-xs text-white/60 break-words">
-                Archivo: <span className="text-white">{selectedFile.name}</span>
+                Seleccionado: <span className="text-white">{selectedFile.name}</span>
               </p>
             ) : (
               <p className="text-xs text-white/50">
@@ -183,8 +191,8 @@ export default function CrearHistoriaModal({
             )}
           </div>
 
-          {/* media_url (fallback) */}
-          <div className="space-y-1">
+          {/* media_url (fallback oculto MVP) */}
+          <div className="hidden">
             <label className="text-sm font-medium text-white">
               media_url (fallback)
             </label>
@@ -207,7 +215,7 @@ export default function CrearHistoriaModal({
           </div>
 
           {/* expira_en */}
-          <div className="space-y-1">
+          <div className="hidden">
             <label className="text-sm font-medium text-white">
               expira_en (opcional, default 24h)
             </label>
@@ -224,7 +232,7 @@ export default function CrearHistoriaModal({
           </div>
 
           {/* is_activa */}
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2">
             <input
               id="is_activa"
               type="checkbox"

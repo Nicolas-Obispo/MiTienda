@@ -103,3 +103,12 @@ class Historia(Base):
         lazy="selectin",
         cascade="all, delete-orphan",
     )
+
+        # Likes (ETAPA 61)
+    # - 1 like = 1 usuario reaccionó positivamente a la historia
+    # - Se usa como interacción real para métricas futuras del espacio
+    likes = relationship(
+        "HistoriaLike",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )

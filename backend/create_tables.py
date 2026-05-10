@@ -24,6 +24,7 @@ from app.models.rubros_models import Rubro
 from app.models.secciones_models import Seccion
 from app.models.historias_models import Historia
 from app.models.historias_vistas_models import HistoriaVista  # ← ETAPA 43
+from app.models.historias_likes_models import HistoriaLike  # ← ETAPA 61
 from app.models.comercios_embeddings_models import ComercioEmbedding  # ← ETAPA 51
 from app.models.usuarios_embeddings_models import UsuarioEmbedding # ← ETAPA 54
 from app.models.seguidores_models import Seguidores  # ← ETAPA 60
