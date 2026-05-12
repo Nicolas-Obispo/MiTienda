@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from app.models.usuarios_embeddings_models import UsuarioEmbedding
-from app.services.publicaciones_services import (
+from app.modules.posts.services.publicaciones_services import (
     obtener_publicaciones_interactuadas_por_usuario,
 )
 from app.services.comercios_embeddings_services import (

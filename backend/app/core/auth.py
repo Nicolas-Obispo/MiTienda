@@ -11,8 +11,8 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.models.usuarios_models import Usuario
-from app.models.tokens_models import TokenRevocado
+from app.modules.users.models.usuarios_models import Usuario
+from app.modules.users.models.tokens_models import TokenRevocado
 
 # auto_error=False permite controlar manualmente el 401
 bearer_scheme = HTTPBearer(auto_error=False)

@@ -40,6 +40,15 @@ import {
   obtenerEstadoSeguimiento,
 } from "../services/seguidores_service";
 
+import {
+  obtenerMetricasSocialesEspacio,
+  obtenerComparacionMetricasSocialesEspacio,
+} from "../services/comercios_metricas_sociales_service";
+
+import {
+  obtenerAnalyticsEspacio,
+} from "../services/comercios_analytics_service";
+
 import { useAuth } from "../context/useAuth";
 
 export default function CommerceProfilePage() {
@@ -61,6 +70,7 @@ export default function CommerceProfilePage() {
 
   const [isCrearHistoriaOpen, setIsCrearHistoriaOpen] = useState(false);
   const [isCrearPublicacionOpen, setIsCrearPublicacionOpen] = useState(false);
+  const [isEstadisticasOpen, setIsEstadisticasOpen] = useState(false);
 
   const [publicacionForm, setPublicacionForm] = useState({
     titulo: "",
@@ -76,6 +86,10 @@ export default function CommerceProfilePage() {
 
   const [siguiendo, setSiguiendo] = useState(false);
   const [isLoadingFollow, setIsLoadingFollow] = useState(false);
+
+  const [metricasSociales, setMetricasSociales] = useState(null);
+  const [comparacionMetricas, setComparacionMetricas] = useState(null);
+  const [analyticsEspacio, setAnalyticsEspacio] = useState(null);
 
   const likeLocksMemo = useMemo(() => likeLocks, [likeLocks]);
   const saveLocksMemo = useMemo(() => saveLocks, [saveLocks]);
@@ -120,13 +134,31 @@ export default function CommerceProfilePage() {
 
       const token = getAccessToken();
 
-      const [comercioData, publicacionesData, historiasData, guardadasData] =
-        await Promise.all([
-          getComercioById(comercioId),
-          getPublicacionesDeComercio(comercioId),
-          fetchHistoriasPorComercio(comercioId),
-          token ? fetchPublicacionesGuardadas() : Promise.resolve([]),
-        ]);
+      const [
+        comercioData,
+        publicacionesData,
+        historiasData,
+        guardadasData,
+        metricasData,
+        comparacionData,
+        analyticsData,
+      ] = await Promise.all([
+        getComercioById(comercioId),
+        getPublicacionesDeComercio(comercioId),
+        fetchHistoriasPorComercio(comercioId),
+        token ? fetchPublicacionesGuardadas() : Promise.resolve([]),
+
+        // ETAPA 62 — métricas sociales reales
+          token
+          ? obtenerMetricasSocialesEspacio(comercioId)
+          : Promise.resolve(null),
+          token
+          ? obtenerComparacionMetricasSocialesEspacio(comercioId)
+          : Promise.resolve(null),
+          token
+          ? obtenerAnalyticsEspacio(comercioId)
+          : Promise.resolve(null),
+      ]);
 
       const pubs = Array.isArray(publicacionesData)
         ? publicacionesData
@@ -152,8 +184,15 @@ export default function CommerceProfilePage() {
       }));
 
       setComercio(comercioData);
+
       setHistorias(hist);
+
       setPublicaciones(mergedPubs);
+
+      // ETAPA 62
+      setMetricasSociales(metricasData);
+      setComparacionMetricas(comparacionData);
+      setAnalyticsEspacio(analyticsData);
 
             // ETAPA 60 — Cargamos estado real de seguimiento solo si hay sesión.
       try {
@@ -679,9 +718,10 @@ export default function CommerceProfilePage() {
 
                   <button
                     type="button"
-                     className="rounded-xl bg-white px-2 py-1 text-sm font-semibold text-gray-900 hover:opacity-90"
+                    className="rounded-xl bg-white px-2 py-1 text-sm font-semibold text-gray-900 hover:opacity-90"
+                    onClick={() => setIsEstadisticasOpen(true)}
                   >
-                    Estadísticas
+                    ⚙Estadísticas
                   </button>
 
                 </div>
@@ -722,6 +762,171 @@ export default function CommerceProfilePage() {
                 </div>
               )}
             </section>
+
+            {isEstadisticasOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+                <div className="w-full max-w-lg rounded-3xl border border-gray-800 bg-gray-950 p-6 shadow-2xl">
+                  <div className="mb-5 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-orange-400">
+                        MiPlaza Analytics
+                      </p>
+
+                      <h3 className="mt-1 text-xl font-bold text-white">
+                        Estadísticas del espacio
+                      </h3>
+
+                      <p className="mt-2 text-sm leading-6 text-gray-400">
+                        Métricas reales calculadas desde la actividad del espacio.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsEstadisticasOpen(false)}
+                      className="rounded-full border border-gray-700 px-3 py-1 text-sm text-gray-300 hover:bg-gray-800"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                      <p className="text-xs text-gray-400">Seguidores</p>
+
+                      <p className="mt-2 text-2xl font-bold text-white">
+                        {metricasSociales?.total_seguidores ?? comercio?.seguidores_count ?? 0}
+                      </p>
+
+                      <p className="mt-1 text-xs text-gray-400">
+                        {comparacionMetricas?.fecha_anterior
+                          ? `${comparacionMetricas?.seguidores?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.seguidores?.delta ?? 0} vs período anterior`
+                          : "Sin período anterior"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                      <p className="text-xs text-gray-400">Publicaciones</p>
+
+                      <p className="mt-2 text-2xl font-bold text-white">
+                        {metricasSociales?.total_publicaciones ?? publicaciones.length}
+                      </p>
+
+                      <p className="mt-1 text-xs text-gray-400">
+                        {comparacionMetricas?.fecha_anterior
+                          ? `${comparacionMetricas?.publicaciones?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.publicaciones?.delta ?? 0} vs período anterior`
+                          : "Sin período anterior"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                      <p className="text-xs text-gray-400">Likes publicaciones</p>
+
+                      <p className="mt-2 text-2xl font-bold text-white">
+                        {metricasSociales?.total_likes_publicaciones ?? 0}
+                      </p>
+
+                      <p className="mt-1 text-xs text-gray-400">
+                        {comparacionMetricas?.fecha_anterior
+                          ? `${comparacionMetricas?.likes_publicaciones?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.likes_publicaciones?.delta ?? 0} vs período anterior`
+                          : "Sin período anterior"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                      <p className="text-xs text-gray-400">Guardados</p>
+
+                      <p className="mt-2 text-2xl font-bold text-white">
+                        {metricasSociales?.total_guardados_publicaciones ?? 0}
+                      </p>
+
+                      <p className="mt-1 text-xs text-gray-400">
+                        {comparacionMetricas?.fecha_anterior
+                          ? `${comparacionMetricas?.guardados_publicaciones?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.guardados_publicaciones?.delta ?? 0} vs período anterior`
+                          : "Sin período anterior"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                      <p className="text-xs text-gray-400">Vistas historias</p>
+
+                      <p className="mt-2 text-2xl font-bold text-white">
+                        {metricasSociales?.total_vistas_historias ?? 0}
+                      </p>
+
+                      <p className="mt-1 text-xs text-gray-400">
+                        {comparacionMetricas?.fecha_anterior
+                          ? `${comparacionMetricas?.vistas_historias?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.vistas_historias?.delta ?? 0} vs período anterior`
+                          : "Sin período anterior"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                      <p className="text-xs text-gray-400">Likes historias</p>
+
+                      <p className="mt-2 text-2xl font-bold text-white">
+                        {metricasSociales?.total_likes_historias ?? 0}
+                      </p>
+
+                      <p className="mt-1 text-xs text-gray-400">
+                        {comparacionMetricas?.fecha_anterior
+                          ? `${comparacionMetricas?.likes_historias?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.likes_historias?.delta ?? 0} vs período anterior`
+                          : "Sin período anterior"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {analyticsEspacio?.insights?.length > 0 && (
+                    <div className="mt-5 space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-orange-400">
+                          Insights automáticos
+                        </p>
+                      </div>
+
+                      {analyticsEspacio.insights.map((insight, index) => (
+                        <div
+                          key={index}
+                          className="rounded-2xl border border-gray-800 bg-gray-900 p-4"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">
+                              {insight.tipo === "positivo"
+                                ? "🟢"
+                                : insight.tipo === "alerta"
+                                ? "🟠"
+                                : "🔵"}
+                            </span>
+
+                            <p className="text-sm font-semibold text-white">
+                              {insight.titulo}
+                            </p>
+                          </div>
+
+                          <p className="mt-2 text-sm leading-6 text-gray-400">
+                            {insight.descripcion}
+                          </p>
+
+                          <div className="mt-3 rounded-xl border border-gray-800 bg-black/40 p-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                              Acción recomendada
+                            </p>
+
+                            <p className="mt-1 text-sm text-gray-300">
+                              {insight.accion_recomendada}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <p className="mt-5 text-xs leading-5 text-gray-500">
+                    Estos datos vienen del backend y se recalculan desde la base real.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <CrearHistoriaModal
               isOpen={isCrearHistoriaOpen}

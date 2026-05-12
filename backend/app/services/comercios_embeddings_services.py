@@ -15,7 +15,7 @@ from typing import List, Dict
 from sqlalchemy.orm import Session
 
 from app.ai.embedding_factory import get_embedding_provider
-from app.models.comercios_models import Comercio
+from app.modules.spaces.models.comercios_models import Comercio
 from app.models.comercios_embeddings_models import ComercioEmbedding
 
 

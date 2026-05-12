@@ -5,22 +5,34 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Routers
 from app.routers.productos_routers import router as productos_routers
-from app.routers.usuarios_routers import router as usuarios_routers
-from app.routers.comercios_routers import router as comercios_router
+from app.modules.users.routes.usuarios_routers import router as usuarios_routers
+from app.modules.spaces.routes.comercios_routers import router as comercios_router
 from app.routers.rubros_routers import router as rubros_routers
 from app.routers.secciones_routers import router as secciones_router
 
-from app.routers.publicaciones_guardadas_routers import router as publicaciones_guardadas_router
-from app.routers.publicaciones_routers import router as publicaciones_router
+from app.modules.social.routes.publicaciones_guardadas_routers import router as publicaciones_guardadas_router
+from app.modules.posts.routes.publicaciones_routers import router as publicaciones_router
 
-from app.routers.historias_routers import router as historias_router
-from app.routers.likes_publicaciones_routers import router as likes_publicaciones_router
-from app.routers.ranking_publicaciones_routers import router as ranking_publicaciones_router
-from app.routers.feed_publicaciones_routers import router as feed_publicaciones_router
-from app.routers.media_routers import router as media_router
+from app.modules.stories.routes.historias_routers import router as historias_router
+from app.modules.social.routes.likes_publicaciones_routers import router as likes_publicaciones_router
+from app.modules.posts.routes.ranking_publicaciones_routers import router as ranking_publicaciones_router
+from app.modules.posts.routes.feed_publicaciones_routers import router as feed_publicaciones_router
+from app.modules.media.routes.media_routers import router as media_router
 
 # 🔥 ETAPA 60 — Seguidores
-from app.routers.seguidores_routers import router as seguidores_router
+from app.modules.social.routes.seguidores_routers import router as seguidores_router
+
+from app.modules.analytics.routes.comercios_metricas_sociales_routers import (
+    router as comercios_metricas_sociales_router,
+)
+
+from app.modules.analytics.routes.comercios_analytics_routers import (
+    router as comercios_analytics_router,
+)
+
+from app.modules.analytics.routes.comercios_score_routers import (
+    router as comercios_score_router,
+)
 
 # ------------------------------
 # Soporte para archivos estáticos (uploads)
@@ -79,5 +91,12 @@ app.include_router(ranking_publicaciones_router)
 app.include_router(feed_publicaciones_router)
 app.include_router(media_router)
 
-# 🔥 ETAPA 60 — Seguidores (al final, no rompe nada existente)
+# 🔥 ETAPA 60 — Seguidores
 app.include_router(seguidores_router)
+
+# 🔥 ETAPA 62 — Métricas sociales
+app.include_router(comercios_metricas_sociales_router)
+# 🔥 ETAPA 63 — Analytics Engine
+app.include_router(comercios_analytics_router)
+# 🔥 ETAPA 63 — Space Score Engine
+app.include_router(comercios_score_router)
