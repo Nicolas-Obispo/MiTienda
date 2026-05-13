@@ -1,4 +1,4 @@
-# backend/app/models/usuarios_embeddings_models.py
+# backend/app/modules/ai/models/usuarios_embeddings_models.py
 
 # Importamos las columnas y tipos que vamos a usar en la tabla
 from sqlalchemy import Column, Integer, ForeignKey, Text, DateTime, func

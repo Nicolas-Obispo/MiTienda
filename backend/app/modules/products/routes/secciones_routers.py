@@ -16,17 +16,17 @@ from typing import List
 from app.core.database import get_db
 from app.core.auth import obtener_usuario_actual
 
-from app.schemas.secciones_schemas import (
+from app.modules.products.schemas.secciones_schemas import (
     SeccionCreate,
     SeccionUpdate,
-    SeccionResponse
+    SeccionResponse,
 )
 
-from app.services.secciones_services import (
+from app.modules.products.services.secciones_services import (
     crear_seccion,
     listar_secciones_por_comercio,
     obtener_seccion_por_id,
-    actualizar_seccion
+    actualizar_seccion,
 )
 
 router = APIRouter(

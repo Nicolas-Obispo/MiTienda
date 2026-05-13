@@ -6,37 +6,59 @@ Script para crear todas las tablas de la base de datos.
 
 from app.core.database import engine, Base
 
-# -------------------------
-# Importar TODOS los modelos
-# -------------------------
+# ============================================================
+# IMPORTANTE:
+# Importamos TODOS los modelos para que SQLAlchemy registre
+# correctamente los mappers y relaciones.
+# ============================================================
 
-# MiTienda
-from app.models.productos_models import Producto
-from app.models.usuarios_models import Usuario
-from app.models.tokens_models import TokenRevocado
+# USERS
+from app.modules.users.models.usuarios_models import Usuario
+from app.modules.users.models.tokens_models import TokenRevocado
 
-# MiPlaza
-from app.models.publicaciones_models import Publicacion
-from app.models.publicaciones_guardadas_models import PublicacionGuardada
-from app.models.likes_publicaciones_models import LikePublicacion
-from app.models.comercios_models import Comercio
-from app.models.rubros_models import Rubro
-from app.models.secciones_models import Seccion
-from app.models.historias_models import Historia
-from app.models.historias_vistas_models import HistoriaVista  # ← ETAPA 43
-from app.models.historias_likes_models import HistoriaLike  # ← ETAPA 61
-from app.models.comercios_embeddings_models import ComercioEmbedding  # ← ETAPA 51
-from app.models.usuarios_embeddings_models import UsuarioEmbedding  # ← ETAPA 54
-from app.models.seguidores_models import Seguidores  # ← ETAPA 60
+# SPACES
+from app.modules.spaces.models.comercios_models import Comercio
 
-# ETAPA 62
-from app.models.comercios_metricas_sociales_models import (
+# PRODUCTS
+from app.modules.products.models.productos_models import Producto
+from app.modules.products.models.rubros_models import Rubro
+from app.modules.products.models.secciones_models import Seccion
+
+# POSTS
+from app.modules.posts.models.publicaciones_models import Publicacion
+
+# SOCIAL
+from app.modules.social.models.publicaciones_guardadas_models import (
+    PublicacionGuardada,
+)
+from app.modules.social.models.likes_publicaciones_models import (
+    LikePublicacion,
+)
+from app.modules.social.models.seguidores_models import Seguidores
+
+# STORIES
+from app.modules.stories.models.historias_models import Historia
+from app.modules.stories.models.historias_vistas_models import HistoriaVista
+from app.modules.stories.models.historias_likes_models import HistoriaLike
+
+# AI
+from app.modules.ai.models.comercios_embeddings_models import (
+    ComercioEmbedding,
+)
+from app.modules.ai.models.usuarios_embeddings_models import (
+    UsuarioEmbedding,
+)
+
+# ANALYTICS
+from app.modules.analytics.models.comercios_metricas_sociales_models import (
     ComercioMetricasSociales,
 )
-from app.models.comercios_metricas_snapshots_models import (
+from app.modules.analytics.models.comercios_metricas_snapshots_models import (
     ComercioMetricasSnapshot,
 )
 
 print("Creando tablas...")
+
 Base.metadata.create_all(bind=engine)
+
 print("Tablas creadas correctamente.")

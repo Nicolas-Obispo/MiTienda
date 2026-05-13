@@ -4,11 +4,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Routers
-from app.routers.productos_routers import router as productos_routers
+from app.modules.products.routes.productos_routers import router as productos_routers
 from app.modules.users.routes.usuarios_routers import router as usuarios_routers
 from app.modules.spaces.routes.comercios_routers import router as comercios_router
-from app.routers.rubros_routers import router as rubros_routers
-from app.routers.secciones_routers import router as secciones_router
+from app.modules.products.routes.rubros_routers import router as rubros_routers
+from app.modules.products.routes.secciones_routers import router as secciones_router
 
 from app.modules.social.routes.publicaciones_guardadas_routers import router as publicaciones_guardadas_router
 from app.modules.posts.routes.publicaciones_routers import router as publicaciones_router

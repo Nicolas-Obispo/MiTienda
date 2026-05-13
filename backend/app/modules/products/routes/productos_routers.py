@@ -9,20 +9,20 @@ from app.core.auth import obtener_usuario_actual      # 🔐 Protección JWT
 from app.core.database import get_db
 
 # Esquemas Pydantic
-from app.schemas.productos_schemas import (
+from app.modules.products.schemas.productos_schemas import (
     ProductoCreate,
     ProductoUpdate,
-    ProductoInDB
+    ProductoInDB,
 )
 
 # Servicios (lógica de negocio)
-from app.services.productos_services import (
+from app.modules.products.services.productos_services import (
     obtener_todos_los_productos,
     crear_producto,
     obtener_producto_por_id,
     actualizar_producto,
     eliminar_producto,
-    buscar_productos_por_nombre
+    buscar_productos_por_nombre,
 )
 
 # Crear router

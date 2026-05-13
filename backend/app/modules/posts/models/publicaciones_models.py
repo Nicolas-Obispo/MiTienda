@@ -1,4 +1,4 @@
-# app/models/publicaciones_models.py
+# app/modules/posts/models/publicaciones_models.py
 """
 Modelo ORM: Publicaciones
 

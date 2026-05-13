@@ -1,4 +1,4 @@
-# app/schemas/publicaciones_schemas.py
+# app/modules/posts/schemas/publicaciones_schemas.py
 
 from datetime import datetime
 from typing import Optional

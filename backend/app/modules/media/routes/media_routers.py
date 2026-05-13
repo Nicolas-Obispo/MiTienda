@@ -1,4 +1,4 @@
-# app/routers/media_routers.py
+# app/modules/media/routes/media_routers.py
 # Router para manejo de uploads (MVP: filesystem local)
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Depends
@@ -39,7 +39,7 @@ def _get_upload_dir() -> str:
     Devuelve la ruta absoluta a la carpeta /uploads del backend.
     IMPORTANTE: Debe coincidir con lo montado en main.py.
     """
-    # __file__ = backend/app/routers/media_routers.py
+    # __file__ = backend/app/modules/media/routes/media_routers.py
     # subimos 3 niveles -> backend/
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # backend/
     return os.path.join(base_dir, "uploads")

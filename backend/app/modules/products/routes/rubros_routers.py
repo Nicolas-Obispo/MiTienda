@@ -11,8 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.rubros_schemas import RubroResponse
-from app.services.rubros_services import (
+from app.modules.products.schemas.rubros_schemas import RubroResponse
+from app.modules.products.services.rubros_services import (
     listar_rubros,
     obtener_rubro_por_id
 )

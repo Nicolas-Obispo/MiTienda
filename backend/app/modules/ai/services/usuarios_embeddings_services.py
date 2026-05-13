@@ -1,4 +1,4 @@
-# backend/app/services/usuarios_embeddings_services.py
+# backend/app/modules/ai/services/usuarios_embeddings_services.py
 
 """
 Service encargado de gestionar los embeddings de usuario.

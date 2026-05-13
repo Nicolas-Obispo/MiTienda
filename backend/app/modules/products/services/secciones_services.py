@@ -13,8 +13,8 @@ Esta capa:
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from app.models.secciones_models import Seccion
-from app.schemas.secciones_schemas import SeccionCreate, SeccionUpdate
+from app.modules.products.models.secciones_models import Seccion
+from app.modules.products.schemas.secciones_schemas import SeccionCreate, SeccionUpdate
 
 
 # ======================================================

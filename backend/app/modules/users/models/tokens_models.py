@@ -1,4 +1,4 @@
-# app/models/tokens_models.py
+# app/modules/users/models/tokens_models.py
 # ---------------------------
 # Modelos ORM para manejar tokens JWT revocados.
 # Esta tabla se usa para implementar un "logout real":

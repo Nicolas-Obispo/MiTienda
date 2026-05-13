@@ -8,7 +8,7 @@ Lógica de negocio para Rubros.
 """
 
 from sqlalchemy.orm import Session
-from app.models.rubros_models import Rubro
+from app.modules.products.models.rubros_models import Rubro
 
 
 def listar_rubros(db: Session) -> list[Rubro]:

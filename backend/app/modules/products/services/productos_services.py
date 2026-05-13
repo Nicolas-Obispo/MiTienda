@@ -16,12 +16,12 @@ El objetivo es que este archivo sea limpio, ordenado y fácil de mantener.
 from sqlalchemy.orm import Session
 
 # Modelo ORM → representa la tabla 'productos' en la base de datos
-from app.models.productos_models import Producto
+from app.modules.products.models.productos_models import Producto
 
-# Schema para crear productos → valida qué datos deben venir del frontend
-from app.schemas.productos_schemas import (
+# Schema para crear/actualizar productos → valida qué datos deben venir del frontend
+from app.modules.products.schemas.productos_schemas import (
     ProductoCreate,
-    ProductoUpdate
+    ProductoUpdate,
 )
 
 
