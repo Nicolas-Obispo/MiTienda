@@ -14,5 +14,6 @@ class RubroResponse(BaseModel):
     id: int
     nombre: str
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }

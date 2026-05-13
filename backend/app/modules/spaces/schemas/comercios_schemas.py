@@ -68,5 +68,6 @@ class ComercioResponse(ComercioBase):
     usuario_id: int
     activo: bool
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }

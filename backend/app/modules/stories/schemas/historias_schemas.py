@@ -56,8 +56,9 @@ class HistoriaRead(HistoriaBase):
     likes_count: int = 0
     liked_by_me: bool = False
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
 
 # --------------------------------------------------
 # ETAPA 47 — Item para barra de historias

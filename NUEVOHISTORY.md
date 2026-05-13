@@ -5549,3 +5549,145 @@ para alineación total con Pydantic v2.
 ```bash
 git commit -m "refactor(architecture): backend 100% modular enterprise + eliminacion total legacy (CIERRE REAL ETAPA 64)"
 ```
+---
+
+# ETAPA 65 — Modernización completa Pydantic v2
+
+## Objetivo
+
+Eliminar completamente los warnings heredados de compatibilidad entre Pydantic v1 y Pydantic v2 luego de la consolidación modular realizada en ETAPA 64.
+
+---
+
+## Cambios realizados
+
+### Migración de `orm_mode`
+
+Se migraron todos los schemas restantes desde:
+
+```python
+class Config:
+    orm_mode = True
+```
+
+hacia configuración compatible con Pydantic v2:
+
+```python
+model_config = {
+    "from_attributes": True
+}
+```
+
+---
+
+## Dominios migrados
+
+### Products
+
+- rubros_schemas.py
+- secciones_schemas.py
+
+### Social
+
+- likes_publicaciones_schemas.py
+- publicaciones_guardadas_schemas.py
+
+### Spaces
+
+- comercios_schemas.py
+
+### Stories
+
+- historias_schemas.py
+
+### Users
+
+- usuarios_schemas.py
+
+---
+
+## Validaciones realizadas
+
+Se validó correctamente:
+
+- compilación individual de schemas
+- compilación general
+- import completo de `main.py`
+- runtime FastAPI
+- eliminación total de warnings:
+
+```text
+orm_mode has been renamed to from_attributes
+```
+
+---
+
+## Resultado final
+
+FeedGo! quedó oficialmente con:
+
+- backend 100% modular
+- Pydantic v2 limpio
+- runtime sin warnings
+- FastAPI moderno
+- arquitectura enterprise consolidada
+- deuda técnica histórica eliminada
+
+---
+
+## Estado arquitectónico oficial
+
+La arquitectura backend oficial queda consolidada como:
+
+```text
+backend/app/
+
+├── core/
+├── modules/
+│
+│   ├── ai/
+│   ├── analytics/
+│   ├── media/
+│   ├── posts/
+│   ├── products/
+│   ├── social/
+│   ├── spaces/
+│   ├── stories/
+│   └── users/
+│
+├── utils/
+└── __init__.py
+```
+
+---
+
+## Próximas etapas sugeridas
+
+### Frontend Enterprise
+
+Migración progresiva del frontend hacia:
+
+```text
+frontend/src/
+
+├── core/
+├── features/
+├── shared/
+├── layouts/
+```
+
+con:
+
+- arquitectura modular frontend
+- features desacopladas
+- path aliases
+- mobile-first real
+- estructura tipo Big Tech
+
+---
+
+# Commit sugerido
+
+```bash
+git commit -m "refactor(pydantic): migracion completa a Pydantic v2 + runtime clean (CIERRE REAL ETAPA 65)"
+```

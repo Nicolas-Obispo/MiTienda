@@ -41,5 +41,6 @@ class SeccionResponse(BaseModel):
     orden: int
     activo: bool
 
-    class Config:
-        orm_mode = True  # (pendiente migrar a Pydantic v2)
+    model_config = {
+        "from_attributes": True
+    }
