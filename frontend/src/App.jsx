@@ -13,7 +13,7 @@
  */
 
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import FeedPage from "./pages/FeedPage";
+import { FeedPage } from "@features/feed";
 
 /**
  * HomePage:

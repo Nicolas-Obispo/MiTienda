@@ -5691,3 +5691,402 @@ con:
 ```bash
 git commit -m "refactor(pydantic): migracion completa a Pydantic v2 + runtime clean (CIERRE REAL ETAPA 65)"
 ```
+
+# ETAPA 66 — MIGRACIÓN ENTERPRISE FRONTEND (FEATURES + CORE + SHARED)
+
+## Objetivo general
+
+Se realizó una migración estructural completa del frontend de FeedGo! hacia una arquitectura modular enterprise basada en dominios/features, manteniendo intacta la UI, UX y lógica funcional existente.
+
+La migración se realizó de forma progresiva, segura y desacoplada, respetando las reglas de oro del proyecto:
+- sin romper funcionalidades
+- sin retrabajo
+- sin parches temporales
+- sin duplicar lógica
+- manteniendo backend como fuente de verdad
+- preparando el proyecto para escalabilidad real y mobile-first architecture
+
+---
+
+# CAMBIO ARQUITECTÓNICO PRINCIPAL
+
+El frontend dejó de utilizar una estructura global tradicional:
+
+```text
+pages/
+components/
+services/
+utils/
+context/
+```
+
+y evolucionó hacia una arquitectura modular enterprise por dominios/features:
+
+```text
+src/
+├── core/
+├── features/
+├── shared/
+├── assets/
+├── App.jsx
+├── main.jsx
+├── App.css
+└── index.css
+```
+
+---
+
+# NUEVA CAPA CORE
+
+## Creada estructura:
+
+```text
+src/core/
+```
+
+## Responsabilidad:
+Infraestructura global del frontend.
+
+## Contenido actual:
+
+```text
+src/core/
+├── index.js
+├── router/
+│   └── AppRouter.jsx
+└── services/
+    └── http_service.js
+```
+
+## Cambios realizados:
+- `AppRouter.jsx` migrado desde `src/router`
+- `http_service.js` migrado desde `src/services`
+- `main.jsx` actualizado para consumir router desde `@core`
+
+---
+
+# NUEVA CAPA SHARED
+
+## Creada estructura:
+
+```text
+src/shared/
+```
+
+## Responsabilidad:
+Elementos reutilizables transversales compartidos entre features.
+
+## Contenido actual:
+
+```text
+src/shared/
+├── index.js
+├── components/
+│   └── InteraccionButton.jsx
+├── layouts/
+│   └── MainLayout.jsx
+├── services/
+│   └── media_service.js
+├── utils/
+│   └── mediaUrl.js
+├── hooks/
+└── ui/
+```
+
+## Cambios realizados:
+- `InteraccionButton.jsx` migrado desde `src/components`
+- `media_service.js` migrado desde `src/services`
+- `mediaUrl.js` migrado desde `src/utils`
+- `MainLayout.jsx` migrado desde `src/layouts`
+- imports globales actualizados a `@shared`
+
+---
+
+# MIGRACIÓN COMPLETA A FEATURES
+
+---
+
+# FEATURE AUTH
+
+## Nueva estructura:
+
+```text
+src/features/auth/
+├── index.js
+├── context/
+│   └── AuthContext.jsx
+├── hooks/
+│   └── useAuth.js
+├── pages/
+│   ├── Login.jsx
+│   ├── Registro.jsx
+│   └── ProfilePage.jsx
+├── services/
+│   ├── authService.js
+│   └── usuarioService.js
+└── components/
+```
+
+## Migrado:
+- login
+- registro
+- perfil usuario
+- auth context
+- hooks auth
+- servicios auth
+
+---
+
+# FEATURE STORIES
+
+## Nueva estructura:
+
+```text
+src/features/stories/
+├── index.js
+├── components/
+│   ├── HistoriasBar.jsx
+│   ├── HistoriasViewer.jsx
+│   └── CrearHistoriaModal.jsx
+├── services/
+│   └── historias_service.js
+├── hooks/
+└── pages/
+```
+
+## Migrado:
+- barra de historias
+- visualizador historias
+- modal creación historias
+- servicios historias
+
+---
+
+# FEATURE POSTS
+
+## Nueva estructura:
+
+```text
+src/features/posts/
+├── index.js
+├── components/
+│   └── PublicacionCard.jsx
+├── services/
+│   └── feed_service.js
+├── pages/
+│   ├── RankingPage.jsx
+│   └── PublicacionDetallePage.jsx
+├── hooks/
+```
+
+## Migrado:
+- publicaciones
+- ranking
+- detalle publicación
+- feed service
+- cards publicaciones
+
+---
+
+# FEATURE SPACES
+
+## Nueva estructura:
+
+```text
+src/features/spaces/
+├── index.js
+├── services/
+│   ├── comercios_service.js
+│   ├── seguidores_service.js
+│   ├── comercios_metricas_sociales_service.js
+│   └── comercios_analytics_service.js
+├── pages/
+│   ├── PerfilComercioPage.jsx
+│   └── VerSeguidosPage.jsx
+├── hooks/
+└── components/
+```
+
+## Migrado:
+- perfil comercio
+- seguidos
+- analytics espacios
+- métricas sociales
+- seguidores
+- comercios
+
+---
+
+# FEATURE FEED
+
+## Nueva estructura:
+
+```text
+src/features/feed/
+├── index.js
+├── pages/
+│   └── FeedPage.jsx
+├── hooks/
+├── services/
+└── components/
+```
+
+## Migrado:
+- feed principal completo
+
+---
+
+# FEATURE EXPLORE
+
+## Nueva estructura:
+
+```text
+src/features/explore/
+├── index.js
+├── pages/
+│   └── ExplorarPage.jsx
+├── hooks/
+├── services/
+└── components/
+```
+
+## Migrado:
+- explorar espacios/publicaciones
+
+---
+
+# FEATURE HOME
+
+## Nueva estructura:
+
+```text
+src/features/home/
+├── index.js
+└── pages/
+    └── Home.jsx
+```
+
+## Migrado:
+- pantalla home
+
+---
+
+# FEATURES PREPARADAS PARA FUTURO
+
+## Estructuras creadas:
+
+```text
+src/features/social/
+src/features/analytics/
+```
+
+Pendientes para próximas etapas.
+
+---
+
+# SISTEMA DE ALIASES
+
+Se consolidó el uso de aliases enterprise:
+
+```text
+@core
+@shared
+@features
+```
+
+## Beneficios:
+- eliminación de imports relativos complejos
+- desacoplamiento físico de carpetas
+- migraciones futuras seguras
+- estructura preparada para escalabilidad real
+
+---
+
+# ELIMINACIÓN DE ESTRUCTURA LEGACY
+
+Se eliminaron completamente:
+
+```text
+src/pages
+src/router
+src/layouts
+src/components
+src/services
+src/utils
+src/context
+```
+
+Toda la lógica quedó migrada correctamente.
+
+---
+
+# VALIDACIONES REALIZADAS
+
+Durante la migración se validó constantemente:
+
+- runtime Vite OK
+- imports correctos
+- eliminación de imports legacy
+- funcionamiento UI intacto
+- funcionamiento UX intacto
+- compatibilidad mobile intacta
+- navegación intacta
+- auth intacto
+- feed intacto
+- historias intactas
+- publicaciones intactas
+
+---
+
+# RESULTADO FINAL
+
+FeedGo! frontend quedó migrado a una arquitectura enterprise modular real, preparada para:
+
+- escalabilidad grande
+- múltiples desarrolladores
+- crecimiento por dominios
+- mobile-first architecture
+- futura app móvil con Capacitor
+- monetización futura
+- separación clara de responsabilidades
+- reutilización avanzada
+- futura integración React Query/TanStack
+- futura cache layer
+- futura optimistic UI layer
+- analytics avanzados
+- IA frontend desacoplada
+
+---
+
+# ESTADO ACTUAL DEL FRONTEND
+
+```text
+src/
+├── core/
+├── features/
+├── shared/
+├── assets/
+├── App.jsx
+├── main.jsx
+├── App.css
+└── index.css
+```
+
+---
+
+# PRÓXIMA ETAPA RECOMENDADA
+
+## ETAPA 67 — SOCIAL + ANALYTICS ENTERPRISE
+
+Objetivos:
+- completar feature social
+- completar feature analytics
+- reusable hooks
+- reusable UI
+- mobile-first reusable components
+- optimistic UI architecture
+- cache architecture
+- future React Query/TanStack readiness
+- preparación Capacitor/mobile packaging
+- desacoplamiento visual/business
+- analytics frontend avanzados
