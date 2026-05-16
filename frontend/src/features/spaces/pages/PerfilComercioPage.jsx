@@ -17,6 +17,15 @@ import { MessageCircle, Camera, MapPin } from "lucide-react";
 import { getMediaUrlFromAny } from "@shared";
 
 import {
+  optimisticToggleGuardado,
+  optimisticToggleLike,
+  toggleGuardado,
+  toggleLike,
+  toggleSeguimientoEspacio,
+  useSocialInteractions,
+} from "@features/social";
+
+import {
   getComercioById,
   getPublicacionesDeComercio,
   crearPublicacionDeComercio,
@@ -29,14 +38,9 @@ import {
 
 import {
   fetchPublicacionesGuardadas,
-  toggleLikePublicacion,
-  guardarPublicacion,
-  quitarPublicacionGuardada,
 } from "@features/posts";
 
 import {
-  seguirEspacio,
-  dejarDeSeguirEspacio,
   obtenerEstadoSeguimiento,
 } from "@features/spaces";
 
@@ -81,8 +85,14 @@ export default function CommerceProfilePage() {
   const [imagenFile, setImagenFile] = useState(null);
   const [isCreatingPublicacion, setIsCreatingPublicacion] = useState(false);
 
-  const [likeLocks, setLikeLocks] = useState({});
-  const [saveLocks, setSaveLocks] = useState({});
+  const {
+    likeLocks,
+    saveLocks,
+    setLikeLock,
+    setSaveLock,
+    isLikeLocked,
+    isSaveLocked,
+  } = useSocialInteractions();
 
   const [siguiendo, setSiguiendo] = useState(false);
   const [isLoadingFollow, setIsLoadingFollow] = useState(false);
@@ -91,14 +101,7 @@ export default function CommerceProfilePage() {
   const [comparacionMetricas, setComparacionMetricas] = useState(null);
   const [analyticsEspacio, setAnalyticsEspacio] = useState(null);
 
-  const likeLocksMemo = useMemo(() => likeLocks, [likeLocks]);
-  const saveLocksMemo = useMemo(() => saveLocks, [saveLocks]);
-
-  function setLock(setter, pubId, value) {
-    setter((prev) => ({ ...prev, [pubId]: value }));
-  }
-
-  function esComercioMio(comercioData, userData) {
+function esComercioMio(comercioData, userData) {
     if (!comercioData || !userData) return false;
 
     const comercioOwner =
@@ -299,34 +302,20 @@ export default function CommerceProfilePage() {
   async function handleToggleLike(pubId) {
     if (usuarioDebeLoguearse()) return;
 
-    if (likeLocksMemo[pubId]) return;
+    if (isLikeLocked(pubId)) return;
 
-    setLock(setLikeLocks, pubId, true);
+    setLikeLock(pubId, true);
     const snapshot = publicaciones;
 
-    setPublicaciones((prev) =>
-      prev.map((p) => {
-        if (p.id !== pubId) return p;
-
-        const nextLiked = !Boolean(p.liked_by_me);
-        const delta = nextLiked ? 1 : -1;
-
-        return {
-          ...p,
-          liked_by_me: nextLiked,
-          likes_count: Math.max(0, (p.likes_count || 0) + delta),
-          interacciones_count: Math.max(0, (p.interacciones_count || 0) + delta),
-        };
-      })
-    );
+    setPublicaciones((prev) => optimisticToggleLike(prev, pubId));
 
     try {
-      await toggleLikePublicacion(pubId);
+      await toggleLike(pubId);
     } catch (error) {
       setPublicaciones(snapshot);
       setErrorMessage(error.message || "Error al togglear like.");
     } finally {
-      setLock(setLikeLocks, pubId, false);
+      setLikeLock(pubId, false);
     }
   }
 
@@ -342,13 +331,12 @@ export default function CommerceProfilePage() {
     try {
       setIsLoadingFollow(true);
 
-      if (siguiendo) {
-        await dejarDeSeguirEspacio(comercioId);
-        setSiguiendo(false);
-      } else {
-        await seguirEspacio(comercioId);
-        setSiguiendo(true);
-      }
+      await toggleSeguimientoEspacio({
+        comercioId,
+        siguiendo,
+      });
+
+      setSiguiendo(!siguiendo);
 
       // Refrescamos estado y contador real desde backend.
       const estadoSeguimiento = await obtenerEstadoSeguimiento(comercioId);
@@ -370,41 +358,26 @@ export default function CommerceProfilePage() {
 
     if (usuarioDebeLoguearse()) return;
 
-    if (saveLocksMemo[pubId]) return;
+    if (isSaveLocked(pubId)) return;
 
-    setLock(setSaveLocks, pubId, true);
+    setSaveLock(pubId, true);
     const snapshot = publicaciones;
 
     const current = publicaciones.find((p) => p.id === pubId);
     const estabaGuardada = Boolean(current?.guardada_by_me);
 
-    setPublicaciones((prev) =>
-      prev.map((p) => {
-        if (p.id !== pubId) return p;
-
-        const nextSaved = !Boolean(p.guardada_by_me);
-        const delta = nextSaved ? 1 : -1;
-
-        return {
-          ...p,
-          guardada_by_me: nextSaved,
-          guardados_count: Math.max(0, (p.guardados_count || 0) + delta),
-          interacciones_count: Math.max(0, (p.interacciones_count || 0) + delta),
-        };
-      })
-    );
+    setPublicaciones((prev) => optimisticToggleGuardado(prev, pubId));
 
     try {
-      if (estabaGuardada) {
-        await quitarPublicacionGuardada(pubId);
-      } else {
-        await guardarPublicacion(pubId);
-      }
+      await toggleGuardado({
+        publicacionId: pubId,
+        estabaGuardada,
+      });
     } catch (error) {
       setPublicaciones(snapshot);
       setErrorMessage(error.message || "Error al guardar/quitar guardado.");
     } finally {
-      setLock(setSaveLocks, pubId, false);
+      setSaveLock(pubId, false);
     }
   }
 
@@ -752,8 +725,8 @@ export default function CommerceProfilePage() {
                       key={p.id}
                       pub={p}
                       headerRightBadgeText="Comercio"
-                      isActingLike={Boolean(likeLocksMemo[p.id])}
-                      isActingSave={Boolean(saveLocksMemo[p.id])}
+                      isActingLike={Boolean(likeLocks[p.id])}
+                      isActingSave={Boolean(saveLocks[p.id])}
                       onToggleLike={() => handleToggleLike(p.id)}
                       onToggleSave={() => handleToggleSave(p.id)}
                       compact
@@ -1039,3 +1012,12 @@ export default function CommerceProfilePage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+

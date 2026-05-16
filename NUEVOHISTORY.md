@@ -6090,3 +6090,299 @@ Objetivos:
 - preparación Capacitor/mobile packaging
 - desacoplamiento visual/business
 - analytics frontend avanzados
+
+# ETAPA 67 — SOCIAL + FRONTEND ENTERPRISE LAYER
+## CIERRE REAL ETAPA 67
+
+### Objetivo general
+Consolidar la arquitectura frontend enterprise iniciada en ETAPA 66, desacoplando completamente la lógica social del UI/páginas y creando una capa social reusable preparada para:
+- cache global
+- TanStack Query
+- realtime
+- offline/mobile sync
+- analytics sociales
+- escalabilidad enterprise
+
+---
+
+# BLOQUE 1 — ESTRUCTURA SOCIAL ENTERPRISE
+
+Se creó oficialmente el nuevo feature:
+
+```text
+frontend/src/features/social/
+```
+
+Nueva estructura:
+
+```text
+src/features/social/
+├── hooks/
+│   └── useSocialInteractions.js
+├── services/
+│   └── socialInteractionsService.js
+├── state/
+├── utils/
+│   └── socialOptimisticUtils.js
+└── index.js
+```
+
+---
+
+# BLOQUE 2 — OPTIMISTIC SOCIAL LAYER
+
+## Nuevo archivo:
+```text
+src/features/social/utils/socialOptimisticUtils.js
+```
+
+Responsabilidad:
+- centralizar optimistic updates
+- eliminar duplicación de lógica social
+- preparar rollback/caching/realtime futuro
+
+Funciones creadas:
+- safeCounter()
+- optimisticToggleLike()
+- optimisticToggleGuardado()
+
+Mejoras:
+- protección contra contadores negativos
+- lógica reusable entre Feed, Ranking y PerfilEspacio
+- desacoplamiento de optimistic UI
+
+---
+
+# BLOQUE 3 — SOCIAL HOOKS ENTERPRISE
+
+## Nuevo archivo:
+```text
+src/features/social/hooks/useSocialInteractions.js
+```
+
+Responsabilidad:
+- centralizar locks sociales
+- evitar doble click
+- preparar arquitectura para cache/realtime
+
+Funciones:
+- setLikeLock()
+- setSaveLock()
+- isLikeLocked()
+- isSaveLocked()
+
+El hook reemplaza:
+- locks locales repetidos
+- useMemo repetidos
+- setters duplicados
+- lógica locking duplicada en páginas
+
+---
+
+# BLOQUE 4 — SOCIAL SERVICE LAYER
+
+## Nuevo archivo:
+```text
+src/features/social/services/socialInteractionsService.js
+```
+
+Responsabilidad:
+- centralizar acciones sociales
+- desacoplar páginas de requests backend
+- transformar social en feature/domain real
+
+Funciones creadas:
+- toggleLike()
+- toggleGuardado()
+- toggleSeguimientoEspacio()
+
+Ahora:
+- social consume posts/spaces
+- páginas consumen social
+- páginas ya NO conocen lógica backend social directa
+
+---
+
+# BLOQUE 5 — MIGRACIÓN ENTERPRISE DE PÁGINAS
+
+## FeedPage.jsx
+Migrado completamente a:
+- useSocialInteractions()
+- socialInteractionsService.js
+- optimistic utils reutilizables
+
+Eliminado:
+- locks locales
+- setLock manual
+- lógica optimistic duplicada
+- requests sociales directos
+
+---
+
+## RankingPage.jsx
+Migrado completamente a:
+- useSocialInteractions()
+- socialInteractionsService.js
+- optimistic utils reutilizables
+
+Eliminado:
+- locks duplicados
+- lógica social repetida
+- requests sociales directos
+
+---
+
+## PerfilComercioPage.jsx
+Migrado completamente a:
+- useSocialInteractions()
+- socialInteractionsService.js
+- optimistic utils reutilizables
+
+Eliminado:
+- locks manuales
+- lógica follow duplicada
+- requests sociales directos
+- lógica social acoplada
+
+---
+
+# NUEVA ARQUITECTURA SOCIAL FRONTEND
+
+Antes:
+
+```text
+Pages
+ ├── Posts Services
+ ├── Spaces Services
+ └── lógica social repetida
+```
+
+Ahora:
+
+```text
+Pages/UI
+    ↓
+features/social
+    ↓
+features/posts + features/spaces
+    ↓
+http/api
+```
+
+---
+
+# BENEFICIOS ARQUITECTÓNICOS OBTENIDOS
+
+## Desacoplamiento real
+- UI separada de lógica social
+- social como dominio reutilizable
+
+## Reusabilidad
+- optimistic updates compartidos
+- locks compartidos
+- actions compartidas
+
+## Escalabilidad
+Preparado para:
+- TanStack Query
+- cache global
+- realtime
+- websocket sync
+- mobile sync
+- offline persistence
+- analytics sociales
+- event tracking
+
+## Mantenibilidad
+- menos duplicación
+- menos bugs por inconsistencias
+- menos lógica repetida
+
+---
+
+# ESTADO REAL DEL FRONTEND
+
+FeedGo! dejó de comportarse como:
+
+```text
+frontend CRUD tradicional
+```
+
+y comenzó a consolidarse como:
+
+```text
+frontend social enterprise architecture
+```
+
+con:
+- feature domains
+- reusable social layer
+- enterprise modular architecture
+- desacoplamiento real
+- base para escalabilidad grande
+
+---
+
+# ARCHIVOS NUEVOS CREADOS
+
+## Social Feature
+
+```text
+frontend/src/features/social/
+├── hooks/
+│   └── useSocialInteractions.js
+├── services/
+│   └── socialInteractionsService.js
+├── utils/
+│   └── socialOptimisticUtils.js
+└── index.js
+```
+
+---
+
+# ARCHIVOS MODIFICADOS
+
+## Feed
+```text
+frontend/src/features/feed/pages/FeedPage.jsx
+```
+
+## Posts
+```text
+frontend/src/features/posts/pages/RankingPage.jsx
+```
+
+## Spaces
+```text
+frontend/src/features/spaces/pages/PerfilComercioPage.jsx
+```
+
+---
+
+# VALIDACIONES REALIZADAS
+
+Se validó correctamente:
+- like/unlike
+- guardar/quitar guardado
+- seguimiento espacios
+- optimistic UI
+- rollback
+- locks sociales
+
+Todo funcionando correctamente tras la migración.
+
+---
+
+# SIGUIENTE ETAPA RECOMENDADA
+
+# ETAPA 68 — TANSTACK QUERY + CACHE ENTERPRISE
+
+Objetivos:
+- cache global inteligente
+- invalidaciones automáticas
+- optimistic sync real
+- menos requests duplicados
+- persist cache
+- mobile/offline readiness
+- realtime preparation
+- websocket hydration futura
