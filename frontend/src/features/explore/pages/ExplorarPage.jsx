@@ -41,6 +41,9 @@ export default function ExplorarPage() {
     return "espacios";
   });
 
+  const [comercios, setComercios] = useState([]);
+  const [publicaciones, setPublicaciones] = useState([]);
+
   const [limit] = useState(20);
   const [offset, setOffset] = useState(0);
   const [hayMas, setHayMas] = useState(true);
@@ -64,6 +67,11 @@ export default function ExplorarPage() {
   const publicacionesQueryData = Array.isArray(publicacionesQuery.data)
   ? publicacionesQuery.data
   : [];
+
+  const estaCargandoQuery =
+    modoExplorar === "publicaciones"
+      ? publicacionesQuery.isLoading || publicacionesQuery.isFetching
+      : espaciosQuery.isLoading || espaciosQuery.isFetching;
 
   const navigate = useNavigate();
   const debounceRef = useRef(null);
@@ -317,7 +325,7 @@ export default function ExplorarPage() {
       )}
 
       {/* LOADING INICIAL */}
-      {cargando && itemsActuales.length === 0 && (
+      {estaCargandoQuery && itemsActuales.length === 0 && (
         <div className="rounded-xl border p-3">
           <p className="text-sm">Cargando...</p>
         </div>
@@ -437,7 +445,7 @@ export default function ExplorarPage() {
       )}
 
       {/* SIN RESULTADOS */}
-      {!cargando && itemsActuales.length === 0 && !error && (
+      {!estaCargandoQuery && itemsActuales.length === 0 && !error && (
         <div className="rounded-xl border p-3">
           <p className="text-sm">
             {modoExplorar === "publicaciones"
