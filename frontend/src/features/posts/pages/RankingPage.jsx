@@ -19,8 +19,8 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+
 import {
-  fetchRankingPublicaciones,
   fetchFeedPublicaciones,
   fetchPublicacionesGuardadas,
 } from "@features/posts";
