@@ -1,5 +1,6 @@
 // frontend/src/context/AuthContext.jsx
 import { createContext, useEffect, useMemo, useState } from "react";
+import { queryClient } from "@core/query/queryClient";
 import { getMe, logoutUsuario } from "@features/auth/services/authService";
 
 export const AuthContext = createContext(null);
@@ -29,15 +30,25 @@ export function AuthProvider({ children }) {
   const [isCargandoUsuario, setIsCargandoUsuario] = useState(false);
 
   function limpiarSesionLocal() {
-    // Centralizamos limpieza para evitar estados inconsistentes
+    // Centralizamos limpieza para evitar estados inconsistentes.
     localStorage.removeItem("access_token");
     setAccessToken(null);
     setEstaAutenticado(false);
     setUsuario(null);
+
+    // Limpiamos cache TanStack Query al cerrar o invalidar sesión.
+    // Evita que el modo exploración herede liked_by_me / guardada_by_me
+    // de un usuario anterior.
+    queryClient.clear();
   }
 
   function login(token) {
     if (!token || typeof token !== "string") return;
+
+    // Limpiamos cache anterior antes de iniciar una nueva sesión.
+    // Evita mezclar datos personales entre usuarios distintos.
+    queryClient.clear();
+
     localStorage.setItem("access_token", token);
     setAccessToken(token);
     setEstaAutenticado(true);

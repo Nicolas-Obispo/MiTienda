@@ -6386,3 +6386,540 @@ Objetivos:
 - mobile/offline readiness
 - realtime preparation
 - websocket hydration futura
+
+
+# ETAPA 68 — TANSTACK QUERY + CACHE ENTERPRISE (CIERRE REAL)
+
+## Objetivo
+
+Continuar la migración enterprise del frontend hacia TanStack Query para centralizar cache, reducir fetches manuales, unificar actualizaciones optimistas y preparar la arquitectura para futuras capacidades como sincronización en tiempo real, offline-first y escalabilidad mobile.
+
+El objetivo principal fue validar que Likes, Guardados y estados personalizados del usuario funcionaran correctamente en todas las pantallas utilizando cache compartida sin romper la arquitectura existente.
+
+---
+
+# Arquitectura incorporada
+
+## Dependencias
+
+Se incorporaron:
+
+```bash
+@tanstack/react-query
+@tanstack/react-query-devtools
+```
+
+---
+
+## Query Client Global
+
+Se creó:
+
+```text
+frontend/src/core/query/queryClient.js
+```
+
+Responsabilidad:
+
+- Configuración centralizada de cache.
+- staleTime.
+- gcTime.
+- retry.
+- Punto único de administración de QueryClient.
+
+---
+
+## Provider Global
+
+Se integró TanStack Query en:
+
+```text
+frontend/src/main.jsx
+```
+
+Incorporando:
+
+```jsx
+<QueryClientProvider client={queryClient}>
+```
+
+y:
+
+```jsx
+<ReactQueryDevtools />
+```
+
+---
+
+## Query Keys Centralizadas
+
+Se creó:
+
+```text
+frontend/src/core/constants/queryKeys.js
+```
+
+Responsabilidad:
+
+- Evitar strings hardcodeados.
+- Unificar invalidaciones.
+- Preparar sincronización futura.
+
+Keys implementadas:
+
+```text
+feed.publicaciones()
+ranking.publicaciones()
+posts.detalle(id)
+spaces.detalle(id)
+spaces.publicaciones(id)
+stories.bySpace(id)
+analytics.espacio(id)
+```
+
+---
+
+# Hooks migrados a TanStack Query
+
+## Feed
+
+```text
+useFeedPublicaciones.js
+```
+
+Responsabilidad:
+
+- Obtener publicaciones del feed.
+- Centralizar cache.
+- Reutilizar datos entre pantallas.
+
+---
+
+## Ranking
+
+```text
+useRankingPublicaciones.js
+```
+
+Responsabilidad:
+
+- Obtener ranking de publicaciones.
+- Compartir cache global.
+
+---
+
+## Detalle
+
+```text
+usePublicacionDetalle.js
+```
+
+Responsabilidad:
+
+- Obtener publicación individual.
+- Mantener cache por publicación.
+
+---
+
+# Mutations centralizadas
+
+## Like
+
+```text
+useToggleLikePublicacionMutation.js
+```
+
+Implementado:
+
+- useMutation.
+- optimistic update global.
+- rollback global ante error.
+- actualización simultánea de Feed, Ranking, Detalle y futuras listas.
+
+---
+
+## Guardado
+
+```text
+useToggleGuardadoPublicacionMutation.js
+```
+
+Implementado:
+
+- useMutation.
+- optimistic update global.
+- rollback global ante error.
+- sincronización compartida.
+
+---
+
+# Utilidades de cache
+
+Se consolidó:
+
+```text
+frontend/src/features/social/utils/socialCacheUtils.js
+```
+
+Responsabilidad:
+
+- Actualizar publicaciones en cache compartida.
+- Evitar duplicación de lógica.
+- Mantener sincronización entre múltiples vistas.
+
+Funciones principales:
+
+```text
+actualizarPublicacionEnCache()
+aplicarLikeOptimistaEnCache()
+aplicarGuardadoOptimistaEnCache()
+```
+
+---
+
+# Diagnóstico realizado
+
+Antes de corregir código se realizó una depuración completa siguiendo una matriz de chequeo basada en rutas funcionales.
+
+Metodología utilizada:
+
+```text
+Pantalla
+↓
+Fuente de datos
+↓
+Render
+↓
+Estado local
+↓
+Mutation
+↓
+Cache
+↓
+Backend
+↓
+Resultado visual
+```
+
+---
+
+# Hallazgos encontrados
+
+## Hallazgo 1
+
+Backend NO era el problema.
+
+Verificado mediante logs:
+
+```text
+POST like -> 200 OK
+POST guardado -> 201 Created
+DELETE guardado -> 204 No Content
+logout -> 200 OK
+```
+
+---
+
+## Hallazgo 2
+
+PublicacionCard NO era el problema.
+
+Renderizaba correctamente:
+
+```js
+pub.liked_by_me
+pub.guardada_by_me
+```
+
+---
+
+## Hallazgo 3
+
+Las mutations funcionaban correctamente.
+
+Se verificó:
+
+```text
+optimistic update
+rollback
+sincronización de cache
+```
+
+sin errores.
+
+---
+
+## Hallazgo 4
+
+Las utilidades de cache funcionaban correctamente.
+
+socialCacheUtils actualizaba:
+
+```text
+Feed
+Ranking
+Detalle
+Publicaciones
+```
+
+de manera consistente.
+
+---
+
+## Hallazgo 5
+
+Feed funcionaba correctamente tras la migración.
+
+No se detectaron inconsistencias de sincronización.
+
+---
+
+## Hallazgo 6
+
+Ranking funcionaba correctamente tras las pruebas completas.
+
+No se reprodujeron errores de sincronización entre vistas.
+
+---
+
+## Hallazgo 7
+
+Detalle de publicación funcionaba correctamente.
+
+Los estados:
+
+```text
+liked_by_me
+guardada_by_me
+```
+
+se reflejaban de forma coherente.
+
+---
+
+## Hallazgo 8 (CRÍTICO)
+
+Se detectó riesgo real de contaminación de cache entre sesiones.
+
+AuthContext limpiaba:
+
+```text
+access_token
+usuario
+estaAutenticado
+```
+
+pero NO limpiaba:
+
+```text
+TanStack Query Cache
+```
+
+Esto podía provocar que:
+
+```text
+liked_by_me
+guardada_by_me
+```
+
+persistieran visualmente después del logout.
+
+---
+
+# Corrección aplicada
+
+Archivo:
+
+```text
+frontend/src/features/auth/context/AuthContext.jsx
+```
+
+Se incorporó:
+
+```js
+queryClient.clear();
+```
+
+en:
+
+```js
+login()
+```
+
+y:
+
+```js
+limpiarSesionLocal()
+```
+
+utilizado por:
+
+```js
+logout()
+```
+
+Objetivo:
+
+```text
+Eliminar completamente cache previa al iniciar sesión.
+Eliminar completamente cache al cerrar sesión.
+Evitar contaminación entre usuarios.
+Evitar contaminación entre modo autenticado y exploración pública.
+```
+
+---
+
+# Matriz completa de validación
+
+## BLOQUE A — Feed
+
+Validado:
+
+```text
+✓ Like
+✓ Guardado
+✓ UI
+✓ Cache
+✓ Backend
+✓ Contadores
+```
+
+---
+
+## BLOQUE B — Detalle publicación
+
+Validado:
+
+```text
+✓ Like
+✓ Guardado
+✓ Query
+✓ Estado local
+✓ Cache
+✓ UI
+```
+
+---
+
+## BLOQUE C — Ranking
+
+Validado:
+
+```text
+✓ Like
+✓ Guardado
+✓ Feed sincronizado
+✓ Detalle sincronizado
+✓ Contadores correctos
+```
+
+---
+
+## BLOQUE D — PerfilComercio
+
+Validado:
+
+```text
+✓ Like
+✓ Guardado
+✓ Feed sincronizado
+✓ Ranking sincronizado
+✓ Detalle sincronizado
+✓ Contadores correctos
+```
+
+---
+
+## BLOQUE E — Exploración pública
+
+Validado:
+
+```text
+✓ Publicaciones públicas
+✓ Detalle público
+✓ Espacios públicos
+✓ Like apagado
+✓ Guardado apagado
+✓ Redirección correcta a Login
+✓ Sin contaminación de sesión anterior
+```
+
+---
+
+## BLOQUE F — Cambio de sesión
+
+Validado:
+
+```text
+✓ Login
+✓ Like
+✓ Guardado
+✓ Logout
+✓ Exploración
+✓ Login nuevamente
+✓ Estado correcto recuperado
+```
+
+---
+
+# Resultado final
+
+La hipótesis principal fue confirmada:
+
+```text
+Contaminación de cache TanStack entre sesiones
+```
+
+La corrección aplicada en AuthContext resolvió el problema sin necesidad de modificar:
+
+```text
+FeedPage
+RankingPage
+PublicacionDetallePage
+PerfilComercioPage
+useToggleLikePublicacionMutation
+useToggleGuardadoPublicacionMutation
+socialCacheUtils
+```
+
+Todas las rutas de interacción quedaron funcionando correctamente.
+
+---
+
+# Estado del proyecto
+
+ETAPA 68:
+
+```text
+COMPLETADA
+ESTABLE
+VALIDADA
+```
+
+Objetivos cumplidos:
+
+```text
+✓ TanStack Query integrado
+✓ Cache compartida funcionando
+✓ Optimistic updates funcionando
+✓ Sincronización entre pantallas validada
+✓ Login/Logout estabilizado
+✓ Exploración pública validada
+✓ Sin contaminación de cache entre sesiones
+```
+
+---
+
+# Próxima etapa sugerida
+
+## ETAPA 69
+
+Continuar consolidando la arquitectura enterprise del frontend:
+
+```text
+- Finalizar migración de pantallas restantes a TanStack Query.
+- Reducir estados locales redundantes.
+- Consolidar invalidaciones y refetch controlados.
+- Preparar base para realtime y notificaciones futuras.
+- Mantener backend como única fuente de verdad.
+```

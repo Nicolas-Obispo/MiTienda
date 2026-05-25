@@ -239,5 +239,9 @@ export async function fetchPublicacionesPublicas({
     `/publicaciones/?limit=${limit}&offset=${offset}`
   );
 
-  return normalizarListaRespuesta(data);
+  return normalizarListaRespuesta(data).map((publicacion) => ({
+    ...publicacion,
+    liked_by_me: false,
+    guardada_by_me: false,
+  }));
 }

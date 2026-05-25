@@ -8,3 +8,5 @@ export * from "@features/posts/services/feed_service";
 
 export { default as RankingPage } from '@features/posts/pages/RankingPage';
 export { default as PublicacionDetallePage } from '@features/posts/pages/PublicacionDetallePage';
+export * from "./hooks/useRankingPublicaciones";
+export * from "./hooks/usePublicacionDetalle";

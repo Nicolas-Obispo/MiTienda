@@ -7,26 +7,24 @@
  * - Backend sigue siendo fuente de verdad
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { PublicacionCard } from "@features/posts";
 import { HistoriasBar } from "@features/stories";
 import { HistoriasViewer } from "@features/stories";
 import { getMediaUrlFromAny } from "@shared";
+import { useFeedPublicaciones } from "@features/feed/hooks/useFeedPublicaciones";
 
 import {
   optimisticToggleGuardado,
   optimisticToggleLike,
-  toggleGuardado,
-  toggleLike,
   useSocialInteractions,
+  useToggleLikePublicacionMutation,
+  useToggleGuardadoPublicacionMutation,
 } from "@features/social";
 
-import {
-  fetchFeedPublicaciones,
-  fetchPublicacionesGuardadas,
-} from "@features/posts";
+import { fetchPublicacionesGuardadas } from "@features/posts";
 
 import {
   fetchHistoriasPorComercio,
@@ -37,6 +35,12 @@ import {
 export default function FeedPage() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const {
+    data: feedData = [],
+    isLoading: isFeedLoading,
+    error: feedQueryError,
+  } = useFeedPublicaciones();
 
   const [isLoading, setIsLoading] = useState(true);
   const [publicaciones, setPublicaciones] = useState([]);
@@ -63,6 +67,12 @@ export default function FeedPage() {
   isLikeLocked,
   isSaveLocked,
 } = useSocialInteractions();
+
+  const toggleLikeMutation =
+    useToggleLikePublicacionMutation();
+  
+  const toggleGuardadoMutation =
+    useToggleGuardadoPublicacionMutation();
 
   async function cerrarViewer() {
     await loadHistoriasBar();
@@ -142,15 +152,17 @@ export default function FeedPage() {
 
   async function loadFeed() {
     try {
-      setIsLoading(true);
       setErrorMessage("");
 
-      const [feedData, guardadasData] = await Promise.all([
-        fetchFeedPublicaciones(),
-        fetchPublicacionesGuardadas(),
-      ]);
+      if (feedQueryError) {
+        throw feedQueryError;
+      }
 
-      const feedItems = Array.isArray(feedData) ? feedData : feedData?.items || [];
+      const feedItems = Array.isArray(feedData)
+        ? feedData
+        : feedData?.items || [];
+
+      const guardadasData = await fetchPublicacionesGuardadas();
 
       const guardadasItems = Array.isArray(guardadasData)
         ? guardadasData
@@ -168,22 +180,45 @@ export default function FeedPage() {
       }));
 
       setPublicaciones(merged);
-
-      // Cargamos historias aparte, sin frenar el Feed.
-      loadHistoriasBar();
+      setIsLoading(false);
     } catch (error) {
       setErrorMessage(error?.message || "Error desconocido cargando el feed.");
       setPublicaciones([]);
-      setHistoriasItems([]);
-      setHistoriasErrorMessage("");
-    } finally {
       setIsLoading(false);
     }
   }
 
   useEffect(() => {
+    if (isFeedLoading) return;
+
     loadFeed();
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFeedLoading, feedQueryError]);
+
+
+  useEffect(() => {
+    if (feedQueryError) {
+      setErrorMessage(
+        feedQueryError?.message || "Error desconocido cargando el feed."
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    if (isFeedLoading && publicaciones.length === 0) {
+      setIsLoading(true);
+      return;
+    }
+
+    if (!isFeedLoading && publicaciones.length > 0) {
+      setIsLoading(false);
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFeedLoading, feedQueryError]);
+
+  useEffect(() => {
     const shouldShowWelcome =
       sessionStorage.getItem("show_miplaza_welcome") === "true";
 
@@ -191,8 +226,6 @@ export default function FeedPage() {
       setShowWelcomeModal(true);
       sessionStorage.removeItem("show_miplaza_welcome");
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
@@ -308,9 +341,8 @@ export default function FeedPage() {
     setPublicaciones((prev) => optimisticToggleLike(prev, pubId));
 
     try {
-      await toggleLike(pubId);
+      await toggleLikeMutation.mutateAsync(pubId);
     } catch (error) {
-      setPublicaciones(snapshot);
       setErrorMessage(error?.message || "Error al togglear like.");
     } finally {
       setLikeLock(pubId, false);
@@ -329,12 +361,11 @@ export default function FeedPage() {
     setPublicaciones((prev) => optimisticToggleGuardado(prev, pubId));
 
     try {
-      await toggleGuardado({
+      await toggleGuardadoMutation.mutateAsync({
         publicacionId: pubId,
         estabaGuardada,
       });
     } catch (error) {
-      setPublicaciones(snapshot);
       setErrorMessage(error?.message || "Error al guardar/quitar guardado.");
     } finally {
       setSaveLock(pubId, false);
@@ -394,7 +425,7 @@ export default function FeedPage() {
           </div>
         )}
 
-        {!isLoading && !errorMessage && publicaciones.length === 0 && (
+        {!isLoading && !isFeedLoading && !errorMessage && publicaciones.length === 0 && (
           <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6 text-center">
             <p className="font-semibold text-gray-200">No hay publicaciones</p>
             <p className="mt-2 text-sm text-gray-400">
@@ -548,6 +579,13 @@ export default function FeedPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
 
 
 

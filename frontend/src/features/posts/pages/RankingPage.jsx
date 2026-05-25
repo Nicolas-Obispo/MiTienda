@@ -26,16 +26,23 @@ import {
 } from "@features/posts";
 
 import { PublicacionCard } from "@features/posts";
+import { useRankingPublicaciones } from "@features/posts/hooks/useRankingPublicaciones";
 
 import {
   optimisticToggleGuardado,
   optimisticToggleLike,
-  toggleGuardado,
-  toggleLike,
   useSocialInteractions,
+  useToggleLikePublicacionMutation,
+  useToggleGuardadoPublicacionMutation,
 } from "@features/social";
 
 export default function RankingPage() {
+  const {
+    data: rankingData = [],
+    isLoading: isRankingLoading,
+    error: rankingQueryError,
+  } = useRankingPublicaciones();
+
   const [isLoading, setIsLoading] = useState(true);
   const [publicaciones, setPublicaciones] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
@@ -48,17 +55,26 @@ export default function RankingPage() {
     isSaveLocked,
   } = useSocialInteractions();
 
+    const toggleLikeMutation =
+    useToggleLikePublicacionMutation();
+
+  const toggleGuardadoMutation =
+    useToggleGuardadoPublicacionMutation();
+
   async function loadRanking() {
     try {
       setIsLoading(true);
       setErrorMessage("");
 
       // Ranking define el orden, Feed define liked_by_me real por usuario
-      const [rankingData, feedData, guardadasData] = await Promise.all([
-        fetchRankingPublicaciones(),
+      const [feedData, guardadasData] = await Promise.all([
         fetchFeedPublicaciones(),
         fetchPublicacionesGuardadas(),
       ]);
+
+      if (rankingQueryError) {
+        throw rankingQueryError;
+      }
 
       const rankingItems = Array.isArray(rankingData)
         ? rankingData
@@ -113,8 +129,10 @@ export default function RankingPage() {
   }
 
   useEffect(() => {
+    if (isRankingLoading) return;
+
     loadRanking();
-  }, []);
+  }, [rankingData, isRankingLoading, rankingQueryError]);
 
   /**
    * Optimistic Like
@@ -129,7 +147,7 @@ export default function RankingPage() {
     setPublicaciones((prev) => optimisticToggleLike(prev, pubId));
 
     try {
-      await toggleLike(pubId);
+      await toggleLikeMutation.mutateAsync(pubId);
     } catch (error) {
       setPublicaciones(snapshot);
       setErrorMessage(error.message || "Error al togglear like.");
@@ -154,10 +172,10 @@ export default function RankingPage() {
     setPublicaciones((prev) => optimisticToggleGuardado(prev, pubId));
 
     try {
-      await toggleGuardado({
-          publicacionId: pubId,
-          estabaGuardada,
-        });
+      await toggleGuardadoMutation.mutateAsync({
+        publicacionId: pubId,
+        estabaGuardada,
+      });
     } catch (error) {
       setPublicaciones(snapshot);
       setErrorMessage(error.message || "Error al guardar/quitar guardado.");

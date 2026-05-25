@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { httpGet } from "@core";
 import { InteraccionButton } from "@shared";
 import { useAuth } from "@features/auth";
 import { getMediaUrlFromAny } from "@shared";
+import { usePublicacionDetalle } from "@features/posts";
 import {
-  toggleLikePublicacion,
-  guardarPublicacion,
-  quitarPublicacionGuardada,
-} from "@features/posts";
+  useToggleGuardadoPublicacionMutation,
+  useToggleLikePublicacionMutation,
+} from "@features/social";
 
 export default function PublicacionDetallePage() {
   const { id } = useParams();
@@ -17,7 +16,15 @@ export default function PublicacionDetallePage() {
   const { usuario, user } = useAuth();
   const usuarioActivo = usuario || user || null;
 
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    data: publicacionQuery,
+    isLoading,
+    error: publicacionError,
+  } = usePublicacionDetalle(id);
+
+  const likeMutation = useToggleLikePublicacionMutation();
+  const guardadoMutation = useToggleGuardadoPublicacionMutation();
+
   const [publicacion, setPublicacion] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -90,74 +97,32 @@ export default function PublicacionDetallePage() {
     );
   }
 
-  async function loadPublicacion() {
-    try {
-      setIsLoading(true);
-      setErrorMessage("");
+  useEffect(() => {
+    if (!publicacionQuery) return;
 
-      const token = localStorage.getItem("access_token");
-      const data = await httpGet(`/publicaciones/${id}`, token);
-
-      // 🔥 NUEVO: verificar si el comercio es mío
-      if (data?.comercio_id && usuarioActivo) {
-        try {
-          const comercioData = await httpGet(
-            `/comercios/${data.comercio_id}`,
-            token
-          );
-
-          const owner =
-            comercioData.owner_user_id ??
-            comercioData.usuario_id ??
-            comercioData.propietario_id ??
-            null;
-
-          const userId =
-            usuarioActivo.id ??
-            usuarioActivo.user_id ??
-            usuarioActivo.usuario_id ??
-            null;
-
-          setEsDuenoComercio(
-            owner != null && userId != null && Number(owner) === Number(userId)
-          );
-        } catch {
-          setEsDuenoComercio(false);
-        }
-      }
-
-      console.log("DATA PUBLICACION DETALLE:", data);
-
-      setPublicacion(data);
-      setLiked(Boolean(data?.liked_by_me));
-      setGuardada(Boolean(data?.guardada_by_me));
-    } catch (error) {
-      setPublicacion(null);
-
-      const mensaje = error?.message || "";
-
-      const publicacionNoDisponible =
-        mensaje.includes("404") ||
-        mensaje.toLowerCase().includes("not found") ||
-        mensaje.toLowerCase().includes("no encontrada") ||
-        mensaje.toLowerCase().includes("no existe");
-
-      if (publicacionNoDisponible) {
-        setErrorMessage(
-          "Lo siento, esta publicación ya no está disponible..."
-        );
-      } else {
-        setErrorMessage(mensaje || "Error cargando la publicación.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    setPublicacion(publicacionQuery);
+    setLiked(Boolean(publicacionQuery?.liked_by_me));
+    setGuardada(Boolean(publicacionQuery?.guardada_by_me));
+    setErrorMessage("");
+  }, [publicacionQuery]);
 
   useEffect(() => {
-    loadPublicacion();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    if (!publicacionError) return;
+
+    const mensaje = publicacionError?.message || "";
+
+    const publicacionNoDisponible =
+      mensaje.includes("404") ||
+      mensaje.toLowerCase().includes("not found") ||
+      mensaje.toLowerCase().includes("no encontrada") ||
+      mensaje.toLowerCase().includes("no existe");
+
+    if (publicacionNoDisponible) {
+      setErrorMessage("Lo siento, esta publicación ya no está disponible...");
+    } else {
+      setErrorMessage(mensaje || "Error cargando la publicación.");
+    }
+  }, [publicacionError]);
 
   async function handleToggleLike() {
     if (usuarioDebeLoguearse()) return;
@@ -168,25 +133,12 @@ export default function PublicacionDetallePage() {
     const snapshot = publicacion;
     const snapshotLiked = liked;
 
-    const nextLiked = !liked;
-    const delta = nextLiked ? 1 : -1;
-
-    setLiked(nextLiked);
-    setPublicacion((prev) => ({
-      ...prev,
-      liked_by_me: nextLiked,
-      likes_count: Math.max(0, (prev?.likes_count || 0) + delta),
-      interacciones_count: Math.max(
-        0,
-        (prev?.interacciones_count || 0) + delta
-      ),
-    }));
+    setLiked((prev) => !prev);
 
     try {
-      await toggleLikePublicacion(Number(id));
+      await likeMutation.mutateAsync(Number(id));
     } catch (error) {
       setLiked(snapshotLiked);
-      setPublicacion(snapshot);
       setErrorMessage(error?.message || "Error al dar like.");
     } finally {
       setIsActingLike(false);
@@ -199,32 +151,17 @@ export default function PublicacionDetallePage() {
 
     setIsActingSave(true);
 
-    const snapshot = publicacion;
     const snapshotGuardada = guardada;
 
-    const nextGuardada = !guardada;
-    const delta = nextGuardada ? 1 : -1;
-
-    setGuardada(nextGuardada);
-    setPublicacion((prev) => ({
-      ...prev,
-      guardada_by_me: nextGuardada,
-      guardados_count: Math.max(0, (prev?.guardados_count || 0) + delta),
-      interacciones_count: Math.max(
-        0,
-        (prev?.interacciones_count || 0) + delta
-      ),
-    }));
+    setGuardada((prev) => !prev);
 
     try {
-      if (guardada) {
-        await quitarPublicacionGuardada(Number(id));
-      } else {
-        await guardarPublicacion(Number(id));
-      }
+      await guardadoMutation.mutateAsync({
+        publicacionId: Number(id),
+        estabaGuardada: snapshotGuardada,
+      });
     } catch (error) {
       setGuardada(snapshotGuardada);
-      setPublicacion(snapshot);
       setErrorMessage(error?.message || "Error al guardar.");
     } finally {
       setIsActingSave(false);

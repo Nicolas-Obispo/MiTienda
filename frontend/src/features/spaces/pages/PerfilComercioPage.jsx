@@ -312,7 +312,6 @@ function esComercioMio(comercioData, userData) {
     try {
       await toggleLike(pubId);
     } catch (error) {
-      setPublicaciones(snapshot);
       setErrorMessage(error.message || "Error al togglear like.");
     } finally {
       setLikeLock(pubId, false);
@@ -366,15 +365,12 @@ function esComercioMio(comercioData, userData) {
     const current = publicaciones.find((p) => p.id === pubId);
     const estabaGuardada = Boolean(current?.guardada_by_me);
 
-    setPublicaciones((prev) => optimisticToggleGuardado(prev, pubId));
-
     try {
       await toggleGuardado({
         publicacionId: pubId,
         estabaGuardada,
       });
     } catch (error) {
-      setPublicaciones(snapshot);
       setErrorMessage(error.message || "Error al guardar/quitar guardado.");
     } finally {
       setSaveLock(pubId, false);
