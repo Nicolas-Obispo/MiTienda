@@ -19,6 +19,11 @@
  */
 
 import React, { useEffect, useRef, useState } from "react";
+import {
+  useExplorarEspacios,
+  useExplorarPublicaciones,
+} from "@features/explore";
+
 import { listarComerciosActivos } from "@features/spaces";
 import { fetchPublicacionesPublicas } from "@features/posts";
 import { useNavigate } from "react-router-dom";
@@ -36,12 +41,29 @@ export default function ExplorarPage() {
     return "espacios";
   });
 
-  const [comercios, setComercios] = useState([]);
-  const [publicaciones, setPublicaciones] = useState([]);
-
   const [limit] = useState(20);
   const [offset, setOffset] = useState(0);
   const [hayMas, setHayMas] = useState(true);
+
+  const espaciosQuery = useExplorarEspacios({
+    q: _normalizarBusqueda(busqueda),
+    smart: _usarModoIA(_normalizarBusqueda(busqueda)),
+    limit,
+    offset: 0,
+  });
+
+  const publicacionesQuery = useExplorarPublicaciones({
+    limit,
+    offset: 0,
+  });
+
+  const espaciosQueryData = Array.isArray(espaciosQuery.data)
+  ? espaciosQuery.data
+  : [];
+
+  const publicacionesQueryData = Array.isArray(publicacionesQuery.data)
+  ? publicacionesQuery.data
+  : [];
 
   const navigate = useNavigate();
   const debounceRef = useRef(null);
@@ -227,12 +249,14 @@ export default function ExplorarPage() {
   const qUI = _normalizarBusqueda(busqueda);
   const modoIAActivo = _usarModoIA(qUI);
 
-  const publicacionesFiltradas = publicaciones.filter((publicacion) =>
+  const publicacionesFiltradas = publicacionesQueryData.filter((publicacion) =>
     publicacionCoincideConBusqueda(publicacion, qUI)
   );
 
   const itemsActuales =
-    modoExplorar === "publicaciones" ? publicacionesFiltradas : comercios;
+    modoExplorar === "publicaciones"
+      ? publicacionesFiltradas
+      : espaciosQueryData;
 
   return (
     <div className="p-4 space-y-4">
@@ -310,7 +334,7 @@ export default function ExplorarPage() {
             gap-3
           "
         >
-          {comercios.map((c) => {
+          {espaciosQueryData.map((c) => {
             const comercioImagenUrl = getMediaUrlFromAny(c);
 
             return (
