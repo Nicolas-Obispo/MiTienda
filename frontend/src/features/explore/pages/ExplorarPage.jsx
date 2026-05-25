@@ -18,21 +18,17 @@
  * - NO se toca lógica de backend
  */
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   useExplorarEspacios,
   useExplorarPublicaciones,
 } from "@features/explore";
 
-import { listarComerciosActivos } from "@features/spaces";
-import { fetchPublicacionesPublicas } from "@features/posts";
 import { useNavigate } from "react-router-dom";
 import { getMediaUrlFromAny } from "@shared";
 
 export default function ExplorarPage() {
   const [busqueda, setBusqueda] = useState("");
-  const [cargando, setCargando] = useState(false);
-  const [error, setError] = useState("");
 
   const [modoExplorar, setModoExplorar] = useState(() => {
     const modoGuardado = localStorage.getItem("miplaza_explorar_modo");
@@ -41,12 +37,7 @@ export default function ExplorarPage() {
     return "espacios";
   });
 
-  const [comercios, setComercios] = useState([]);
-  const [publicaciones, setPublicaciones] = useState([]);
-
   const [limit] = useState(20);
-  const [offset, setOffset] = useState(0);
-  const [hayMas, setHayMas] = useState(true);
 
   const espaciosQuery = useExplorarEspacios({
     q: _normalizarBusqueda(busqueda),
@@ -73,8 +64,12 @@ export default function ExplorarPage() {
       ? publicacionesQuery.isLoading || publicacionesQuery.isFetching
       : espaciosQuery.isLoading || espaciosQuery.isFetching;
 
+  const error =
+    modoExplorar === "publicaciones"
+      ? publicacionesQuery.error?.message
+      : espaciosQuery.error?.message;
+
   const navigate = useNavigate();
-  const debounceRef = useRef(null);
 
   function _normalizarBusqueda(valor) {
     if (!valor) return null;
@@ -136,113 +131,6 @@ export default function ExplorarPage() {
     url.toLowerCase().includes(ext)
   );
   }
-
-  async function cargarPrimerPagina(qRaw) {
-    setCargando(true);
-    setError("");
-
-    const q = _normalizarBusqueda(qRaw);
-    const smart = _usarModoIA(q);
-
-    try {
-      if (modoExplorar === "publicaciones") {
-        const data = await fetchPublicacionesPublicas({
-          limit,
-          offset: 0,
-        });
-        const lista = Array.isArray(data) ? data : [];
-
-        setPublicaciones(lista);
-        setHayMas(false);
-        return;
-      }
-
-      const data = await listarComerciosActivos({
-        q,
-        smart,
-        limit,
-        offset: 0,
-      });
-
-      const lista = Array.isArray(data) ? data : [];
-
-      setComercios(lista);
-      setOffset(lista.length);
-      setHayMas(lista.length === limit);
-    } catch (e) {
-      setError(
-        e?.message ||
-          (modoExplorar === "publicaciones"
-            ? "Error al cargar publicaciones"
-            : "Error al cargar comercios")
-      );
-
-      if (modoExplorar === "publicaciones") {
-        setPublicaciones([]);
-      } else {
-        setComercios([]);
-      }
-
-      setOffset(0);
-      setHayMas(false);
-    } finally {
-      setCargando(false);
-    }
-  }
-
-  async function cargarMas() {
-    if (cargando || !hayMas || modoExplorar === "publicaciones") return;
-
-    setCargando(true);
-    setError("");
-
-    const q = _normalizarBusqueda(busqueda);
-    const smart = _usarModoIA(q);
-
-    try {
-      const data = await listarComerciosActivos({
-        q,
-        smart,
-        limit,
-        offset,
-      });
-
-      const lista = Array.isArray(data) ? data : [];
-
-      setComercios((prev) => [...prev, ...lista]);
-      setOffset((prev) => prev + lista.length);
-      setHayMas(lista.length === limit);
-    } catch (e) {
-      setError(e?.message || "Error al cargar más comercios");
-    } finally {
-      setCargando(false);
-    }
-  }
-
-  useEffect(() => {
-    cargarPrimerPagina(null);
-    // eslint-disable-next-line
-  }, [modoExplorar]);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    const q = _normalizarBusqueda(busqueda);
-
-    if (!q) {
-      debounceRef.current = setTimeout(() => {
-        cargarPrimerPagina(null);
-      }, 200);
-      return;
-    }
-
-    debounceRef.current = setTimeout(() => {
-      cargarPrimerPagina(q);
-    }, 350);
-
-    return () => clearTimeout(debounceRef.current);
-    // eslint-disable-next-line
-  }, [busqueda]);
 
   function irAPerfilComercio(comercioId) {
     if (!comercioId) return;
@@ -455,24 +343,6 @@ export default function ExplorarPage() {
         </div>
       )}
 
-      {/* PAGINACIÓN */}
-      {modoExplorar === "espacios" && (
-        <div className="pt-2">
-          {hayMas ? (
-            <button
-              onClick={cargarMas}
-              disabled={cargando}
-              className="w-full rounded-xl border px-4 py-2"
-            >
-              {cargando ? "Cargando..." : "Cargar más"}
-            </button>
-          ) : (
-            <p className="text-sm opacity-70 text-center">
-              No hay más resultados.
-            </p>
-          )}
-        </div>
-      )}
     </div>
   );
 }
