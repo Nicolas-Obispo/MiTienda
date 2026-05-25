@@ -43,7 +43,6 @@ export default function ExplorarPage() {
     q: _normalizarBusqueda(busqueda),
     smart: _usarModoIA(_normalizarBusqueda(busqueda)),
     limit,
-    offset: 0,
   });
 
   const publicacionesQuery = useExplorarPublicaciones({
@@ -51,9 +50,11 @@ export default function ExplorarPage() {
     offset: 0,
   });
 
-  const espaciosQueryData = Array.isArray(espaciosQuery.data)
-  ? espaciosQuery.data
-  : [];
+  const espaciosQueryData = espaciosQuery.data?.pages
+    ? espaciosQuery.data.pages.flatMap((pagina) =>
+        Array.isArray(pagina) ? pagina : []
+      )
+    : [];
 
   const publicacionesQueryData = Array.isArray(publicacionesQuery.data)
   ? publicacionesQuery.data
@@ -341,6 +342,26 @@ export default function ExplorarPage() {
               : "No hay comercios para mostrar."}
           </p>
         </div>
+      )}
+
+        {/* PAGINACIÓN TANSTACK */}
+    {modoExplorar === "espacios" && espaciosQueryData.length > 0 && (
+      <div className="pt-2">
+        {espaciosQuery.hasNextPage ? (
+          <button
+            type="button"
+            onClick={() => espaciosQuery.fetchNextPage()}
+            disabled={espaciosQuery.isFetchingNextPage}
+            className="w-full rounded-xl border px-4 py-2"
+          >
+            {espaciosQuery.isFetchingNextPage ? "Cargando..." : "Cargar más"}
+          </button>
+        ) : (
+          <p className="text-sm opacity-70 text-center">
+            No hay más resultados.
+          </p>
+        )}
+      </div>
       )}
 
     </div>

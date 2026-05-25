@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { listarComerciosActivos } from "@features/spaces";
 
@@ -10,6 +10,7 @@ import { listarComerciosActivos } from "@features/spaces";
 | Responsabilidad:
 | - obtener espacios para Explorar
 | - reutilizar cache TanStack Query
+| - manejar paginación incremental con useInfiniteQuery
 | - mantener backend como fuente de verdad
 |
 */
@@ -18,9 +19,8 @@ export function useExplorarEspacios({
   q = null,
   smart = false,
   limit = 20,
-  offset = 0,
 }) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [
       "explore",
       "spaces",
@@ -28,17 +28,28 @@ export function useExplorarEspacios({
         q,
         smart,
         limit,
-        offset,
       },
     ],
 
-    queryFn: () =>
+    initialPageParam: 0,
+
+    queryFn: ({ pageParam = 0 }) =>
       listarComerciosActivos({
         q,
         smart,
         limit,
-        offset,
+        offset: pageParam,
       }),
+
+    getNextPageParam: (lastPage, allPages) => {
+      const ultimaPagina = Array.isArray(lastPage) ? lastPage : [];
+
+      if (ultimaPagina.length < limit) {
+        return undefined;
+      }
+
+      return allPages.length * limit;
+    },
 
     staleTime: 1000 * 30,
     retry: 1,
