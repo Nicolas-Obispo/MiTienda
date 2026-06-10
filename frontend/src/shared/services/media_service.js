@@ -4,8 +4,10 @@
 
 // Usamos la misma base URL que http_service.js para mantener consistencia.
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
-
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  "http://127.0.0.1:8000";
 /**
  * Sube una imagen al backend usando multipart/form-data.
  * Devuelve: { url: "http://..." }

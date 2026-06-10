@@ -6923,3 +6923,519 @@ Continuar consolidando la arquitectura enterprise del frontend:
 - Preparar base para realtime y notificaciones futuras.
 - Mantener backend como única fuente de verdad.
 ```
+
+# ETAPA 69.4 — Infinite Query Enterprise para Explorar
+## Fecha: 2026-05-25
+## Commit: 7a0424f
+## Tipo: Refactor Frontend + TanStack Query
+## Estado: COMPLETADA
+
+---
+
+# OBJETIVO
+
+Completar la migración de la sección **Explorar (Espacios)** hacia el modelo enterprise basado en **TanStack Query**, recuperando la funcionalidad de paginación incremental eliminada durante la limpieza de código legacy realizada en la ETAPA 69.3.
+
+La meta era evitar volver a introducir estados locales de negocio (`offset`, `hayMas`, `cargarMas`, etc.) y utilizar exclusivamente mecanismos nativos de TanStack Query.
+
+---
+
+# PROBLEMA HEREDADO DE ETAPA 69.3
+
+Durante la ETAPA 69.3 se eliminó correctamente toda la carga manual legacy de `ExplorarPage.jsx`, incluyendo:
+
+```javascript
+offset
+setOffset
+
+hayMas
+setHayMas
+
+cargarMas()
+
+cargarPrimerPagina()
+
+useEffect(...)
+```
+
+Esto dejó la pantalla completamente migrada a TanStack Query, pero eliminó también la funcionalidad:
+
+```text
+"Cargar más"
+```
+
+porque dicha funcionalidad dependía directamente de la paginación manual basada en offset local.
+
+El comportamiento principal funcionaba correctamente, pero la exploración quedaba limitada a la primera página de resultados.
+
+---
+
+# DECISIÓN ARQUITECTURAL
+
+Se decidió NO volver a introducir:
+
+```javascript
+offset
+hayMas
+setOffset
+setHayMas
+cargarMas
+```
+
+porque violaría la arquitectura definida para la migración enterprise.
+
+La solución elegida fue:
+
+```javascript
+useInfiniteQuery()
+```
+
+de TanStack Query.
+
+---
+
+# ARCHIVOS MODIFICADOS
+
+## 1)
+
+frontend/src/features/explore/hooks/useExplorarEspacios.js
+
+---
+
+## 2)
+
+frontend/src/features/explore/pages/ExplorarPage.jsx
+
+---
+
+# CAMBIOS REALIZADOS
+
+## Hook migrado a useInfiniteQuery
+
+Antes:
+
+```javascript
+useQuery(...)
+```
+
+Después:
+
+```javascript
+useInfiniteQuery(...)
+```
+
+---
+
+Se incorporó:
+
+```javascript
+initialPageParam: 0
+```
+
+para iniciar desde:
+
+```text
+offset = 0
+```
+
+---
+
+Se reemplazó la carga manual por:
+
+```javascript
+queryFn({ pageParam })
+```
+
+que delega el offset al sistema interno de TanStack Query.
+
+---
+
+Implementación:
+
+```javascript
+listarComerciosActivos({
+  q,
+  smart,
+  limit,
+  offset: pageParam,
+})
+```
+
+---
+
+# PAGINACIÓN AUTOMÁTICA
+
+Se agregó:
+
+```javascript
+getNextPageParam(...)
+```
+
+con la lógica:
+
+```javascript
+if (ultimaPagina.length < limit)
+  return undefined;
+```
+
+para detectar el final de resultados.
+
+---
+
+Caso contrario:
+
+```javascript
+return allPages.length * limit;
+```
+
+generando automáticamente:
+
+```text
+offset 0
+offset 20
+offset 40
+offset 60
+...
+```
+
+sin estado manual.
+
+---
+
+# ADAPTACIÓN DE EXPLORARPAGE
+
+Antes:
+
+```javascript
+Array.isArray(espaciosQuery.data)
+  ? espaciosQuery.data
+  : []
+```
+
+---
+
+Después:
+
+```javascript
+espaciosQuery.data?.pages
+  ? espaciosQuery.data.pages.flatMap(...)
+  : []
+```
+
+---
+
+Resultado:
+
+Todas las páginas obtenidas por TanStack se unifican en una sola colección visible para la UI.
+
+---
+
+# RECUPERACIÓN DEL BOTÓN "CARGAR MÁS"
+
+Se incorporó nuevamente el bloque de paginación.
+
+Basado ahora en:
+
+```javascript
+espaciosQuery.fetchNextPage()
+```
+
+---
+
+Control de disponibilidad:
+
+```javascript
+espaciosQuery.hasNextPage
+```
+
+---
+
+Control de carga:
+
+```javascript
+espaciosQuery.isFetchingNextPage
+```
+
+---
+
+Texto dinámico:
+
+```text
+Cargando...
+```
+
+durante la obtención de la siguiente página.
+
+---
+
+Texto final:
+
+```text
+No hay más resultados.
+```
+
+cuando el backend ya no devuelve elementos suficientes para otra página.
+
+---
+
+# VALIDACIONES REALIZADAS
+
+## Build producción
+
+Ejecutado:
+
+```bash
+npm run build
+```
+
+Resultado:
+
+```text
+✓ built successfully
+```
+
+Sin errores.
+
+---
+
+## Pruebas funcionales
+
+### Explorar
+
+✔ carga inicial correcta
+
+✔ render correcto
+
+✔ sin pantalla blanca
+
+---
+
+### Paginación
+
+✔ botón visible
+
+✔ fetchNextPage funcionando
+
+✔ nuevas páginas agregadas correctamente
+
+✔ sin duplicados
+
+✔ sin recarga completa
+
+---
+
+### Búsqueda
+
+✔ búsqueda por texto
+
+✔ limpieza de búsqueda
+
+✔ actualización correcta del queryKey
+
+---
+
+### Navegación
+
+✔ cambio Espacios → Publicaciones
+
+✔ cambio Publicaciones → Espacios
+
+✔ navegación estable
+
+---
+
+### Consola
+
+✔ sin errores JavaScript
+
+✔ sin ReferenceError
+
+✔ sin loops de render
+
+---
+
+# REGLAS REFORZADAS
+
+Se confirma nuevamente la regla de oro de migración:
+
+```text
+No eliminar estados, funciones o efectos
+hasta demostrar que ya no tienen consumidores.
+```
+
+Proceso obligatorio:
+
+Diagnóstico
+↓
+Evidencia
+↓
+Cambio mínimo
+↓
+Build
+↓
+Prueba manual
+↓
+Commit
+
+---
+
+# RESULTADO FINAL
+
+La sección:
+
+```text
+Explorar → Espacios
+```
+
+queda completamente migrada a TanStack Query Enterprise.
+
+Ya no existen mecanismos legacy de carga manual.
+
+La paginación funciona exclusivamente mediante:
+
+```javascript
+useInfiniteQuery()
+```
+
+manteniendo:
+
+✔ backend como fuente de verdad
+
+✔ cache centralizada
+
+✔ paginación incremental
+
+✔ arquitectura enterprise
+
+✔ preparación para scroll infinito futuro
+
+---
+
+# COMMIT DE CIERRE
+
+```text
+7a0424f
+```
+
+Mensaje:
+
+```text
+refactor(explore): implementa infinite query para espacios (ETAPA 69.4)
+```
+
+---
+
+# ESTADO DEL PROYECTO AL CIERRE
+
+## Backend modular
+
+✔ completado
+
+---
+
+## Pydantic v2
+
+✔ completado
+
+---
+
+## Frontend Enterprise
+
+✔ completado
+
+---
+
+## TanStack Query
+
+Auth:
+✔ migrado
+
+Feed:
+✔ migrado
+
+Ranking:
+✔ migrado
+
+Detalle:
+✔ migrado
+
+Social:
+✔ migrado
+
+Explorar:
+✔ migrado
+
+Infinite Query:
+✔ implementado
+
+---
+
+## Estado general
+
+Frontend Enterprise:
+≈ 95%
+
+TanStack Query:
+≈ 90%
+
+Repositorio:
+✔ estable
+
+Build:
+✔ estable
+
+Commit ancla actual:
+7a0424f
+
+ETAPA 70.3
+
+- Eliminada URL hardcodeada de upload en PerfilComercioPage.
+- Migrado upload de publicaciones al servicio compartido uploadImagen().
+- Compatibilidad mejorada para LAN, móvil y producción.
+- Build verificado OK.
+
+ETAPA 70 — Auditoría Enterprise Frontend / Consolidación parcial
+
+- Corregida ruta de uploads en backend para que /media/upload guarde en backend/uploads, coincidiendo con StaticFiles.
+- Migrados servicios de auth a http_service:
+  - authService.js
+  - usuarioService.js
+- Migrado ProfilePage a servicios compartidos:
+  - getMe()
+  - httpPut()
+  - uploadImagen()
+- Corregido logout para enviar token como string y evitar token "[object Object]".
+- Corregido upload de avatar, portada y publicaciones para usar API base centralizada.
+- Corregido flujo de Mi Perfil:
+  - botón "Crear tu espacio" para usuarios sin espacios.
+  - botón "Crear nuevo espacio" para usuarios con espacios existentes.
+  - explicación previa "Creá tu espacio en FeedGo!".
+  - botón "Iniciar espacio".
+  - formulario de creación visible correctamente para primer espacio y nuevos espacios.
+  - "Tus espacios" solo aparece cuando el usuario ya tiene espacios creados.
+- Feed desktop carga historias al montar.
+- Build frontend verificado OK.
+
+Pendiente dentro de ETAPA 70:
+- Revisar App.jsx legacy/huérfano.
+- Limpiar comentarios legacy.
+- Revisar fetch legacy restantes.
+- Bug pendiente: historias no visibles correctamente en celular/LAN.
+ETAPA 70.4 — Auditoría UX Perfil / Espacios
+
+- Migrado authService.js a http_service.
+- Migrado usuarioService.js a http_service.
+- Corregido logout para enviar token correctamente.
+- Corregido upload de avatar y portada usando servicios compartidos.
+- Corregido media_service para utilizar configuración centralizada.
+- Corregido PerfilComercioPage para uploads consistentes.
+- Corregido flujo de creación de espacios:
+  - Crear tu espacio (primer espacio).
+  - Crear nuevo espacio (usuarios con espacios existentes).
+  - Explicación previa de FeedGo!.
+  - Iniciar espacio.
+  - Activación automática de modo publicador.
+  - Apertura correcta del formulario.
+- Ocultación de "Tus espacios" cuando el usuario no posee espacios.
+- Build frontend validado.
+- Estado general estable para continuar auditoría.

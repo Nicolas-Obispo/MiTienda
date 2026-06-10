@@ -37,11 +37,20 @@ MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024
 def _get_upload_dir() -> str:
     """
     Devuelve la ruta absoluta a la carpeta /uploads del backend.
-    IMPORTANTE: Debe coincidir con lo montado en main.py.
+    Debe coincidir con lo montado en main.py.
     """
     # __file__ = backend/app/modules/media/routes/media_routers.py
-    # subimos 3 niveles -> backend/
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # backend/
+    # subimos 5 niveles -> backend/
+    base_dir = os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.dirname(
+                    os.path.dirname(__file__)
+                )
+            )
+        )
+    )
+
     return os.path.join(base_dir, "uploads")
 
 

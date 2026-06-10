@@ -1,30 +1,29 @@
 /**
  * usuarioService.js
  * Responsabilidad:
- * - Obtener información del usuario autenticado
- * - Comunicarse con endpoints protegidos del backend
+ * - Obtener información del usuario autenticado.
+ * - Cambiar modo activo del usuario.
+ * - Comunicarse con endpoints protegidos usando http_service.
  */
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { httpGet, httpPost } from "@core";
 
-/**
- * obtenerUsuarioActual
- * Consulta el endpoint /usuarios/me usando el token JWT.
- *
- * @param {string} tokenJWT
- * @returns {Promise<Object>} datos del usuario
- */
 export async function obtenerUsuarioActual(tokenJWT) {
-  const response = await fetch(`${API_BASE_URL}/usuarios/me`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${tokenJWT}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Token inválido o sesión expirada");
+  if (!tokenJWT) {
+    throw new Error("Falta token para obtener usuario actual");
   }
 
-  return response.json();
+  return httpGet("/usuarios/me", tokenJWT);
+}
+
+export async function cambiarModoUsuario(tokenJWT, modo) {
+  if (!tokenJWT) {
+    throw new Error("Falta token para cambiar modo de usuario");
+  }
+
+  return httpPost(
+    "/usuarios/modo",
+    { modo },
+    tokenJWT
+  );
 }

@@ -96,6 +96,11 @@ export default function FeedPage() {
     }));
   }, [historiasItems]);
 
+  useEffect(() => {
+    loadHistoriasBar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function preloadHistoriasImages(historias, max = 10) {
     if (!Array.isArray(historias) || historias.length === 0) return;
 

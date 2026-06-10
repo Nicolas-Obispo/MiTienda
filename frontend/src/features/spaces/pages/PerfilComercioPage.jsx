@@ -14,7 +14,7 @@ import { PublicacionCard } from "@features/posts";
 import { CrearHistoriaModal } from "@features/stories";
 import { HistoriasViewer } from "@features/stories";
 import { MessageCircle, Camera, MapPin } from "lucide-react";
-import { getMediaUrlFromAny } from "@shared";
+import { getMediaUrlFromAny, uploadImagen } from "@shared";
 
 import {
   optimisticToggleGuardado,
@@ -454,23 +454,9 @@ function esComercioMio(comercioData, userData) {
       let imagenUrlFinal = null;
 
       if (imagenFile) {
-        const formData = new FormData();
-        formData.append("file", imagenFile);
-
         try {
-          const response = await fetch("http://127.0.0.1:8000/media/upload", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-            },
-            body: formData,
-          });
+          const data = await uploadImagen(imagenFile);
 
-          if (!response.ok) {
-            throw new Error("Error al subir la imagen");
-          }
-
-          const data = await response.json();
           imagenUrlFinal = data.url;
         } catch (error) {
           setErrorMessage(error.message || "Error subiendo la imagen.");
