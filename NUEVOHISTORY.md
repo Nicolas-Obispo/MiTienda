@@ -7439,3 +7439,368 @@ ETAPA 70.4 — Auditoría UX Perfil / Espacios
 - Ocultación de "Tus espacios" cuando el usuario no posee espacios.
 - Build frontend validado.
 - Estado general estable para continuar auditoría.
+# ETAPA 71 — Cierre Definitivo de Migración Enterprise
+
+**Fecha:** Junio 2026
+
+**Commit de cierre:**
+
+```bash
+0b5de97
+refactor: cierra migracion enterprise y branding FeedGo (ETAPA 71)
+```
+
+---
+
+## Objetivo
+
+Realizar la auditoría final de la migración Enterprise iniciada en ETAPA 64, identificando deuda técnica remanente, archivos legacy, código huérfano y desviaciones arquitectónicas antes de dar por concluida la transformación estructural del proyecto.
+
+Importante:
+
+Esta etapa no tuvo como objetivo agregar nuevas funcionalidades sino validar, limpiar y consolidar la arquitectura definitiva de FeedGo!.
+
+---
+
+## Auditoría Backend
+
+Se verificó la estructura modular consolidada:
+
+```text
+app/
+├── core/
+└── modules/
+    ├── auth
+    ├── users
+    ├── spaces
+    ├── posts
+    ├── stories
+    ├── social
+    ├── analytics
+    ├── ai
+    ├── media
+    ├── uploads
+    └── products
+```
+
+### Resultado
+
+* Arquitectura modular validada.
+* Sin dependencias legacy detectadas.
+* Sin imports antiguos desde:
+
+```python
+app.models
+app.services
+app.schemas
+app.routers
+```
+
+### Limpieza realizada
+
+Eliminación de archivo huérfano:
+
+```text
+backend/app/utils/__init__.py
+```
+
+Resultado:
+
+* Carpeta sin uso removida.
+* Sin impacto funcional.
+
+---
+
+## Auditoría Frontend
+
+Se verificó la estructura Enterprise consolidada:
+
+```text
+src/
+├── core/
+├── shared/
+└── features/
+```
+
+### Resultado
+
+* Arquitectura Enterprise validada.
+* Flujo real de aplicación confirmado:
+
+```text
+main.jsx
+→ AppRouter.jsx
+```
+
+* App.jsx ya había sido eliminado en ETAPA 70.
+
+---
+
+## Eliminación de archivos legacy
+
+### App.css
+
+Hallazgo:
+
+```text
+frontend/src/App.css
+```
+
+Archivo remanente de arquitectura anterior.
+
+Resultado:
+
+* Eliminado.
+* Sin referencias activas.
+* Sin impacto funcional.
+
+---
+
+## Limpieza de código muerto
+
+### ProfilePage.jsx
+
+Hallazgo:
+
+Variable declarada pero nunca utilizada.
+
+```javascript
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:8000";
+```
+
+Resultado:
+
+* Eliminada.
+* Build validado correctamente.
+
+---
+
+## Corrección de deuda técnica Enterprise
+
+### PublicacionDetallePage.jsx
+
+Hallazgo:
+
+Persistía un DELETE hardcodeado fuera de la capa HTTP centralizada.
+
+Antes:
+
+```javascript
+fetch(
+  `http://127.0.0.1:8000/publicaciones/${publicacion.id}`,
+  ...
+)
+```
+
+Esto rompía la regla Enterprise de desacoplamiento de infraestructura.
+
+Corrección:
+
+Migración a:
+
+```javascript
+await httpDelete(
+  `/publicaciones/${publicacion.id}`,
+  token
+);
+```
+
+Utilizando:
+
+```text
+core/services/http_service.js
+```
+
+Resultado:
+
+* Eliminado último DELETE hardcodeado.
+* Consistencia arquitectónica restaurada.
+* Compatibilidad con LAN, localhost y producción.
+* Build validado correctamente.
+
+---
+
+## Branding FeedGo!
+
+Se completó la limpieza visual del branding principal.
+
+### Cambios
+
+Logo principal actualizado:
+
+```text
+logo_miplaza.png
+→
+logo_Feedgo.png
+```
+
+Actualizaciones realizadas en:
+
+* MainLayout
+* Login
+* Registro
+* Feed
+* Home
+
+Cambio de naming visible:
+
+```text
+MiPlaza
+→
+FeedGo!
+```
+
+Resultado:
+
+* Branding principal alineado con identidad actual del producto.
+
+---
+
+## Validaciones realizadas
+
+### Auditoría de Legacy
+
+Verificaciones ejecutadas:
+
+* Archivos huérfanos.
+* Código muerto.
+* Referencias hardcodeadas.
+* Arquitectura modular.
+* Consistencia de imports.
+
+### Build
+
+Resultado:
+
+```bash
+npm run build
+```
+
+Estado:
+
+```text
+✓ Build exitoso
+✓ Sin errores
+✓ Producción compilando correctamente
+```
+
+### Git
+
+Estado final:
+
+```bash
+git status
+```
+
+Resultado:
+
+```text
+working tree clean
+```
+
+---
+
+## Pendientes Documentados
+
+### Historias móvil
+
+Estado:
+
+Pendiente de investigación futura.
+
+Hallazgos confirmados:
+
+* Upload correcto.
+* Persistencia correcta.
+* media_url correcto.
+* Imagen accesible desde celular.
+* Endpoint `/historias/bar` responde correctamente.
+* Backend responde correctamente desde LAN.
+
+Síntoma:
+
+```text
+Feed móvil no muestra historias.
+```
+
+Conclusión:
+
+Problema funcional aislado.
+
+No bloquea la migración Enterprise.
+
+Queda documentado para etapa futura.
+
+---
+
+## Resultado Final
+
+### Backend Enterprise
+
+✅ Validado
+
+### Frontend Enterprise
+
+✅ Validado
+
+### Legacy relevante
+
+✅ Eliminado
+
+### Código huérfano
+
+✅ Eliminado
+
+### Deuda técnica detectada
+
+✅ Corregida
+
+### Branding FeedGo!
+
+✅ Actualizado
+
+### Build producción
+
+✅ Validado
+
+---
+
+# CIERRE OFICIAL DE MIGRACIÓN ENTERPRISE
+
+Con ETAPA 71 se da por finalizada la migración Enterprise iniciada en ETAPA 64.
+
+La arquitectura queda consolidada sobre:
+
+```text
+backend/
+└── app/
+    ├── core/
+    └── modules/
+
+frontend/
+└── src/
+    ├── core/
+    ├── shared/
+    └── features/
+```
+
+A partir de este punto el proyecto deja de enfocarse en arquitectura y vuelve a enfocarse en evolución de producto.
+
+---
+
+# Próxima etapa
+
+## ETAPA 72 — Product Evolution Enterprise
+
+Objetivos previstos:
+
+* Products.
+* Rubros.
+* Secciones.
+* UX.
+* Historias móvil.
+* Evolución funcional de FeedGo!.
+
+Sin volver a modificar la arquitectura ya consolidada.
