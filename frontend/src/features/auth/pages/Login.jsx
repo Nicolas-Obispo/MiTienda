@@ -69,7 +69,7 @@ export default function Login() {
       <div className="mb-0 animate-logo">
         <div className="h-80 w-80 overflow-hidden rounded-full bg-gray-950 flex items-center justify-center">
           <img
-            src="/logo_miplaza.png"
+            src="/logo_Feedgo.png"
             alt="MiPlaza"
             className="h-full w-full object-contain p-4"
           />

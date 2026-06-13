@@ -8,6 +8,7 @@ import {
   useToggleGuardadoPublicacionMutation,
   useToggleLikePublicacionMutation,
 } from "@features/social";
+import { httpDelete } from "@core/services/http_service";
 
 export default function PublicacionDetallePage() {
   const { id } = useParams();
@@ -188,19 +189,7 @@ export default function PublicacionDetallePage() {
 
       const token = localStorage.getItem("access_token");
 
-      const response = await fetch(
-        `http://127.0.0.1:8000/publicaciones/${publicacion.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar la publicación");
-      }
+      await httpDelete(`/publicaciones/${publicacion.id}`, token);
 
       if (comercioId) {
         navigate(`/comercios/${comercioId}`, { replace: true });

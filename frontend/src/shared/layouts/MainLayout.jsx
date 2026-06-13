@@ -31,7 +31,7 @@ export default function MainLayout() {
           <Link to="/" className="flex items-center">
             <div className="h-12 w-12 overflow-hidden rounded-full border border-gray-700 bg-gray-900">
               <img
-                src="/logo_miplaza.png"
+                src="/logo_Feedgo.png"
                 alt="MiPlaza"
                 className="h-full w-full object-contain p-1"
               />

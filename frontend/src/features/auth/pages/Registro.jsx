@@ -68,7 +68,7 @@ export default function Registro() {
       <div className="mb-0 animate-logo">
         <div className="flex h-80 w-80 items-center justify-center overflow-hidden rounded-full bg-gray-950">
           <img
-            src="/logo_miplaza.png"
+            src="/logo_Feedgo.png"
             alt="MiPlaza"
             className="h-full w-full object-contain p-4"
           />

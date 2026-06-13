@@ -15,7 +15,7 @@ export default function Home() {
           </p>
 
           <h1 className="text-4xl font-black leading-tight tracking-tight sm:text-5xl">
-            MiPlaza
+            FeedGo!
           </h1>
 
           <p className="mt-3 text-xl font-semibold text-purple-100">

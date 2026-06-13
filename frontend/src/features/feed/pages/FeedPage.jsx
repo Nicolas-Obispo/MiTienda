@@ -499,7 +499,7 @@ export default function FeedPage() {
 
       <div className="mt-4 relative mx-auto flex h58 w-58 items-center justify-center overflow-hidden rounded-full bg-gray-950 ring-4 ring-white/40 shadow-4xl">
         <img
-          src="/logo_miplaza.png"
+          src="/logo_Feedgo.png"
           alt="MiPlaza"
           className="h-full w-full object-contain p-5"
         />
