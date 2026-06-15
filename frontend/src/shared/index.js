@@ -10,3 +10,5 @@ export { getMediaUrlFromAny } from "@shared/utils/mediaUrl";
 export * from "@shared/services/media_service";
 
 export { default as MainLayout } from '@shared/layouts/MainLayout';
+
+export { default as LocationPicker } from "@shared/components/LocationPicker";

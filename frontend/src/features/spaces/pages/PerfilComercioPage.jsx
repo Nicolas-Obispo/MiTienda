@@ -488,6 +488,17 @@ function esComercioMio(comercioData, userData) {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <main className="mx-auto max-w-5xl px-4 py-6">
+
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800"
+          >
+            ← Volver
+          </button>
+        </div>
+        
         {isLoading && (
           <div className="space-y-4">
             <div className="h-40 rounded-3xl border border-gray-800 bg-gray-900 animate-pulse" />
@@ -510,11 +521,35 @@ function esComercioMio(comercioData, userData) {
           <>
             <section className="relative rounded-3xl border border-gray-800 bg-gray-900 p-5 sm:p-6">
               
-              {esComercioMio(comercio, usuarioActivo) && (
-                <span className="absolute right-3 top-3 rounded-full border border-gray-700 bg-gray-950 px-1 py-1 text-xs text-gray-300">
-                  {comercio?.is_activo === false ? "🔴" : "🟢"}
-                </span>
-              )}
+{esComercioMio(comercio, usuarioActivo) && (
+  <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
+
+    <div className="group relative">
+      <span className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-700 bg-gray-950 text-xs">
+        {comercio?.is_activo === false ? "🔴" : "🟢"}
+      </span>
+
+      <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg bg-black px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+        {comercio?.is_activo === false ? "Inactivo" : "Activo"}
+      </div>
+    </div>
+
+    <div className="group relative">
+      <button
+        type="button"
+        onClick={() => navigate(`/perfil?editarEspacioId=${comercio.id}`)}
+        className="rounded-full border border-gray-700 bg-gray-950 px-1 py-1 text-[15px] font-semibold text-orange-400 hover:bg-gray-900"
+      >
+        ✏️
+      </button>
+
+      <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg bg-black px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+        Editar
+      </div>
+    </div>
+
+  </div>
+)}
               
               <div className="flex items-start justify-between">
   
@@ -593,7 +628,7 @@ function esComercioMio(comercioData, userData) {
                     </p>
                   )}
 
-                  <div className="mt-10 -ml-24 flex items-center gap-1 flex-nowrap">
+                  <div className="mt-3 flex items-center gap-1 flex-nowrap">
                     
                     {/* PUBLICACIONES */}
                     <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1 text-xs">
@@ -637,9 +672,13 @@ function esComercioMio(comercioData, userData) {
                     )}
 
                     {/* MAPS */}
-                    {comercio?.maps_url && (
+                    {(comercio?.latitud && comercio?.longitud) || comercio?.maps_url ? (
                       <a
-                        href={comercio.maps_url}
+                        href={
+                          comercio?.latitud && comercio?.longitud
+                            ? `https://www.google.com/maps?q=${comercio.latitud},${comercio.longitud}`
+                            : comercio.maps_url
+                        }
                         target="_blank"
                         rel="noreferrer"
                         className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-2 py-1 text-[10px] font-semibold text-blue-400 hover:bg-gray-900"
@@ -647,7 +686,7 @@ function esComercioMio(comercioData, userData) {
                         <MapPin size={14} />
                         Cómo llegar
                       </a>
-                    )}
+                    ) : null}
 
                   </div>
                 </div>

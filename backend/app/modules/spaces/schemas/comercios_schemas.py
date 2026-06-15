@@ -24,6 +24,8 @@ class ComercioBase(BaseModel):
     provincia: str
     ciudad: str
     direccion: Optional[str] = None
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None
 
     whatsapp: Optional[str] = None
     instagram: Optional[str] = None
@@ -51,6 +53,8 @@ class ComercioUpdate(BaseModel):
     provincia: Optional[str] = None
     ciudad: Optional[str] = None
     direccion: Optional[str] = None
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None
 
     whatsapp: Optional[str] = None
     instagram: Optional[str] = None

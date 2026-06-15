@@ -13,18 +13,18 @@
  *
  * Decisión de producto:
  * - Usuario = cuenta de acceso.
- * - Mi perfil = pantalla personal del usuario dentro de MiPlaza.
+ * - Mi perfil = pantalla personal del usuario dentro de FeedGo!.
  * - Tus espacios = negocios, servicios o perfiles públicos que ese usuario administra.
  * - Backend mantiene "comercios" por compatibilidad técnica.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { httpPut } from "@core";
-import { getMediaUrlFromAny, uploadImagen } from "@shared";
+import { getMediaUrlFromAny, uploadImagen, LocationPicker } from "@shared";
 import { getMe } from "@features/auth";
 import { cambiarModoUsuario } from "@features/auth/services/usuarioService";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   fetchPublicacionesGuardadas,
@@ -302,6 +302,9 @@ export default function ProfilePage() {
   // ==========================================================
   const [isLoadingComercios, setIsLoadingComercios] = useState(true);
   const [misComercios, setMisComercios] = useState([]);
+  const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [comerciosErrorMessage, setComerciosErrorMessage] = useState("");
 
   const [isCreatingComercio, setIsCreatingComercio] = useState(false);
@@ -322,6 +325,8 @@ export default function ProfilePage() {
     whatsapp: "",
     instagram: "",
     maps_url: "",
+    latitud: null,
+    longitud: null,
   });
 
   function setComercioLock(comercioId, value) {
@@ -343,6 +348,8 @@ export default function ProfilePage() {
       whatsapp: "",
       instagram: "",
       maps_url: "",
+      latitud: null,
+      longitud: null,
     });
   }
 
@@ -365,6 +372,8 @@ export default function ProfilePage() {
       whatsapp: comercio.whatsapp || "",
       instagram: comercio.instagram || "",
       maps_url: comercio.maps_url || "",
+      latitud: comercio.latitud ?? null,
+      longitud: comercio.longitud ?? null,
     });
   }
 
@@ -409,6 +418,20 @@ export default function ProfilePage() {
     loadMisComercios();
     loadGuardadas();
   }, []);
+
+  useEffect(() => {
+    const editarEspacioId = Number(searchParams.get("editarEspacioId"));
+
+    if (!editarEspacioId || misComercios.length === 0) return;
+
+    const comercioParaEditar = misComercios.find(
+      (c) => Number(c.id) === editarEspacioId
+    );
+
+    if (!comercioParaEditar) return;
+
+    handleEditarComercio(comercioParaEditar);
+  }, [searchParams, misComercios]);
 
   async function handleToggleLike(pubId) {
     if (likeLocksMemo[pubId]) return;
@@ -539,14 +562,27 @@ export default function ProfilePage() {
         descripcion: createForm.descripcion?.trim()
           ? createForm.descripcion.trim()
           : "",
+          latitud:
+            createForm.latitud !== null && createForm.latitud !== ""
+              ? Number(createForm.latitud)
+              : null,
+          longitud:
+            createForm.longitud !== null && createForm.longitud !== ""
+              ? Number(createForm.longitud)
+              : null,
       };
 
       if (editingComercioId) {
         await actualizarComercio(editingComercioId, payload);
-      } else {
-        await crearComercio(payload);
+
+        setShowCreateForm(false);
+        handleResetForm();
+
+        navigate(`/comercios/${editingComercioId}`);
+        return;
       }
 
+      await crearComercio(payload);
       await loadMisComercios();
 
       setShowCreateForm(false);
@@ -573,6 +609,7 @@ export default function ProfilePage() {
 
       await desactivarComercio(comercioId);
       await loadMisComercios();
+      queryClient.invalidateQueries({ queryKey: ["explore", "spaces"] });
     } catch (error) {
       setComerciosErrorMessage(
         error.message || "Error desactivando el espacio."
@@ -595,6 +632,7 @@ export default function ProfilePage() {
 
       await reactivarComercio(comercioId);
       await loadMisComercios();
+      queryClient.invalidateQueries({ queryKey: ["explore", "spaces"] });
     } catch (error) {
       setComerciosErrorMessage(
         error.message || "Error reactivando el espacio."
@@ -666,7 +704,7 @@ export default function ProfilePage() {
                 <p className="font-semibold">Perfil personal</p>
 
                 <p className="mt-1 text-sm text-gray-400">
-                  Este es tu perfil dentro de MiPlaza. Podés explorar,
+                  Este es tu perfil dentro de FeedGo!. Podés explorar,
                   guardar publicaciones, seguir espacios y también administrar
                   tus propios espacios.
                 </p>
@@ -873,7 +911,7 @@ export default function ProfilePage() {
                         onDragLeave={handlePortadaDragLeave}
                         onDrop={handlePortadaDrop}
                         className={[
-                          "relative h-14 w-14 rounded-xl border overflow-hidden",
+                          "relative h-26 w-26 rounded-2xl border overflow-hidden",
                           "flex items-center justify-center",
                           isDragOverPortada ? "border-green-400" : "border-gray-700",
                           "bg-gray-900",
@@ -911,8 +949,13 @@ export default function ProfilePage() {
                         title="Click para seleccionar imagen"
                       >
                         <p className="text-sm text-gray-300">
-                          Click o arrastrar para subir. Formatos: JPG / PNG /
-                          WEBP.
+                          Elege una imagen que represente claramente tu espacio.
+                        </p>
+
+                        <p className="mt-1 text-xs text-gray-500">
+                          Recomendamos utilizar el logo de tu negocio, el nombre de tu emprendimiento,
+                          una imagen de tu marca o una foto que ayude a los usuarios a identificar tu
+                          actividad de forma rápida.
                         </p>
 
                         <button
@@ -943,19 +986,6 @@ export default function ProfilePage() {
                         )}
                       </div>
                     </div>
-
-                    <div className="mt-3">
-                      <label className="text-xs text-gray-500">
-                        Portada URL opcional
-                      </label>
-                      <input
-                        name="portada_url"
-                        value={createForm.portada_url}
-                        onChange={handleCreateInputChange}
-                        className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
-                        placeholder="https://... o /uploads/..."
-                      />
-                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -983,6 +1013,7 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
                     <div>
                       <label className="text-xs text-gray-400">Dirección</label>
                       <input
@@ -993,17 +1024,33 @@ export default function ProfilePage() {
                         placeholder="Calle 123"
                       />
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="text-xs text-gray-400">Maps URL</label>
-                      <input
-                        name="maps_url"
-                        value={createForm.maps_url}
-                        onChange={handleCreateInputChange}
-                        className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
-                        placeholder="https://maps..."
+                  <div>
+                    <label className="text-xs text-gray-400">
+                      Ubicación del espacio
+                    </label>
+
+                    <div className="mt-2">
+                      <LocationPicker
+                        direccion={createForm.direccion}
+                        ciudad={createForm.ciudad}
+                        provincia={createForm.provincia}
+                        latitud={createForm.latitud}
+                        longitud={createForm.longitud}
+                        onChange={({ latitud, longitud }) => {
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            latitud,
+                            longitud,
+                          }));
+                        }}
                       />
                     </div>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      Buscá la dirección, mové el pin y guardá la ubicación exacta.
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-3 pt-2">

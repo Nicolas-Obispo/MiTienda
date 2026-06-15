@@ -15,6 +15,7 @@ from sqlalchemy import (
     Boolean,
     ForeignKey,
     DateTime,
+    Float,
 )
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -69,6 +70,8 @@ class Comercio(Base):
     whatsapp = Column(String(50))
     instagram = Column(String(255))
     maps_url = Column(String(500))
+    latitud = Column(Float)
+    longitud = Column(Float)
 
     # -----------------------------
     # Estado
