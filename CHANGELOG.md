@@ -62,3 +62,48 @@ Retomar evolución funcional de FeedGo! sobre la arquitectura Enterprise ya cons
 - Historias móvil.
 - Nuevas capacidades de producto.
 
+## ETAPA 72.4 — Geolocalización MVP + UX de Espacios
+
+**Commit:** `ffe882d`
+**Estado:** Cerrada
+
+### Agregado
+
+* Componente reutilizable `LocationPicker`.
+* Integración de Leaflet y React-Leaflet para selección visual de ubicación.
+* Soporte de coordenadas geográficas (`latitud`, `longitud`) en espacios.
+* Búsqueda de direcciones mediante Nominatim (OpenStreetMap).
+* Selección manual de ubicación mediante movimiento de pin en mapa.
+* Botón "Cómo llegar" basado en coordenadas reales.
+* Botón de edición rápida desde el perfil del espacio.
+* Botón de navegación "Volver" en perfil de espacio.
+
+### Cambiado
+
+* Formulario de creación y edición de espacios actualizado para soportar geolocalización.
+* Al guardar cambios de un espacio se cierra el formulario automáticamente y se navega al perfil del espacio actualizado.
+* Mejora visual del bloque de carga de portada.
+* Mensajería y ayudas UX para selección de imagen de portada.
+* Actualización automática de resultados en Explorar al activar o desactivar espacios.
+
+### Backend
+
+* Modelo `Comercio` preparado para persistir coordenadas geográficas.
+* Schemas de espacios actualizados para exponer `latitud` y `longitud`.
+
+### Validado
+
+* Build frontend OK.
+* Build backend OK (`python -m compileall app`).
+* Creación de espacios con coordenadas.
+* Edición de espacios con coordenadas.
+* Persistencia correcta de ubicación.
+* Navegación Google Maps mediante coordenadas.
+* Refresco correcto de espacios activos/inactivos.
+
+### Próxima etapa
+
+* ETAPA 72.5 — Explorar por cercanía.
+* Ordenamiento por distancia.
+* Descubrimiento geolocalizado.
+* Preparación para operación multiciudad.
