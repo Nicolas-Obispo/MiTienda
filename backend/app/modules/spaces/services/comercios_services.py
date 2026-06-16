@@ -167,6 +167,75 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
 
     return dot / (math.sqrt(na) * math.sqrt(nb))
 
+def _calcular_distancia_km(
+    lat_origen: float,
+    lng_origen: float,
+    lat_destino: float | None,
+    lng_destino: float | None,
+) -> float | None:
+    if lat_destino is None or lng_destino is None:
+        return None
+
+    radio_tierra_km = 6371.0
+
+    lat1 = math.radians(lat_origen)
+    lng1 = math.radians(lng_origen)
+    lat2 = math.radians(lat_destino)
+    lng2 = math.radians(lng_destino)
+
+    dlat = lat2 - lat1
+    dlng = lng2 - lng1
+
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin(dlng / 2) ** 2
+    )
+
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return round(radio_tierra_km * c, 2)
+
+def _aplicar_distancia_y_radio(
+    comercios: list[Comercio],
+    lat: float | None,
+    lng: float | None,
+    radio_km: float | None = None,
+) -> list[Comercio]:
+    if lat is None or lng is None:
+        return comercios
+
+    resultado: list[Comercio] = []
+
+    for comercio in comercios:
+        distancia = _calcular_distancia_km(
+            lat_origen=lat,
+            lng_origen=lng,
+            lat_destino=getattr(comercio, "latitud", None),
+            lng_destino=getattr(comercio, "longitud", None),
+        )
+
+        comercio.distancia_km = distancia
+
+        if distancia is None:
+            resultado.append(comercio)
+            continue
+
+        if radio_km is not None and distancia > radio_km:
+            continue
+
+        resultado.append(comercio)
+
+    return resultado
+
+
+def _distancia_sort_value(comercio: Comercio) -> float:
+    distancia = getattr(comercio, "distancia_km", None)
+
+    if distancia is None:
+        return 999999.0
+
+    return distancia
+
 
 # ============================================================
 # Crear comercio
@@ -254,6 +323,9 @@ def listar_comercios_activos(
     q: str | None = None,
     smart: bool = False,
     smart_semantic: bool = False,
+    lat: float | None = None,
+    lng: float | None = None,
+    radio_km: float | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> list[Comercio]:
@@ -405,12 +477,29 @@ def listar_comercios_activos(
             score_total = sim + bonus_textual + bonus_senales
             scored.append((score_total, c.id, c))
 
-        # Orden: score_total DESC, id DESC
-        scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        comercios_rankeados = [item[2] for item in scored]
+
+        comercios_rankeados = _aplicar_distancia_y_radio(
+            comercios=comercios_rankeados,
+            lat=lat,
+            lng=lng,
+            radio_km=radio_km,
+        )
+
+        # Orden: score_total DESC, distancia ASC, id DESC
+        score_por_id = {item[2].id: item[0] for item in scored}
+        comercios_rankeados.sort(
+            key=lambda c: (
+                score_por_id.get(c.id, -999999.0),
+                -_distancia_sort_value(c),
+                c.id,
+            ),
+            reverse=True,
+        )
 
         # Paginado sobre ranking final
-        pagina = scored[offset: offset + limit]
-        return [item[2] for item in pagina]
+        pagina = comercios_rankeados[offset: offset + limit]
+        return pagina
 
     # ============================================================
     # SMART MODE (ETAPA 50)
@@ -487,14 +576,31 @@ def listar_comercios_activos(
             )
             scored.append((score, c.id, c))
 
-        # Orden: score DESC, id DESC
-        scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        comercios_rankeados = [item[2] for item in scored]
+
+        comercios_rankeados = _aplicar_distancia_y_radio(
+            comercios=comercios_rankeados,
+            lat=lat,
+            lng=lng,
+            radio_km=radio_km,
+        )
+
+        # Orden: score DESC, distancia ASC, id DESC
+        score_por_id = {item[2].id: item[0] for item in scored}
+
+        comercios_rankeados.sort(
+            key=lambda c: (
+                score_por_id.get(c.id, -999999),
+                -_distancia_sort_value(c),
+                c.id,
+            ),
+            reverse=True,
+        )
 
         # Paginado sobre ranking final
-        pagina = scored[offset: offset + limit]
+        pagina = comercios_rankeados[offset: offset + limit]
 
-        # Devolvemos solo comercios
-        return [item[2] for item in pagina]
+        return pagina
 
     # ============================================================
     # CLÁSICO (ETAPA 48/49) - comportamiento existente
@@ -531,7 +637,24 @@ def listar_comercios_activos(
     # Paginado
     query = query.offset(offset).limit(limit)
 
-    return query.all()
+    comercios = query.all()
+
+    comercios = _aplicar_distancia_y_radio(
+        comercios=comercios,
+        lat=lat,
+        lng=lng,
+        radio_km=radio_km,
+    )
+
+    if lat is not None and lng is not None:
+        comercios.sort(
+            key=lambda c: (
+                _distancia_sort_value(c),
+                -c.id,
+            )
+        )
+
+    return comercios
 
 
 # ============================================================

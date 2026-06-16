@@ -22,6 +22,24 @@ export async function obtenerEstadoSeguimiento(comercioId) {
   return await httpGet(`/seguidores/espacios/${comercioId}/estado`, getToken());
 }
 
-export async function obtenerMisEspaciosSeguidos() {
-  return await httpGet("/seguidores/mis-espacios", getToken());
+export async function obtenerMisEspaciosSeguidos({
+  lat = null,
+  lng = null,
+} = {}) {
+  const params = new URLSearchParams();
+
+  if (lat !== null && lat !== undefined) {
+    params.set("lat", String(lat));
+  }
+
+  if (lng !== null && lng !== undefined) {
+    params.set("lng", String(lng));
+  }
+
+  const queryString = params.toString();
+  const url = queryString
+    ? `/seguidores/mis-espacios?${queryString}`
+    : "/seguidores/mis-espacios";
+
+  return await httpGet(url, getToken());
 }

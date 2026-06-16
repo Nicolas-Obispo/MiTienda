@@ -18,6 +18,9 @@ import { listarComerciosActivos } from "@features/spaces";
 export function useExplorarEspacios({
   q = null,
   smart = false,
+  lat = null,
+  lng = null,
+  radio_km = null,
   limit = 20,
 }) {
   return useInfiniteQuery({
@@ -27,6 +30,9 @@ export function useExplorarEspacios({
       {
         q,
         smart,
+        lat,
+        lng,
+        radio_km,
         limit,
       },
     ],
@@ -37,6 +43,9 @@ export function useExplorarEspacios({
       listarComerciosActivos({
         q,
         smart,
+        lat,
+        lng,
+        radio_km,
         limit,
         offset: pageParam,
       }),

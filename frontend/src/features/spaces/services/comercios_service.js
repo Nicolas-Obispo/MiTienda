@@ -121,6 +121,9 @@ export async function getHistoriasDeComercio(comercioId) {
 export async function listarComerciosActivos({
   q = null,
   smart = false,
+  lat = null,
+  lng = null,
+  radio_km = null,
   limit = 20,
   offset = 0,
 } = {}) {
@@ -153,6 +156,18 @@ export async function listarComerciosActivos({
   // ETAPA 50 — smart (IA v1)
   if (smart === true) {
     params.set("smart", "true");
+  }
+
+  if (lat !== null && lat !== undefined) {
+    params.set("lat", String(lat));
+  }
+
+  if (lng !== null && lng !== undefined) {
+    params.set("lng", String(lng));
+  }
+
+  if (radio_km !== null && radio_km !== undefined) {
+    params.set("radio_km", String(radio_km));
   }
 
   const queryString = params.toString();

@@ -6,10 +6,50 @@ export default function VerSeguidosPage() {
   const [espacios, setEspacios] = useState([]);
   const [cargando, setCargando] = useState(true);
 
+  const [ubicacion, setUbicacion] = useState({
+    lat: null,
+    lng: null,
+    lista: false,
+  });
+
   useEffect(() => {
+    if (!navigator.geolocation) {
+      setUbicacion((prev) => ({
+        ...prev,
+        lista: true,
+      }));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUbicacion({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          lista: true,
+        });
+      },
+      () => {
+        setUbicacion((prev) => ({
+          ...prev,
+          lista: true,
+        }));
+      }
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!ubicacion.lista) return;
+
     async function cargar() {
       try {
-        const data = await obtenerMisEspaciosSeguidos();
+        setCargando(true);
+
+        const data = await obtenerMisEspaciosSeguidos({
+          lat: ubicacion.lat,
+          lng: ubicacion.lng,
+        });
+
         setEspacios(data);
       } catch (e) {
         console.error(e);
@@ -19,7 +59,11 @@ export default function VerSeguidosPage() {
     }
 
     cargar();
-  }, []);
+  }, [ubicacion.lista, ubicacion.lat, ubicacion.lng]);
+
+  if (!ubicacion.lista) {
+    return <p className="text-center text-gray-400">Buscando ubicación...</p>;
+  }
 
   if (cargando) {
     return <p className="text-center text-gray-400">Cargando...</p>;
@@ -64,6 +108,13 @@ export default function VerSeguidosPage() {
             <p className="text-xs text-gray-400 line-clamp-2">
               {c.descripcion || "Sin descripción"}
             </p>
+            {typeof c.distancia_km === "number" && (
+              <p className="text-xs text-orange-500 mt-1">
+                📍 Estás a {c.distancia_km < 1
+                  ? `${Math.round(c.distancia_km * 1000)} m`
+                  : `${c.distancia_km.toFixed(1)} km`}
+              </p>
+            )}
           </div>
         </Link>
       ))}

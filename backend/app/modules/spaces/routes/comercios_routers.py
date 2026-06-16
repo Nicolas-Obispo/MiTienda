@@ -104,6 +104,23 @@ def listar_comercios_activos_endpoint(
         default=False,
         description="Si true, aplica ranking semántico (IA v2 embeddings) en el orden de resultados."
     ),
+
+        lat: float | None = Query(
+        default=None,
+        description="Latitud del usuario para ordenar por cercanía."
+    ),
+    lng: float | None = Query(
+        default=None,
+        description="Longitud del usuario para ordenar por cercanía."
+    ),
+    radio_km: float | None = Query(
+        default=None,
+        ge=0.1,
+        le=100,
+        description="Radio máximo de búsqueda en kilómetros."
+    ),
+
+
     limit: int = Query(default=20, ge=1, le=100, description="Tamaño de página (1..100)"),
     offset: int = Query(default=0, ge=0, description="Offset para paginado"),
     db: Session = Depends(get_db),
@@ -128,6 +145,9 @@ def listar_comercios_activos_endpoint(
         q=q,
         smart=smart,
         smart_semantic=smart_semantic,
+        lat=lat,
+        lng=lng,
+        radio_km=radio_km,
         limit=limit,
         offset=offset
     )

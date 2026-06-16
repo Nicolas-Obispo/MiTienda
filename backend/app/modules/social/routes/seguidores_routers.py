@@ -13,7 +13,7 @@ Regla de oro:
 - La lógica de negocio vive en services.
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -25,7 +25,7 @@ from app.modules.social.services.seguidores_services import (
     usuario_sigue_espacio,
     contar_seguidores,
 )
-
+from app.modules.spaces.services.comercios_services import _calcular_distancia_km
 
 router = APIRouter(
     prefix="/seguidores",
@@ -131,6 +131,8 @@ from app.modules.social.services.seguidores_services import listar_espacios_segu
 
 @router.get("/mis-espacios")
 def obtener_espacios_seguidos(
+    lat: float | None = Query(default=None),
+    lng: float | None = Query(default=None),
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
@@ -143,12 +145,25 @@ def obtener_espacios_seguidos(
         usuario_id=usuario_actual.id,
     )
 
-    return [
-    {
-        "id": c.id,
-        "nombre": c.nombre,
-        "descripcion": c.descripcion,
-        "imagen_url": c.portada_url,
-    }
-    for c in espacios
-]
+    resultado = []
+
+    for c in espacios:
+        distancia_km = None
+
+        if lat is not None and lng is not None:
+            distancia_km = _calcular_distancia_km(
+                lat_origen=lat,
+                lng_origen=lng,
+                lat_destino=getattr(c, "latitud", None),
+                lng_destino=getattr(c, "longitud", None),
+            )
+
+        resultado.append({
+            "id": c.id,
+            "nombre": c.nombre,
+            "descripcion": c.descripcion,
+            "imagen_url": c.portada_url,
+            "distancia_km": distancia_km,
+        })
+
+    return resultado

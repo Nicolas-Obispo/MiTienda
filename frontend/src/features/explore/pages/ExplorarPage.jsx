@@ -18,7 +18,7 @@
  * - NO se toca lógica de backend
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   useExplorarEspacios,
   useExplorarPublicaciones,
@@ -39,9 +39,43 @@ export default function ExplorarPage() {
 
   const [limit] = useState(20);
 
+  const [ubicacion, setUbicacion] = useState({
+    lat: null,
+    lng: null,
+    lista: false,
+  });
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setUbicacion((prev) => ({
+        ...prev,
+        lista: true,
+      }));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUbicacion({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          lista: true,
+        });
+      },
+      () => {
+        setUbicacion((prev) => ({
+          ...prev,
+          lista: true,
+        }));
+      }
+    );
+  }, []);
+
   const espaciosQuery = useExplorarEspacios({
     q: _normalizarBusqueda(busqueda),
     smart: _usarModoIA(_normalizarBusqueda(busqueda)),
+    lat: ubicacion.lista ? ubicacion.lat : null,
+    lng: ubicacion.lista ? ubicacion.lng : null,
     limit,
   });
 
@@ -214,7 +248,13 @@ export default function ExplorarPage() {
       )}
 
       {/* LOADING INICIAL */}
-      {estaCargandoQuery && itemsActuales.length === 0 && (
+      {modoExplorar === "espacios" && !ubicacion.lista && (
+        <div className="rounded-xl border p-3">
+          <p className="text-sm">Buscando ubicación...</p>
+        </div>
+      )}
+
+      {estaCargandoQuery && itemsActuales.length === 0 && ubicacion.lista && (
         <div className="rounded-xl border p-3">
           <p className="text-sm">Cargando...</p>
         </div>
@@ -264,6 +304,14 @@ export default function ExplorarPage() {
                   <p className="text-xs opacity-70 truncate">
                     {c.ciudad || "Ciudad"}
                   </p>
+
+                  {typeof c.distancia_km === "number" && (
+                    <p className="text-xs text-orange-500">
+                      📍 {c.distancia_km < 1
+                        ? `${Math.round(c.distancia_km * 1000)} m`
+                        : `${c.distancia_km.toFixed(1)} km`}
+                    </p>
+                  )}
                 </div>
               </div>
             );
