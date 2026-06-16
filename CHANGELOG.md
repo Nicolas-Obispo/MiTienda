@@ -107,3 +107,47 @@ Retomar evolución funcional de FeedGo! sobre la arquitectura Enterprise ya cons
 * Ordenamiento por distancia.
 * Descubrimiento geolocalizado.
 * Preparación para operación multiciudad.
+## ETAPA 72.5 — Explorar por Cercanía
+
+### Objetivo
+
+Incorporar geolocalización en la experiencia de descubrimiento manteniendo el backend como fuente de verdad para el cálculo y ordenamiento de distancias.
+
+### Backend
+
+* Se agregan parámetros `lat`, `lng` y `radio_km` a la exploración de espacios.
+* Se implementa cálculo de distancia geográfica mediante fórmula Haversine.
+* Se incorpora atributo dinámico `distancia_km` en respuestas de comercios.
+* Se habilita filtrado por radio de búsqueda.
+* El cálculo de distancia permanece exclusivamente en backend respetando la arquitectura por capas.
+
+### Frontend
+
+* Explorar obtiene ubicación del dispositivo mediante Geolocation API.
+* Explorar envía coordenadas al backend.
+* Se muestra distancia estimada entre usuario y espacio.
+* Se corrige la carga inicial para evitar renderizar resultados antes de resolver ubicación.
+
+### Espacios Seguidos
+
+* Se incorpora soporte de distancia en `/ver-seguidos`.
+* Se envían coordenadas del usuario al endpoint de espacios seguidos.
+* Se muestra distancia cuando el espacio posee coordenadas registradas.
+
+### Validaciones realizadas
+
+* Build frontend OK.
+* Compilación backend OK.
+* Pruebas funcionales en Explorar OK.
+* Pruebas funcionales en Seguidos OK.
+* Compatibilidad validada con modos clásico, smart y smart_semantic.
+
+### Deuda técnica registrada
+
+* Revisar ranking clásico para preservar señales históricas (historias/publicaciones) junto con cercanía.
+* Diseñar ranking local inteligente basado en cercanía + señales sociales.
+* Auditar precisión de LocationPicker y búsqueda Nominatim.
+
+### Próxima etapa
+
+ETAPA 72.6 — Precisión Geográfica y UX de LocationPicker.
