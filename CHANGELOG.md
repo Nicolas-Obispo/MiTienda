@@ -151,3 +151,58 @@ Incorporar geolocalización en la experiencia de descubrimiento manteniendo el b
 ### Próxima etapa
 
 ETAPA 72.6 — Precisión Geográfica y UX de LocationPicker.
+
+## ETAPA 72.6 — Precisión Geográfica y UX de LocationPicker
+
+### Objetivo
+
+Mejorar la experiencia de búsqueda de ubicaciones y reducir errores producidos por resultados ambiguos de Nominatim.
+
+### Auditoría realizada
+
+Se auditó `frontend/src/shared/components/LocationPicker.jsx`.
+
+Hallazgos:
+
+* La búsqueda utilizaba Nominatim con `limit=1`.
+* El usuario no podía elegir entre múltiples coincidencias.
+* Si Nominatim devolvía una ubicación imprecisa, FeedGo! la aceptaba automáticamente.
+* El pin movible ya funcionaba correctamente.
+
+### Implementación
+
+Se realizaron mejoras únicamente sobre:
+
+`frontend/src/shared/components/LocationPicker.jsx`
+
+Cambios:
+
+* Nominatim pasa de `limit=1` a `limit=5`.
+* Se almacenan múltiples resultados de búsqueda.
+* Se muestra una lista de coincidencias debajo del buscador.
+* El usuario puede seleccionar la coincidencia correcta.
+* Al seleccionar una ubicación:
+
+  * se actualiza el texto,
+  * se mueve el pin,
+  * se recentra el mapa.
+* Se mantiene el pin movible mediante click y drag.
+* Se mantiene el contrato actual de `onChange({ latitud, longitud })`.
+
+### Validación
+
+* ESLint específico del componente: OK.
+* Sin errores de JSX.
+* Sin errores de imports.
+* Sin cambios de arquitectura.
+* Sin modificaciones en otros módulos.
+
+### Commit
+
+`8ab781b`
+
+`feat(spaces): mejora precision de location picker (ETAPA 72.6)`
+
+### Resultado
+
+Se mejora significativamente la precisión percibida por el usuario al permitir seleccionar manualmente entre varias coincidencias devueltas por Nominatim, manteniendo la filosofía de FeedGo! donde la ubicación final siempre puede corregirse mediante el pin del mapa.
