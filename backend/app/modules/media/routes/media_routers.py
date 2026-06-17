@@ -93,7 +93,6 @@ async def upload_media(
     with open(file_path, "wb") as f:
         f.write(content)
 
-    base_url = str(request.base_url).rstrip("/")
-    public_url = f"{base_url}/uploads/{filename}"
+    public_url = f"/uploads/{filename}"
 
     return {"url": public_url}

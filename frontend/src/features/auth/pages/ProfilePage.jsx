@@ -1105,6 +1105,7 @@ export default function ProfilePage() {
                   <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {misComercios.map((c) => {
                       const isActing = Boolean(isActingComercioById[c.id]);
+                      const imagenUrl = getMediaUrlFromAny(c);
 
                       return (
                         <div
@@ -1114,9 +1115,9 @@ export default function ProfilePage() {
                           {/* PORTADA */}
                           <Link to={`/comercios/${c.id}`}>
                             <div className="aspect-square bg-gray-800">
-                              {c.portada_url ? (
+                              {imagenUrl ? (
                                 <img
-                                  src={c.portada_url}
+                                  src={imagenUrl}
                                   alt="Portada del espacio"
                                   className="w-full h-full object-cover"
                                 />

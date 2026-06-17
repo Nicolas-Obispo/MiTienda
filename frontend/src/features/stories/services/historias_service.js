@@ -4,6 +4,8 @@
  * Service de Historias (MiPlaza).
  */
 
+import { httpGet, httpPost } from "@core";
+
 function getApiBaseUrl() {
   return (
     import.meta?.env?.VITE_API_URL ||
@@ -73,10 +75,7 @@ async function requestJson(
 }
 
 export async function fetchHistoriasBarItems() {
-  return requestJson("/historias/bar", {
-    method: "GET",
-    auth: "optional",
-  });
+  return httpGet("/historias/bar", getAccessToken());
 }
 
 export async function fetchHistoriasPorComercio(comercioId) {
@@ -84,10 +83,7 @@ export async function fetchHistoriasPorComercio(comercioId) {
     throw new Error("fetchHistoriasPorComercio: comercioId es requerido");
   }
 
-  return requestJson(`/historias/comercios/${comercioId}`, {
-    method: "GET",
-    auth: "optional",
-  });
+  return httpGet(`/historias/comercios/${comercioId}`, getAccessToken());
 }
 
 export async function crearHistoria(comercioId, historiaPayload) {
@@ -120,11 +116,7 @@ export async function marcarHistoriaVista(historiaId) {
     throw new Error("marcarHistoriaVista: historiaId es requerido");
   }
 
-  return requestJson(`/historias/${historiaId}/vistas`, {
-    method: "POST",
-    body: null,
-    auth: true,
-  });
+  return httpPost(`/historias/${historiaId}/vistas`, null, getAccessToken());
 }
 
 export async function toggleLikeHistoria(historiaId) {

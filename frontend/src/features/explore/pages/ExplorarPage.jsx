@@ -43,14 +43,18 @@ export default function ExplorarPage() {
     lat: null,
     lng: null,
     lista: false,
+    error: null,
   });
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setUbicacion((prev) => ({
-        ...prev,
-        lista: true,
-      }));
+      queueMicrotask(() => {
+        setUbicacion((prev) => ({
+          ...prev,
+          lista: true,
+          error: "Ubicación no disponible",
+        }));
+      });
       return;
     }
 
@@ -60,12 +64,14 @@ export default function ExplorarPage() {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           lista: true,
+          error: null,
         });
       },
       () => {
         setUbicacion((prev) => ({
           ...prev,
           lista: true,
+          error: "Ubicación no disponible",
         }));
       }
     );
@@ -310,6 +316,11 @@ export default function ExplorarPage() {
                       📍 {c.distancia_km < 1
                         ? `${Math.round(c.distancia_km * 1000)} m`
                         : `${c.distancia_km.toFixed(1)} km`}
+                    </p>
+                  )}
+                  {ubicacion.error && typeof c.distancia_km !== "number" && (
+                    <p className="text-xs text-orange-500">
+                      {ubicacion.error}
                     </p>
                   )}
                 </div>

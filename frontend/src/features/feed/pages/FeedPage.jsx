@@ -98,7 +98,6 @@ export default function FeedPage() {
 
   useEffect(() => {
     loadHistoriasBar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function preloadHistoriasImages(historias, max = 10) {
@@ -142,17 +141,6 @@ export default function FeedPage() {
         error?.message || "Error desconocido cargando historias."
       );
     }
-  }
-
-  async function refrescarItemHistoriasComercio() {
-    // IMPORTANTE:
-    // No refrescar mientras el viewer está abierto,
-    // porque cambia el orden/estado de historias
-    // y rompe la navegación automática.
-
-    if (viewerIsOpen) return;
-
-    await loadHistoriasBar();
   }
 
   async function loadFeed() {
@@ -341,8 +329,6 @@ export default function FeedPage() {
     if (isLikeLocked(pubId)) return;
 
     setLikeLock(pubId, true);
-    const snapshot = publicaciones;
-
     setPublicaciones((prev) => optimisticToggleLike(prev, pubId));
 
     try {
@@ -358,8 +344,6 @@ export default function FeedPage() {
     if (isSaveLocked(pubId)) return;
 
     setSaveLock(pubId, true);
-    const snapshot = publicaciones;
-
     const current = publicaciones.find((p) => p.id === pubId);
     const estabaGuardada = Boolean(current?.guardada_by_me);
 

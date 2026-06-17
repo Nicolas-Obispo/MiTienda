@@ -11,6 +11,7 @@ Reglas:
 
 from datetime import datetime
 from typing import List, Optional
+from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
 
@@ -20,6 +21,23 @@ from app.modules.stories.models.historias_likes_models import HistoriaLike
 from app.modules.stories.schemas.historias_schemas import HistoriaCreate
 from app.modules.spaces.models.comercios_models import Comercio
 
+
+LOCAL_UPLOAD_HOSTS = {
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+}
+
+
+def _normalizar_thumbnail_url(portada_url: Optional[str]) -> Optional[str]:
+    if not portada_url:
+        return portada_url
+
+    for local_host in LOCAL_UPLOAD_HOSTS:
+        if portada_url.startswith(local_host):
+            parsed = urlparse(portada_url)
+            return parsed.path
+
+    return portada_url
 
 
 def crear_historia(
@@ -166,7 +184,7 @@ def listar_historias_bar(
                 "comercioId": c.id,
                 "nombre": c.nombre,
                 # Frontend espera thumbnailUrl, usamos la portada del comercio
-                "thumbnailUrl": c.portada_url,
+                "thumbnailUrl": _normalizar_thumbnail_url(c.portada_url),
                 "cantidad": len(historias),
                 "pendientes": pendientes,
             }

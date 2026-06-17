@@ -7,7 +7,7 @@
  * - Feed principal queda vertical, pero el comercio queda como galería
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { PublicacionCard } from "@features/posts";
@@ -17,7 +17,6 @@ import { MessageCircle, Camera, MapPin } from "lucide-react";
 import { getMediaUrlFromAny, uploadImagen } from "@shared";
 
 import {
-  optimisticToggleGuardado,
   optimisticToggleLike,
   toggleGuardado,
   toggleLike,
@@ -148,7 +147,7 @@ function esComercioMio(comercioData, userData) {
       ] = await Promise.all([
         getComercioById(comercioId),
         getPublicacionesDeComercio(comercioId),
-        fetchHistoriasPorComercio(comercioId),
+        fetchHistoriasPorComercio(comercioId).catch(() => []),
         token ? fetchPublicacionesGuardadas() : Promise.resolve([]),
 
         // ETAPA 62 — métricas sociales reales
@@ -209,7 +208,7 @@ function esComercioMio(comercioData, userData) {
             seguidores_count: estadoSeguimiento.seguidores_count,
           }));
         }
-      } catch (error) {
+      } catch {
         // No rompemos la pantalla si falla el estado de seguimiento.
       }
     } catch (error) {
@@ -305,7 +304,6 @@ function esComercioMio(comercioData, userData) {
     if (isLikeLocked(pubId)) return;
 
     setLikeLock(pubId, true);
-    const snapshot = publicaciones;
 
     setPublicaciones((prev) => optimisticToggleLike(prev, pubId));
 
@@ -360,7 +358,6 @@ function esComercioMio(comercioData, userData) {
     if (isSaveLocked(pubId)) return;
 
     setSaveLock(pubId, true);
-    const snapshot = publicaciones;
 
     const current = publicaciones.find((p) => p.id === pubId);
     const estabaGuardada = Boolean(current?.guardada_by_me);
@@ -482,7 +479,7 @@ function esComercioMio(comercioData, userData) {
   }
 
   const tieneHistoriasPendientes = historias.some(
-  (historia) => !Boolean(historia?.vista_by_me)
+  (historia) => !historia?.vista_by_me
   );
 
   return (
