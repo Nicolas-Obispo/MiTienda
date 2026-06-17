@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import L from "leaflet";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -35,6 +41,16 @@ function DraggableMarker({ position, onChange }) {
   );
 }
 
+function MapPositionUpdater({ position }) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(position);
+  }, [map, position]);
+
+  return null;
+}
+
 export default function LocationPicker({
   direccion = "",
   ciudad = "",
@@ -51,6 +67,7 @@ export default function LocationPicker({
 
   const [query, setQuery] = useState("");
   const [position, setPosition] = useState(initialPosition);
+  const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -79,9 +96,10 @@ export default function LocationPicker({
     try {
       setIsSearching(true);
       setErrorMessage("");
+      setSearchResults([]);
 
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ar&q=${encodeURIComponent(
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=ar&q=${encodeURIComponent(
           query
         )}`
       );
@@ -93,6 +111,7 @@ export default function LocationPicker({
         return;
       }
 
+      setSearchResults(data);
       updatePosition(data[0].lat, data[0].lon);
     } catch (error) {
       console.error(error);
@@ -100,6 +119,11 @@ export default function LocationPicker({
     } finally {
       setIsSearching(false);
     }
+  }
+
+  function handleSelectResult(result) {
+    setQuery(result.display_name || query);
+    updatePosition(result.lat, result.lon);
   }
 
   function handleUsarUbicacionActual() {
@@ -152,6 +176,21 @@ export default function LocationPicker({
         <p className="mt-2 text-xs text-red-400">{errorMessage}</p>
       )}
 
+      {searchResults.length > 0 && (
+        <div className="mt-2 overflow-hidden rounded-xl border border-gray-800">
+          {searchResults.map((result) => (
+            <button
+              key={result.place_id}
+              type="button"
+              onClick={() => handleSelectResult(result)}
+              className="block w-full border-b border-gray-800 px-3 py-2 text-left text-xs text-gray-300 last:border-b-0 hover:bg-gray-900"
+            >
+              {result.display_name}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="mt-3 h-72 overflow-hidden rounded-xl border border-gray-800">
         <MapContainer
           center={position}
@@ -164,6 +203,7 @@ export default function LocationPicker({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
+          <MapPositionUpdater position={position} />
           <DraggableMarker position={position} onChange={updatePosition} />
         </MapContainer>
       </div>
