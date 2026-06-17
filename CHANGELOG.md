@@ -206,3 +206,49 @@ Cambios:
 ### Resultado
 
 Se mejora significativamente la precisión percibida por el usuario al permitir seleccionar manualmente entre varias coincidencias devueltas por Nominatim, manteniendo la filosofía de FeedGo! donde la ubicación final siempre puede corregirse mediante el pin del mapa.
+
+## ETAPA 72.7 — Corrección mobile iOS: historias, media y geolocalización
+
+### Commit funcional
+
+`093daa6`
+
+`fix(mobile): corrige historias, media y geolocalizacion en iOS (ETAPA 72.7)`
+
+### Objetivo
+
+Corregir fallos reales detectados en iPhone/Safari relacionados con historias, carga de imágenes, URLs de media y geolocalización.
+
+### Cambios principales
+
+- Historias mobile:
+  - `fetchHistoriasBarItems` migrado a `httpGet`.
+  - `fetchHistoriasPorComercio` migrado a `httpGet`.
+  - `marcarHistoriaVista` migrado a `httpPost`.
+  - Se corrigió apertura de historias en iPhone.
+  - Se corrigió marcado de vistas y pendientes.
+
+- Media:
+  - `/media/upload` ahora devuelve rutas relativas `/uploads/...`.
+  - Se evita guardar URLs absolutas dependientes de `localhost`, `127.0.0.1` o IP LAN.
+  - Se normalizan thumbnails de historias con URLs locales.
+  - Se corrigieron portadas en Mi Perfil y Espacios Seguidos usando `getMediaUrlFromAny`.
+
+- UX:
+  - Explorar y Seguidos ya no bloquean la carga esperando geolocalización.
+  - Si iPhone no entrega ubicación por HTTP LAN, se muestra “Ubicación no disponible”.
+  - PerfilComercio ya no se rompe completo si falla la carga de historias.
+
+### Hallazgos técnicos
+
+- El helper propio `requestJson` de historias presentó incompatibilidades en Safari/iOS.
+- Los helpers core `httpGet` y `httpPost` funcionaron correctamente.
+- URLs absolutas locales en `portada_url`, `thumbnailUrl` o `media_url` provocaban fallos en móvil.
+- En iPhone, `navigator.geolocation` puede no entregar ubicación usando `http://192.168.x.x:5173`.
+
+### Pendientes futuros
+
+- Auditar `requestJson` de historias y decidir si se corrige o se elimina.
+- Evaluar HTTPS local o túnel HTTPS para probar geolocalización real en iPhone.
+- Revisar deuda de URLs históricas ya guardadas en DB.
+- Seguir monitoreando bugs mobile que puedan compartir la misma causa raíz.
