@@ -252,3 +252,25 @@ Corregir fallos reales detectados en iPhone/Safari relacionados con historias, c
 - Evaluar HTTPS local o túnel HTTPS para probar geolocalización real en iPhone.
 - Revisar deuda de URLs históricas ya guardadas en DB.
 - Seguir monitoreando bugs mobile que puedan compartir la misma causa raíz.
+Actualizar CHANGELOG.md.
+
+Registrar commits recientes:
+
+71aa81d feat(auth): agrega aviso por inactividad de sesion
+aaa1c22 feat(ux): optimiza experiencia mobile y perfil
+3e8e895 feat(profile): agrega edicion basica de perfil
+
+Contexto:
+ETAPA 72.9
+
+Resumen:
+- aviso por inactividad de sesión a los 15 minutos
+- modal con cerrar sesión / continuar
+- mejoras UX mobile y perfil
+- edición básica de perfil con provincia y ciudad
+- nuevo PATCH /usuarios/me
+- httpPatch frontend
+- ProfilePage con modo editar perfil
+
+NO tocar código.
+Solo CHANGELOG.md.
