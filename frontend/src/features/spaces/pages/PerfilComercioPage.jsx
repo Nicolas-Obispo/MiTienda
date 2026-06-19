@@ -484,7 +484,7 @@ function esComercioMio(comercioData, userData) {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <main className="mx-auto max-w-5xl px-4 py-6">
+      <main className="mx-auto max-w-5xl px-0 py-4 sm:px-4 sm:py-6">
 
         <div className="mb-4">
           <button
@@ -516,7 +516,7 @@ function esComercioMio(comercioData, userData) {
 
         {!isLoading && !errorMessage && (
           <>
-            <section className="relative rounded-3xl border border-gray-800 bg-gray-900 p-5 sm:p-6">
+            <section className="relative rounded-2xl border border-gray-800 bg-gray-900 p-4 sm:rounded-3xl sm:p-6">
               
 {esComercioMio(comercio, usuarioActivo) && (
   <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
@@ -737,7 +737,7 @@ function esComercioMio(comercioData, userData) {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:gap-3">
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 md:gap-3">
                   {publicaciones.map((p) => (
                     <PublicacionCard
                       key={p.id}

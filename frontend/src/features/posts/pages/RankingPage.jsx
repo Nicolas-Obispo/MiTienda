@@ -197,7 +197,7 @@ export default function RankingPage() {
 
         {/* Estado: Loading */}
         {isLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-3">
             <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
             <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
             <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
@@ -230,7 +230,8 @@ export default function RankingPage() {
               grid-cols-2
               sm:grid-cols-3
               md:grid-cols-3
-              gap-3
+              gap-2
+              sm:gap-3
             "
           >
             {publicaciones.map((p, idx) => (

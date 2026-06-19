@@ -22,7 +22,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { httpPut } from "@core";
 import { getMediaUrlFromAny, uploadImagen, LocationPicker } from "@shared";
-import { getMe } from "@features/auth";
+import { getMe, useAuth } from "@features/auth";
 import { cambiarModoUsuario } from "@features/auth/services/usuarioService";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -305,6 +305,7 @@ export default function ProfilePage() {
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [comerciosErrorMessage, setComerciosErrorMessage] = useState("");
 
   const [isCreatingComercio, setIsCreatingComercio] = useState(false);
@@ -364,7 +365,7 @@ export default function ProfilePage() {
     setCreateForm({
       nombre: comercio.nombre || "",
       descripcion: comercio.descripcion || "",
-      portada_url: comercio.portada_url || "",
+      portada_url: getMediaUrlFromAny(comercio) || "",
       rubro_id: comercio.rubro_id || 1,
       provincia: comercio.provincia || "",
       ciudad: comercio.ciudad || "",
@@ -375,6 +376,11 @@ export default function ProfilePage() {
       latitud: comercio.latitud ?? null,
       longitud: comercio.longitud ?? null,
     });
+  }
+
+  async function manejarLogout() {
+    await logout();
+    navigate("/login");
   }
 
   async function loadGuardadas() {
@@ -751,6 +757,14 @@ export default function ProfilePage() {
                     : "No se pudo cargar el usuario."}
                 </p>
 
+                <button
+                  type="button"
+                  onClick={manejarLogout}
+                  className="mt-2 rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-gray-800"
+                >
+                  Cerrar sesión
+                </button>
+
                 {avatarErrorMessage && (
                   <div className="mt-3 rounded-xl border border-red-900 bg-red-950/40 p-3">
                     <p className="text-sm text-red-100 break-words">
@@ -1102,7 +1116,7 @@ export default function ProfilePage() {
             {!isLoadingComercios &&
               !comerciosErrorMessage &&
               misComercios.length > 0 && (
-                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="mt-3 grid grid-cols-3 gap-1.5 sm:grid-cols-3 sm:gap-3">
                     {misComercios.map((c) => {
                       const isActing = Boolean(isActingComercioById[c.id]);
                       const imagenUrl = getMediaUrlFromAny(c);

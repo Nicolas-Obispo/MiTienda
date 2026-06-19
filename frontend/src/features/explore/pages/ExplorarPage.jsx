@@ -196,7 +196,7 @@ export default function ExplorarPage() {
       : espaciosQueryData;
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="px-1 py-3 space-y-3 sm:p-4 sm:space-y-4">
       {/* HEADER */}
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Explorar</h1>
@@ -271,10 +271,11 @@ export default function ExplorarPage() {
         <div
           className="
             grid 
-            grid-cols-2 
+            grid-cols-3 
             sm:grid-cols-3 
             md:grid-cols-4 
-            gap-3
+            gap-1.5
+            sm:gap-3
           "
         >
           {espaciosQueryData.map((c) => {
@@ -335,10 +336,11 @@ export default function ExplorarPage() {
         <div
           className="
             grid 
-            grid-cols-2 
+            grid-cols-3 
             sm:grid-cols-3 
             md:grid-cols-4 
-            gap-3
+            gap-1.5
+            sm:gap-3
           "
         >
           {publicacionesFiltradas.map((p) => {
