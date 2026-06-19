@@ -16,6 +16,7 @@ from app.modules.users.schemas.usuarios_schemas import (
     UsuarioLogin,
     UsuarioResponse,
     UsuarioOnboarding,
+    UsuarioPerfilUpdate,
     UsuarioCambioModo,
     UsuarioAvatarUpdate,  # ETAPA 49
 )
@@ -35,6 +36,7 @@ from app.modules.users.services.usuarios_services import (
     crear_usuario,
     autenticar_usuario,
     obtener_usuario_por_id,
+    actualizar_perfil_usuario,
     completar_onboarding_usuario,
     cambiar_modo_usuario,
 )
@@ -125,6 +127,28 @@ def logout_endpoint(
 @router.get("/me", response_model=UsuarioResponse)
 def obtener_mi_perfil(usuario_actual=Depends(obtener_usuario_actual)):
     return usuario_actual
+
+
+# =============================================================
+#  ACTUALIZAR PERFIL DEL USUARIO AUTENTICADO
+# =============================================================
+@router.patch(
+    "/me",
+    response_model=UsuarioResponse,
+    summary="Actualizar perfil basico del usuario autenticado"
+)
+def actualizar_mi_perfil(
+    payload: UsuarioPerfilUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual=Depends(obtener_usuario_actual),
+):
+    campos = payload.model_dump(exclude_unset=True)
+
+    return actualizar_perfil_usuario(
+        db=db,
+        usuario=usuario_actual,
+        campos=campos
+    )
 
 
 # =============================================================

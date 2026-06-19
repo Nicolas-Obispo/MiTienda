@@ -11,6 +11,7 @@ export {
   loginUsuario,
   logoutUsuario,
   getMe,
+  actualizarPerfilUsuario,
   registrarUsuario,
 } from "@features/auth/services/authService";
 

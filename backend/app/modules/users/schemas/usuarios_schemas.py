@@ -61,6 +61,19 @@ class UsuarioOnboarding(BaseModel):
 
 
 # ---------------------------------
+# Schema para editar perfil basico
+# ---------------------------------
+class UsuarioPerfilUpdate(BaseModel):
+    """
+    Datos editables desde Mi Perfil.
+
+    No permite modificar email, password, avatar, modo_activo ni onboarding.
+    """
+    provincia: Optional[str] = None
+    ciudad: Optional[str] = None
+
+
+# ---------------------------------
 # Schema para cambio de modo
 # ---------------------------------
 class UsuarioCambioModo(BaseModel):

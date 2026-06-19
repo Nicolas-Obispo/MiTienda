@@ -140,3 +140,32 @@ export async function httpPut(path, body = null, token = null) {
 
   return response.text();
 }
+
+/**
+ * httpPatch
+ * Request PATCH generico.
+ *
+ * @param {string} path - Ruta del backend
+ * @param {object|null} body - Body JSON
+ * @param {string|null} token - JWT opcional
+ * @returns {Promise<any>} JSON parseado
+ */
+export async function httpPatch(path, body = null, token = null) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "PATCH",
+    headers: buildHeaders(token),
+    body: body ? JSON.stringify(body) : null,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status} - ${errorText}`);
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  return response.text();
+}

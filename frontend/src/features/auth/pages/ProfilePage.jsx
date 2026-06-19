@@ -22,7 +22,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { httpPut } from "@core";
 import { getMediaUrlFromAny, uploadImagen, LocationPicker } from "@shared";
-import { getMe, useAuth } from "@features/auth";
+import { actualizarPerfilUsuario, getMe, useAuth } from "@features/auth";
 import { cambiarModoUsuario } from "@features/auth/services/usuarioService";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -62,6 +62,13 @@ export default function ProfilePage() {
   const [avatarErrorMessage, setAvatarErrorMessage] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isDragOverAvatar, setIsDragOverAvatar] = useState(false);
+  const [showPerfilForm, setShowPerfilForm] = useState(false);
+  const [isSavingPerfil, setIsSavingPerfil] = useState(false);
+  const [perfilErrorMessage, setPerfilErrorMessage] = useState("");
+  const [perfilForm, setPerfilForm] = useState({
+    provincia: "",
+    ciudad: "",
+  });
 
   const fileInputRef = useRef(null);
 
@@ -89,6 +96,10 @@ export default function ProfilePage() {
       const data = await getMe(token);
 
       setUsuarioMe(data);
+      setPerfilForm({
+        provincia: data?.provincia || "",
+        ciudad: data?.ciudad || "",
+      });
     } catch (error) {
       setUsuarioMe(null);
       setAvatarErrorMessage(
@@ -116,6 +127,69 @@ export default function ProfilePage() {
         error?.message ||
         "No se pudo activar el modo publicador."
       );
+    }
+  }
+
+  function abrirEdicionPerfil() {
+    setPerfilErrorMessage("");
+    setPerfilForm({
+      provincia: usuarioMe?.provincia || "",
+      ciudad: usuarioMe?.ciudad || "",
+    });
+    setShowPerfilForm(true);
+  }
+
+  function cancelarEdicionPerfil() {
+    setPerfilErrorMessage("");
+    setPerfilForm({
+      provincia: usuarioMe?.provincia || "",
+      ciudad: usuarioMe?.ciudad || "",
+    });
+    setShowPerfilForm(false);
+  }
+
+  function handlePerfilFormChange(e) {
+    const { name, value } = e.target;
+
+    setPerfilForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+
+  async function handlePerfilSubmit(e) {
+    e.preventDefault();
+
+    try {
+      setIsSavingPerfil(true);
+      setPerfilErrorMessage("");
+
+      const token = getToken();
+
+      if (!token) {
+        throw new Error("No hay sesion activa.");
+      }
+
+      const payload = {
+        provincia: perfilForm.provincia.trim(),
+        ciudad: perfilForm.ciudad.trim(),
+      };
+
+      const usuarioActualizado = await actualizarPerfilUsuario(token, payload);
+
+      setUsuarioMe(usuarioActualizado);
+      await refrescarUsuario?.();
+      setPerfilForm({
+        provincia: usuarioActualizado?.provincia || "",
+        ciudad: usuarioActualizado?.ciudad || "",
+      });
+      setShowPerfilForm(false);
+    } catch (error) {
+      setPerfilErrorMessage(
+        error.message || "No se pudo actualizar el perfil."
+      );
+    } finally {
+      setIsSavingPerfil(false);
     }
   }
 
@@ -305,7 +379,7 @@ export default function ProfilePage() {
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, refrescarUsuario } = useAuth();
   const [comerciosErrorMessage, setComerciosErrorMessage] = useState("");
 
   const [isCreatingComercio, setIsCreatingComercio] = useState(false);
@@ -663,11 +737,14 @@ export default function ProfilePage() {
             Mi perfil
           </h1>
 
+          {!showPerfilForm && (
           <p className="mt-1 text-sm text-gray-400">
             Gestioná tu actividad, tus espacios y tus publicaciones guardadas.
           </p>
+          )}
 
           {/* Perfil personal */}
+          {!showPerfilForm && (
           <div className="mt-4 rounded-2xl border border-gray-800 bg-gray-950 p-4">
             <div className="flex items-center gap-4">
               <div
@@ -715,7 +792,7 @@ export default function ProfilePage() {
                   tus propios espacios.
                 </p>
 
-                <div className="mt-2 flex items-center justify-between gap-3">
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={handleAvatarClick}
@@ -723,6 +800,15 @@ export default function ProfilePage() {
                     className="rounded-xl bg-white text-black px-3 py-2 text-xs font-semibold transition-all hover:bg-gray-100 hover:shadow-md disabled:opacity-60"
                   >
                     {isUploadingAvatar ? "Subiendo..." : "Cambiar foto"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={abrirEdicionPerfil}
+                    disabled={isLoadingMe || !usuarioMe || showPerfilForm}
+                    className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-gray-800 disabled:opacity-60"
+                  >
+                    Editar perfil
                   </button>
 
                   <button
@@ -735,9 +821,7 @@ export default function ProfilePage() {
                     }}
                     className="rounded-xl bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-400"
                   >
-                    {misComercios.length > 0
-                      ? "Crear nuevo espacio"
-                      : "Crear tu espacio"}
+                    Crear nuevo espacio
                   </button>
                 </div>
 
@@ -775,9 +859,73 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+          )}
         </section>
 
-        {showActivarEspacioInfo && (
+        {showPerfilForm && (
+          <section className="mb-8 rounded-2xl border border-gray-800 bg-gray-950 p-4">
+            <form onSubmit={handlePerfilSubmit} className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-xs font-medium text-gray-400">
+                    Provincia
+                  </span>
+                  <input
+                    type="text"
+                    name="provincia"
+                    value={perfilForm.provincia}
+                    onChange={handlePerfilFormChange}
+                    disabled={isSavingPerfil}
+                    className="mt-1 w-full rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-orange-500 disabled:opacity-60"
+                    placeholder="Provincia"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-xs font-medium text-gray-400">
+                    Ciudad
+                  </span>
+                  <input
+                    type="text"
+                    name="ciudad"
+                    value={perfilForm.ciudad}
+                    onChange={handlePerfilFormChange}
+                    disabled={isSavingPerfil}
+                    className="mt-1 w-full rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-orange-500 disabled:opacity-60"
+                    placeholder="Ciudad"
+                  />
+                </label>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="submit"
+                  disabled={isSavingPerfil}
+                  className="rounded-xl bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-400 disabled:opacity-60"
+                >
+                  {isSavingPerfil ? "Guardando..." : "Guardar"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={cancelarEdicionPerfil}
+                  disabled={isSavingPerfil}
+                  className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-gray-800 disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+
+            {perfilErrorMessage && (
+              <p className="mt-3 text-xs text-red-300">
+                {perfilErrorMessage}
+              </p>
+            )}
+          </section>
+        )}
+
+        {!showPerfilForm && showActivarEspacioInfo && (
         <div className="mt-3 rounded-2xl border border-purple-900 bg-purple-950/30 p-6 text-center">
           <p className="text-lg font-bold text-purple-100">
             Creá tu espacio en FeedGo!
@@ -818,7 +966,7 @@ export default function ProfilePage() {
         {/* ===================================================== */}
         {/* Sección: Tus espacios */}
         {/* ===================================================== */}
-        {(esModoPublicador || showCreateForm) && (
+        {!showPerfilForm && (esModoPublicador || showCreateForm) && (
           <section className="mb-8">
             {misComercios.length > 0 && (
               <div className="flex items-end justify-between gap-3">
@@ -1194,6 +1342,7 @@ export default function ProfilePage() {
         {/* ===================================================== */}
         {/* Sección: Publicaciones guardadas */}
         {/* ===================================================== */}
+        {!showPerfilForm && (
         <section>
           <div className="mb-3">
             <h2 className="text-lg font-semibold">Publicaciones guardadas</h2>
@@ -1280,6 +1429,7 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+        )}
       </main>
     </div>
   );

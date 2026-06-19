@@ -75,6 +75,34 @@ def completar_onboarding_usuario(
 
     return usuario
 
+
+def actualizar_perfil_usuario(
+    db: Session,
+    usuario: Usuario,
+    campos: dict
+) -> Usuario:
+    """
+    Actualiza solo los campos editables del perfil personal.
+
+    Campos permitidos:
+    - provincia
+    - ciudad
+    """
+
+    campos_permitidos = {"provincia", "ciudad"}
+
+    for campo, valor in campos.items():
+        if campo not in campos_permitidos:
+            continue
+
+        setattr(usuario, campo, valor.strip() if isinstance(valor, str) else valor)
+
+    db.commit()
+    db.refresh(usuario)
+
+    return usuario
+
+
 def cambiar_modo_usuario(
     db: Session,
     usuario: Usuario,

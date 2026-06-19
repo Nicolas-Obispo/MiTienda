@@ -5,7 +5,7 @@
  * - Usar http_service como única capa HTTP de infraestructura.
  */
 
-import { httpGet, httpPost } from "@core";
+import { httpGet, httpPatch, httpPost } from "@core";
 
 export async function loginUsuario({ email, password }) {
   try {
@@ -47,6 +47,18 @@ export async function getMe(tokenJWT) {
   }
 
   return httpGet("/usuarios/me", tokenJWT);
+}
+
+/**
+ * actualizarPerfilUsuario
+ * Edita campos basicos permitidos del usuario autenticado.
+ */
+export async function actualizarPerfilUsuario(tokenJWT, payload) {
+  if (!tokenJWT) {
+    throw new Error("Falta token para actualizar perfil");
+  }
+
+  return httpPatch("/usuarios/me", payload, tokenJWT);
 }
 
 /**
