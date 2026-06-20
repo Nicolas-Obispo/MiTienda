@@ -17,11 +17,12 @@ import { MessageCircle, Camera, MapPin } from "lucide-react";
 import { getMediaUrlFromAny, uploadImagen } from "@shared";
 
 import {
+  optimisticToggleGuardado,
   optimisticToggleLike,
-  toggleGuardado,
-  toggleLike,
   toggleSeguimientoEspacio,
   useSocialInteractions,
+  useToggleGuardadoPublicacionMutation,
+  useToggleLikePublicacionMutation,
 } from "@features/social";
 
 import {
@@ -92,6 +93,9 @@ export default function CommerceProfilePage() {
     isLikeLocked,
     isSaveLocked,
   } = useSocialInteractions();
+
+  const toggleLikeMutation = useToggleLikePublicacionMutation();
+  const toggleGuardadoMutation = useToggleGuardadoPublicacionMutation();
 
   const [siguiendo, setSiguiendo] = useState(false);
   const [isLoadingFollow, setIsLoadingFollow] = useState(false);
@@ -305,11 +309,14 @@ function esComercioMio(comercioData, userData) {
 
     setLikeLock(pubId, true);
 
+    const snapshot = publicaciones;
+
     setPublicaciones((prev) => optimisticToggleLike(prev, pubId));
 
     try {
-      await toggleLike(pubId);
+      await toggleLikeMutation.mutateAsync(pubId);
     } catch (error) {
+      setPublicaciones(snapshot);
       setErrorMessage(error.message || "Error al togglear like.");
     } finally {
       setLikeLock(pubId, false);
@@ -361,13 +368,17 @@ function esComercioMio(comercioData, userData) {
 
     const current = publicaciones.find((p) => p.id === pubId);
     const estabaGuardada = Boolean(current?.guardada_by_me);
+    const snapshot = publicaciones;
+
+    setPublicaciones((prev) => optimisticToggleGuardado(prev, pubId));
 
     try {
-      await toggleGuardado({
+      await toggleGuardadoMutation.mutateAsync({
         publicacionId: pubId,
         estabaGuardada,
       });
     } catch (error) {
+      setPublicaciones(snapshot);
       setErrorMessage(error.message || "Error al guardar/quitar guardado.");
     } finally {
       setSaveLock(pubId, false);
