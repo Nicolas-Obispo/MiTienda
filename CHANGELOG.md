@@ -47,7 +47,9 @@ Para detalle histórico extenso previo, ver:
 
 ## ETAPA 72 — Product Evolution Enterprise
 
-**Estado:** Próxima
+**Estado:** Cerrada
+
+**Último punto estable:** `ca9e8b6`
 
 ### Objetivo
 
@@ -61,6 +63,26 @@ Retomar evolución funcional de FeedGo! sobre la arquitectura Enterprise ya cons
 - Mejoras UX.
 - Historias móvil.
 - Nuevas capacidades de producto.
+
+### Resultado
+
+ETAPA 72 queda cerrada como etapa histórica de evolución funcional, UX y performance incremental sobre la arquitectura Enterprise ya consolidada.
+
+### Alcance consolidado
+
+- Evolución funcional del producto.
+- Mejoras UX mobile y de navegación.
+- Historias permanentes temporales.
+- Perfil, guardados y sincronización social.
+- Performance frontend incremental.
+- Cache selectiva y reducción de requests redundantes.
+
+### Estado arquitectónico
+
+- La arquitectura Enterprise sigue cerrada.
+- No hay migración activa.
+- Backend continúa siendo fuente de verdad.
+- Frontend continúa organizado por `core`, `shared` y `features`.
 
 ## ETAPA 72.4 — Geolocalización MVP + UX de Espacios
 
@@ -702,3 +724,33 @@ La ETAPA 72.11 queda oficialmente cerrada como:
 PERFORMANCE FRONTEND INCREMENTAL
 
 No representa el cierre definitivo de performance del producto completo, pero sí el cierre exitoso de la auditoría e implementación incremental de optimizaciones frontend seguras realizadas durante la ETAPA 72.
+
+---
+
+## ETAPA 73 — Evolución Funcional y Crecimiento del Producto
+
+**Estado:** Activa
+
+**Punto de partida:** `ca9e8b6`
+
+### Contexto
+
+ETAPA 73 inicia oficialmente después del cierre histórico de ETAPA 72.
+
+La arquitectura Enterprise permanece cerrada y no hay migración activa. El trabajo actual continúa sobre la base ya consolidada.
+
+### Foco
+
+- Evolución funcional del producto.
+- Mejoras UX incrementales.
+- Performance incremental.
+- Crecimiento del producto.
+- Consolidación de flujos existentes.
+- Nuevas capacidades sin refactor masivo.
+
+### Reglas de etapa
+
+- No reabrir migración Enterprise.
+- No introducir refactors masivos sin necesidad.
+- Mantener backend como fuente de verdad.
+- Priorizar cambios acotados, auditables y compatibles con la arquitectura actual.
