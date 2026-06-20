@@ -5,11 +5,12 @@ Service: Historias
 Reglas:
 - Services = lógica de negocio
 - Sin HTTP
-- Maneja expiración de historias
+- Decisión temporal de producto:
+  las historias permanecen visibles indefinidamente durante etapa temprana de adopción.
+  La expiración de 24 horas se mantiene en la estructura de datos para futura reactivación.
 - ETAPA 44: Resolver estado vista_by_me en backend (estado real por usuario)
 """
 
-from datetime import datetime
 from typing import List, Optional
 from urllib.parse import urlparse
 
@@ -75,7 +76,7 @@ def listar_historias_activas_por_comercio(
     usuario_id: Optional[int] = None,  # NUEVO
 ) -> List[Historia]:
     """
-    Devuelve historias activas y no expiradas de un comercio.
+    Devuelve historias activas de un comercio.
 
     ETAPA 44:
     - Si se recibe usuario_id:
@@ -84,14 +85,11 @@ def listar_historias_activas_por_comercio(
         → vista_by_me queda False (no autenticado).
     """
 
-    ahora = datetime.utcnow()
-
     historias = (
         db.query(Historia)
         .filter(
             Historia.comercio_id == comercio_id,
             Historia.is_activa.is_(True),
-            Historia.expira_en > ahora,
         )
         .order_by(Historia.created_at.desc())
         .all()
@@ -137,25 +135,25 @@ def listar_historias_bar(
     usuario_id: Optional[int] = None,
 ) -> List[dict]:
     """
-    Devuelve items para la barra de historias basados en comercios con historias activas/no expiradas.
+    Devuelve items para la barra de historias basados en comercios con historias activas.
 
     Reglas:
     - Solo comercios activos.
-    - Solo comercios con al menos 1 historia activa y no expirada.
+    - Solo comercios con al menos 1 historia activa.
+    - Decisión temporal de producto:
+      las historias permanecen visibles indefinidamente durante etapa temprana de adopción.
+      La expiración de 24 horas se mantiene en la estructura de datos para futura reactivación.
     - Si hay usuario_id: pendientes se calcula con vista_by_me real.
     - Si no hay usuario: vista_by_me queda False y pendientes = cantidad.
     """
 
-    ahora = datetime.utcnow()
-
-    # Traemos comercios que tienen al menos 1 historia activa/no expirada
+    # Traemos comercios que tienen al menos 1 historia activa.
     comercios = (
         db.query(Comercio)
         .join(Historia, Historia.comercio_id == Comercio.id)
         .filter(
             Comercio.activo.is_(True),
             Historia.is_activa.is_(True),
-            Historia.expira_en > ahora,
         )
         .distinct()
         .all()
