@@ -455,3 +455,250 @@ Durante la etapa temprana de adopción de FeedGo!, las historias permanecerán v
 Esta es una medida temporal de crecimiento temprano.
 
 Cuando exista mayor volumen de usuarios y publicaciones se evaluará restaurar el comportamiento original de historias efímeras de 24 horas.
+
+# CHANGELOG — ETAPA 72.11
+
+## Performance Frontend Incremental
+
+### Estado
+
+ETAPA cerrada.
+
+Objetivo: mejorar rendimiento percibido, reutilización de cache y reducción de requests innecesarios sin modificar arquitectura Enterprise, sin bajar calidad multimedia y sin alterar UX.
+
+---
+
+## 72.11A — Auditoría Performance
+
+### Hallazgos iniciales
+
+* Guardadas se cargaban manualmente en múltiples pantallas.
+* Mutations sociales cancelaban toda la cache de TanStack Query.
+* PerfilComercio utilizaba servicios directos para likes y guardados.
+* Varias imágenes y videos no utilizaban optimizaciones modernas de carga.
+* Historias repetían requests al mismo comercio dentro de una misma sesión.
+* Existían cargas innecesarias y trabajo redundante en frontend.
+
+---
+
+## 72.11B — Guardadas + TanStack Query
+
+### Commit
+
+47a783e — perf(posts): cachea publicaciones guardadas con TanStack
+
+### Cambios
+
+* Se agregó query key dedicada:
+
+  * queryKeys.posts.guardadas()
+
+* Se creó:
+
+  * usePublicacionesGuardadas()
+
+* VerSeguidos migró a TanStack Query.
+
+* Las publicaciones guardadas:
+
+  * ya no cargan al ingresar a la pantalla.
+  * cargan únicamente cuando el usuario abre la pestaña "Publicaciones guardadas".
+
+### Beneficios
+
+* Menor carga inicial.
+* Menos requests innecesarios.
+* Cache compartida para guardadas.
+
+---
+
+## 72.11C-1 — Cache Social Selectiva
+
+### Commit
+
+cce93cd — perf(social): acota cache e invalidacion de interacciones
+
+### Cambios
+
+* Eliminación de cancelQueries() global.
+* Eliminación de snapshots globales.
+* Implementación de snapshots selectivos.
+* Implementación de rollback selectivo.
+* Invalidación selectiva de queries relacionadas con publicaciones.
+* Actualización optimista de cache para guardadas.
+
+### Beneficios
+
+* Menor trabajo interno de TanStack.
+* Menos recargas innecesarias.
+* Mayor coherencia entre pantallas.
+
+---
+
+## 72.11C-2 — PerfilComercio Sincronizado
+
+### Commit
+
+114313d — perf(spaces): sincroniza interacciones en perfil comercio
+
+### Cambios
+
+* PerfilComercio deja de utilizar:
+
+  * toggleLike()
+  * toggleGuardado()
+
+* Pasa a utilizar:
+
+  * useToggleLikePublicacionMutation()
+  * useToggleGuardadoPublicacionMutation()
+
+* Se mantiene respuesta instantánea mediante optimistic update local.
+
+* Se agrega rollback local en caso de error.
+
+### Beneficios
+
+* Feed, Ranking, Detalle y PerfilComercio comparten el mismo flujo social.
+* Mejor sincronización global.
+
+---
+
+## 72.11D-1 — Media Loading Seguro
+
+### Commit
+
+4db53dd — perf(media): optimiza carga de imagenes y videos
+
+### Cambios
+
+* Se agregó:
+
+  * loading="lazy"
+  * decoding="async"
+  * preload="metadata"
+
+* Aplicado en:
+
+  * PublicacionCard
+  * ExplorarPage
+  * HistoriasBar
+  * HistoriasViewer
+  * PerfilComercioPage
+
+### Restricciones respetadas
+
+* No se modificó calidad multimedia.
+* No se modificó autoplay.
+* No se modificó UX.
+* No se modificó timer de historias.
+
+### Beneficios
+
+* Menor presión inicial de red.
+* Menor bloqueo del render principal.
+
+---
+
+## 72.11E-1 — Cache Local Historias Feed
+
+### Commit
+
+e55b5fc — perf(stories): cachea historias por comercio en feed
+
+### Cambios
+
+* Implementada cache local por comercio:
+
+  * historiasPorComercioRef
+
+* Se reutilizan historias ya cargadas en la misma sesión.
+
+* Aplicado a:
+
+  * apertura de historias
+  * siguiente comercio
+  * comercio anterior
+
+* No se cachean listas vacías para evitar ocultar historias recién creadas.
+
+### Beneficios
+
+* Menos requests repetidos.
+* Apertura más rápida de historias previamente vistas.
+
+---
+
+# Resultado Global
+
+### Mejoras obtenidas
+
+* Menos requests redundantes.
+* Menos invalidaciones globales.
+* Menor trabajo interno de TanStack Query.
+* Mejor reutilización de cache.
+* Mejor sincronización de likes y guardados.
+* Menor carga temprana de multimedia.
+* Menos requests repetidos de historias.
+
+### Reglas Enterprise respetadas
+
+* Sin refactor masivo.
+* Sin cambios de arquitectura.
+* Backend continúa siendo fuente de verdad.
+* Sin degradar calidad multimedia.
+* Sin cambios visibles de UX.
+* Cambios acotados y auditados.
+
+---
+
+# Deudas Técnicas Registradas
+
+## PERF-BE-01
+
+N+1 en:
+
+/historias/bar
+
+Backend obtiene comercios y luego consulta historias por cada comercio.
+
+---
+
+## PERF-BE-02
+
+N+1 en publicaciones guardadas.
+
+Frontend debe completar publicaciones mediante requests adicionales cuando el endpoint devuelve información incompleta.
+
+---
+
+## PERF-FE-01
+
+Ranking continúa realizando fetch auxiliar de:
+
+* Feed
+* Guardadas
+
+para completar estados sociales.
+
+---
+
+## PERF-FE-02
+
+PerfilComercio continúa mayormente fuera de TanStack Query.
+
+---
+
+## PERF-FE-03
+
+Historias todavía no poseen cache global TanStack.
+
+---
+
+# Cierre
+
+La ETAPA 72.11 queda oficialmente cerrada como:
+
+PERFORMANCE FRONTEND INCREMENTAL
+
+No representa el cierre definitivo de performance del producto completo, pero sí el cierre exitoso de la auditoría e implementación incremental de optimizaciones frontend seguras realizadas durante la ETAPA 72.
