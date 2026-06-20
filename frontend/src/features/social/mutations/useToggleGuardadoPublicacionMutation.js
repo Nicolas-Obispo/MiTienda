@@ -1,6 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { aplicarGuardadoOptimistaEnCache, toggleGuardado } from "@features/social";
+import {
+  actualizarGuardadasOptimistaEnCache,
+  aplicarGuardadoOptimistaEnCache,
+  invalidarPublicacionesQueries,
+  publicacionesQueryFilters,
+  restaurarSnapshotCache,
+  snapshotPublicacionesCache,
+  toggleGuardado,
+} from "@features/social";
 
 /*
 |--------------------------------------------------------------------------
@@ -11,7 +19,7 @@ import { aplicarGuardadoOptimistaEnCache, toggleGuardado } from "@features/socia
 | - ejecutar guardar/quitar guardado con useMutation
 | - aplicar optimistic update en cache compartida
 | - sincronizar Feed + Ranking + Detalle + futuras listas
-| - hacer rollback global si backend falla
+| - hacer rollback selectivo si backend falla
 |
 */
 
@@ -21,15 +29,17 @@ export function useToggleGuardadoPublicacionMutation() {
   return useMutation({
     mutationFn: toggleGuardado,
 
-    onMutate: async ({ publicacionId }) => {
-      await queryClient.cancelQueries();
+    onMutate: async ({ publicacionId, estabaGuardada }) => {
+      await queryClient.cancelQueries(publicacionesQueryFilters());
 
-      const snapshotCache = queryClient.getQueryCache().findAll().map((query) => ({
-        queryKey: query.queryKey,
-        data: queryClient.getQueryData(query.queryKey),
-      }));
+      const snapshotCache = snapshotPublicacionesCache(queryClient);
 
       aplicarGuardadoOptimistaEnCache(queryClient, publicacionId);
+      actualizarGuardadasOptimistaEnCache({
+        queryClient,
+        publicacionId,
+        estabaGuardada,
+      });
 
       return {
         snapshotCache,
@@ -39,9 +49,11 @@ export function useToggleGuardadoPublicacionMutation() {
     onError: (_error, _publicacionId, context) => {
       if (!context?.snapshotCache) return;
 
-      context.snapshotCache.forEach((snapshot) => {
-        queryClient.setQueryData(snapshot.queryKey, snapshot.data);
-      });
+      restaurarSnapshotCache(queryClient, context.snapshotCache);
+    },
+
+    onSettled: () => {
+      return invalidarPublicacionesQueries(queryClient);
     },
   });
 }

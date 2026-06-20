@@ -1,6 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { aplicarLikeOptimistaEnCache, toggleLike } from "@features/social";
+import {
+  aplicarLikeOptimistaEnCache,
+  invalidarPublicacionesQueries,
+  publicacionesQueryFilters,
+  restaurarSnapshotCache,
+  snapshotPublicacionesCache,
+  toggleLike,
+} from "@features/social";
 
 /*
 |--------------------------------------------------------------------------
@@ -11,7 +18,7 @@ import { aplicarLikeOptimistaEnCache, toggleLike } from "@features/social";
 | - ejecutar like/unlike con useMutation
 | - aplicar optimistic update en cache compartida
 | - sincronizar Feed + Ranking + Detalle + futuras listas
-| - hacer rollback global si backend falla
+| - hacer rollback selectivo si backend falla
 |
 */
 
@@ -22,12 +29,9 @@ export function useToggleLikePublicacionMutation() {
     mutationFn: toggleLike,
 
     onMutate: async (publicacionId) => {
-      await queryClient.cancelQueries();
+      await queryClient.cancelQueries(publicacionesQueryFilters());
 
-      const snapshotCache = queryClient.getQueryCache().findAll().map((query) => ({
-        queryKey: query.queryKey,
-        data: queryClient.getQueryData(query.queryKey),
-      }));
+      const snapshotCache = snapshotPublicacionesCache(queryClient);
 
       aplicarLikeOptimistaEnCache(queryClient, publicacionId);
 
@@ -39,9 +43,11 @@ export function useToggleLikePublicacionMutation() {
     onError: (_error, _publicacionId, context) => {
       if (!context?.snapshotCache) return;
 
-      context.snapshotCache.forEach((snapshot) => {
-        queryClient.setQueryData(snapshot.queryKey, snapshot.data);
-      });
+      restaurarSnapshotCache(queryClient, context.snapshotCache);
+    },
+
+    onSettled: () => {
+      return invalidarPublicacionesQueries(queryClient);
     },
   });
 }
