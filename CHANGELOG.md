@@ -754,3 +754,30 @@ La arquitectura Enterprise permanece cerrada y no hay migración activa. El trab
 - No introducir refactors masivos sin necesidad.
 - Mantener backend como fuente de verdad.
 - Priorizar cambios acotados, auditables y compatibles con la arquitectura actual.
+
+## ETAPA 73.1 — Historias, Retención y Evolución de Producto
+
+### 73.1.1 — Optimización de refresco de barra de historias
+**Commit:** `1c1129b`
+
+- Se evita refrescar `/historias/bar` al cerrar el viewer cuando no hubo nuevas vistas registradas.
+- Se reduce tráfico innecesario entre frontend y backend.
+- Sin cambios visuales.
+- Sin cambios de arquitectura.
+- Sin cambios de comportamiento funcional.
+
+### 73.1.2 — Optimización backend de /historias/bar
+**Commit:** `d0eef47`
+
+- Se elimina el principal N+1 detectado en la carga de la barra de historias.
+- Se reemplaza la carga por comercio por consultas agregadas en lote.
+- Se mantienen:
+  - response shape
+  - lógica de pendientes
+  - lógica de vistas
+  - lógica de likes
+  - orden actual de la barra
+- Mejora la escalabilidad y reduce significativamente la cantidad de consultas SQL.
+- Sin cambios en frontend.
+- Sin cambios en endpoints.
+- Sin cambios visuales.
