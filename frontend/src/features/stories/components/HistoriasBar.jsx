@@ -97,6 +97,7 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
                           alt={item.nombre}
                           className="h-full w-full object-cover"
                           loading="lazy"
+                          decoding="async"
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-xs opacity-70">

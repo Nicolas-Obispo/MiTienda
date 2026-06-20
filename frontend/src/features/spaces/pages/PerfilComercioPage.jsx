@@ -611,6 +611,7 @@ function esComercioMio(comercioData, userData) {
                 <img
                   src={comercioImagenUrl}
                   alt={comercio?.nombre || "Comercio"}
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
               ) : (

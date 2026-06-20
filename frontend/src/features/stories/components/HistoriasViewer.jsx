@@ -332,6 +332,7 @@ export default function HistoriasViewer({
               autoPlay
               muted
               playsInline
+              preload="metadata"
               className="h-full w-full object-contain"
               onLoadedData={() => {
                 setMediaLista(true);
@@ -354,6 +355,7 @@ export default function HistoriasViewer({
               key={`${cycleKey}-${indexActual}-${historiaMediaUrl}`}
               src={historiaMediaUrl}
               alt={`Historia ${historiaActual.id}`}
+              decoding="async"
               className="h-full w-full object-contain"
               draggable="false"
               onLoad={() => setMediaLista(true)}

@@ -91,12 +91,15 @@ export default function PublicacionCard({
                 muted
                 loop
                 playsInline
+                preload="metadata"
                 className="h-full w-full object-cover"
               />
             ) : (
               <img
                 src={mediaUrl}
                 alt={pub?.titulo || pub?.descripcion || "Publicación"}
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full object-cover"
               />
             )
@@ -218,12 +221,15 @@ export default function PublicacionCard({
               loop
               playsInline
               controls
+              preload="metadata"
               className="max-h-[78vh] w-full object-contain"
 />
           ) : (
             <img
               src={mediaUrl}
               alt={pub?.titulo || pub?.descripcion || "Publicación"}
+              loading="lazy"
+              decoding="async"
               className="max-h-[78vh] w-full object-contain"
             />
           )

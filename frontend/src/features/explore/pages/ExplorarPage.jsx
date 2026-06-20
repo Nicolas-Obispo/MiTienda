@@ -293,6 +293,8 @@ export default function ExplorarPage() {
                     <img
                       src={comercioImagenUrl}
                       alt={c.nombre || "Comercio"}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition"
                     />
                   ) : (
@@ -362,12 +364,15 @@ export default function ExplorarPage() {
                         muted
                         loop
                         playsInline
+                        preload="metadata"
                         className="w-full h-full object-cover group-hover:scale-105 transition"
                       />
                     ) : (
                       <img
                         src={publicacionImagenUrl}
                         alt={getNombrePublicacion(p)}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition"
                       />
                     )
