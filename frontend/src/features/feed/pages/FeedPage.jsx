@@ -59,6 +59,7 @@ export default function FeedPage() {
   const viewerComercioIdRef = useRef(null);
   const historiasOrdenRef = useRef([]);
   const historiasPorComercioRef = useRef({});
+  const huboVistasNuevasRef = useRef(false);
 
   const {
   likeLocks,
@@ -76,13 +77,16 @@ export default function FeedPage() {
     useToggleGuardadoPublicacionMutation();
 
   async function cerrarViewer() {
-    await loadHistoriasBar();
+    if (huboVistasNuevasRef.current) {
+      await loadHistoriasBar();
+    }
 
     setViewerIsOpen(false);
     setViewerHistorias([]);
     setViewerTitulo("Historias");
     ultimaHistoriaVistaMarcadaRef.current = null;
     viewerComercioIdRef.current = null;
+    huboVistasNuevasRef.current = false;
   }
 
   useEffect(() => {
@@ -390,6 +394,7 @@ export default function FeedPage() {
 
     try {
       await marcarHistoriaVista(historiaId);
+      huboVistasNuevasRef.current = true;
     } catch {
       // silencioso
     } finally {
