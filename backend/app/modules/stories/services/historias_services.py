@@ -14,6 +14,7 @@ Reglas:
 from typing import List, Optional
 from urllib.parse import urlparse
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.modules.stories.models.historias_models import Historia
@@ -159,21 +160,82 @@ def listar_historias_bar(
         .all()
     )
 
+    comercio_ids = [c.id for c in comercios]
+
+    if not comercio_ids:
+        return []
+
+    historias = (
+        db.query(Historia)
+        .filter(
+            Historia.comercio_id.in_(comercio_ids),
+            Historia.is_activa.is_(True),
+        )
+        .order_by(Historia.created_at.desc())
+        .all()
+    )
+
+    historia_ids = [h.id for h in historias]
+
+    if not historia_ids:
+        return []
+
+    likes_count_rows = (
+        db.query(HistoriaLike.historia_id, func.count(HistoriaLike.id))
+        .filter(HistoriaLike.historia_id.in_(historia_ids))
+        .group_by(HistoriaLike.historia_id)
+        .all()
+    )
+
+    likes_count_by_historia = {
+        historia_id: int(total)
+        for historia_id, total in likes_count_rows
+    }
+
+    vistas_set = set()
+    likes_set = set()
+
+    if usuario_id:
+        vistas_ids = (
+            db.query(HistoriaVista.historia_id)
+            .filter(
+                HistoriaVista.usuario_id == usuario_id,
+                HistoriaVista.historia_id.in_(historia_ids),
+            )
+            .all()
+        )
+
+        likes_ids = (
+            db.query(HistoriaLike.historia_id)
+            .filter(
+                HistoriaLike.usuario_id == usuario_id,
+                HistoriaLike.historia_id.in_(historia_ids),
+            )
+            .all()
+        )
+
+        vistas_set = {row[0] for row in vistas_ids}
+        likes_set = {row[0] for row in likes_ids}
+
+    historias_por_comercio = {}
+
+    for h in historias:
+        h.vista_by_me = h.id in vistas_set if usuario_id else False
+        h.likes_count = likes_count_by_historia.get(h.id, 0)
+        h.liked_by_me = h.id in likes_set if usuario_id else False
+
+        historias_por_comercio.setdefault(h.comercio_id, []).append(h)
+
     items: List[dict] = []
 
     for c in comercios:
-        # Reutilizamos lógica existente (resuelve vista_by_me)
-        historias = listar_historias_activas_por_comercio(
-            db,
-            comercio_id=c.id,
-            usuario_id=usuario_id,
-        )
+        historias_comercio = historias_por_comercio.get(c.id, [])
 
-        if not historias:
+        if not historias_comercio:
             continue
 
         pendientes = 0
-        for h in historias:
+        for h in historias_comercio:
             if not getattr(h, "vista_by_me", False):
                 pendientes += 1
 
@@ -183,7 +245,7 @@ def listar_historias_bar(
                 "nombre": c.nombre,
                 # Frontend espera thumbnailUrl, usamos la portada del comercio
                 "thumbnailUrl": _normalizar_thumbnail_url(c.portada_url),
-                "cantidad": len(historias),
+                "cantidad": len(historias_comercio),
                 "pendientes": pendientes,
             }
         )
