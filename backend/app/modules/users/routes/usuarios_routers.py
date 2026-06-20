@@ -144,11 +144,14 @@ def actualizar_mi_perfil(
 ):
     campos = payload.model_dump(exclude_unset=True)
 
-    return actualizar_perfil_usuario(
-        db=db,
-        usuario=usuario_actual,
-        campos=campos
-    )
+    try:
+        return actualizar_perfil_usuario(
+            db=db,
+            usuario=usuario_actual,
+            campos=campos
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # =============================================================

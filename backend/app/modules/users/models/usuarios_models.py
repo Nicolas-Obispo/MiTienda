@@ -34,6 +34,10 @@ class Usuario(Base):
     # Nullable para no romper usuarios existentes
     avatar_url = Column(String(255), nullable=True)
 
+    # Color de fondo personalizable del perfil
+    # Formato esperado: HEX #RRGGBB
+    color_fondo = Column(String(7), nullable=True)
+
     # Modo activo del usuario dentro de la plataforma
     # Valores esperados:
     # - "usuario"     → consumidor

@@ -1,7 +1,7 @@
 /**
  * ProfilePage.jsx
  * ----------------
- * ETAPA 39 (Perfil de usuario) - Guardados
+ * ETAPA 72.9 (Perfil de usuario) - Edicion de perfil y espacios administrados
  * ETAPA 45 (Orden UX navegación) - Admin: espacios publicadores + acciones (Crear / Editar / Desactivar)
  * ETAPA 49 (Avatar usuario) - Subida real + drag & drop + persistencia en BD
  * ETAPA 49 (Portada espacio) - Upload real + drag & drop + botón "Seleccionar imagen"
@@ -18,20 +18,17 @@
  * - Backend mantiene "comercios" por compatibilidad técnica.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { httpPut } from "@core";
-import { getMediaUrlFromAny, uploadImagen, LocationPicker } from "@shared";
+import {
+  getMediaUrlFromAny,
+  uploadImagen,
+  LocationPicker,
+} from "@shared";
 import { actualizarPerfilUsuario, getMe, useAuth } from "@features/auth";
 import { cambiarModoUsuario } from "@features/auth/services/usuarioService";
 import { useQueryClient } from "@tanstack/react-query";
-
-import {
-  fetchPublicacionesGuardadas,
-  toggleLikePublicacion,
-  guardarPublicacion,
-  quitarPublicacionGuardada,
-} from "@features/posts";
 
 import {
   getMisComercios,
@@ -40,6 +37,22 @@ import {
   actualizarComercio,
   reactivarComercio,
 } from "@features/spaces";
+
+const COLOR_FONDO_PRESETS = [
+  { nombre: "Negro/default", valor: "#111827" },
+  { nombre: "Gris oscuro", valor: "#1F2937" },
+];
+
+const COLOR_FONDO_DEFAULT = "#111827";
+
+function normalizeColorFondo(colorFondo) {
+  const color = String(colorFondo || "").trim().toUpperCase();
+  const isAllowed = COLOR_FONDO_PRESETS.some(
+    (preset) => preset.valor.toUpperCase() === color
+  );
+
+  return isAllowed ? color : COLOR_FONDO_DEFAULT;
+}
 
 export default function ProfilePage() {
   // =====================================================
@@ -61,13 +74,15 @@ export default function ProfilePage() {
   const [isLoadingMe, setIsLoadingMe] = useState(true);
   const [avatarErrorMessage, setAvatarErrorMessage] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [isDragOverAvatar, setIsDragOverAvatar] = useState(false);
   const [showPerfilForm, setShowPerfilForm] = useState(false);
+  const [showColorFondoOptions, setShowColorFondoOptions] = useState(false);
   const [isSavingPerfil, setIsSavingPerfil] = useState(false);
   const [perfilErrorMessage, setPerfilErrorMessage] = useState("");
+  const [perfilSuccessMessage, setPerfilSuccessMessage] = useState("");
   const [perfilForm, setPerfilForm] = useState({
     provincia: "",
     ciudad: "",
+    color_fondo: COLOR_FONDO_DEFAULT,
   });
 
   const fileInputRef = useRef(null);
@@ -99,6 +114,7 @@ export default function ProfilePage() {
       setPerfilForm({
         provincia: data?.provincia || "",
         ciudad: data?.ciudad || "",
+        color_fondo: normalizeColorFondo(data?.color_fondo),
       });
     } catch (error) {
       setUsuarioMe(null);
@@ -132,18 +148,24 @@ export default function ProfilePage() {
 
   function abrirEdicionPerfil() {
     setPerfilErrorMessage("");
+    setPerfilSuccessMessage("");
+    setShowColorFondoOptions(false);
     setPerfilForm({
       provincia: usuarioMe?.provincia || "",
       ciudad: usuarioMe?.ciudad || "",
+      color_fondo: normalizeColorFondo(usuarioMe?.color_fondo),
     });
     setShowPerfilForm(true);
   }
 
   function cancelarEdicionPerfil() {
     setPerfilErrorMessage("");
+    setPerfilSuccessMessage("");
+    setShowColorFondoOptions(false);
     setPerfilForm({
       provincia: usuarioMe?.provincia || "",
       ciudad: usuarioMe?.ciudad || "",
+      color_fondo: normalizeColorFondo(usuarioMe?.color_fondo),
     });
     setShowPerfilForm(false);
   }
@@ -163,6 +185,7 @@ export default function ProfilePage() {
     try {
       setIsSavingPerfil(true);
       setPerfilErrorMessage("");
+      setPerfilSuccessMessage("");
 
       const token = getToken();
 
@@ -173,6 +196,7 @@ export default function ProfilePage() {
       const payload = {
         provincia: perfilForm.provincia.trim(),
         ciudad: perfilForm.ciudad.trim(),
+        color_fondo: normalizeColorFondo(perfilForm.color_fondo),
       };
 
       const usuarioActualizado = await actualizarPerfilUsuario(token, payload);
@@ -182,12 +206,16 @@ export default function ProfilePage() {
       setPerfilForm({
         provincia: usuarioActualizado?.provincia || "",
         ciudad: usuarioActualizado?.ciudad || "",
+        color_fondo: normalizeColorFondo(usuarioActualizado?.color_fondo),
       });
+      setShowColorFondoOptions(false);
       setShowPerfilForm(false);
+      setPerfilSuccessMessage("Perfil actualizado");
     } catch (error) {
       setPerfilErrorMessage(
         error.message || "No se pudo actualizar el perfil."
       );
+      setPerfilSuccessMessage("");
     } finally {
       setIsSavingPerfil(false);
     }
@@ -252,7 +280,6 @@ export default function ProfilePage() {
       );
     } finally {
       setIsUploadingAvatar(false);
-      setIsDragOverAvatar(false);
 
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -266,28 +293,6 @@ export default function ProfilePage() {
   function handleAvatarClick() {
     if (isUploadingAvatar) return;
     fileInputRef.current?.click();
-  }
-
-  function handleAvatarDragOver(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isUploadingAvatar) return;
-    setIsDragOverAvatar(true);
-  }
-
-  function handleAvatarDragLeave(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOverAvatar(false);
-  }
-
-  function handleAvatarDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isUploadingAvatar) return;
-
-    const file = e.dataTransfer?.files?.[0];
-    handleAvatarFile(file);
   }
 
   // =====================================================
@@ -352,23 +357,6 @@ export default function ProfilePage() {
 
     const file = e.dataTransfer?.files?.[0];
     handlePortadaFile(file);
-  }
-
-  // ==========================================================
-  // Estado: Publicaciones guardadas
-  // ==========================================================
-  const [isLoading, setIsLoading] = useState(true);
-  const [publicaciones, setPublicaciones] = useState([]);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const [likeLocks, setLikeLocks] = useState({});
-  const [saveLocks, setSaveLocks] = useState({});
-
-  const likeLocksMemo = useMemo(() => likeLocks, [likeLocks]);
-  const saveLocksMemo = useMemo(() => saveLocks, [saveLocks]);
-
-  function setLock(setter, pubId, value) {
-    setter((prev) => ({ ...prev, [pubId]: value }));
   }
 
   // ==========================================================
@@ -457,24 +445,6 @@ export default function ProfilePage() {
     navigate("/login");
   }
 
-  async function loadGuardadas() {
-    try {
-      setIsLoading(true);
-      setErrorMessage("");
-
-      const guardadas = await fetchPublicacionesGuardadas();
-
-      setPublicaciones(Array.isArray(guardadas) ? guardadas : []);
-    } catch (error) {
-      setErrorMessage(
-        error.message || "Error desconocido cargando guardados."
-      );
-      setPublicaciones([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
   async function loadMisComercios() {
     try {
       setIsLoadingComercios(true);
@@ -496,8 +466,17 @@ export default function ProfilePage() {
   useEffect(() => {
     loadUsuarioMe();
     loadMisComercios();
-    loadGuardadas();
   }, []);
+
+  useEffect(() => {
+    if (!perfilSuccessMessage) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setPerfilSuccessMessage("");
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [perfilSuccessMessage]);
 
   useEffect(() => {
     const editarEspacioId = Number(searchParams.get("editarEspacioId"));
@@ -512,86 +491,6 @@ export default function ProfilePage() {
 
     handleEditarComercio(comercioParaEditar);
   }, [searchParams, misComercios]);
-
-  async function handleToggleLike(pubId) {
-    if (likeLocksMemo[pubId]) return;
-
-    setLock(setLikeLocks, pubId, true);
-
-    const snapshot = publicaciones;
-
-    setPublicaciones((prev) =>
-      prev.map((p) => {
-        if (p.id !== pubId) return p;
-
-        const nextLiked = !p.liked_by_me;
-        const delta = nextLiked ? 1 : -1;
-
-        return {
-          ...p,
-          liked_by_me: nextLiked,
-          likes_count: Math.max(0, (p.likes_count || 0) + delta),
-          interacciones_count: Math.max(
-            0,
-            (p.interacciones_count || 0) + delta
-          ),
-        };
-      })
-    );
-
-    try {
-      await toggleLikePublicacion(pubId);
-    } catch (error) {
-      setPublicaciones(snapshot);
-      setErrorMessage(error.message || "Error al togglear like.");
-    } finally {
-      setLock(setLikeLocks, pubId, false);
-    }
-  }
-
-  async function handleToggleSave(pubId) {
-    if (saveLocksMemo[pubId]) return;
-
-    setLock(setSaveLocks, pubId, true);
-
-    const snapshot = publicaciones;
-
-    const current = publicaciones.find((p) => p.id === pubId);
-    const estabaGuardada = Boolean(current?.guardada_by_me);
-
-    if (estabaGuardada) {
-      setPublicaciones((prev) => prev.filter((p) => p.id !== pubId));
-    } else {
-      setPublicaciones((prev) =>
-        prev.map((p) => {
-          if (p.id !== pubId) return p;
-
-          return {
-            ...p,
-            guardada_by_me: true,
-            guardados_count: Math.max(0, (p.guardados_count || 0) + 1),
-            interacciones_count: Math.max(
-              0,
-              (p.interacciones_count || 0) + 1
-            ),
-          };
-        })
-      );
-    }
-
-    try {
-      if (estabaGuardada) {
-        await quitarPublicacionGuardada(pubId);
-      } else {
-        await guardarPublicacion(pubId);
-      }
-    } catch (error) {
-      setPublicaciones(snapshot);
-      setErrorMessage(error.message || "Error al guardar/quitar guardado.");
-    } finally {
-      setLock(setSaveLocks, pubId, false);
-    }
-  }
 
   // =====================================================
   // Crear / Editar espacio
@@ -724,8 +623,6 @@ export default function ProfilePage() {
 
   const avatarUrl = usuarioMe?.avatar_url || "";
   const esModoPublicador = usuarioMe?.modo_activo === "publicador";
-  
-
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <main className="mx-auto max-w-3xl px-4 py-8">
@@ -743,27 +640,23 @@ export default function ProfilePage() {
           </p>
           )}
 
+          {perfilSuccessMessage && (
+            <div className="mt-4 flex items-center gap-2 rounded-xl border border-green-800 bg-green-950/50 px-4 py-3 text-sm font-semibold text-green-100">
+              <span aria-hidden="true">✓</span>
+              <span>{perfilSuccessMessage}</span>
+            </div>
+          )}
+
           {/* Perfil personal */}
           {!showPerfilForm && (
           <div className="mt-4 rounded-2xl border border-gray-800 bg-gray-950 p-4">
             <div className="flex items-center gap-4">
               <div
-                role="button"
-                tabIndex={0}
-                onClick={handleAvatarClick}
-                onDragOver={handleAvatarDragOver}
-                onDragLeave={handleAvatarDragLeave}
-                onDrop={handleAvatarDrop}
                 className={[
                   "relative h-16 w-16 rounded-full border overflow-hidden",
                   "flex items-center justify-center",
-                  isDragOverAvatar ? "border-green-400" : "border-gray-700",
-                  "bg-gray-900",
-                  isUploadingAvatar
-                    ? "opacity-70 cursor-not-allowed"
-                    : "cursor-pointer",
+                  "border-gray-700 bg-gray-900",
                 ].join(" ")}
-                title="Click para elegir imagen o arrastrá una foto acá"
               >
                 {avatarUrl ? (
                   <img
@@ -776,11 +669,6 @@ export default function ProfilePage() {
                   <span className="text-xs text-gray-300">Sin foto</span>
                 )}
 
-                {isUploadingAvatar && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <span className="text-xs">Subiendo...</span>
-                  </div>
-                )}
               </div>
 
               <div className="flex-1">
@@ -793,15 +681,6 @@ export default function ProfilePage() {
                 </p>
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleAvatarClick}
-                    disabled={isUploadingAvatar}
-                    className="rounded-xl bg-white text-black px-3 py-2 text-xs font-semibold transition-all hover:bg-gray-100 hover:shadow-md disabled:opacity-60"
-                  >
-                    {isUploadingAvatar ? "Subiendo..." : "Cambiar foto"}
-                  </button>
-
                   <button
                     type="button"
                     onClick={abrirEdicionPerfil}
@@ -824,14 +703,6 @@ export default function ProfilePage() {
                     Crear nuevo espacio
                   </button>
                 </div>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleAvatarInputChange}
-                  className="hidden"
-                />
 
                 <p className="mt-2 text-xs text-gray-500">
                   {isLoadingMe
@@ -865,37 +736,135 @@ export default function ProfilePage() {
         {showPerfilForm && (
           <section className="mb-8 rounded-2xl border border-gray-800 bg-gray-950 p-4">
             <form onSubmit={handlePerfilSubmit} className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block">
-                  <span className="text-xs font-medium text-gray-400">
-                    Provincia
-                  </span>
-                  <input
-                    type="text"
-                    name="provincia"
-                    value={perfilForm.provincia}
-                    onChange={handlePerfilFormChange}
-                    disabled={isSavingPerfil}
-                    className="mt-1 w-full rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-orange-500 disabled:opacity-60"
-                    placeholder="Provincia"
-                  />
-                </label>
+              <div className="flex items-center gap-3">
+                <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full border border-gray-700 bg-gray-900">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Foto de perfil"
+                      className="h-full w-full object-cover"
+                      draggable={false}
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center px-1 text-center text-xs text-gray-300">
+                      Sin foto
+                    </div>
+                  )}
+                </div>
 
-                <label className="block">
-                  <span className="text-xs font-medium text-gray-400">
-                    Ciudad
-                  </span>
-                  <input
-                    type="text"
-                    name="ciudad"
-                    value={perfilForm.ciudad}
-                    onChange={handlePerfilFormChange}
-                    disabled={isSavingPerfil}
-                    className="mt-1 w-full rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-orange-500 disabled:opacity-60"
-                    placeholder="Ciudad"
-                  />
-                </label>
+                <p className="min-w-0 flex-1 truncate text-sm text-gray-200">
+                  {usuarioMe?.email || "Usuario sin correo"}
+                </p>
               </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={handleAvatarClick}
+                  disabled={isUploadingAvatar || isSavingPerfil}
+                  className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black transition-all hover:bg-gray-100 hover:shadow-md disabled:opacity-60"
+                >
+                  {isUploadingAvatar ? "Subiendo..." : "Cambiar foto"}
+                </button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleAvatarInputChange}
+                  className="hidden"
+                />
+              </div>
+
+              <div>
+                <span className="text-xs font-medium text-gray-400">
+                  Color de fondo
+                </span>
+
+                <div className="relative mt-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowColorFondoOptions((isOpen) => !isOpen)
+                    }
+                    disabled={isSavingPerfil}
+                    className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-gray-800 disabled:opacity-60"
+                    aria-expanded={showColorFondoOptions}
+                  >
+                    Color de fondo
+                  </button>
+
+                  {showColorFondoOptions && (
+                    <div className="absolute left-0 z-20 mt-2 w-64 overflow-hidden rounded-xl border border-gray-800 bg-gray-950 shadow-xl">
+                      {COLOR_FONDO_PRESETS.map((color) => {
+                        const isSelected =
+                          normalizeColorFondo(perfilForm.color_fondo).toLowerCase() ===
+                          color.valor.toLowerCase();
+
+                        return (
+                          <button
+                            key={color.nombre}
+                            type="button"
+                            onClick={() => {
+                              setPerfilForm((prev) => ({
+                                ...prev,
+                                color_fondo: color.valor,
+                              }));
+                              setShowColorFondoOptions(false);
+                            }}
+                            disabled={isSavingPerfil}
+                            className={[
+                              "flex w-full items-center gap-3 px-3 py-2 text-left text-sm",
+                              isSelected
+                                ? "bg-orange-500/20 text-white"
+                                : "text-gray-200 hover:bg-gray-900",
+                              "disabled:opacity-60",
+                            ].join(" ")}
+                            aria-pressed={isSelected}
+                          >
+                            <span
+                              className="h-5 w-5 rounded-full border border-gray-600"
+                              style={{ backgroundColor: color.valor }}
+                              aria-hidden="true"
+                            />
+                            <span>{color.nombre}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <label className="block">
+                <span className="text-xs font-medium text-gray-400">
+                  Provincia
+                </span>
+                <input
+                  type="text"
+                  name="provincia"
+                  value={perfilForm.provincia}
+                  onChange={handlePerfilFormChange}
+                  disabled={isSavingPerfil}
+                  className="mt-1 w-full rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-orange-500 disabled:opacity-60"
+                  placeholder="Provincia"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-medium text-gray-400">
+                  Ciudad
+                </span>
+                <input
+                  type="text"
+                  name="ciudad"
+                  value={perfilForm.ciudad}
+                  onChange={handlePerfilFormChange}
+                  disabled={isSavingPerfil}
+                  className="mt-1 w-full rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-orange-500 disabled:opacity-60"
+                  placeholder="Ciudad"
+                />
+              </label>
 
               <div className="flex flex-wrap gap-2">
                 <button
@@ -1339,97 +1308,6 @@ export default function ProfilePage() {
           </section>
         )}
 
-        {/* ===================================================== */}
-        {/* Sección: Publicaciones guardadas */}
-        {/* ===================================================== */}
-        {!showPerfilForm && (
-        <section>
-          <div className="mb-3">
-            <h2 className="text-lg font-semibold">Publicaciones guardadas</h2>
-            <p className="mt-1 text-sm text-gray-400">
-              Contenido que guardaste desde Feed, Ranking o Explorador.
-            </p>
-          </div>
-
-          {isLoading && (
-            <div className="space-y-3">
-              <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-              <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-              <div className="h-28 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-            </div>
-          )}
-
-          {!isLoading && errorMessage && (
-            <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
-              <p className="font-semibold text-red-200">Error</p>
-              <p className="mt-2 text-red-100 break-words">{errorMessage}</p>
-
-              <p className="mt-3 text-sm text-gray-200">
-                Si ves <b>401</b>, verificá que exista{" "}
-                <code className="bg-gray-800 px-1 rounded">access_token</code>{" "}
-                en localStorage.
-              </p>
-            </div>
-          )}
-
-          {!isLoading && !errorMessage && publicaciones.length === 0 && (
-            <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center">
-              <p className="text-gray-200 font-semibold">
-                No tenés publicaciones guardadas
-              </p>
-              <p className="mt-2 text-gray-400 text-sm">
-                Guardá publicaciones desde el Feed o Tendencias y van a aparecer
-                acá.
-              </p>
-            </div>
-          )}
-
-          {!isLoading && !errorMessage && publicaciones.length > 0 && (
-            <div className="space-y-4">
-              <div
-                className="
-                  grid
-                  grid-cols-3
-                  sm:grid-cols-3
-                  md:grid-cols-4
-                  gap-1
-                "
-              >
-                {publicaciones.map((p) => {
-                  const publicacionImagenUrl = getMediaUrlFromAny(p);
-
-                  return (
-                    <Link
-                      key={p.id}
-                      to={`/publicaciones/${p.id}`}
-                      className="relative aspect-square bg-gray-800 overflow-hidden block"
-                    >
-                      {publicacionImagenUrl ? (
-                        <img
-                          src={publicacionImagenUrl}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                          Sin imagen
-                        </div>
-                      )}
-
-                      <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition flex items-center justify-center">
-                        <div className="text-xs text-white text-center">
-                          <p>❤️ {p.likes_count || 0}</p>
-                          <p>💾 {p.guardados_count || 0}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </section>
-        )}
       </main>
     </div>
   );

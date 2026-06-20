@@ -8,7 +8,7 @@ Los campos agregados son solo de salida (response),
 para no romper flujos existentes.
 """
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 
@@ -39,6 +39,7 @@ class UsuarioResponse(BaseModel):
 
     # Campos agregados para MiPlaza
     avatar_url: Optional[str] = None  # ETAPA 49
+    color_fondo: Optional[str] = None
     modo_activo: str
     onboarding_completo: bool
     provincia: Optional[str] = None
@@ -71,6 +72,10 @@ class UsuarioPerfilUpdate(BaseModel):
     """
     provincia: Optional[str] = None
     ciudad: Optional[str] = None
+    color_fondo: Optional[str] = Field(
+        default=None,
+        pattern=r"^#[0-9A-Fa-f]{6}$",
+    )
 
 
 # ---------------------------------

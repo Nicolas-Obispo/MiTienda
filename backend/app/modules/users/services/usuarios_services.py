@@ -4,12 +4,16 @@ usuarios_services.py
 Lógica de negocio para Usuarios.
 """
 
+import re
+
 from sqlalchemy.orm import Session
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.schemas.usuarios_schemas import UsuarioCreate, UsuarioLogin
 
 # Funciones de seguridad
 from app.core.security import hash_password, verificar_password
+
+COLOR_FONDO_HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 # ✔️ IMPORTANTE: ya NO importamos auth aquí
 # Cada capa cumple su propia responsabilidad
@@ -87,15 +91,23 @@ def actualizar_perfil_usuario(
     Campos permitidos:
     - provincia
     - ciudad
+    - color_fondo
     """
 
-    campos_permitidos = {"provincia", "ciudad"}
+    campos_permitidos = {"provincia", "ciudad", "color_fondo"}
 
     for campo, valor in campos.items():
         if campo not in campos_permitidos:
             continue
 
-        setattr(usuario, campo, valor.strip() if isinstance(valor, str) else valor)
+        if isinstance(valor, str):
+            valor = valor.strip()
+
+        if campo == "color_fondo" and valor is not None:
+            if not COLOR_FONDO_HEX_RE.fullmatch(valor):
+                raise ValueError("color_fondo debe ser un HEX valido (#RRGGBB)")
+
+        setattr(usuario, campo, valor)
 
     db.commit()
     db.refresh(usuario)
