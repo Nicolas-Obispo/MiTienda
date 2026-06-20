@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchPublicacionesGuardadas } from "@features/posts";
+import { usePublicacionesGuardadas } from "@features/posts";
 import { obtenerMisEspaciosSeguidos } from "@features/spaces";
 import { getMediaUrlFromAny } from "@shared";
 
@@ -8,9 +8,6 @@ export default function VerSeguidosPage() {
   const [vistaActiva, setVistaActiva] = useState("espacios");
   const [espacios, setEspacios] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [publicacionesGuardadas, setPublicacionesGuardadas] = useState([]);
-  const [cargandoGuardadas, setCargandoGuardadas] = useState(false);
-  const [guardadasErrorMessage, setGuardadasErrorMessage] = useState("");
 
   const [ubicacion, setUbicacion] = useState({
     lat: null,
@@ -80,37 +77,21 @@ export default function VerSeguidosPage() {
     };
   }, [ubicacion.lat, ubicacion.lng]);
 
-  useEffect(() => {
-    let cancelado = false;
+  const {
+    data: publicacionesGuardadasData = [],
+    isLoading: cargandoGuardadas,
+    error: guardadasError,
+  } = usePublicacionesGuardadas({
+    enabled: vistaActiva === "guardadas",
+  });
 
-    async function cargarGuardadas() {
-      try {
-        setCargandoGuardadas(true);
-        setGuardadasErrorMessage("");
+  const publicacionesGuardadas = Array.isArray(publicacionesGuardadasData)
+    ? publicacionesGuardadasData
+    : [];
 
-        const data = await fetchPublicacionesGuardadas();
-
-        if (cancelado) return;
-        setPublicacionesGuardadas(Array.isArray(data) ? data : []);
-      } catch (error) {
-        if (cancelado) return;
-        setGuardadasErrorMessage(
-          error.message || "Error desconocido cargando publicaciones guardadas."
-        );
-        setPublicacionesGuardadas([]);
-      } finally {
-        if (!cancelado) {
-          setCargandoGuardadas(false);
-        }
-      }
-    }
-
-    cargarGuardadas();
-
-    return () => {
-      cancelado = true;
-    };
-  }, []);
+  const guardadasErrorMessage = guardadasError
+    ? guardadasError.message || "Error desconocido cargando publicaciones guardadas."
+    : "";
 
   return (
     <div className="space-y-4">

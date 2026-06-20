@@ -25,6 +25,7 @@ export const queryKeys = {
   posts: {
     all: ["posts"],
     detalle: (publicacionId) => ["posts", "detalle", publicacionId],
+    guardadas: () => ["posts", "guardadas"],
   },
 
   spaces: {
