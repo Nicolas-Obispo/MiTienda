@@ -415,3 +415,43 @@ Solo CHANGELOG.md.
 * Build frontend OK.
 * Compile backend OK.
 * Working tree clean.
+
+## ETAPA 72.10 — Historias permanentes (temporal)
+
+### Commit 28fae51
+
+**feat(stories): mantiene historias visibles temporalmente**
+
+#### Decisión de producto
+
+Durante la etapa temprana de adopción de FeedGo!, las historias permanecerán visibles indefinidamente para mantener actividad visible en la plataforma.
+
+#### Cambios
+
+* Se elimina temporalmente el filtro de expiración de historias.
+* Las historias activas continúan apareciendo en:
+
+  * Feed
+  * Barra de historias
+  * Perfil del espacio
+  * Viewer de historias
+* Se conserva `expira_en` en:
+
+  * Base de datos
+  * Modelos
+  * Schemas
+  * Flujo de creación
+
+#### Sin cambios
+
+* Likes de historias.
+* Vistas de historias.
+* Contadores.
+* Frontend.
+* Contratos de API.
+
+#### Nota importante
+
+Esta es una medida temporal de crecimiento temprano.
+
+Cuando exista mayor volumen de usuarios y publicaciones se evaluará restaurar el comportamiento original de historias efímeras de 24 horas.
