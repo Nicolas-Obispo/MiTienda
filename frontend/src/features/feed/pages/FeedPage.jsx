@@ -58,6 +58,7 @@ export default function FeedPage() {
   const historiasPendientesRef = useRef(new Set());
   const viewerComercioIdRef = useRef(null);
   const historiasOrdenRef = useRef([]);
+  const historiasPorComercioRef = useRef({});
 
   const {
   likeLocks,
@@ -141,6 +142,23 @@ export default function FeedPage() {
         error?.message || "Error desconocido cargando historias."
       );
     }
+  }
+
+  async function getHistoriasDeComercio(comercioId) {
+    const cache = historiasPorComercioRef.current;
+
+    if (Array.isArray(cache[comercioId])) {
+      return cache[comercioId];
+    }
+
+    const historias = await fetchHistoriasPorComercio(comercioId);
+    const list = Array.isArray(historias) ? historias : [];
+
+    if (list.length > 0) {
+      cache[comercioId] = list;
+    }
+
+    return list;
   }
 
   async function loadFeed() {
@@ -243,8 +261,7 @@ export default function FeedPage() {
       const nextId = next.comercioId;
       const nextTitulo = next.nombre || `Comercio ${nextId}`;
 
-      const historias = await fetchHistoriasPorComercio(nextId);
-      const list = Array.isArray(historias) ? historias : [];
+      const list = await getHistoriasDeComercio(nextId);
 
       if (list.length === 0) {
         viewerComercioIdRef.current = nextId;
@@ -281,8 +298,7 @@ export default function FeedPage() {
       const prevId = prev.comercioId;
       const prevTitulo = prev.nombre || `Comercio ${prevId}`;
 
-      const historias = await fetchHistoriasPorComercio(prevId);
-      const list = Array.isArray(historias) ? historias : [];
+      const list = await getHistoriasDeComercio(prevId);
 
       if (list.length === 0) {
         viewerComercioIdRef.current = prevId;
@@ -305,8 +321,7 @@ export default function FeedPage() {
       const item = historiasItems.find((i) => i.comercioId === comercioId);
       const titulo = item?.nombre || `Comercio ${comercioId}`;
 
-      const historias = await fetchHistoriasPorComercio(comercioId);
-      const list = Array.isArray(historias) ? historias : [];
+      const list = await getHistoriasDeComercio(comercioId);
 
       if (list.length === 0) {
         navigate(`/comercios/${comercioId}`);
