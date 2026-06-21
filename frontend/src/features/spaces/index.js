@@ -9,4 +9,8 @@ export * from "@features/spaces/services/seguidores_service";
 export * from "@features/spaces/services/comercios_metricas_sociales_service";
 export * from "@features/spaces/services/comercios_analytics_service";
 
+// Hooks
+export * from "@features/spaces/hooks/useComercioDetalle";
+export * from "@features/spaces/hooks/usePublicacionesComercio";
+
 export { default as VerSeguidosPage } from '@features/spaces/pages/VerSeguidosPage';

@@ -10,3 +10,4 @@ export * from "@features/stories/services/historias_service";
 
 // Hooks
 export * from "@features/stories/hooks/useHistoriasBar";
+export * from "@features/stories/hooks/useHistoriasComercio";
