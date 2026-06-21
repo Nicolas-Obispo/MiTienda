@@ -28,8 +28,8 @@ import { fetchPublicacionesGuardadas } from "@features/posts";
 
 import {
   fetchHistoriasPorComercio,
-  fetchHistoriasBarItems,
   marcarHistoriaVista,
+  useHistoriasBar,
 } from "@features/stories";
 
 export default function FeedPage() {
@@ -42,12 +42,20 @@ export default function FeedPage() {
     error: feedQueryError,
   } = useFeedPublicaciones();
 
+  const {
+    data: historiasItems = [],
+    isLoading: isHistoriasBarLoading,
+    error: historiasBarError,
+    refetch: refetchHistoriasBar,
+  } = useHistoriasBar();
+
   const [isLoading, setIsLoading] = useState(true);
+  const [feedHydratado, setFeedHydratado] = useState(false);
   const [publicaciones, setPublicaciones] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
-
-  const [historiasItems, setHistoriasItems] = useState([]);
-  const [historiasErrorMessage, setHistoriasErrorMessage] = useState("");
+  const historiasErrorMessage = historiasBarError
+    ? historiasBarError.message || "Error desconocido cargando historias."
+    : "";
 
   const [viewerIsOpen, setViewerIsOpen] = useState(false);
   const [viewerTitulo, setViewerTitulo] = useState("Historias");
@@ -78,7 +86,7 @@ export default function FeedPage() {
 
   async function cerrarViewer() {
     if (huboVistasNuevasRef.current) {
-      await loadHistoriasBar();
+      await refetchHistoriasBar();
     }
 
     setViewerIsOpen(false);
@@ -100,10 +108,6 @@ export default function FeedPage() {
       nombre: i.nombre,
     }));
   }, [historiasItems]);
-
-  useEffect(() => {
-    loadHistoriasBar();
-  }, []);
 
   function preloadHistoriasImages(historias, max = 10) {
     if (!Array.isArray(historias) || historias.length === 0) return;
@@ -131,20 +135,6 @@ export default function FeedPage() {
       window.requestIdleCallback(doPreload, { timeout: 1200 });
     } else {
       setTimeout(doPreload, 0);
-    }
-  }
-
-  async function loadHistoriasBar() {
-    try {
-      setHistoriasErrorMessage("");
-      const data = await fetchHistoriasBarItems();
-      const items = Array.isArray(data) ? data : data?.items || [];
-      setHistoriasItems(items);
-    } catch (error) {
-      setHistoriasItems([]);
-      setHistoriasErrorMessage(
-        error?.message || "Error desconocido cargando historias."
-      );
     }
   }
 
@@ -195,9 +185,11 @@ export default function FeedPage() {
       }));
 
       setPublicaciones(merged);
+      setFeedHydratado(true);
       setIsLoading(false);
     } catch (error) {
       setErrorMessage(error?.message || "Error desconocido cargando el feed.");
+      setFeedHydratado(true);
       setIsLoading(false);
     }
   }
@@ -206,6 +198,11 @@ export default function FeedPage() {
     const feedItems = Array.isArray(feedData)
       ? feedData
       : feedData?.items || [];
+
+    if (feedItems.length > 0 && publicaciones.length === 0) {
+      setPublicaciones(feedItems);
+      setIsLoading(false);
+    }
 
     if (isFeedLoading && publicaciones.length === 0 && feedItems.length === 0) {
       return;
@@ -226,10 +223,10 @@ export default function FeedPage() {
       return;
     }
 
-    setIsLoading(isFeedLoading && publicaciones.length === 0);
+    setIsLoading(!feedHydratado && publicaciones.length === 0);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFeedLoading, feedQueryError, publicaciones.length]);
+  }, [feedHydratado, isFeedLoading, feedQueryError, publicaciones.length]);
 
   useEffect(() => {
     const shouldShowWelcome =
@@ -403,7 +400,9 @@ export default function FeedPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <main className="mx-auto max-w-2xl px-3 py-4 sm:px-4 sm:py-6">
-        {!isLoading && !errorMessage && (
+        {!isLoading &&
+          !errorMessage &&
+          !(isHistoriasBarLoading && historiasItems.length === 0) && (
           <div className="-mx-3 mb-4 border-b border-gray-800 bg-gray-950 px-3 py-3 sm:-mx-4 sm:px-4">
             <HistoriasBar
               items={historiasItems}
@@ -432,7 +431,7 @@ export default function FeedPage() {
           </div>
         )}
 
-        {!isLoading && !isFeedLoading && !errorMessage && publicaciones.length === 0 && (
+        {feedHydratado && !isLoading && !isFeedLoading && !errorMessage && publicaciones.length === 0 && (
           <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6 text-center">
             <p className="font-semibold text-gray-200">No hay publicaciones</p>
             <p className="mt-2 text-sm text-gray-400">

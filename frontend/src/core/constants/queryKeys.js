@@ -36,6 +36,7 @@ export const queryKeys = {
 
   stories: {
     all: ["stories"],
+    bar: () => ["stories", "bar"],
     bySpace: (espacioId) => ["stories", "space", espacioId],
   },
 

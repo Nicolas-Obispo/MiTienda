@@ -7,3 +7,6 @@ export { default as CrearHistoriaModal } from "@features/stories/components/Crea
 
 // Services
 export * from "@features/stories/services/historias_service";
+
+// Hooks
+export * from "@features/stories/hooks/useHistoriasBar";
