@@ -10,6 +10,8 @@ No contienen lógica de negocio.
 """
 
 from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -35,6 +37,33 @@ class PublicacionGuardadaResponse(BaseModel):
         "from_attributes": True
     }
 
+
+class PublicacionGuardadaPublicacion(BaseModel):
+    """
+    Datos de la publicacion guardada listos para renderizar cards.
+    """
+    id: int
+    publicacion_id: int
+    comercio_id: int
+    comercio_nombre: Optional[str] = None
+    titulo: str
+    descripcion: Optional[str] = None
+    seccion_id: Optional[int] = None
+    imagen_url: Optional[str] = None
+    is_activa: bool
+    created_at: datetime
+    updated_at: datetime
+    likes_count: int = 0
+    guardados_count: int = 0
+    interacciones_count: int = 0
+    liked_by_me: bool = False
+    guardada_by_me: bool = True
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
 class PublicacionGuardadaListado(BaseModel):
     """
     Schema para listar publicaciones guardadas por el usuario.
@@ -44,6 +73,7 @@ class PublicacionGuardadaListado(BaseModel):
     """
     publicacion_id: int
     created_at: datetime
+    publicacion: Optional[PublicacionGuardadaPublicacion] = None
 
     model_config = {
         "from_attributes": True

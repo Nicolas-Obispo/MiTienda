@@ -92,6 +92,34 @@ function normalizarPublicacionGuardada(item) {
   return null;
 }
 
+function tienePublicacionGuardadaCompleta(item) {
+  const publicacion = item?.publicacion;
+
+  if (!publicacion || typeof publicacion.id !== "number") return false;
+
+  const camposRequeridos = [
+    "publicacion_id",
+    "comercio_id",
+    "comercio_nombre",
+    "titulo",
+    "descripcion",
+    "seccion_id",
+    "imagen_url",
+    "is_activa",
+    "created_at",
+    "updated_at",
+    "likes_count",
+    "guardados_count",
+    "interacciones_count",
+    "liked_by_me",
+    "guardada_by_me",
+  ];
+
+  return camposRequeridos.every((campo) =>
+    Object.prototype.hasOwnProperty.call(publicacion, campo)
+  );
+}
+
 /**
  * completarPublicacionGuardada
  * Si la guardada viene incompleta, busca el detalle real de la publicación.
@@ -200,11 +228,22 @@ export async function fetchPublicacionesGuardadas() {
 
   const lista = normalizarListaRespuesta(data);
 
-  const normalizadas = lista.map(normalizarPublicacionGuardada).filter(Boolean);
+  const normalizadas = lista
+    .map((item) => ({
+      publicacion: normalizarPublicacionGuardada(item),
+      requiereCompletar: !tienePublicacionGuardadaCompleta(item),
+    }))
+    .filter(({ publicacion }) => Boolean(publicacion));
+
+  if (normalizadas.every(({ requiereCompletar }) => !requiereCompletar)) {
+    return normalizadas.map(({ publicacion }) => publicacion);
+  }
 
   const completas = await Promise.all(
-    normalizadas.map((publicacion) =>
-      completarPublicacionGuardada(publicacion, token)
+    normalizadas.map(({ publicacion, requiereCompletar }) =>
+      requiereCompletar
+        ? completarPublicacionGuardada(publicacion, token)
+        : publicacion
     )
   );
 
