@@ -44,6 +44,7 @@ export default function RankingPage() {
   } = useRankingPublicaciones();
 
   const [isLoading, setIsLoading] = useState(true);
+  const [rankingHydratado, setRankingHydratado] = useState(false);
   const [publicaciones, setPublicaciones] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const {
@@ -61,9 +62,12 @@ export default function RankingPage() {
   const toggleGuardadoMutation =
     useToggleGuardadoPublicacionMutation();
 
-  async function loadRanking() {
+  async function loadRanking({ mantenerVisible = false } = {}) {
     try {
-      setIsLoading(true);
+      if (!mantenerVisible && publicaciones.length === 0) {
+        setIsLoading(true);
+      }
+
       setErrorMessage("");
 
       // Ranking define el orden, Feed define liked_by_me real por usuario
@@ -120,18 +124,35 @@ export default function RankingPage() {
       });
 
       setPublicaciones(merged);
+      setRankingHydratado(true);
     } catch (error) {
       setErrorMessage(error.message || "Error desconocido cargando el ranking.");
-      setPublicaciones([]);
+      setRankingHydratado(true);
     } finally {
       setIsLoading(false);
     }
   }
 
   useEffect(() => {
-    if (isRankingLoading) return;
+    const rankingItems = Array.isArray(rankingData)
+      ? rankingData
+      : rankingData?.items || [];
 
-    loadRanking();
+    const hidratoDesdeCache =
+      rankingItems.length > 0 && publicaciones.length === 0;
+
+    if (hidratoDesdeCache) {
+      setPublicaciones(rankingItems);
+      setIsLoading(false);
+    }
+
+    if (isRankingLoading && publicaciones.length === 0 && rankingItems.length === 0) {
+      return;
+    }
+
+    loadRanking({
+      mantenerVisible: hidratoDesdeCache || publicaciones.length > 0,
+    });
   }, [rankingData, isRankingLoading, rankingQueryError]);
 
   /**
@@ -196,7 +217,7 @@ export default function RankingPage() {
         </div>
 
         {/* Estado: Loading */}
-        {isLoading && (
+        {isLoading && publicaciones.length === 0 && (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-3">
             <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
             <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
@@ -213,7 +234,7 @@ export default function RankingPage() {
         )}
 
         {/* Estado: Vacío */}
-        {!isLoading && !errorMessage && publicaciones.length === 0 && (
+        {rankingHydratado && !isLoading && !isRankingLoading && !errorMessage && publicaciones.length === 0 && (
           <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center">
             <p className="text-gray-200 font-semibold">No hay publicaciones</p>
             <p className="mt-2 text-gray-400 text-sm">
@@ -223,7 +244,7 @@ export default function RankingPage() {
         )}
 
         {/* Estado: OK */}
-        {!isLoading && !errorMessage && publicaciones.length > 0 && (
+        {!errorMessage && publicaciones.length > 0 && (
           <div
             className="
               grid
