@@ -198,18 +198,23 @@ export default function FeedPage() {
       setIsLoading(false);
     } catch (error) {
       setErrorMessage(error?.message || "Error desconocido cargando el feed.");
-      setPublicaciones([]);
       setIsLoading(false);
     }
   }
 
   useEffect(() => {
-    if (isFeedLoading) return;
+    const feedItems = Array.isArray(feedData)
+      ? feedData
+      : feedData?.items || [];
+
+    if (isFeedLoading && publicaciones.length === 0 && feedItems.length === 0) {
+      return;
+    }
 
     loadFeed();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFeedLoading, feedQueryError]);
+  }, [feedData, isFeedLoading, feedQueryError]);
 
 
   useEffect(() => {
@@ -221,17 +226,10 @@ export default function FeedPage() {
       return;
     }
 
-    if (isFeedLoading && publicaciones.length === 0) {
-      setIsLoading(true);
-      return;
-    }
-
-    if (!isFeedLoading && publicaciones.length > 0) {
-      setIsLoading(false);
-    }
+    setIsLoading(isFeedLoading && publicaciones.length === 0);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFeedLoading, feedQueryError]);
+  }, [isFeedLoading, feedQueryError, publicaciones.length]);
 
   useEffect(() => {
     const shouldShowWelcome =
@@ -420,7 +418,7 @@ export default function FeedPage() {
           </div>
         )}
 
-        {isLoading && (
+        {isLoading && publicaciones.length === 0 && (
           <div className="space-y-4">
             <div className="h-[70vh] rounded-3xl border border-gray-800 bg-gray-900 animate-pulse" />
             <div className="h-[70vh] rounded-3xl border border-gray-800 bg-gray-900 animate-pulse" />
