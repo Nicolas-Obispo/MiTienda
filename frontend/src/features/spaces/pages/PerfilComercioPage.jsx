@@ -26,18 +26,18 @@ import {
 } from "@features/social";
 
 import {
-  getComercioById,
-  getPublicacionesDeComercio,
   crearPublicacionDeComercio,
+  useComercioDetalle,
+  usePublicacionesComercio,
 } from "@features/spaces";
 
 import {
-  fetchHistoriasPorComercio,
   marcarHistoriaVista,
+  useHistoriasComercio,
 } from "@features/stories";
 
 import {
-  fetchPublicacionesGuardadas,
+  usePublicacionesGuardadas,
 } from "@features/posts";
 
 import {
@@ -62,7 +62,7 @@ export default function CommerceProfilePage() {
   const { usuario, user } = useAuth();
   const usuarioActivo = usuario || user || null;
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [perfilHydratado, setPerfilHydratado] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const [comercio, setComercio] = useState(null);
@@ -96,6 +96,13 @@ export default function CommerceProfilePage() {
 
   const toggleLikeMutation = useToggleLikePublicacionMutation();
   const toggleGuardadoMutation = useToggleGuardadoPublicacionMutation();
+  const token = getAccessToken();
+  const comercioQuery = useComercioDetalle(comercioId);
+  const publicacionesQuery = usePublicacionesComercio(comercioId);
+  const historiasQuery = useHistoriasComercio(comercioId);
+  const guardadasQuery = usePublicacionesGuardadas({
+    enabled: Boolean(token),
+  });
 
   const [siguiendo, setSiguiendo] = useState(false);
   const [isLoadingFollow, setIsLoadingFollow] = useState(false);
@@ -127,73 +134,44 @@ function esComercioMio(comercioData, userData) {
     return localStorage.getItem("access_token");
   }
 
-  async function loadAll() {
+  function normalizarItems(data) {
+    return Array.isArray(data) ? data : data?.items || [];
+  }
+
+  function mergePublicacionesConGuardadas(publicacionesData, guardadasData) {
+    const pubs = normalizarItems(publicacionesData);
+    const guardadasItems = normalizarItems(guardadasData);
+
+    const guardadasSet = new Set(
+      guardadasItems
+        .map((g) => g?.id ?? g?.publicacion_id)
+        .filter((pid) => typeof pid === "number")
+    );
+
+    return pubs.map((p) => ({
+      ...p,
+      guardada_by_me: Boolean(p.guardada_by_me) || guardadasSet.has(p.id),
+    }));
+  }
+
+  async function loadDatosSecundarios() {
     if (!comercioId || Number.isNaN(comercioId)) {
       setErrorMessage("ID de comercio inválido.");
-      setIsLoading(false);
       return;
     }
 
     try {
-      setIsLoading(true);
-      setErrorMessage("");
+      const accessToken = getAccessToken();
 
-      const token = getAccessToken();
+      if (!accessToken) return;
 
-      const [
-        comercioData,
-        publicacionesData,
-        historiasData,
-        guardadasData,
-        metricasData,
-        comparacionData,
-        analyticsData,
-      ] = await Promise.all([
-        getComercioById(comercioId),
-        getPublicacionesDeComercio(comercioId),
-        fetchHistoriasPorComercio(comercioId).catch(() => []),
-        token ? fetchPublicacionesGuardadas() : Promise.resolve([]),
+      const [metricasData, comparacionData, analyticsData] = await Promise.all([
 
         // ETAPA 62 — métricas sociales reales
-          token
-          ? obtenerMetricasSocialesEspacio(comercioId)
-          : Promise.resolve(null),
-          token
-          ? obtenerComparacionMetricasSocialesEspacio(comercioId)
-          : Promise.resolve(null),
-          token
-          ? obtenerAnalyticsEspacio(comercioId)
-          : Promise.resolve(null),
+          obtenerMetricasSocialesEspacio(comercioId),
+          obtenerComparacionMetricasSocialesEspacio(comercioId),
+          obtenerAnalyticsEspacio(comercioId),
       ]);
-
-      const pubs = Array.isArray(publicacionesData)
-        ? publicacionesData
-        : publicacionesData?.items || [];
-
-      const hist = Array.isArray(historiasData)
-        ? historiasData
-        : historiasData?.items || [];
-
-      const guardadasItems = Array.isArray(guardadasData)
-        ? guardadasData
-        : guardadasData?.items || [];
-
-      const guardadasSet = new Set(
-        guardadasItems
-          .map((g) => g?.id ?? g?.publicacion_id)
-          .filter((pid) => typeof pid === "number")
-      );
-
-      const mergedPubs = pubs.map((p) => ({
-        ...p,
-        guardada_by_me: Boolean(p.guardada_by_me) || guardadasSet.has(p.id),
-      }));
-
-      setComercio(comercioData);
-
-      setHistorias(hist);
-
-      setPublicaciones(mergedPubs);
 
       // ETAPA 62
       setMetricasSociales(metricasData);
@@ -202,28 +180,25 @@ function esComercioMio(comercioData, userData) {
 
             // ETAPA 60 — Cargamos estado real de seguimiento solo si hay sesión.
       try {
-        if (token) {
+        if (accessToken) {
           const estadoSeguimiento = await obtenerEstadoSeguimiento(comercioId);
 
           setSiguiendo(Boolean(estadoSeguimiento.siguiendo));
 
-          setComercio((prev) => ({
-            ...prev,
-            seguidores_count: estadoSeguimiento.seguidores_count,
-          }));
+          setComercio((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  seguidores_count: estadoSeguimiento.seguidores_count,
+                }
+              : prev
+          );
         }
       } catch {
         // No rompemos la pantalla si falla el estado de seguimiento.
       }
-    } catch (error) {
-      setErrorMessage(
-        error.message || "Error desconocido cargando perfil del comercio."
-      );
-      setComercio(null);
-      setHistorias([]);
-      setPublicaciones([]);
-    } finally {
-      setIsLoading(false);
+    } catch {
+      // No bloqueamos el perfil si fallan metricas, analytics o seguimiento.
     }
   }
 
@@ -231,11 +206,8 @@ function esComercioMio(comercioData, userData) {
     if (!comercioId || Number.isNaN(comercioId)) return;
 
     try {
-      const historiasData = await fetchHistoriasPorComercio(comercioId);
-
-      const hist = Array.isArray(historiasData)
-        ? historiasData
-        : historiasData?.items || [];
+      const { data: historiasData } = await historiasQuery.refetch();
+      const hist = normalizarItems(historiasData);
 
       setHistorias(hist);
     } catch (error) {
@@ -247,31 +219,17 @@ function esComercioMio(comercioData, userData) {
     if (!comercioId || Number.isNaN(comercioId)) return;
 
     try {
-      const token = getAccessToken();
+      const accessToken = getAccessToken();
 
-      const [publicacionesData, guardadasData] = await Promise.all([
-        getPublicacionesDeComercio(comercioId),
-        token ? fetchPublicacionesGuardadas() : Promise.resolve([]),
+      const [publicacionesResult, guardadasResult] = await Promise.all([
+        publicacionesQuery.refetch(),
+        accessToken ? guardadasQuery.refetch() : Promise.resolve({ data: [] }),
       ]);
 
-      const pubs = Array.isArray(publicacionesData)
-        ? publicacionesData
-        : publicacionesData?.items || [];
-
-      const guardadasItems = Array.isArray(guardadasData)
-        ? guardadasData
-        : guardadasData?.items || [];
-
-      const guardadasSet = new Set(
-        guardadasItems
-          .map((g) => g?.id ?? g?.publicacion_id)
-          .filter((pid) => typeof pid === "number")
+      const mergedPubs = mergePublicacionesConGuardadas(
+        publicacionesResult.data,
+        guardadasResult.data
       );
-
-      const mergedPubs = pubs.map((p) => ({
-        ...p,
-        guardada_by_me: Boolean(p.guardada_by_me) || guardadasSet.has(p.id),
-      }));
 
       setPublicaciones(mergedPubs);
     } catch (error) {
@@ -280,7 +238,57 @@ function esComercioMio(comercioData, userData) {
   }
 
   useEffect(() => {
-    loadAll();
+    if (!comercioQuery.data) return;
+
+    setComercio(comercioQuery.data);
+    setPerfilHydratado(true);
+    setErrorMessage("");
+  }, [comercioQuery.data]);
+
+  useEffect(() => {
+    if (!publicacionesQuery.data) return;
+
+    const mergedPubs = mergePublicacionesConGuardadas(
+      publicacionesQuery.data,
+      guardadasQuery.data
+    );
+
+    setPublicaciones(mergedPubs);
+    setPerfilHydratado(true);
+    setErrorMessage("");
+  }, [publicacionesQuery.data, guardadasQuery.data]);
+
+  useEffect(() => {
+    if (!historiasQuery.data) return;
+
+    setHistorias(normalizarItems(historiasQuery.data));
+    setPerfilHydratado(true);
+    setErrorMessage("");
+  }, [historiasQuery.data]);
+
+  useEffect(() => {
+    const principalError =
+      comercioQuery.error || publicacionesQuery.error || historiasQuery.error;
+
+    if (!principalError) return;
+    if (comercio || publicaciones.length > 0 || historias.length > 0) return;
+
+    setErrorMessage(
+      principalError.message ||
+        "Error desconocido cargando perfil del comercio."
+    );
+    setPerfilHydratado(true);
+  }, [
+    comercioQuery.error,
+    publicacionesQuery.error,
+    historiasQuery.error,
+    comercio,
+    publicaciones.length,
+    historias.length,
+  ]);
+
+  useEffect(() => {
+    loadDatosSecundarios();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comercioId]);
 
@@ -493,6 +501,16 @@ function esComercioMio(comercioData, userData) {
   (historia) => !historia?.vista_by_me
   );
 
+  const hayDatosVisibles =
+    Boolean(comercio) || publicaciones.length > 0 || historias.length > 0;
+
+  const isInitialLoading =
+    !hayDatosVisibles &&
+    !perfilHydratado &&
+    (comercioQuery.isLoading ||
+      publicacionesQuery.isLoading ||
+      historiasQuery.isLoading);
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <main className="mx-auto max-w-5xl px-0 py-4 sm:px-4 sm:py-6">
@@ -507,7 +525,7 @@ function esComercioMio(comercioData, userData) {
           </button>
         </div>
         
-        {isLoading && (
+        {isInitialLoading && (
           <div className="space-y-4">
             <div className="h-40 rounded-3xl border border-gray-800 bg-gray-900 animate-pulse" />
             <div className="grid grid-cols-3 gap-2">
@@ -518,14 +536,14 @@ function esComercioMio(comercioData, userData) {
           </div>
         )}
 
-        {!isLoading && errorMessage && (
+        {!isInitialLoading && errorMessage && (
           <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
             <p className="font-semibold text-red-200">Error</p>
             <p className="mt-2 text-red-100 break-words">{errorMessage}</p>
           </div>
         )}
 
-        {!isLoading && !errorMessage && (
+        {!isInitialLoading && !errorMessage && (
           <>
             <section className="relative rounded-2xl border border-gray-800 bg-gray-900 p-4 sm:rounded-3xl sm:p-6">
               
