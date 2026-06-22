@@ -66,8 +66,9 @@ def obtener_feed_publicaciones(
     # Bonus recencia
     # -------------------------------------
     bonus_recencia = case(
-        (Publicacion.created_at >= ahora - timedelta(days=1), 3),
-        (Publicacion.created_at >= ahora - timedelta(days=3), 2),
+        (Publicacion.created_at >= ahora - timedelta(hours=6), 12),
+        (Publicacion.created_at >= ahora - timedelta(days=1), 8),
+        (Publicacion.created_at >= ahora - timedelta(days=3), 4),
         (Publicacion.created_at >= ahora - timedelta(days=7), 1),
         else_=0,
     )
@@ -161,9 +162,9 @@ def obtener_feed_publicaciones(
 
         # Score base
         score_base = (
-            likes_count_val
-            + (guardados_count_val * 2)
             + bonus_recencia_val
+            + (min(likes_count_val, 20) * 0.5)
+            + (min(guardados_count_val, 20) * 1.0)
         )
 
         # Afinidad IA
