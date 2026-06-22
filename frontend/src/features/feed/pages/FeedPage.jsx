@@ -24,7 +24,7 @@ import {
   useToggleGuardadoPublicacionMutation,
 } from "@features/social";
 
-import { fetchPublicacionesGuardadas } from "@features/posts";
+import { usePublicacionesGuardadas } from "@features/posts";
 
 import {
   fetchHistoriasPorComercio,
@@ -41,6 +41,10 @@ export default function FeedPage() {
     isLoading: isFeedLoading,
     error: feedQueryError,
   } = useFeedPublicaciones();
+
+  const {
+    data: guardadasData = [],
+  } = usePublicacionesGuardadas();
 
   const {
     data: historiasItems = [],
@@ -167,8 +171,6 @@ export default function FeedPage() {
         ? feedData
         : feedData?.items || [];
 
-      const guardadasData = await fetchPublicacionesGuardadas();
-
       const guardadasItems = Array.isArray(guardadasData)
         ? guardadasData
         : guardadasData?.items || [];
@@ -211,7 +213,7 @@ export default function FeedPage() {
     loadFeed();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feedData, isFeedLoading, feedQueryError]);
+  }, [feedData, guardadasData, isFeedLoading, feedQueryError]);
 
 
   useEffect(() => {
