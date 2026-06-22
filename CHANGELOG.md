@@ -781,3 +781,158 @@ La arquitectura Enterprise permanece cerrada y no hay migración activa. El trab
 - Sin cambios en frontend.
 - Sin cambios en endpoints.
 - Sin cambios visuales.
+
+## ETAPA 73.3 – 73.4 | UX Cache-First + Hidratación Instantánea
+
+### Objetivo
+
+Mejorar la percepción de velocidad de la aplicación eliminando recargas visuales innecesarias, aprovechando TanStack Query como fuente de cache y realizando reconciliación de datos en segundo plano.
+
+### Principio adoptado
+
+Mostrar cache inmediatamente y reconciliar en segundo plano.
+
+Este patrón pasa a considerarse una regla de UX para futuras pantallas del sistema.
+
+---
+
+### PERF-73.3.1 — Feed Cache-First
+
+Commit: `fcda877`
+
+* Eliminado comportamiento que ocultaba contenido visible durante refetch.
+* El skeleton ahora solo aparece cuando no existen publicaciones renderizables.
+* Se evita vaciar el feed ante errores temporales.
+* Feed hidrata contenido desde cache antes de completar reconciliaciones secundarias.
+
+Resultado:
+
+* Al volver al Feed, las publicaciones aparecen instantáneamente.
+
+---
+
+### PERF-73.3.2 — Historias Cache-First
+
+Commit: `72d0e8c`
+
+* Creado hook `useHistoriasBar`.
+* Incorporado cache TanStack para `/historias/bar`.
+* Eliminada carga manual inicial de historias en Feed.
+* Refetch de historias al cerrar viewer cuando existen vistas nuevas.
+
+Resultado:
+
+* La barra de historias reaparece instantáneamente al volver al Feed.
+
+---
+
+### PERF-73.3.3 — Ranking Cache-First
+
+Commit: `357eabb`
+
+* Ranking hidrata contenido desde cache antes de completar reconciliación de likes y guardados.
+* Skeleton limitado a carga inicial real.
+* Conservación de contenido visible durante refetch.
+
+Resultado:
+
+* Ranking vuelve a mostrarse inmediatamente al regresar a la pantalla.
+
+---
+
+### FEAT-73.4.1 — Hooks de Cache para Perfil de Comercio
+
+Commit: `b0a06cd`
+
+Se incorporan nuevos hooks:
+
+* `useComercioDetalle`
+* `usePublicacionesComercio`
+* `useHistoriasComercio`
+
+Basados en TanStack Query y reutilizando servicios existentes.
+
+Resultado:
+
+* Infraestructura preparada para cache-first en PerfilComercio.
+
+---
+
+### PERF-73.4.2 — Perfil de Comercio Cache-First
+
+Commit: `29a5c4e`
+
+* PerfilComercio deja de depender de una carga global bloqueante.
+* Comercio, publicaciones e historias se hidratan desde cache.
+* Métricas, analytics y seguimiento pasan a segundo plano.
+* Se mantienen optimistic updates existentes.
+
+Resultado:
+
+* El perfil reaparece instantáneamente al volver a visitarlo.
+
+---
+
+### FIX-73.4.3 — Upload de Imagen en Publicaciones
+
+Commit: `0af8bdc`
+
+* Corregido envío de token en upload de imágenes desde PerfilComercio.
+* `/media/upload` vuelve a recibir Authorization correctamente.
+
+Resultado:
+
+* Creación de publicaciones con imagen restaurada.
+
+---
+
+### FEAT-73.4.4 — Feed Prioriza Recencia
+
+Commit: `be7d7ef`
+
+Ajustada fórmula de ranking del Feed:
+
+* Mayor peso para publicaciones recientes.
+* Interacciones limitadas mediante caps.
+* Afinidad IA mantenida.
+* Ranking permanece sin modificaciones.
+
+Resultado:
+
+* Feed más dinámico y actualizado.
+* Ranking continúa representando popularidad e interacción.
+
+---
+
+### PERF-73.4.5 — Estabilización de Seguimiento Visible
+
+Commit: `ec396a1`
+
+* Cache local de estado de seguimiento por comercio.
+* Conservación visual de seguidores y estado siguiendo.
+* Reconciliación posterior con backend.
+
+Resultado:
+
+* Eliminado el pestañeo visual del botón seguir/siguiendo y del contador de seguidores.
+
+---
+
+### Regla de Arquitectura UX Incorporada
+
+Para futuras pantallas:
+
+1. Mostrar cache inmediatamente.
+2. Reconciliar datos en segundo plano.
+3. Evitar loaders que oculten contenido ya disponible.
+4. Evitar requests manuales duplicados.
+5. Utilizar TanStack Query como fuente principal de cache.
+6. Mantener backend como fuente de verdad.
+7. Preservar optimistic updates cuando existan.
+
+Pantallas ya adaptadas:
+
+* Feed
+* Historias Bar
+* Ranking
+* PerfilComercio
