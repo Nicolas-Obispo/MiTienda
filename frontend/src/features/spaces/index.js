@@ -12,5 +12,6 @@ export * from "@features/spaces/services/comercios_analytics_service";
 // Hooks
 export * from "@features/spaces/hooks/useComercioDetalle";
 export * from "@features/spaces/hooks/usePublicacionesComercio";
+export * from "@features/spaces/hooks/useMisComercios";
 
 export { default as VerSeguidosPage } from '@features/spaces/pages/VerSeguidosPage';

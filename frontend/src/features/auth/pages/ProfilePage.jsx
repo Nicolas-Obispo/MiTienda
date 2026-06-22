@@ -21,6 +21,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { httpPut } from "@core";
+import { queryKeys } from "@core/constants/queryKeys";
 import {
   getMediaUrlFromAny,
   uploadImagen,
@@ -31,11 +32,11 @@ import { cambiarModoUsuario } from "@features/auth/services/usuarioService";
 import { useQueryClient } from "@tanstack/react-query";
 
 import {
-  getMisComercios,
   crearComercio,
   desactivarComercio,
   actualizarComercio,
   reactivarComercio,
+  useMisComercios,
 } from "@features/spaces";
 
 const COLOR_FONDO_PRESETS = [
@@ -362,13 +363,23 @@ export default function ProfilePage() {
   // ==========================================================
   // Estado: Espacios administrados
   // ==========================================================
-  const [isLoadingComercios, setIsLoadingComercios] = useState(true);
-  const [misComercios, setMisComercios] = useState([]);
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { logout, refrescarUsuario } = useAuth();
   const [comerciosErrorMessage, setComerciosErrorMessage] = useState("");
+  const {
+    data: misComercios = [],
+    isLoading: isLoadingComercios,
+    error: misComerciosError,
+  } = useMisComercios({
+    enabled: Boolean(getToken()),
+  });
+  const comerciosQueryErrorMessage = misComerciosError
+    ? misComerciosError.message || "Error desconocido cargando tus espacios."
+    : "";
+  const comerciosErrorVisible =
+    comerciosErrorMessage || comerciosQueryErrorMessage;
 
   const [isCreatingComercio, setIsCreatingComercio] = useState(false);
   const [isActingComercioById, setIsActingComercioById] = useState({});
@@ -445,27 +456,8 @@ export default function ProfilePage() {
     navigate("/login");
   }
 
-  async function loadMisComercios() {
-    try {
-      setIsLoadingComercios(true);
-      setComerciosErrorMessage("");
-
-      const data = await getMisComercios();
-      const items = Array.isArray(data) ? data : data?.items || [];
-      setMisComercios(items);
-    } catch (error) {
-      setComerciosErrorMessage(
-        error.message || "Error desconocido cargando tus espacios."
-      );
-      setMisComercios([]);
-    } finally {
-      setIsLoadingComercios(false);
-    }
-  }
-
   useEffect(() => {
     loadUsuarioMe();
-    loadMisComercios();
   }, []);
 
   useEffect(() => {
@@ -553,6 +545,12 @@ export default function ProfilePage() {
 
       if (editingComercioId) {
         await actualizarComercio(editingComercioId, payload);
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.spaces.mis(),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.spaces.detalle(editingComercioId),
+        });
 
         setShowCreateForm(false);
         handleResetForm();
@@ -562,7 +560,9 @@ export default function ProfilePage() {
       }
 
       await crearComercio(payload);
-      await loadMisComercios();
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.spaces.mis(),
+      });
 
       setShowCreateForm(false);
       handleResetForm();
@@ -587,8 +587,13 @@ export default function ProfilePage() {
       setComercioLock(comercioId, true);
 
       await desactivarComercio(comercioId);
-      await loadMisComercios();
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.spaces.mis(),
+      });
       queryClient.invalidateQueries({ queryKey: ["explore", "spaces"] });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.spaces.detalle(comercioId),
+      });
     } catch (error) {
       setComerciosErrorMessage(
         error.message || "Error desactivando el espacio."
@@ -610,8 +615,13 @@ export default function ProfilePage() {
       setComercioLock(comercioId, true);
 
       await reactivarComercio(comercioId);
-      await loadMisComercios();
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.spaces.mis(),
+      });
       queryClient.invalidateQueries({ queryKey: ["explore", "spaces"] });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.spaces.detalle(comercioId),
+      });
     } catch (error) {
       setComerciosErrorMessage(
         error.message || "Error reactivando el espacio."
@@ -1212,26 +1222,26 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {isLoadingComercios && (
+            {isLoadingComercios && misComercios.length === 0 && (
               <div className="mt-3 space-y-2">
                 <div className="h-16 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
                 <div className="h-16 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
               </div>
             )}
 
-            {!isLoadingComercios && comerciosErrorMessage && (
+            {comerciosErrorVisible && misComercios.length === 0 && (
               <div className="mt-3 rounded-2xl border border-red-900 bg-red-950/40 p-5">
                 <p className="font-semibold text-red-200">Error</p>
                 <p className="mt-2 text-red-100 break-words">
-                  {comerciosErrorMessage}
+                  {comerciosErrorVisible}
                 </p>
               </div>
             )}
 
 
 
-            {!isLoadingComercios &&
-              !comerciosErrorMessage &&
+            {(!isLoadingComercios || misComercios.length > 0) &&
+              !(comerciosErrorVisible && misComercios.length === 0) &&
               misComercios.length > 0 && (
                   <div className="mt-3 grid grid-cols-3 gap-1.5 sm:grid-cols-3 sm:gap-3">
                     {misComercios.map((c) => {
