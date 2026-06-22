@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { usePublicacionesGuardadas } from "@features/posts";
-import { obtenerMisEspaciosSeguidos } from "@features/spaces";
+import { useMisEspaciosSeguidos } from "@features/spaces";
 import { getMediaUrlFromAny } from "@shared";
 
 export default function VerSeguidosPage() {
   const [vistaActiva, setVistaActiva] = useState("espacios");
-  const [espacios, setEspacios] = useState([]);
-  const [cargando, setCargando] = useState(true);
 
   const [ubicacion, setUbicacion] = useState({
     lat: null,
@@ -47,35 +45,21 @@ export default function VerSeguidosPage() {
     );
   }, []);
 
-  useEffect(() => {
-    let cancelado = false;
+  const {
+    data: espaciosData = [],
+    isLoading: cargando,
+    isFetching: fetchingEspacios,
+    error: espaciosError,
+  } = useMisEspaciosSeguidos({
+    lat: ubicacion.lat,
+    lng: ubicacion.lng,
+    enabled: vistaActiva === "espacios",
+  });
 
-    async function cargar() {
-      try {
-        setCargando(true);
-
-        const data = await obtenerMisEspaciosSeguidos({
-          lat: ubicacion.lat,
-          lng: ubicacion.lng,
-        });
-
-        if (cancelado) return;
-        setEspacios(data);
-      } catch {
-        // Error esperado de carga: la pantalla conserva el estado actual.
-      } finally {
-        if (!cancelado) {
-          setCargando(false);
-        }
-      }
-    }
-
-    cargar();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [ubicacion.lat, ubicacion.lng]);
+  const espacios = Array.isArray(espaciosData) ? espaciosData : [];
+  const espaciosErrorMessage = espaciosError
+    ? espaciosError.message || "Error desconocido cargando espacios seguidos."
+    : "";
 
   const {
     data: publicacionesGuardadasData = [],
@@ -129,7 +113,22 @@ export default function VerSeguidosPage() {
         <p className="text-center text-gray-400">Cargando...</p>
       )}
 
-      {vistaActiva === "espacios" && !cargando && espacios.length === 0 && (
+      {vistaActiva === "espacios" &&
+        espaciosErrorMessage &&
+        espacios.length === 0 && (
+          <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
+            <p className="font-semibold text-red-200">Error</p>
+            <p className="mt-2 text-red-100 break-words">
+              {espaciosErrorMessage}
+            </p>
+          </div>
+        )}
+
+      {vistaActiva === "espacios" &&
+        !cargando &&
+        !fetchingEspacios &&
+        !espaciosErrorMessage &&
+        espacios.length === 0 && (
         <p className="text-gray-400">Todavia no seguis ningun espacio.</p>
       )}
 
