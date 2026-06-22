@@ -204,18 +204,20 @@ export default function PublicacionDetallePage() {
     }
   }
 
-  const mediaUrl = getMediaUrl(publicacion);
+  const publicacionVisible = publicacionQuery ?? publicacion;
+
+  const mediaUrl = getMediaUrl(publicacionVisible);
   const mediaEsVideo = esVideo(mediaUrl);
-  const nombreComercio = getNombreComercio(publicacion);
+  const nombreComercio = getNombreComercio(publicacionVisible);
   const comercioId =
-    typeof publicacion?.comercio_id === "number"
-      ? publicacion.comercio_id
+    typeof publicacionVisible?.comercio_id === "number"
+      ? publicacionVisible.comercio_id
       : null;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <main className="mx-auto max-w-3xl px-4 py-6">
-        {isLoading && (
+        {isLoading && !publicacionVisible && (
           <div className="space-y-3">
             <div className="h-10 animate-pulse rounded-xl border border-gray-800 bg-gray-950" />
             <div className="aspect-square animate-pulse rounded-2xl border border-gray-800 bg-gray-950" />
@@ -223,7 +225,7 @@ export default function PublicacionDetallePage() {
           </div>
         )}
 
-        {!isLoading && errorMessage && (
+        {errorMessage && !publicacionVisible && (
           <div className="rounded-2xl border border-gray-800 bg-gray-950 p-8 text-center">
             <div className="flex flex-col items-center justify-center gap-3">
               <span className="text-4xl">😅</span>
@@ -235,7 +237,7 @@ export default function PublicacionDetallePage() {
           </div>
         )}
 
-        {!isLoading && !errorMessage && publicacion && (
+        {publicacionVisible && (
           <article className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-950">
             <header className="flex items-center justify-between gap-3 p-4">
               <p className="truncate text-lg font-semibold text-white">
@@ -268,7 +270,7 @@ export default function PublicacionDetallePage() {
                 ) : (
                   <img
                     src={mediaUrl}
-                    alt={publicacion?.titulo || nombreComercio}
+                    alt={publicacionVisible?.titulo || nombreComercio}
                     className="max-h-[80vh] w-full object-contain"
                   />
                 )
@@ -280,14 +282,16 @@ export default function PublicacionDetallePage() {
             </div>
 
             <div className="space-y-4 p-4">
-              {publicacion?.titulo && (
+              {publicacionVisible?.titulo && (
                 <h2 className="text-xl font-bold text-white">
-                  {publicacion.titulo}
+                  {publicacionVisible.titulo}
                 </h2>
               )}
 
-              {publicacion?.descripcion && (
-                <p className="text-gray-300">{publicacion.descripcion}</p>
+              {publicacionVisible?.descripcion && (
+                <p className="text-gray-300">
+                  {publicacionVisible.descripcion}
+                </p>
               )}
 
               <div className="flex flex-wrap gap-3">
@@ -310,9 +314,11 @@ export default function PublicacionDetallePage() {
 
               <div className="flex items-center justify-between text-sm text-gray-400">
                 <div className="flex flex-wrap gap-4">
-                  <span>❤️ {publicacion?.likes_count ?? 0}</span>
-                  <span>⭐ {publicacion?.guardados_count ?? 0}</span>
-                  <span>🔥 {publicacion?.interacciones_count ?? 0}</span>
+                  <span>❤️ {publicacionVisible?.likes_count ?? 0}</span>
+                  <span>⭐ {publicacionVisible?.guardados_count ?? 0}</span>
+                  <span>
+                    🔥 {publicacionVisible?.interacciones_count ?? 0}
+                  </span>
                 </div>
 
                 {esDuenoComercio && (
