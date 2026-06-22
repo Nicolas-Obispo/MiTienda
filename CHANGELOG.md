@@ -936,3 +936,82 @@ Pantallas ya adaptadas:
 * Historias Bar
 * Ranking
 * PerfilComercio
+
+---
+
+# ETAPA 74 — Cache-First Restante
+
+## Objetivo
+
+Completar la estrategia Cache-First en las pantallas que todavía conservaban fetches manuales, loaders bloqueantes o estados remotos fuera de TanStack Query.
+
+## Cambios realizados
+
+### ETAPA 74.1
+
+Commit: f14ff31
+
+- Se crea useMisComercios().
+- Se agrega queryKeys.spaces.mis().
+- ProfilePage migra GET /comercios/mis a TanStack Query.
+- Invalidaciones cache-first para crear, editar, desactivar y reactivar espacios.
+- Skeleton solo en carga inicial real.
+
+### ETAPA 74.2
+
+Commit: 0ea88ba
+
+- Se crea useMisEspaciosSeguidos().
+- Se agrega queryKeys.spaces.seguidos().
+- VerSeguidosPage migra espacios seguidos a TanStack Query.
+- Eliminado fetch manual principal.
+- Lista visible durante refetch.
+
+### ETAPA 74.3
+
+Commit: 32b4e17
+
+- RankingPage deja de usar fetch manual de guardadas.
+- Se reutiliza cache de usePublicacionesGuardadas().
+- Menos requests duplicados.
+
+### ETAPA 74.4
+
+Commit: c261a81
+
+- PublicacionDetallePage evita loading bloqueante.
+- Se introduce publicacionVisible.
+- Skeleton solo cuando no existe información visible.
+- Mejora experiencia al navegar desde listas.
+
+### ETAPA 74.5
+
+Commit: 12e2a0e
+
+- FeedPage deja de usar fetch manual de guardadas.
+- Se reutiliza cache de usePublicacionesGuardadas().
+- Menos requests duplicados.
+- Mantiene optimistic updates existentes.
+
+## Auditoría Arquitectónica
+
+Resultado:
+
+- Arquitectura Enterprise validada.
+- Backend continúa siendo fuente de verdad.
+- Frontend mantiene responsabilidades de UX, cache y presentación.
+- Sin hallazgos críticos.
+- Sin migraciones de lógica de negocio al frontend.
+
+## Estado final
+
+ETAPA 74 cerrada.
+
+Principios consolidados:
+
+- Cache visible primero.
+- Refetch en background.
+- Skeletons solo en primera carga real.
+- Menos fetches manuales.
+- Menos estados duplicados.
+- TanStack Query como estrategia principal de cache.
