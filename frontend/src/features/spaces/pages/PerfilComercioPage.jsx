@@ -55,12 +55,15 @@ import {
 
 import { useAuth } from "@features/auth";
 
+const seguimientoPerfilComercioCache = new Map();
+
 export default function CommerceProfilePage() {
   const { id } = useParams();
   const comercioId = Number(id);
   const navigate = useNavigate();
   const { usuario, user } = useAuth();
   const usuarioActivo = usuario || user || null;
+  const seguimientoCacheInicial = seguimientoPerfilComercioCache.get(comercioId);
 
   const [perfilHydratado, setPerfilHydratado] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -70,6 +73,11 @@ export default function CommerceProfilePage() {
   const [viewerIsOpen, setViewerIsOpen] = useState(false);
   const [viewerHistorias, setViewerHistorias] = useState([]);
   const ultimaHistoriaVistaMarcadaRef = useRef(null);
+  const seguidoresCountPrevioRef = useRef(
+    typeof seguimientoCacheInicial?.seguidores_count === "number"
+      ? seguimientoCacheInicial.seguidores_count
+      : null
+  );
   const [publicaciones, setPublicaciones] = useState([]);
 
   const [isCrearHistoriaOpen, setIsCrearHistoriaOpen] = useState(false);
@@ -104,7 +112,14 @@ export default function CommerceProfilePage() {
     enabled: Boolean(token),
   });
 
-  const [siguiendo, setSiguiendo] = useState(false);
+  const [siguiendo, setSiguiendo] = useState(() =>
+    typeof seguimientoCacheInicial?.siguiendo === "boolean"
+      ? seguimientoCacheInicial.siguiendo
+      : false
+  );
+  const [seguimientoHydratado, setSeguimientoHydratado] = useState(() =>
+    typeof seguimientoCacheInicial?.siguiendo === "boolean"
+  );
   const [isLoadingFollow, setIsLoadingFollow] = useState(false);
 
   const [metricasSociales, setMetricasSociales] = useState(null);
@@ -154,6 +169,23 @@ function esComercioMio(comercioData, userData) {
     }));
   }
 
+  function guardarSeguimientoVisible(estadoSeguimiento) {
+    if (!estadoSeguimiento || !comercioId || Number.isNaN(comercioId)) return;
+
+    const siguienteEstado = {
+      siguiendo: Boolean(estadoSeguimiento.siguiendo),
+      seguidores_count: estadoSeguimiento.seguidores_count,
+    };
+
+    seguimientoPerfilComercioCache.set(comercioId, siguienteEstado);
+    setSiguiendo(siguienteEstado.siguiendo);
+    setSeguimientoHydratado(true);
+
+    if (typeof siguienteEstado.seguidores_count === "number") {
+      seguidoresCountPrevioRef.current = siguienteEstado.seguidores_count;
+    }
+  }
+
   async function loadDatosSecundarios() {
     if (!comercioId || Number.isNaN(comercioId)) {
       setErrorMessage("ID de comercio inválido.");
@@ -183,7 +215,7 @@ function esComercioMio(comercioData, userData) {
         if (accessToken) {
           const estadoSeguimiento = await obtenerEstadoSeguimiento(comercioId);
 
-          setSiguiendo(Boolean(estadoSeguimiento.siguiendo));
+          guardarSeguimientoVisible(estadoSeguimiento);
 
           setComercio((prev) =>
             prev
@@ -267,6 +299,35 @@ function esComercioMio(comercioData, userData) {
   }, [historiasQuery.data]);
 
   useEffect(() => {
+    const seguimientoCacheado = seguimientoPerfilComercioCache.get(comercioId);
+
+    if (!seguimientoCacheado) {
+      setSiguiendo(false);
+      setSeguimientoHydratado(false);
+      return;
+    }
+
+    setSiguiendo(Boolean(seguimientoCacheado.siguiendo));
+    setSeguimientoHydratado(true);
+
+    if (typeof seguimientoCacheado.seguidores_count === "number") {
+      seguidoresCountPrevioRef.current = seguimientoCacheado.seguidores_count;
+    }
+  }, [comercioId]);
+
+  useEffect(() => {
+    if (typeof comercio?.seguidores_count !== "number") return;
+    if (
+      comercio.seguidores_count === 0 &&
+      seguidoresCountPrevioRef.current !== null
+    ) {
+      return;
+    }
+
+    seguidoresCountPrevioRef.current = comercio.seguidores_count;
+  }, [comercio?.seguidores_count]);
+
+  useEffect(() => {
     const principalError =
       comercioQuery.error || publicacionesQuery.error || historiasQuery.error;
 
@@ -342,18 +403,21 @@ function esComercioMio(comercioData, userData) {
 
     try {
       setIsLoadingFollow(true);
+      const siguiendoActual = seguimientoHydratado
+        ? siguiendo
+        : seguimientoPerfilComercioCache.get(comercioId)?.siguiendo ?? siguiendo;
 
       await toggleSeguimientoEspacio({
         comercioId,
-        siguiendo,
+        siguiendo: siguiendoActual,
       });
 
-      setSiguiendo(!siguiendo);
+      setSiguiendo(!siguiendoActual);
 
       // Refrescamos estado y contador real desde backend.
       const estadoSeguimiento = await obtenerEstadoSeguimiento(comercioId);
 
-      setSiguiendo(Boolean(estadoSeguimiento.siguiendo));
+      guardarSeguimientoVisible(estadoSeguimiento);
 
       setComercio((prev) => ({
         ...prev,
@@ -517,6 +581,39 @@ function esComercioMio(comercioData, userData) {
       publicacionesQuery.isLoading ||
       historiasQuery.isLoading);
 
+  const publicacionesQueryItems = normalizarItems(publicacionesQuery.data);
+
+  const publicacionesCountVisible =
+    publicaciones.length > 0
+      ? publicaciones.length
+      : publicacionesQueryItems.length > 0
+      ? publicacionesQueryItems.length
+      : comercio?.publicaciones_count ?? comercio?.total_publicaciones ?? 0;
+
+  const seguimientoCacheActual =
+    seguimientoPerfilComercioCache.get(comercioId);
+
+  const siguiendoVisible = seguimientoHydratado
+    ? siguiendo
+    : typeof seguimientoCacheActual?.siguiendo === "boolean"
+    ? seguimientoCacheActual.siguiendo
+    : siguiendo;
+
+  const seguidoresCountDesdeComercio =
+    typeof comercio?.seguidores_count === "number"
+      ? comercio.seguidores_count
+      : typeof comercioQuery.data?.seguidores_count === "number"
+      ? comercioQuery.data.seguidores_count
+      : null;
+
+  const seguidoresCountVisible =
+    seguidoresCountPrevioRef.current ??
+    (typeof seguimientoCacheActual?.seguidores_count === "number"
+      ? seguimientoCacheActual.seguidores_count
+      : null) ??
+    seguidoresCountDesdeComercio ??
+    0;
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <main className="mx-auto max-w-5xl px-0 py-4 sm:px-4 sm:py-6">
@@ -596,12 +693,12 @@ function esComercioMio(comercioData, userData) {
                 type="button"
                 onClick={handleToggleFollow}
                 className={`rounded-xl px-1.5 py- text-xs font-semibold transition ${
-                  siguiendo
+                  siguiendoVisible
                     ? "border border-gray-700 bg-gray-800 text-white"
                     : "bg-white text-black"
                 }`}
               >
-                {siguiendo ? "Siguiendo" : "+Seguir"}
+                {siguiendoVisible ? "Siguiendo" : "+Seguir"}
               </button>
             )}
 
@@ -665,12 +762,12 @@ function esComercioMio(comercioData, userData) {
                     
                     {/* PUBLICACIONES */}
                     <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1 text-xs">
-                      {publicaciones.length} publicaciones
+                      {publicacionesCountVisible} publicaciones
                     </span>
 
                     {/* SEGUIDORES */}
                     <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1 text-xs">
-                      {comercio?.seguidores_count ?? 0} seguidores
+                      {seguidoresCountVisible} seguidores
                     </span>
 
                   </div>
