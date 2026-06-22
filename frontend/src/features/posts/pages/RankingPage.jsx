@@ -22,10 +22,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   fetchFeedPublicaciones,
-  fetchPublicacionesGuardadas,
 } from "@features/posts";
 
 import { PublicacionCard } from "@features/posts";
+import { usePublicacionesGuardadas } from "@features/posts";
 import { useRankingPublicaciones } from "@features/posts/hooks/useRankingPublicaciones";
 
 import {
@@ -42,6 +42,9 @@ export default function RankingPage() {
     isLoading: isRankingLoading,
     error: rankingQueryError,
   } = useRankingPublicaciones();
+  const {
+    data: guardadasData = [],
+  } = usePublicacionesGuardadas();
 
   const [isLoading, setIsLoading] = useState(true);
   const [rankingHydratado, setRankingHydratado] = useState(false);
@@ -71,10 +74,7 @@ export default function RankingPage() {
       setErrorMessage("");
 
       // Ranking define el orden, Feed define liked_by_me real por usuario
-      const [feedData, guardadasData] = await Promise.all([
-        fetchFeedPublicaciones(),
-        fetchPublicacionesGuardadas(),
-      ]);
+      const feedData = await fetchFeedPublicaciones();
 
       if (rankingQueryError) {
         throw rankingQueryError;
