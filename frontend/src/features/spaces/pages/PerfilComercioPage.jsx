@@ -471,7 +471,13 @@ function esComercioMio(comercioData, userData) {
 
       if (imagenFile) {
         try {
-          const data = await uploadImagen(imagenFile);
+          const token = getAccessToken();
+
+          if (!token) {
+            throw new Error("No hay sesiÃ³n activa.");
+          }
+
+          const data = await uploadImagen(imagenFile, token);
 
           imagenUrlFinal = data.url;
         } catch (error) {
