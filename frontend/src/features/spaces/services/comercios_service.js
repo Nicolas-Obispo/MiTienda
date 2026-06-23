@@ -121,6 +121,7 @@ export async function getHistoriasDeComercio(comercioId) {
 export async function listarComerciosActivos({
   q = null,
   smart = false,
+  smart_semantic = false,
   lat = null,
   lng = null,
   radio_km = null,
@@ -156,6 +157,10 @@ export async function listarComerciosActivos({
   // ETAPA 50 — smart (IA v1)
   if (smart === true) {
     params.set("smart", "true");
+  }
+
+  if (smart_semantic === true) {
+    params.set("smart_semantic", "true");
   }
 
   if (lat !== null && lat !== undefined) {

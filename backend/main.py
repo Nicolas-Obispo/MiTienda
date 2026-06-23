@@ -2,6 +2,8 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.database import SessionLocal
+from app.modules.products.services.rubros_services import asegurar_catalogo_rubros
 
 # Routers
 from app.modules.products.routes.productos_routers import router as productos_routers
@@ -67,6 +69,15 @@ def home():
 # ------------------------------
 # Configuración carpeta uploads
 # ------------------------------
+@app.on_event("startup")
+def inicializar_catalogos():
+    db = SessionLocal()
+    try:
+        asegurar_catalogo_rubros(db)
+    finally:
+        db.close()
+
+
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 

@@ -41,6 +41,7 @@ from app.modules.spaces.services.comercios_services import (
     obtener_comercio_por_id,
     actualizar_comercio,
     desactivar_comercio,
+    RubroInvalidoError,
 )
 
 
@@ -66,6 +67,11 @@ def crear_comercio_endpoint(
 ):
     try:
         return crear_comercio(db, usuario_actual, payload)
+    except RubroInvalidoError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -222,6 +228,11 @@ def actualizar_comercio_endpoint(
     except PermissionError as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e)
+        )
+    except RubroInvalidoError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
 

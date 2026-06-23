@@ -25,7 +25,7 @@ import json
 import math
 
 from sqlalchemy import case, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.modules.ai.models.comercios_embeddings_models import ComercioEmbedding
 from app.modules.spaces.models.comercios_models import Comercio
@@ -34,6 +34,11 @@ from app.modules.posts.models.publicaciones_models import Publicacion
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.spaces.schemas.comercios_schemas import ComercioCreate, ComercioUpdate
 from app.modules.ai.services.comercios_embeddings_services import upsert_embedding_comercio
+from app.modules.products.services.rubros_services import obtener_rubro_por_id
+
+
+class RubroInvalidoError(ValueError):
+    pass
 
 
 # ============================================================
@@ -59,6 +64,128 @@ def _tokenizar(texto: str) -> list[str]:
     if not texto:
         return []
     return [t for t in texto.split(" ") if t]
+
+
+def _expandir_intencion_busqueda(q: str) -> list[str]:
+    """
+    Expande consultas cortas a terminos de intencion controlados.
+
+    La expansion vive en backend para mantener React como capa de UI/cache.
+    Si no hay match, conserva la busqueda original.
+    """
+    q_normalizada = _normalizar_texto(q)
+
+    if not q_normalizada:
+        return []
+
+    diccionario_intencion = {
+        "pizza": [
+            "pizza",
+            "pizzeria",
+            "pizzería",
+            "comida",
+            "gastronomia",
+            "gastronomía",
+            "restaurante",
+            "delivery",
+            "cena",
+        ],
+        "hamburguesa": [
+            "hamburguesa",
+            "comida",
+            "gastronomia",
+            "gastronomía",
+            "restaurante",
+            "fast food",
+            "cena",
+        ],
+        "ropa": [
+            "ropa",
+            "indumentaria",
+            "moda",
+            "boutique",
+            "calzado",
+            "tienda de ropa",
+        ],
+        "cafe": [
+            "cafe",
+            "café",
+            "cafeteria",
+            "cafetería",
+            "desayuno",
+            "merienda",
+            "gastronomia",
+            "gastronomía",
+        ],
+        "café": [
+            "cafe",
+            "café",
+            "cafeteria",
+            "cafetería",
+            "desayuno",
+            "merienda",
+            "gastronomia",
+            "gastronomía",
+        ],
+        "cerveza": [
+            "cerveza",
+            "bar",
+            "bebida",
+            "salida",
+            "gastronomia",
+            "gastronomía",
+        ],
+        "helado": [
+            "helado",
+            "heladeria",
+            "heladería",
+            "postre",
+            "gastronomia",
+            "gastronomía",
+        ],
+    }
+
+    terminos: list[str] = [q_normalizada]
+
+    for token in _tokenizar(q_normalizada):
+        terminos.extend(diccionario_intencion.get(token, []))
+
+    if q_normalizada in diccionario_intencion:
+        terminos.extend(diccionario_intencion[q_normalizada])
+
+    resultado: list[str] = []
+    vistos: set[str] = set()
+
+    for termino in terminos:
+        termino_normalizado = _normalizar_texto(termino)
+
+        if termino_normalizado and termino_normalizado not in vistos:
+            resultado.append(termino_normalizado)
+            vistos.add(termino_normalizado)
+
+    return resultado or [q_normalizada]
+
+
+def _tiene_intencion_conocida(q: str) -> bool:
+    q_normalizada = _normalizar_texto(q)
+
+    if not q_normalizada:
+        return False
+
+    intenciones_conocidas = {
+        "pizza",
+        "hamburguesa",
+        "ropa",
+        "cafe",
+        "cafÃ©",
+        "cerveza",
+        "helado",
+    }
+
+    if q_normalizada in intenciones_conocidas:
+        return True
+
+    return any(token in intenciones_conocidas for token in _tokenizar(q_normalizada))
 
 
 def _calcular_score_comercio(
@@ -237,6 +364,11 @@ def _distancia_sort_value(comercio: Comercio) -> float:
     return distancia
 
 
+def _validar_rubro_activo(db: Session, rubro_id: int) -> None:
+    if not obtener_rubro_por_id(db, rubro_id):
+        raise RubroInvalidoError("Rubro no encontrado o inactivo")
+
+
 # ============================================================
 # Crear comercio
 # ============================================================
@@ -255,6 +387,8 @@ def crear_comercio(
 
     if usuario.modo_activo != "publicador":
         raise ValueError("El usuario no está en modo publicador")
+
+    _validar_rubro_activo(db, data.rubro_id)
 
     comercio = Comercio(
         usuario_id=usuario.id,
@@ -288,6 +422,7 @@ def obtener_comercio_por_id(
 ) -> Comercio | None:
     return (
         db.query(Comercio)
+        .options(selectinload(Comercio.rubro))
         .filter(Comercio.id == comercio_id, Comercio.activo == True)
         .first()
     )
@@ -302,7 +437,11 @@ def listar_comercios(
     ciudad: str | None = None,
     rubro_id: int | None = None
 ) -> list[Comercio]:
-    query = db.query(Comercio).filter(Comercio.activo == True)
+    query = (
+        db.query(Comercio)
+        .options(selectinload(Comercio.rubro))
+        .filter(Comercio.activo == True)
+    )
 
     if ciudad:
         query = query.filter(Comercio.ciudad == ciudad)
@@ -361,7 +500,11 @@ def listar_comercios_activos(
     - "Con publicaciones" = existe al menos 1 publicación del comercio.
     """
 
-    query = db.query(Comercio).filter(Comercio.activo == True)
+    query = (
+        db.query(Comercio)
+        .options(selectinload(Comercio.rubro))
+        .filter(Comercio.activo == True)
+    )
 
     # Normalizamos q (si viene vacía, tratamos como cadena vacía)
     q_normalizada = ""
@@ -380,9 +523,12 @@ def listar_comercios_activos(
 
         provider = get_embedding_provider()
 
-        # Embedding de la query
+        # Embedding de la query enriquecida por intencion.
         query_texto = _normalizar_texto(q_normalizada)
-        query_vector = provider.embed_text(query_texto)
+        terminos_intencion = _expandir_intencion_busqueda(query_texto)
+        tiene_intencion_conocida = _tiene_intencion_conocida(query_texto)
+        query_texto_embedding = " ".join(terminos_intencion)
+        query_vector = provider.embed_text(query_texto_embedding)
 
         # NO filtramos por nombre:
         # usamos un pool amplio de comercios activos y rankeamos por similitud.
@@ -438,8 +584,8 @@ def listar_comercios_activos(
             )
         )
 
-        # Tokens de la query para bonus simples
-        tokens = _tokenizar(query_texto)
+        # Tokens de la query expandida para bonus simples.
+        tokens = _tokenizar(query_texto_embedding)
 
         # Scoring híbrido inicial:
         # - similitud embeddings como base
@@ -452,14 +598,43 @@ def listar_comercios_activos(
 
             nombre = _normalizar_texto(getattr(c, "nombre", None))
             descripcion = _normalizar_texto(getattr(c, "descripcion", None))
+            rubro_nombre = ""
+            rubro_obj = getattr(c, "rubro", None)
+            if rubro_obj is not None:
+                rubro_nombre = _normalizar_texto(
+                    getattr(rubro_obj, "nombre", None)
+                )
+
+            texto_relevancia = " ".join(
+                parte for parte in [nombre, descripcion, rubro_nombre] if parte
+            )
+
+            if tiene_intencion_conocida and not any(
+                termino in texto_relevancia for termino in terminos_intencion
+            ):
+                continue
 
             bonus_textual = 0.0
 
-            # Match fuerte de query completa
+            # Match fuerte de query original.
             if query_texto and query_texto in nombre:
                 bonus_textual += 0.35
             if query_texto and query_texto in descripcion:
                 bonus_textual += 0.20
+            if query_texto and query_texto in rubro_nombre:
+                bonus_textual += 0.25
+
+            # Match por intencion expandida, incluyendo rubro.
+            for termino in terminos_intencion:
+                if termino == query_texto:
+                    continue
+
+                if termino in nombre:
+                    bonus_textual += 0.18
+                if termino in descripcion:
+                    bonus_textual += 0.10
+                if termino in rubro_nombre:
+                    bonus_textual += 0.16
 
             # Match por tokens
             for t in tokens:
@@ -467,6 +642,8 @@ def listar_comercios_activos(
                     bonus_textual += 0.08
                 if t in descripcion:
                     bonus_textual += 0.04
+                if t in rubro_nombre:
+                    bonus_textual += 0.06
 
             bonus_senales = 0.0
             if c.id in comercios_con_historias:
@@ -678,6 +855,9 @@ def actualizar_comercio(
         raise PermissionError("No tenés permiso para modificar este comercio")
 
     for campo, valor in data.dict(exclude_unset=True).items():
+        if campo == "rubro_id":
+            _validar_rubro_activo(db, valor)
+
         setattr(comercio, campo, valor)
 
     db.commit()

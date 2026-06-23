@@ -77,9 +77,13 @@ export default function ExplorarPage() {
     );
   }, []);
 
+  const busquedaNormalizada = _normalizarBusqueda(busqueda);
+  const usarSmartSemantic = _usarModoIA(busquedaNormalizada);
+
   const espaciosQuery = useExplorarEspacios({
-    q: _normalizarBusqueda(busqueda),
-    smart: _usarModoIA(_normalizarBusqueda(busqueda)),
+    q: busquedaNormalizada,
+    smart: usarSmartSemantic ? false : _usarModoIA(busquedaNormalizada),
+    smart_semantic: usarSmartSemantic,
     lat: ubicacion.lista ? ubicacion.lat : null,
     lng: ubicacion.lista ? ubicacion.lng : null,
     limit,
@@ -183,7 +187,7 @@ export default function ExplorarPage() {
     navigate(`/publicaciones/${publicacionId}`);
   }
 
-  const qUI = _normalizarBusqueda(busqueda);
+  const qUI = busquedaNormalizada;
   const modoIAActivo = _usarModoIA(qUI);
 
   const publicacionesFiltradas = publicacionesQueryData.filter((publicacion) =>

@@ -58,7 +58,12 @@ class Comercio(Base):
     # -----------------------------
     # Clasificación / ubicación
     # -----------------------------
-    rubro_id = Column(Integer, nullable=False, index=True)
+    rubro_id = Column(
+        Integer,
+        ForeignKey("rubros.id"),
+        nullable=False,
+        index=True,
+    )
 
     provincia = Column(String(100), nullable=False)
     ciudad = Column(String(100), nullable=False)
@@ -132,3 +137,18 @@ class Comercio(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+
+    # -------------------------
+    # Rubro
+    # -------------------------
+    rubro = relationship(
+        "Rubro",
+        lazy="selectin",
+    )
+
+    @property
+    def rubro_nombre(self):
+        if not self.rubro:
+            return None
+
+        return self.rubro.nombre

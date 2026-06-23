@@ -32,6 +32,7 @@ export const queryKeys = {
     all: ["spaces"],
     detalle: (espacioId) => ["spaces", "detalle", espacioId],
     publicaciones: (espacioId) => ["spaces", "publicaciones", espacioId],
+    rubros: () => ["spaces", "rubros"],
     mis: () => ["spaces", "mis"],
     seguidos: ({ lat = null, lng = null } = {}) => [
       "spaces",

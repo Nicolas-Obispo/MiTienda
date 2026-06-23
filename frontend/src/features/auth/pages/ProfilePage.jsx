@@ -37,6 +37,7 @@ import {
   actualizarComercio,
   reactivarComercio,
   useMisComercios,
+  useRubros,
 } from "@features/spaces";
 
 const COLOR_FONDO_PRESETS = [
@@ -380,6 +381,10 @@ export default function ProfilePage() {
     : "";
   const comerciosErrorVisible =
     comerciosErrorMessage || comerciosQueryErrorMessage;
+  const {
+    data: rubros = [],
+    isLoading: isLoadingRubros,
+  } = useRubros();
 
   const [isCreatingComercio, setIsCreatingComercio] = useState(false);
   const [isActingComercioById, setIsActingComercioById] = useState({});
@@ -513,8 +518,13 @@ export default function ProfilePage() {
         throw new Error("Provincia y ciudad son obligatorias.");
       }
 
+      if (!Number(createForm.rubro_id)) {
+        throw new Error("El rubro es obligatorio.");
+      }
+
       const payload = {
         ...createForm,
+        rubro_id: Number(createForm.rubro_id),
         direccion: createForm.direccion?.trim()
           ? createForm.direccion.trim()
           : null,
@@ -994,15 +1004,26 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="text-xs text-gray-400">Rubro ID *</label>
-                      <input
+                      <label className="text-xs text-gray-400">Rubro *</label>
+                      <select
                         name="rubro_id"
-                        type="number"
                         value={createForm.rubro_id}
                         onChange={handleCreateInputChange}
+                        disabled={isLoadingRubros || rubros.length === 0}
                         className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
-                        min={1}
-                      />
+                      >
+                        {rubros.length === 0 ? (
+                          <option value={createForm.rubro_id}>
+                            {isLoadingRubros ? "Cargando rubros..." : "Sin rubros disponibles"}
+                          </option>
+                        ) : (
+                          rubros.map((rubro) => (
+                            <option key={rubro.id} value={rubro.id}>
+                              {rubro.nombre}
+                            </option>
+                          ))
+                        )}
+                      </select>
                     </div>
 
                     <div>

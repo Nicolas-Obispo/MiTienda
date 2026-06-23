@@ -18,6 +18,7 @@ import { listarComerciosActivos } from "@features/spaces";
 export function useExplorarEspacios({
   q = null,
   smart = false,
+  smart_semantic = false,
   lat = null,
   lng = null,
   radio_km = null,
@@ -30,6 +31,7 @@ export function useExplorarEspacios({
       {
         q,
         smart,
+        smart_semantic,
         lat,
         lng,
         radio_km,
@@ -43,6 +45,7 @@ export function useExplorarEspacios({
       listarComerciosActivos({
         q,
         smart,
+        smart_semantic,
         lat,
         lng,
         radio_km,

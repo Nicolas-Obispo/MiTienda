@@ -71,6 +71,7 @@ class ComercioResponse(ComercioBase):
     id: int
     usuario_id: int
     activo: bool
+    rubro_nombre: Optional[str] = None
     distancia_km: Optional[float] = None
 
     model_config = {
