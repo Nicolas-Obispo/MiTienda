@@ -66,6 +66,293 @@ def _tokenizar(texto: str) -> list[str]:
     return [t for t in texto.split(" ") if t]
 
 
+_INTENCIONES_BUSQUEDA_V2 = {
+    "pizza": [
+        "pizza",
+        "pizzeria",
+        "pizzería",
+        "comida",
+        "gastronomia",
+        "gastronomía",
+        "restaurante",
+        "delivery",
+        "cena",
+        "kiosco",
+    ],
+    "hamburguesa": [
+        "hamburguesa",
+        "comida",
+        "gastronomia",
+        "gastronomía",
+        "restaurante",
+        "fast food",
+        "cena",
+    ],
+    "ropa": [
+        "ropa",
+        "indumentaria",
+        "moda",
+        "boutique",
+        "calzado",
+        "tienda de ropa",
+    ],
+    "zapatos": [
+        "zapatos",
+        "zapato",
+        "zapatillas",
+        "zapatilla",
+        "calzado",
+        "zapateria",
+        "zapatería",
+        "tienda de ropa",
+        "deportes",
+    ],
+    "zapatillas": [
+        "zapatillas",
+        "zapatilla",
+        "zapatos",
+        "calzado",
+        "zapateria",
+        "zapatería",
+        "deportes",
+    ],
+    "calzado": [
+        "calzado",
+        "zapatos",
+        "zapatillas",
+        "zapateria",
+        "zapatería",
+        "tienda de ropa",
+        "deportes",
+    ],
+    "deportes": [
+        "deportes",
+        "deportivo",
+        "deportiva",
+        "deportivas",
+        "zapatillas deportivas",
+    ],
+    "deportivo": [
+        "deportes",
+        "deportivo",
+        "deportiva",
+        "deportivas",
+        "zapatillas deportivas",
+    ],
+    "revestimientos": [
+        "revestimientos",
+        "revestimiento",
+        "construccion",
+        "construcción",
+        "obra",
+        "materiales",
+        "hogar y construccion",
+        "hogar y construcción",
+        "servicios de construccion",
+        "servicios de construcción",
+    ],
+    "construccion": [
+        "construccion",
+        "construcción",
+        "obra",
+        "materiales",
+        "revestimientos",
+        "hogar y construccion",
+        "hogar y construcción",
+        "servicios de construccion",
+        "servicios de construcción",
+    ],
+    "construcción": [
+        "construccion",
+        "construcción",
+        "obra",
+        "materiales",
+        "revestimientos",
+        "hogar y construccion",
+        "hogar y construcción",
+        "servicios de construccion",
+        "servicios de construcción",
+    ],
+    "obra": [
+        "obra",
+        "construccion",
+        "construcción",
+        "materiales",
+        "revestimientos",
+        "servicios de construccion",
+        "servicios de construcción",
+    ],
+    "materiales": [
+        "materiales",
+        "construccion",
+        "construcción",
+        "obra",
+        "revestimientos",
+        "servicios de construccion",
+        "servicios de construcción",
+    ],
+    "cafe": [
+        "cafe",
+        "café",
+        "cafeteria",
+        "cafetería",
+        "desayuno",
+        "merienda",
+        "gastronomia",
+        "gastronomía",
+    ],
+    "café": [
+        "cafe",
+        "café",
+        "cafeteria",
+        "cafetería",
+        "desayuno",
+        "merienda",
+        "gastronomia",
+        "gastronomía",
+    ],
+    "cerveza": [
+        "cerveza",
+        "bar",
+        "bebida",
+        "salida",
+        "gastronomia",
+        "gastronomía",
+    ],
+    "helado": [
+        "helado",
+        "heladeria",
+        "heladería",
+        "postre",
+        "gastronomia",
+        "gastronomía",
+    ],
+}
+
+
+_INTENCION_A_FAMILIA_V2 = {
+    "pizza": "gastronomia",
+    "hamburguesa": "gastronomia",
+    "cafe": "gastronomia",
+    "café": "gastronomia",
+    "cerveza": "gastronomia",
+    "helado": "gastronomia",
+    "ropa": "moda",
+    "zapatos": "moda_calzado",
+    "zapatillas": "moda_calzado",
+    "calzado": "moda_calzado",
+    "deportes": "deportes",
+    "deportivo": "deportes",
+    "revestimientos": "construccion",
+    "construccion": "construccion",
+    "construcción": "construccion",
+    "obra": "construccion",
+    "materiales": "construccion",
+}
+
+
+_FAMILIAS_INTENCION_V2 = {
+    "gastronomia": [
+        "gastronomia",
+        "gastronomía",
+        "kiosco",
+        "comida",
+        "bebida",
+        "bar",
+        "restaurante",
+        "pizzeria",
+        "pizzería",
+        "cafeteria",
+        "cafetería",
+        "heladeria",
+        "heladería",
+    ],
+    "moda": [
+        "ropa",
+        "tienda de ropa",
+        "indumentaria",
+        "moda",
+        "boutique",
+        "calzado",
+        "zapateria",
+        "zapatería",
+    ],
+    "moda_calzado": [
+        "ropa",
+        "tienda de ropa",
+        "indumentaria",
+        "moda",
+        "boutique",
+        "calzado",
+        "zapatos",
+        "zapato",
+        "zapatillas",
+        "zapatilla",
+        "zapateria",
+        "zapatería",
+        "deportes",
+    ],
+    "deportes": [
+        "deportes",
+        "deportivo",
+        "deportiva",
+        "deportivas",
+        "zapatillas deportivas",
+    ],
+    "construccion": [
+        "construccion",
+        "construcción",
+        "hogar y construccion",
+        "hogar y construcción",
+        "servicios de construccion",
+        "servicios de construcción",
+        "revestimientos",
+        "revestimiento",
+        "obra",
+        "materiales",
+    ],
+}
+
+
+def _normalizar_lista_terminos(terminos: list[str]) -> list[str]:
+    resultado: list[str] = []
+    vistos: set[str] = set()
+
+    for termino in terminos:
+        termino_normalizado = _normalizar_texto(termino)
+
+        if termino_normalizado and termino_normalizado not in vistos:
+            resultado.append(termino_normalizado)
+            vistos.add(termino_normalizado)
+
+    return resultado
+
+
+def _obtener_familia_intencion(q: str) -> str | None:
+    q_normalizada = _normalizar_texto(q)
+
+    if not q_normalizada:
+        return None
+
+    if q_normalizada in _INTENCION_A_FAMILIA_V2:
+        return _INTENCION_A_FAMILIA_V2[q_normalizada]
+
+    for token in _tokenizar(q_normalizada):
+        if token in _INTENCION_A_FAMILIA_V2:
+            return _INTENCION_A_FAMILIA_V2[token]
+
+    return None
+
+
+def _terminos_familia_intencion(q: str) -> list[str]:
+    familia = _obtener_familia_intencion(q)
+
+    if not familia:
+        return []
+
+    return _normalizar_lista_terminos(_FAMILIAS_INTENCION_V2.get(familia, []))
+
+
 def _expandir_intencion_busqueda(q: str) -> list[str]:
     """
     Expande consultas cortas a terminos de intencion controlados.
@@ -78,114 +365,20 @@ def _expandir_intencion_busqueda(q: str) -> list[str]:
     if not q_normalizada:
         return []
 
-    diccionario_intencion = {
-        "pizza": [
-            "pizza",
-            "pizzeria",
-            "pizzería",
-            "comida",
-            "gastronomia",
-            "gastronomía",
-            "restaurante",
-            "delivery",
-            "cena",
-        ],
-        "hamburguesa": [
-            "hamburguesa",
-            "comida",
-            "gastronomia",
-            "gastronomía",
-            "restaurante",
-            "fast food",
-            "cena",
-        ],
-        "ropa": [
-            "ropa",
-            "indumentaria",
-            "moda",
-            "boutique",
-            "calzado",
-            "tienda de ropa",
-        ],
-        "cafe": [
-            "cafe",
-            "café",
-            "cafeteria",
-            "cafetería",
-            "desayuno",
-            "merienda",
-            "gastronomia",
-            "gastronomía",
-        ],
-        "café": [
-            "cafe",
-            "café",
-            "cafeteria",
-            "cafetería",
-            "desayuno",
-            "merienda",
-            "gastronomia",
-            "gastronomía",
-        ],
-        "cerveza": [
-            "cerveza",
-            "bar",
-            "bebida",
-            "salida",
-            "gastronomia",
-            "gastronomía",
-        ],
-        "helado": [
-            "helado",
-            "heladeria",
-            "heladería",
-            "postre",
-            "gastronomia",
-            "gastronomía",
-        ],
-    }
-
     terminos: list[str] = [q_normalizada]
 
     for token in _tokenizar(q_normalizada):
-        terminos.extend(diccionario_intencion.get(token, []))
+        terminos.extend(_INTENCIONES_BUSQUEDA_V2.get(token, []))
 
-    if q_normalizada in diccionario_intencion:
-        terminos.extend(diccionario_intencion[q_normalizada])
+    if q_normalizada in _INTENCIONES_BUSQUEDA_V2:
+        terminos.extend(_INTENCIONES_BUSQUEDA_V2[q_normalizada])
 
-    resultado: list[str] = []
-    vistos: set[str] = set()
-
-    for termino in terminos:
-        termino_normalizado = _normalizar_texto(termino)
-
-        if termino_normalizado and termino_normalizado not in vistos:
-            resultado.append(termino_normalizado)
-            vistos.add(termino_normalizado)
-
+    resultado = _normalizar_lista_terminos(terminos)
     return resultado or [q_normalizada]
 
 
 def _tiene_intencion_conocida(q: str) -> bool:
-    q_normalizada = _normalizar_texto(q)
-
-    if not q_normalizada:
-        return False
-
-    intenciones_conocidas = {
-        "pizza",
-        "hamburguesa",
-        "ropa",
-        "cafe",
-        "cafÃ©",
-        "cerveza",
-        "helado",
-    }
-
-    if q_normalizada in intenciones_conocidas:
-        return True
-
-    return any(token in intenciones_conocidas for token in _tokenizar(q_normalizada))
+    return _obtener_familia_intencion(q) is not None
 
 
 def _calcular_score_comercio(
@@ -520,6 +713,9 @@ def listar_comercios_activos(
     # En ese caso, volvemos al modo clásico para mantener UX estable.
     if smart_semantic and q_normalizada:
         from app.modules.ai.core.embedding_factory import get_embedding_provider
+        from app.modules.ai.services.rubros_embeddings_services import (
+            detectar_rubros_por_query,
+        )
 
         provider = get_embedding_provider()
 
@@ -527,8 +723,11 @@ def listar_comercios_activos(
         query_texto = _normalizar_texto(q_normalizada)
         terminos_intencion = _expandir_intencion_busqueda(query_texto)
         tiene_intencion_conocida = _tiene_intencion_conocida(query_texto)
+        terminos_filtro_intencion = _terminos_familia_intencion(query_texto)
         query_texto_embedding = " ".join(terminos_intencion)
         query_vector = provider.embed_text(query_texto_embedding)
+        rubros_detectados = detectar_rubros_por_query(db, query_texto)
+        rubro_ids_detectados = [rubro.rubro_id for rubro in rubros_detectados]
 
         # NO filtramos por nombre:
         # usamos un pool amplio de comercios activos y rankeamos por similitud.
@@ -538,12 +737,26 @@ def listar_comercios_activos(
         if fetch_size > 500:
             fetch_size = 500
 
+        query_candidatos = query
+        if rubro_ids_detectados:
+            query_candidatos = query_candidatos.filter(
+                Comercio.rubro_id.in_(rubro_ids_detectados)
+            )
+
         candidatos: list[Comercio] = (
-            query
+            query_candidatos
             .order_by(Comercio.id.desc())
             .limit(fetch_size)
             .all()
         )
+
+        if rubro_ids_detectados and not candidatos:
+            candidatos = (
+                query
+                .order_by(Comercio.id.desc())
+                .limit(fetch_size)
+                .all()
+            )
 
         if not candidatos:
             return []
@@ -609,8 +822,13 @@ def listar_comercios_activos(
                 parte for parte in [nombre, descripcion, rubro_nombre] if parte
             )
 
-            if tiene_intencion_conocida and not any(
-                termino in texto_relevancia for termino in terminos_intencion
+            if (
+                tiene_intencion_conocida
+                and terminos_filtro_intencion
+                and not any(
+                    termino in texto_relevancia
+                    for termino in terminos_filtro_intencion
+                )
             ):
                 continue
 

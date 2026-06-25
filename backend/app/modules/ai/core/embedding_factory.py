@@ -14,6 +14,9 @@ from app.modules.ai.providers.simulated_provider import SimulatedEmbeddingProvid
 from app.modules.ai.providers.local_provider import LocalEmbeddingProvider
 
 
+_PROVIDERS_CACHE: dict[str, EmbeddingProvider] = {}
+
+
 def get_embedding_provider() -> EmbeddingProvider:
     """
     Devuelve el provider configurado en settings.
@@ -25,11 +28,19 @@ def get_embedding_provider() -> EmbeddingProvider:
 
     provider_name = (settings.EMBEDDINGS_PROVIDER or "simulated").strip().lower()
 
+    provider = _PROVIDERS_CACHE.get(provider_name)
+    if provider is not None:
+        return provider
+
     if provider_name == "simulated":
-        return SimulatedEmbeddingProvider()
+        provider = SimulatedEmbeddingProvider()
+        _PROVIDERS_CACHE[provider_name] = provider
+        return provider
 
     if provider_name == "local":
-        return LocalEmbeddingProvider()
+        provider = LocalEmbeddingProvider()
+        _PROVIDERS_CACHE[provider_name] = provider
+        return provider
 
     raise ValueError(
         f"EMBEDDINGS_PROVIDER no soportado: '{provider_name}'. "
