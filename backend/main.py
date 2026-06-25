@@ -11,6 +11,9 @@ from app.modules.users.routes.usuarios_routers import router as usuarios_routers
 from app.modules.spaces.routes.comercios_routers import router as comercios_router
 from app.modules.products.routes.rubros_routers import router as rubros_routers
 from app.modules.products.routes.secciones_routers import router as secciones_router
+from app.modules.search.routes.sugerencias_busqueda_routers import (
+    router as sugerencias_busqueda_router,
+)
 
 from app.modules.social.routes.publicaciones_guardadas_routers import router as publicaciones_guardadas_router
 from app.modules.posts.routes.publicaciones_routers import router as publicaciones_router
@@ -91,6 +94,7 @@ app.include_router(usuarios_routers)
 app.include_router(comercios_router)
 app.include_router(rubros_routers)
 app.include_router(secciones_router)
+app.include_router(sugerencias_busqueda_router)
 
 # IMPORTANTE: guardadas antes que publicaciones
 app.include_router(publicaciones_guardadas_router)
