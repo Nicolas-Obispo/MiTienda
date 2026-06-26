@@ -33,6 +33,12 @@ from app.modules.products.models.productos_models import Producto
 from app.modules.products.models.rubros_models import Rubro
 from app.modules.products.models.secciones_models import Seccion
 
+# DISCOVERY
+from app.modules.discovery.models.taxonomy_models import (
+    TaxonomyAssignment,
+    TaxonomyNode,
+)
+
 # POSTS
 from app.modules.posts.models.publicaciones_models import Publicacion
 
