@@ -19,16 +19,29 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@core/constants/queryKeys";
 import {
   useExplorarEspacios,
   useExplorarPublicaciones,
 } from "@features/explore";
+import { listarComerciosActivos } from "@features/spaces";
 
 import { useNavigate } from "react-router-dom";
+import { useSearchSuggestions } from "@features/search/hooks/useSearchSuggestions";
 import { getMediaUrlFromAny } from "@shared";
+
+const HISTORIAL_BUSQUEDA_KEY = "miplaza_explorar_historial_busqueda";
+const HISTORIAL_BUSQUEDA_MAX = 5;
 
 export default function ExplorarPage() {
   const [busqueda, setBusqueda] = useState("");
+  const [busquedaSugerenciasDebounced, setBusquedaSugerenciasDebounced] =
+    useState(null);
+  const [buscadorActivo, setBuscadorActivo] = useState(false);
+  const [historialBusqueda, setHistorialBusqueda] = useState(() =>
+    leerHistorialBusqueda()
+  );
 
   const [modoExplorar, setModoExplorar] = useState(() => {
     const modoGuardado = localStorage.getItem("miplaza_explorar_modo");
@@ -80,6 +93,22 @@ export default function ExplorarPage() {
   const busquedaNormalizada = _normalizarBusqueda(busqueda);
   const usarSmartSemantic = _usarModoIA(busquedaNormalizada);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setBusquedaSugerenciasDebounced(_normalizarBusqueda(busqueda));
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [busqueda]);
+
+  const queryClient = useQueryClient();
+
+  const sugerenciasQuery = useSearchSuggestions({
+    q: busquedaSugerenciasDebounced,
+    limit: 5,
+    enabled: modoExplorar === "espacios",
+  });
+
   const espaciosQuery = useExplorarEspacios({
     q: busquedaNormalizada,
     smart: usarSmartSemantic ? false : _usarModoIA(busquedaNormalizada),
@@ -129,6 +158,96 @@ export default function ExplorarPage() {
   function cambiarModoExplorar(nuevoModo) {
     setModoExplorar(nuevoModo);
     localStorage.setItem("miplaza_explorar_modo", nuevoModo);
+  }
+
+  function leerHistorialBusqueda() {
+    try {
+      const historial = JSON.parse(
+        localStorage.getItem(HISTORIAL_BUSQUEDA_KEY) || "[]"
+      );
+
+      if (!Array.isArray(historial)) return [];
+
+      return historial
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .slice(0, HISTORIAL_BUSQUEDA_MAX);
+    } catch {
+      return [];
+    }
+  }
+
+  function guardarEnHistorialBusqueda(valor) {
+    const q = _normalizarBusqueda(valor);
+    if (!q) return;
+
+    const historialActualizado = [
+      q,
+      ...historialBusqueda.filter(
+        (item) => item.toLowerCase() !== q.toLowerCase()
+      ),
+    ].slice(0, HISTORIAL_BUSQUEDA_MAX);
+
+    setHistorialBusqueda(historialActualizado);
+    localStorage.setItem(
+      HISTORIAL_BUSQUEDA_KEY,
+      JSON.stringify(historialActualizado)
+    );
+  }
+
+  function prefetchBusquedaEspacios(valor) {
+    const q = _normalizarBusqueda(valor);
+    if (!q) return;
+
+    const paramsBusqueda = {
+      q,
+      smart: false,
+      smart_semantic: true,
+      lat: ubicacion.lista ? ubicacion.lat : null,
+      lng: ubicacion.lista ? ubicacion.lng : null,
+      radio_km: null,
+      limit,
+    };
+
+    queryClient.prefetchInfiniteQuery({
+      queryKey: queryKeys.explore.spaces(paramsBusqueda),
+      initialPageParam: 0,
+      queryFn: ({ pageParam = 0 }) =>
+        listarComerciosActivos({
+          ...paramsBusqueda,
+          offset: pageParam,
+        }),
+      getNextPageParam: (lastPage, allPages) => {
+        const ultimaPagina = Array.isArray(lastPage) ? lastPage : [];
+
+        if (ultimaPagina.length < limit) {
+          return undefined;
+        }
+
+        return allPages.length * limit;
+      },
+      staleTime: 1000 * 30,
+    });
+  }
+
+  function confirmarBusqueda(valor) {
+    const q = _normalizarBusqueda(valor);
+    if (!q) return;
+
+    setBusqueda(q);
+    guardarEnHistorialBusqueda(q);
+    prefetchBusquedaEspacios(q);
+    setBuscadorActivo(false);
+  }
+
+  function manejarTeclaBuscador(event) {
+    if (event.key === "Enter") {
+      confirmarBusqueda(busqueda);
+    }
+
+    if (event.key === "Escape") {
+      setBuscadorActivo(false);
+    }
   }
 
   function publicacionCoincideConBusqueda(publicacion, q) {
@@ -199,6 +318,36 @@ export default function ExplorarPage() {
       ? publicacionesFiltradas
       : espaciosQueryData;
 
+  const sugerenciasBusqueda = Array.isArray(
+    sugerenciasQuery.data?.suggestions
+  )
+    ? sugerenciasQuery.data.suggestions
+    : [];
+
+  const opcionesBuscador = busquedaNormalizada
+    ? sugerenciasBusqueda.map((sugerencia) => ({
+        key: `${sugerencia.type}-${sugerencia.id}`,
+        label: sugerencia.label,
+        meta: formatearTipoSugerencia(sugerencia.type),
+        value: sugerencia.label,
+      }))
+    : historialBusqueda.map((item, index) => ({
+        key: `historial-${item}-${index}`,
+        label: item,
+        meta: "Reciente",
+        value: item,
+      }));
+
+  const mostrarPanelBuscador =
+    modoExplorar === "espacios" && buscadorActivo && opcionesBuscador.length > 0;
+
+  function formatearTipoSugerencia(type) {
+    if (type === "rubro") return "Rubro";
+    if (type === "categoria") return "Categoria";
+    if (type === "subcategoria") return "Subcategoria";
+    return "Sugerencia";
+  }
+
   return (
     <div className="px-1 py-3 space-y-3 sm:p-4 sm:space-y-4">
       {/* HEADER */}
@@ -239,16 +388,44 @@ export default function ExplorarPage() {
       </div>
 
       {/* BUSCADOR */}
-      <input
-        value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
-        placeholder={
-          modoExplorar === "publicaciones"
-            ? "Buscar publicaciones..."
-            : "Buscar comercios..."
-        }
-        className="w-full rounded-xl border px-3 py-2"
-      />
+      <div className="relative">
+        <input
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          onFocus={() => setBuscadorActivo(true)}
+          onBlur={() => {
+            setTimeout(() => setBuscadorActivo(false), 120);
+          }}
+          onKeyDown={manejarTeclaBuscador}
+          placeholder={
+            modoExplorar === "publicaciones"
+              ? "Buscar publicaciones..."
+              : "Buscar comercios..."
+          }
+          className="w-full rounded-xl border px-3 py-2"
+        />
+
+        {mostrarPanelBuscador && (
+          <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border bg-white text-gray-950 shadow-lg">
+            {opcionesBuscador.map((opcion) => (
+              <button
+                key={opcion.key}
+                type="button"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  confirmarBusqueda(opcion.value);
+                }}
+                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-gray-100"
+              >
+                <span className="truncate font-medium">{opcion.label}</span>
+                <span className="shrink-0 text-xs text-gray-500">
+                  {opcion.meta}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* ERROR */}
       {error && (

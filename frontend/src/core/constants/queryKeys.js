@@ -55,4 +55,38 @@ export const queryKeys = {
     all: ["analytics"],
     espacio: (espacioId) => ["analytics", "espacio", espacioId],
   },
+
+  search: {
+    all: ["search"],
+    suggestions: ({ q = null, limit = 5 } = {}) => [
+      "search",
+      "suggestions",
+      { q, limit },
+    ],
+  },
+
+  explore: {
+    all: ["explore"],
+    spaces: ({
+      q = null,
+      smart = false,
+      smart_semantic = false,
+      lat = null,
+      lng = null,
+      radio_km = null,
+      limit = 20,
+    } = {}) => [
+      "explore",
+      "spaces",
+      {
+        q,
+        smart,
+        smart_semantic,
+        lat,
+        lng,
+        radio_km,
+        limit,
+      },
+    ],
+  },
 };

@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 
+import { queryKeys } from "@core/constants/queryKeys";
 import { listarComerciosActivos } from "@features/spaces";
 
 /*
@@ -25,19 +26,15 @@ export function useExplorarEspacios({
   limit = 20,
 }) {
   return useInfiniteQuery({
-    queryKey: [
-      "explore",
-      "spaces",
-      {
-        q,
-        smart,
-        smart_semantic,
-        lat,
-        lng,
-        radio_km,
-        limit,
-      },
-    ],
+    queryKey: queryKeys.explore.spaces({
+      q,
+      smart,
+      smart_semantic,
+      lat,
+      lng,
+      radio_km,
+      limit,
+    }),
 
     initialPageParam: 0,
 
@@ -64,6 +61,7 @@ export function useExplorarEspacios({
     },
 
     staleTime: 1000 * 30,
+    placeholderData: (previousData) => previousData,
     retry: 1,
   });
 }
