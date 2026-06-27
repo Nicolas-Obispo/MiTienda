@@ -28,6 +28,9 @@ from sqlalchemy import case, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.modules.ai.models.comercios_embeddings_models import ComercioEmbedding
+from app.modules.discovery.services.taxonomy_assignment_services import (
+    sincronizar_assignments_comercio_desde_rubros,
+)
 from app.modules.spaces.models.comercios_models import Comercio
 from app.modules.stories.models.historias_models import Historia
 from app.modules.posts.models.publicaciones_models import Publicacion
@@ -600,6 +603,13 @@ def crear_comercio(
     db.add(comercio)
     db.commit()
     db.refresh(comercio)
+    sincronizar_assignments_comercio_desde_rubros(
+        db=db,
+        comercio_id=comercio.id,
+        rubro_id_principal=comercio.rubro_id,
+        rubro_ids_secundarios=data.rubro_secundario_ids,
+    )
+    db.commit()
     upsert_embedding_comercio(db=db, comercio=comercio)
 
     return comercio
@@ -1072,7 +1082,16 @@ def actualizar_comercio(
     if comercio.usuario_id != usuario.id:
         raise PermissionError("No tenés permiso para modificar este comercio")
 
-    for campo, valor in data.dict(exclude_unset=True).items():
+    payload = data.dict(exclude_unset=True)
+    sincronizar_assignments = (
+        "rubro_id" in payload or "rubro_secundario_ids" in payload
+    )
+    rubro_secundario_ids = payload.get("rubro_secundario_ids")
+
+    for campo, valor in payload.items():
+        if campo == "rubro_secundario_ids":
+            continue
+
         if campo == "rubro_id":
             _validar_rubro_activo(db, valor)
 
@@ -1080,6 +1099,14 @@ def actualizar_comercio(
 
     db.commit()
     db.refresh(comercio)
+    if sincronizar_assignments:
+        sincronizar_assignments_comercio_desde_rubros(
+            db=db,
+            comercio_id=comercio.id,
+            rubro_id_principal=comercio.rubro_id,
+            rubro_ids_secundarios=rubro_secundario_ids,
+        )
+        db.commit()
     upsert_embedding_comercio(db=db, comercio=comercio)
 
     return comercio

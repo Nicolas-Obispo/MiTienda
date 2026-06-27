@@ -71,6 +71,91 @@ def asegurar_assignment(
     return assignment, True
 
 
+def sincronizar_assignments_comercio_desde_rubros(
+    db: Session,
+    comercio_id: int,
+    rubro_id_principal: int,
+    rubro_ids_secundarios: list[int] | None = None,
+) -> None:
+    assignments_actuales = (
+        db.query(TaxonomyAssignment)
+        .filter(TaxonomyAssignment.entity_type == "comercio")
+        .filter(TaxonomyAssignment.entity_id == comercio_id)
+        .all()
+    )
+    secundarios_actuales_node_ids = {
+        assignment.taxonomy_node_id
+        for assignment in assignments_actuales
+        if not assignment.principal
+    }
+
+    secundarios_reemplazados = rubro_ids_secundarios is not None
+    rubro_ids_secundarios_normalizados: list[int] = []
+    if secundarios_reemplazados:
+        rubro_ids_secundarios_normalizados = [
+            rubro_id
+            for rubro_id in rubro_ids_secundarios
+            if rubro_id != rubro_id_principal
+        ]
+
+    rubro_ids = [rubro_id_principal, *rubro_ids_secundarios_normalizados]
+
+    rubro_assignments = (
+        db.query(TaxonomyAssignment)
+        .filter(TaxonomyAssignment.entity_type == "rubro")
+        .filter(TaxonomyAssignment.entity_id.in_(rubro_ids))
+        .all()
+    )
+    rubro_id_a_node_id = {
+        assignment.entity_id: assignment.taxonomy_node_id
+        for assignment in rubro_assignments
+    }
+
+    principal_node_id = rubro_id_a_node_id.get(rubro_id_principal)
+    secundarios_node_ids = (
+        {
+            node_id
+            for rubro_id, node_id in rubro_id_a_node_id.items()
+            if rubro_id != rubro_id_principal and node_id is not None
+        }
+        if secundarios_reemplazados
+        else secundarios_actuales_node_ids
+    )
+
+    node_ids_actuales = set(secundarios_node_ids)
+    if principal_node_id is not None:
+        node_ids_actuales.add(principal_node_id)
+
+    for assignment in assignments_actuales:
+        if assignment.taxonomy_node_id not in node_ids_actuales:
+            db.delete(assignment)
+
+    if principal_node_id is not None:
+        asegurar_assignment(
+            db,
+            taxonomy_node_id=principal_node_id,
+            entity_type="comercio",
+            entity_id=comercio_id,
+            source="rubro_principal",
+            confidence=1.0,
+            principal=True,
+        )
+
+    for node_id in secundarios_node_ids:
+        if node_id == principal_node_id:
+            continue
+
+        asegurar_assignment(
+            db,
+            taxonomy_node_id=node_id,
+            entity_type="comercio",
+            entity_id=comercio_id,
+            source="rubro_secundario",
+            confidence=0.8,
+            principal=False,
+        )
+
+
 def sincronizar_assignments_desde_rubros(
     db: Session,
     rubro_nombre_a_taxonomy_slug: dict[str, str],

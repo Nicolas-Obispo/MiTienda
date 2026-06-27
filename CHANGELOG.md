@@ -1028,3 +1028,17 @@ Principios consolidados:
 - Frontend no modificado.
 - Schemas no modificados.
 - Validado endpoint /buscar/sugerencias con ropa, remera, indumentaria.
+
+---
+
+## ETAPA 77.3.x — Rubros secundarios con Discovery Assignments
+
+- Se agrega soporte backend para rubros secundarios mediante Discovery Assignments.
+- Comercio.rubro_id se mantiene como rubro principal por compatibilidad.
+- ComercioCreate acepta rubro_secundario_ids opcional.
+- ComercioUpdate acepta rubro_secundario_ids opcional.
+- rubro_secundario_ids ausente preserva secundarios.
+- rubro_secundario_ids=[] elimina secundarios.
+- rubro_secundario_ids=[...] reemplaza secundarios.
+- Validado con creación y actualización real de comercios.
+- Frontend todavía no modificado.

@@ -7,7 +7,7 @@ Validan datos de entrada y salida.
 No contienen lógica de negocio.
 """
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl
 from typing import Optional
 
 
@@ -37,7 +37,7 @@ class ComercioBase(BaseModel):
 # ============================================================
 
 class ComercioCreate(ComercioBase):
-    pass
+    rubro_secundario_ids: list[int] = Field(default_factory=list)
 
 
 # ============================================================
@@ -50,6 +50,7 @@ class ComercioUpdate(BaseModel):
     portada_url: Optional[HttpUrl] = None
 
     rubro_id: Optional[int] = None
+    rubro_secundario_ids: Optional[list[int]] = None
     provincia: Optional[str] = None
     ciudad: Optional[str] = None
     direccion: Optional[str] = None
