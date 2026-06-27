@@ -1042,3 +1042,35 @@ Principios consolidados:
 - rubro_secundario_ids=[...] reemplaza secundarios.
 - Validado con creación y actualización real de comercios.
 - Frontend todavía no modificado.
+
+---
+
+## ETAPA 78 — Buscador Explorar y cache consistente
+
+**Estado:** En curso
+
+### Avances realizados
+
+- Publicaciones públicas en Explorar incorporan búsqueda backend mediante parámetro `q` opcional.
+- `GET /publicaciones/` mantiene compatibilidad: sin `q` conserva el listado público paginado existente.
+- Backend filtra publicaciones antes de paginar por:
+  - `Publicacion.titulo`
+  - `Publicacion.descripcion`
+  - `Comercio.nombre`
+- Frontend `fetchPublicacionesPublicas()` acepta `q` y lo envía solo cuando hay búsqueda real.
+- `useExplorarPublicaciones()` acepta `q` y separa cache por búsqueda.
+- Se agrega `queryKeys.explore.posts({ q, limit, offset })`.
+- Explorar deja de aplicar filtrado final frontend sobre publicaciones; backend queda como fuente de verdad.
+- Se unifican las query options de espacios entre `useExplorarEspacios()` y `prefetchBusquedaEspacios()`.
+- Nuevo helper frontend `getExplorarEspaciosInfiniteQueryOptions(params)` comparte:
+  - `queryKey`
+  - `initialPageParam`
+  - `queryFn`
+  - `getNextPageParam`
+  - `staleTime`
+
+### Objetivo técnico
+
+- Mantener cache TanStack consistente entre búsqueda visible y prefetch.
+- Evitar divergencias entre `useInfiniteQuery` y `prefetchInfiniteQuery`.
+- Reducir duplicación en query keys, query functions y paginado incremental.
