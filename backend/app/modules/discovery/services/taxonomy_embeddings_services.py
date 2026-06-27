@@ -20,7 +20,12 @@ from app.modules.ai.core.embedding_factory import get_embedding_provider
 from app.modules.discovery.models.taxonomy_models import TaxonomyNode
 
 
-TIPOS_EMBEDDINGS_TAXONOMIA = {"rubro", "categoria", "subcategoria"}
+TIPOS_EMBEDDINGS_TAXONOMIA = {
+    "rubro",
+    "categoria",
+    "subcategoria",
+    "especialidad",
+}
 
 
 @dataclass(frozen=True)
@@ -44,12 +49,28 @@ def _normalizar_texto(valor: str | None) -> str:
     return valor.strip().lower()
 
 
+def _extraer_terminos_metadata(metadata: dict | None) -> list[str]:
+    if not isinstance(metadata, dict):
+        return []
+
+    terminos: list[str] = []
+    for key in ("search_terms", "synonyms"):
+        valores = metadata.get(key)
+        if not isinstance(valores, list):
+            continue
+
+        terminos.extend(str(valor) for valor in valores if valor)
+
+    return terminos
+
+
 def _build_texto_taxonomy_node(node: TaxonomyNode) -> str:
     slug = str(getattr(node, "slug", "") or "").replace("-", " ").strip()
     partes = [
         str(getattr(node, "nombre", "") or "").strip(),
         slug,
         str(getattr(node, "descripcion", "") or "").strip(),
+        " ".join(_extraer_terminos_metadata(getattr(node, "metadata_json", None))),
         str(getattr(node, "type", "") or "").strip(),
     ]
     return ". ".join(parte for parte in partes if parte)
@@ -71,7 +92,7 @@ def _cosine_similarity(a: list[float] | None, b: list[float] | None) -> float:
 
 def _firma_nodos_taxonomia(
     nodes: list[TaxonomyNode],
-) -> tuple[tuple[int, str, str, str, str], ...]:
+) -> tuple[tuple[int, str, str, str, str, str], ...]:
     return tuple(
         (
             node.id,
@@ -79,6 +100,9 @@ def _firma_nodos_taxonomia(
             _normalizar_texto(getattr(node, "nombre", None)),
             _normalizar_texto(getattr(node, "type", None)),
             _normalizar_texto(getattr(node, "descripcion", None)),
+            _normalizar_texto(
+                " ".join(_extraer_terminos_metadata(getattr(node, "metadata_json", None)))
+            ),
         )
         for node in nodes
     )

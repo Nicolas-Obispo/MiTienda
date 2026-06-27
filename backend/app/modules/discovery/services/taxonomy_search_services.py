@@ -14,7 +14,12 @@ from app.modules.discovery.models.taxonomy_models import (
 )
 
 
-TIPOS_SUGERENCIA_BUSCADOR = {"rubro", "categoria", "subcategoria"}
+TIPOS_SUGERENCIA_BUSCADOR = {
+    "rubro",
+    "categoria",
+    "subcategoria",
+    "especialidad",
+}
 
 
 @dataclass(frozen=True)
@@ -27,6 +32,7 @@ class _TaxonomySearchCacheItem:
     nombre_normalizado: str
     descripcion_normalizada: str
     slug_normalizado: str
+    terminos_normalizados: str
 
 
 _TAXONOMY_SEARCH_CACHE: list[_TaxonomySearchCacheItem] | None = None
@@ -45,6 +51,21 @@ def _normalizar_texto(valor: str | None) -> str:
     if not valor:
         return ""
     return valor.strip().lower()
+
+
+def _extraer_terminos_metadata(metadata: dict | None) -> list[str]:
+    if not isinstance(metadata, dict):
+        return []
+
+    terminos: list[str] = []
+    for key in ("search_terms", "synonyms"):
+        valores = metadata.get(key)
+        if not isinstance(valores, list):
+            continue
+
+        terminos.extend(str(valor) for valor in valores if valor)
+
+    return terminos
 
 
 def invalidar_cache_busqueda_taxonomia() -> None:
@@ -78,6 +99,9 @@ def _obtener_cache_nodos_taxonomia(db: Session) -> list[_TaxonomySearchCacheItem
                 getattr(node, "descripcion", None)
             ),
             slug_normalizado=_normalizar_texto(getattr(node, "slug", None)),
+            terminos_normalizados=_normalizar_texto(
+                " ".join(_extraer_terminos_metadata(getattr(node, "metadata_json", None)))
+            ),
         )
         for node in nodes
     ]
@@ -107,6 +131,7 @@ def _calcular_score_textual(
     nombre: str,
     descripcion: str,
     slug: str,
+    terminos: str,
 ) -> float:
     if not query:
         return 0.0
@@ -119,6 +144,9 @@ def _calcular_score_textual(
 
     if query in slug:
         return 0.75
+
+    if query in terminos:
+        return 0.90
 
     if query in descripcion:
         return 0.60
@@ -146,6 +174,7 @@ def buscar_nodos_taxonomia_por_texto(
             nombre=node.nombre_normalizado,
             descripcion=node.descripcion_normalizada,
             slug=node.slug_normalizado,
+            terminos=node.terminos_normalizados,
         )
         if score <= 0:
             continue

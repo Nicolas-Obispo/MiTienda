@@ -23,6 +23,7 @@ class TaxonomyNodeSeed:
     descripcion: str
     parent_slug: str | None = None
     orden: int = 0
+    metadata_json: dict | None = None
 
 
 @dataclass
@@ -250,6 +251,59 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Locales gastronomicos, bares, restaurantes, pizzerias, cafeterias y delivery.",
         parent_slug="comida-preparada",
         orden=10,
+    ),
+    TaxonomyNodeSeed(
+        slug="comidas-rapidas",
+        nombre="Comidas rapidas",
+        type="especialidad",
+        descripcion="Comidas rapidas, pizzerias, hamburgueserias, panchos, lomitos y delivery.",
+        parent_slug="gastronomia",
+        orden=20,
+        metadata_json={
+            "search_terms": [
+                "pizza",
+                "pizzas",
+                "pizzeria",
+                "pizzerias",
+                "hamburguesa",
+                "hamburguesas",
+                "hamburgueseria",
+                "pancho",
+                "panchos",
+                "lomito",
+                "lomitos",
+            ],
+            "synonyms": [
+                "comida rapida",
+                "fast food",
+            ],
+        },
+    ),
+    TaxonomyNodeSeed(
+        slug="bar-cocteleria",
+        nombre="Bar y cocteleria",
+        type="especialidad",
+        descripcion="Bares, cocteleria, tragos, cerveza, cocktails, barra y bebidas.",
+        parent_slug="gastronomia",
+        orden=30,
+        metadata_json={
+            "search_terms": [
+                "tragos",
+                "trago",
+                "cerveza",
+                "cervezas",
+                "coctel",
+                "cocteles",
+                "cocktail",
+                "cocktails",
+                "barra",
+            ],
+            "synonyms": [
+                "bar",
+                "bares",
+                "cocteleria",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="compras-diarias",
@@ -601,6 +655,7 @@ def asegurar_taxonomia_base(db: Session) -> TaxonomySeedResult:
                 parent_id=parent_id,
                 activo=True,
                 orden=seed.orden,
+                metadata_json=seed.metadata_json,
             )
             db.add(node)
             db.flush()
@@ -617,6 +672,9 @@ def asegurar_taxonomia_base(db: Session) -> TaxonomySeedResult:
             "activo": True,
             "orden": seed.orden,
         }
+        if seed.metadata_json is not None:
+            campos["metadata_json"] = seed.metadata_json
+
         for campo, valor in campos.items():
             if getattr(node, campo) != valor:
                 setattr(node, campo, valor)
