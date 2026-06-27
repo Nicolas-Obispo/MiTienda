@@ -16,7 +16,7 @@ import { listarComerciosActivos } from "@features/spaces";
 |
 */
 
-export function useExplorarEspacios({
+export function getExplorarEspaciosInfiniteQueryOptions({
   q = null,
   smart = false,
   smart_semantic = false,
@@ -25,28 +25,24 @@ export function useExplorarEspacios({
   radio_km = null,
   limit = 20,
 }) {
-  return useInfiniteQuery({
-    queryKey: queryKeys.explore.spaces({
-      q,
-      smart,
-      smart_semantic,
-      lat,
-      lng,
-      radio_km,
-      limit,
-    }),
+  const params = {
+    q,
+    smart,
+    smart_semantic,
+    lat,
+    lng,
+    radio_km,
+    limit,
+  };
+
+  return {
+    queryKey: queryKeys.explore.spaces(params),
 
     initialPageParam: 0,
 
     queryFn: ({ pageParam = 0 }) =>
       listarComerciosActivos({
-        q,
-        smart,
-        smart_semantic,
-        lat,
-        lng,
-        radio_km,
-        limit,
+        ...params,
         offset: pageParam,
       }),
 
@@ -61,6 +57,28 @@ export function useExplorarEspacios({
     },
 
     staleTime: 1000 * 30,
+  };
+}
+
+export function useExplorarEspacios({
+  q = null,
+  smart = false,
+  smart_semantic = false,
+  lat = null,
+  lng = null,
+  radio_km = null,
+  limit = 20,
+}) {
+  return useInfiniteQuery({
+    ...getExplorarEspaciosInfiniteQueryOptions({
+      q,
+      smart,
+      smart_semantic,
+      lat,
+      lng,
+      radio_km,
+      limit,
+    }),
     placeholderData: (previousData) => previousData,
     retry: 1,
   });

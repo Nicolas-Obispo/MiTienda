@@ -20,12 +20,11 @@
 
 import React, { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@core/constants/queryKeys";
 import {
+  getExplorarEspaciosInfiniteQueryOptions,
   useExplorarEspacios,
   useExplorarPublicaciones,
 } from "@features/explore";
-import { listarComerciosActivos } from "@features/spaces";
 
 import { useNavigate } from "react-router-dom";
 import { useSearchSuggestions } from "@features/search/hooks/useSearchSuggestions";
@@ -210,25 +209,9 @@ export default function ExplorarPage() {
       limit,
     };
 
-    queryClient.prefetchInfiniteQuery({
-      queryKey: queryKeys.explore.spaces(paramsBusqueda),
-      initialPageParam: 0,
-      queryFn: ({ pageParam = 0 }) =>
-        listarComerciosActivos({
-          ...paramsBusqueda,
-          offset: pageParam,
-        }),
-      getNextPageParam: (lastPage, allPages) => {
-        const ultimaPagina = Array.isArray(lastPage) ? lastPage : [];
-
-        if (ultimaPagina.length < limit) {
-          return undefined;
-        }
-
-        return allPages.length * limit;
-      },
-      staleTime: 1000 * 30,
-    });
+    queryClient.prefetchInfiniteQuery(
+      getExplorarEspaciosInfiniteQueryOptions(paramsBusqueda)
+    );
   }
 
   function confirmarBusqueda(valor) {
