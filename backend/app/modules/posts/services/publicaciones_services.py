@@ -19,9 +19,10 @@ ETAPA 57:
 from typing import List, Dict, Optional
 
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from app.modules.posts.models.publicaciones_models import Publicacion
+from app.modules.spaces.models.comercios_models import Comercio
 from app.modules.social.models.publicaciones_guardadas_models import PublicacionGuardada
 from app.modules.social.models.likes_publicaciones_models import LikePublicacion
 from app.modules.posts.schemas.publicaciones_schemas import PublicacionCreate
@@ -67,6 +68,7 @@ def crear_publicacion(
 def listar_publicaciones_activas(
     db: Session,
     *,
+    q: str | None = None,
     limit: int = 40,
     offset: int = 0,
 ) -> List[Publicacion]:
@@ -79,10 +81,25 @@ def listar_publicaciones_activas(
     - Se usa en Explorar > Publicaciones.
     """
 
-    return (
+    query = (
         db.query(Publicacion)
         .options(joinedload(Publicacion.comercio))
         .filter(Publicacion.is_activa.is_(True))
+    )
+
+    q_normalizada = (q or "").strip()
+    if q_normalizada:
+        like = f"%{q_normalizada}%"
+        query = query.join(Publicacion.comercio).filter(
+            or_(
+                Publicacion.titulo.ilike(like),
+                Publicacion.descripcion.ilike(like),
+                Comercio.nombre.ilike(like),
+            )
+        )
+
+    return (
+        query
         .order_by(Publicacion.created_at.desc())
         .offset(offset)
         .limit(limit)

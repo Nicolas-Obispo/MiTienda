@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
+import { queryKeys } from "@core/constants/queryKeys";
 import { fetchPublicacionesPublicas } from "@features/posts";
 
 /*
@@ -15,21 +16,22 @@ import { fetchPublicacionesPublicas } from "@features/posts";
 */
 
 export function useExplorarPublicaciones({
+  q = null,
   limit = 20,
   offset = 0,
 }) {
+  const query = String(q || "").trim() || null;
+
   return useQuery({
-    queryKey: [
-      "explore",
-      "posts",
-      {
-        limit,
-        offset,
-      },
-    ],
+    queryKey: queryKeys.explore.posts({
+      q: query,
+      limit,
+      offset,
+    }),
 
     queryFn: () =>
       fetchPublicacionesPublicas({
+        q: query,
         limit,
         offset,
       }),

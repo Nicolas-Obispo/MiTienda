@@ -119,6 +119,7 @@ export default function ExplorarPage() {
   });
 
   const publicacionesQuery = useExplorarPublicaciones({
+    q: busquedaNormalizada,
     limit,
     offset: 0,
   });
@@ -309,9 +310,7 @@ export default function ExplorarPage() {
   const qUI = busquedaNormalizada;
   const modoIAActivo = _usarModoIA(qUI);
 
-  const publicacionesFiltradas = publicacionesQueryData.filter((publicacion) =>
-    publicacionCoincideConBusqueda(publicacion, qUI)
-  );
+  const publicacionesFiltradas = publicacionesQueryData;
 
   const itemsActuales =
     modoExplorar === "publicaciones"

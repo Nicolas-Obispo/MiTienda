@@ -67,6 +67,15 @@ export const queryKeys = {
 
   explore: {
     all: ["explore"],
+    posts: ({ q = null, limit = 20, offset = 0 } = {}) => [
+      "explore",
+      "posts",
+      {
+        q,
+        limit,
+        offset,
+      },
+    ],
     spaces: ({
       q = null,
       smart = false,

@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -107,6 +107,7 @@ def construir_publicacion_read(
     response_model=List[PublicacionRead],
 )
 def listar_publicaciones_activas_endpoint(
+    q: str | None = Query(default=None, description="Busqueda por publicacion o comercio"),
     limit: int = 40,
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -123,6 +124,7 @@ def listar_publicaciones_activas_endpoint(
 
     publicaciones = listar_publicaciones_activas(
         db=db,
+        q=q,
         limit=limit,
         offset=offset,
     )

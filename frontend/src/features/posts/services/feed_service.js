@@ -271,12 +271,20 @@ export async function fetchRankingPublicaciones() {
  * - Se usa en Explorar > Publicaciones.
  */
 export async function fetchPublicacionesPublicas({
+  q = null,
   limit = 40,
   offset = 0,
 } = {}) {
-  const data = await httpGet(
-    `/publicaciones/?limit=${limit}&offset=${offset}`
-  );
+  const params = new URLSearchParams();
+  params.set("limit", String(limit));
+  params.set("offset", String(offset));
+
+  const query = String(q || "").trim();
+  if (query) {
+    params.set("q", query);
+  }
+
+  const data = await httpGet(`/publicaciones/?${params.toString()}`);
 
   return normalizarListaRespuesta(data).map((publicacion) => ({
     ...publicacion,
