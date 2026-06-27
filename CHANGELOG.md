@@ -1074,9 +1074,23 @@ Principios consolidados:
 - Se traducen nodos a `rubro_ids` vía `TaxonomyAssignment`.
 - Se traducen nodos a `comercio_ids` vía `TaxonomyAssignment` con `entity_type="comercio"`.
 - Los candidatos del buscador combinan rubro principal y especialidades asignadas.
+- Se agrega `metadata_json.search_terms` y `metadata_json.synonyms` a `TaxonomyNodeSeed`.
+- La búsqueda textual de Discovery ahora lee `search_terms` y `synonyms`.
+- Los embeddings de taxonomía ahora incluyen `search_terms` y `synonyms`.
+- Las especialidades entran en sugerencias y embeddings de taxonomía.
+- Se agregan especialidades gastronómicas:
+  - `comidas-rapidas`
+  - `bar-cocteleria`
+- Se protege `metadata_json` manual al actualizar seed: solo se pisa cuando el seed trae metadata explícita.
+- Se define Knowledge Base FeedGo:
+  - Rubro
+  - Especialidad
+  - `search_terms`
+  - `synonyms`
 
 ### Pendiente
 
+- Knowledge Builder.
 - Ranking por Discovery.
 - Optimización/revisión de prefetch.
 - Limpieza gradual de hardcodes de intención.
