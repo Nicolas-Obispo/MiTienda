@@ -1068,6 +1068,18 @@ Principios consolidados:
   - `queryFn`
   - `getNextPageParam`
   - `staleTime`
+- Se conecta Discovery al endpoint `/comercios/activos`.
+- `smart_semantic` ahora usa `recuperar_nodos_discovery()`.
+- Se obtienen `node_ids` desde `TaxonomyNode`.
+- Se traducen nodos a `rubro_ids` vía `TaxonomyAssignment`.
+- Se traducen nodos a `comercio_ids` vía `TaxonomyAssignment` con `entity_type="comercio"`.
+- Los candidatos del buscador combinan rubro principal y especialidades asignadas.
+
+### Pendiente
+
+- Ranking por Discovery.
+- Optimización/revisión de prefetch.
+- Limpieza gradual de hardcodes de intención.
 
 ### Objetivo técnico
 
