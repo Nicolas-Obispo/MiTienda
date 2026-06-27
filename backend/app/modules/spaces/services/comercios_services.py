@@ -748,6 +748,10 @@ def listar_comercios_activos(
             query_texto,
             limit=10,
         )
+        intencion_discovery_fuerte = any(
+            nodo.text_score >= 0.85 or nodo.source in {"text", "mixed"}
+            for nodo in nodos_discovery
+        )
         node_ids_discovery = [node.node_id for node in nodos_discovery]
         rubro_ids_discovery = buscar_rubro_ids_asignados_a_nodos_taxonomia(
             db,
@@ -771,6 +775,11 @@ def listar_comercios_activos(
                 *rubro_ids_discovery,
             }
         )
+
+        if intencion_discovery_fuerte and not (
+            rubro_ids_detectados or comercio_ids_discovery
+        ):
+            return []
 
         # NO filtramos por nombre:
         # usamos un pool amplio de comercios activos y rankeamos por similitud.
@@ -797,6 +806,9 @@ def listar_comercios_activos(
         )
 
         if (rubro_ids_detectados or comercio_ids_discovery) and not candidatos:
+            if intencion_discovery_fuerte:
+                return []
+
             candidatos = (
                 query
                 .order_by(Comercio.id.desc())
