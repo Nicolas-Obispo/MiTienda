@@ -1074,6 +1074,11 @@ Principios consolidados:
 - Se traducen nodos a `rubro_ids` vía `TaxonomyAssignment`.
 - Se traducen nodos a `comercio_ids` vía `TaxonomyAssignment` con `entity_type="comercio"`.
 - Los candidatos del buscador combinan rubro principal y especialidades asignadas.
+- Discovery evita el fallback al pool amplio cuando detecta una intención fuerte.
+- Si Discovery identifica una intención pero no encuentra candidatos, el backend devuelve una lista vacía.
+- Se evita mostrar comercios irrelevantes para preservar la confianza del buscador.
+- El buscador prioriza precisión sobre cantidad de resultados.
+- La UI mostrará simplemente: `No encontramos resultados para "<búsqueda>".`
 - Se agrega `metadata_json.search_terms` y `metadata_json.synonyms` a `TaxonomyNodeSeed`.
 - La búsqueda textual de Discovery ahora lee `search_terms` y `synonyms`.
 - Los embeddings de taxonomía ahora incluyen `search_terms` y `synonyms`.
@@ -1090,10 +1095,11 @@ Principios consolidados:
 
 ### Pendiente
 
+- Ranking por Discovery (`confidence` y `principal`).
 - Knowledge Builder.
-- Ranking por Discovery.
-- Optimización/revisión de prefetch.
-- Limpieza gradual de hardcodes de intención.
+- Prefetch inteligente.
+- Eliminación gradual de hardcodes.
+- Mejorar cobertura de `search_terms` y especialidades.
 
 ### Objetivo técnico
 
