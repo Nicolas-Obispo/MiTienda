@@ -17,3 +17,15 @@ class RubroResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+
+class RubroEspecialidadResponse(BaseModel):
+    id: int
+    slug: str
+    nombre: str
+    descripcion: str | None = None
+    orden: int
+
+    model_config = {
+        "from_attributes": True
+    }

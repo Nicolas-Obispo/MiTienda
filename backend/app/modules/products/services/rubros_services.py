@@ -8,6 +8,10 @@ Lógica de negocio para Rubros.
 """
 
 from sqlalchemy.orm import Session
+from app.modules.discovery.models.taxonomy_models import (
+    TaxonomyAssignment,
+    TaxonomyNode,
+)
 from app.modules.products.models.rubros_models import Rubro
 
 
@@ -190,4 +194,164 @@ def obtener_rubro_por_id(db: Session, rubro_id: int) -> Rubro | None:
             Rubro.activo == True
         )
         .first()
+    )
+
+
+def listar_especialidades_por_rubro(
+    db: Session,
+    rubro_id: int,
+) -> list[TaxonomyNode] | None:
+    """
+    Devuelve especialidades Discovery hijas del rubro principal.
+    """
+    rubro_principal = obtener_rubro_por_id(db, rubro_id)
+    if not rubro_principal:
+        return None
+
+    assignment_principal = (
+        db.query(TaxonomyAssignment)
+        .filter(TaxonomyAssignment.entity_type == "rubro")
+        .filter(TaxonomyAssignment.entity_id == rubro_id)
+        .first()
+    )
+    if not assignment_principal:
+        return []
+
+    return (
+        db.query(TaxonomyNode)
+        .filter(TaxonomyNode.parent_id == assignment_principal.taxonomy_node_id)
+        .filter(TaxonomyNode.type == "especialidad")
+        .filter(TaxonomyNode.activo == True)
+        .order_by(TaxonomyNode.orden.asc(), TaxonomyNode.nombre.asc())
+        .all()
+    )
+
+
+def _agregar_descendientes_rubro(
+    *,
+    nodes_by_parent: dict[int | None, list[TaxonomyNode]],
+    parent_id: int | None,
+    prioridad: int,
+    node_id_a_prioridad: dict[int, int],
+) -> None:
+    pendientes = list(nodes_by_parent.get(parent_id, []))
+
+    while pendientes:
+        node = pendientes.pop(0)
+        if node.type == "rubro":
+            prioridad_actual = node_id_a_prioridad.get(node.id)
+            if prioridad_actual is None or prioridad < prioridad_actual:
+                node_id_a_prioridad[node.id] = prioridad
+
+        pendientes.extend(nodes_by_parent.get(node.id, []))
+
+
+def listar_rubros_secundarios_sugeridos(
+    db: Session,
+    rubro_id: int,
+) -> list[Rubro] | None:
+    """
+    Devuelve rubros secundarios coherentes segun la relacion Discovery.
+    """
+    rubro_principal = obtener_rubro_por_id(db, rubro_id)
+    if not rubro_principal:
+        return None
+
+    assignment_principal = (
+        db.query(TaxonomyAssignment)
+        .filter(TaxonomyAssignment.entity_type == "rubro")
+        .filter(TaxonomyAssignment.entity_id == rubro_id)
+        .first()
+    )
+    if not assignment_principal:
+        return []
+
+    node_principal = (
+        db.query(TaxonomyNode)
+        .filter(TaxonomyNode.id == assignment_principal.taxonomy_node_id)
+        .filter(TaxonomyNode.activo == True)
+        .first()
+    )
+    if not node_principal:
+        return []
+
+    nodes = (
+        db.query(TaxonomyNode)
+        .filter(TaxonomyNode.activo == True)
+        .all()
+    )
+    nodes_by_parent: dict[int | None, list[TaxonomyNode]] = {}
+    nodes_by_id = {node.id: node for node in nodes}
+
+    for node in nodes:
+        nodes_by_parent.setdefault(node.parent_id, []).append(node)
+
+    node_id_a_prioridad: dict[int, int] = {}
+
+    if node_principal.parent_id is not None:
+        for node in nodes_by_parent.get(node_principal.parent_id, []):
+            if node.type == "rubro":
+                node_id_a_prioridad[node.id] = 0
+
+        _agregar_descendientes_rubro(
+            nodes_by_parent=nodes_by_parent,
+            parent_id=node_principal.parent_id,
+            prioridad=1,
+            node_id_a_prioridad=node_id_a_prioridad,
+        )
+
+        parent_node = nodes_by_id.get(node_principal.parent_id)
+        if parent_node and parent_node.parent_id is not None:
+            _agregar_descendientes_rubro(
+                nodes_by_parent=nodes_by_parent,
+                parent_id=parent_node.parent_id,
+                prioridad=2,
+                node_id_a_prioridad=node_id_a_prioridad,
+            )
+
+    node_id_a_prioridad.pop(node_principal.id, None)
+    node_ids_relacionados = list(node_id_a_prioridad.keys())
+    if not node_ids_relacionados:
+        return []
+
+    rubro_assignments = (
+        db.query(TaxonomyAssignment)
+        .filter(TaxonomyAssignment.entity_type == "rubro")
+        .filter(TaxonomyAssignment.taxonomy_node_id.in_(node_ids_relacionados))
+        .all()
+    )
+    if not rubro_assignments:
+        return []
+
+    rubro_id_a_prioridad: dict[int, int] = {}
+    for assignment in rubro_assignments:
+        prioridad = node_id_a_prioridad.get(assignment.taxonomy_node_id)
+        if prioridad is None:
+            continue
+
+        prioridad_actual = rubro_id_a_prioridad.get(assignment.entity_id)
+        if prioridad_actual is None or prioridad < prioridad_actual:
+            rubro_id_a_prioridad[assignment.entity_id] = prioridad
+
+    rubro_ids = [
+        entity_id
+        for entity_id in rubro_id_a_prioridad
+        if entity_id != rubro_id
+    ]
+    if not rubro_ids:
+        return []
+
+    rubros = (
+        db.query(Rubro)
+        .filter(Rubro.activo == True)
+        .filter(Rubro.id.in_(rubro_ids))
+        .all()
+    )
+
+    return sorted(
+        rubros,
+        key=lambda rubro: (
+            rubro_id_a_prioridad.get(rubro.id, 99),
+            (rubro.nombre or "").lower(),
+        ),
     )
