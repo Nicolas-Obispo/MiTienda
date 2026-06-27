@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     # 🤖 Configuración IA
     # --------------------------
     EMBEDDINGS_PROVIDER: str = "simulated"
+    EMBEDDINGS_LOCAL_MODEL_PATH: str = "all-MiniLM-L6-v2"
 
     class Config:
         env_file = ".env"

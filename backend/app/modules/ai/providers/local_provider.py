@@ -11,6 +11,7 @@ from typing import List
 
 from sentence_transformers import SentenceTransformer
 
+from app.core.config import settings
 from app.modules.ai.core.embedding_provider import EmbeddingProvider
 
 
@@ -26,7 +27,10 @@ class LocalEmbeddingProvider(EmbeddingProvider):
 
     def __init__(self):
         # Carga del modelo en memoria
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.model = SentenceTransformer(
+            settings.EMBEDDINGS_LOCAL_MODEL_PATH,
+            local_files_only=True,
+        )
 
     def embed_text(self, text: str) -> List[float]:
         """
