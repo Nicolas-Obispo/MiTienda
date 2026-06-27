@@ -1015,3 +1015,16 @@ Principios consolidados:
 - Menos fetches manuales.
 - Menos estados duplicados.
 - TanStack Query como estrategia principal de cache.
+
+---
+
+## ETAPA 77.2 — Discovery conectado al buscador predictivo
+
+- Discovery conectado al buscador predictivo.
+- Nuevo service taxonomy_search_services.py.
+- Cache interno lazy para TaxonomyNode.
+- Buscador prioriza texto nombre, Discovery fuerte, texto/Discovery débil y embeddings.
+- Fallback de embeddings para evitar 500 si local provider falla.
+- Frontend no modificado.
+- Schemas no modificados.
+- Validado endpoint /buscar/sugerencias con ropa, remera, indumentaria.

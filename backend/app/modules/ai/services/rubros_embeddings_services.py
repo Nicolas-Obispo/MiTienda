@@ -118,20 +118,23 @@ def detectar_rubros_por_query(
     if not query_normalizada:
         return []
 
-    provider = get_embedding_provider()
-    query_vector = provider.embed_text(query_normalizada)
+    try:
+        provider = get_embedding_provider()
+        query_vector = provider.embed_text(query_normalizada)
 
-    scored: list[RubroDetectado] = []
-    for rubro_id, nombre, vector in _obtener_embeddings_rubros(db):
-        score = _cosine_similarity(query_vector, vector)
-        if score >= min_score:
-            scored.append(
-                RubroDetectado(
-                    rubro_id=rubro_id,
-                    nombre=nombre,
-                    score=score,
+        scored: list[RubroDetectado] = []
+        for rubro_id, nombre, vector in _obtener_embeddings_rubros(db):
+            score = _cosine_similarity(query_vector, vector)
+            if score >= min_score:
+                scored.append(
+                    RubroDetectado(
+                        rubro_id=rubro_id,
+                        nombre=nombre,
+                        score=score,
+                    )
                 )
-            )
+    except Exception:
+        return []
 
     scored.sort(key=lambda item: (item.score, item.rubro_id), reverse=True)
     return scored[:top_k]

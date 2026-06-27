@@ -38,7 +38,10 @@ def get_embedding_provider() -> EmbeddingProvider:
         return provider
 
     if provider_name == "local":
-        provider = LocalEmbeddingProvider()
+        try:
+            provider = LocalEmbeddingProvider()
+        except Exception:
+            provider = SimulatedEmbeddingProvider()
         _PROVIDERS_CACHE[provider_name] = provider
         return provider
 
