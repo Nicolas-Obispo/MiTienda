@@ -726,6 +726,13 @@ def listar_comercios_activos(
         from app.modules.ai.services.rubros_embeddings_services import (
             detectar_rubros_por_query,
         )
+        from app.modules.discovery.services.discovery_retrieval_services import (
+            recuperar_nodos_discovery,
+        )
+        from app.modules.discovery.services.taxonomy_search_services import (
+            buscar_rubro_ids_asignados_a_nodos_taxonomia,
+        )
+        from app.modules.discovery.models.taxonomy_models import TaxonomyAssignment
 
         provider = get_embedding_provider()
 
@@ -736,8 +743,34 @@ def listar_comercios_activos(
         terminos_filtro_intencion = _terminos_familia_intencion(query_texto)
         query_texto_embedding = " ".join(terminos_intencion)
         query_vector = provider.embed_text(query_texto_embedding)
+        nodos_discovery = recuperar_nodos_discovery(
+            db,
+            query_texto,
+            limit=10,
+        )
+        node_ids_discovery = [node.node_id for node in nodos_discovery]
+        rubro_ids_discovery = buscar_rubro_ids_asignados_a_nodos_taxonomia(
+            db,
+            node_ids_discovery,
+        )
+        comercio_ids_discovery = set()
+        if node_ids_discovery:
+            comercio_ids_discovery = {
+                comercio_id
+                for (comercio_id,) in (
+                    db.query(TaxonomyAssignment.entity_id)
+                    .filter(TaxonomyAssignment.taxonomy_node_id.in_(node_ids_discovery))
+                    .filter(TaxonomyAssignment.entity_type == "comercio")
+                    .all()
+                )
+            }
         rubros_detectados = detectar_rubros_por_query(db, query_texto)
-        rubro_ids_detectados = [rubro.rubro_id for rubro in rubros_detectados]
+        rubro_ids_detectados = list(
+            {
+                *[rubro.rubro_id for rubro in rubros_detectados],
+                *rubro_ids_discovery,
+            }
+        )
 
         # NO filtramos por nombre:
         # usamos un pool amplio de comercios activos y rankeamos por similitud.
@@ -748,9 +781,12 @@ def listar_comercios_activos(
             fetch_size = 500
 
         query_candidatos = query
-        if rubro_ids_detectados:
+        if rubro_ids_detectados or comercio_ids_discovery:
             query_candidatos = query_candidatos.filter(
-                Comercio.rubro_id.in_(rubro_ids_detectados)
+                or_(
+                    Comercio.rubro_id.in_(rubro_ids_detectados),
+                    Comercio.id.in_(comercio_ids_discovery),
+                )
             )
 
         candidatos: list[Comercio] = (
@@ -760,7 +796,7 @@ def listar_comercios_activos(
             .all()
         )
 
-        if rubro_ids_detectados and not candidatos:
+        if (rubro_ids_detectados or comercio_ids_discovery) and not candidatos:
             candidatos = (
                 query
                 .order_by(Comercio.id.desc())
