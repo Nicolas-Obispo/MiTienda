@@ -1330,3 +1330,57 @@ Discovery queda considerado arquitectónicamente estable. La etapa consolida el 
 - Snapshots diarios agregados.
 - Diseño e implementación de `KnowledgeProposal`.
 - Integración futura con Knowledge Builder.
+
+---
+
+## ETAPA 79.4 — Knowledge Evidence Base
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el módulo interno `backend/app/modules/knowledge/builder/`.
+- Se agregaron schemas internos para evidencia estructurada:
+  - `SearchTermEvidence`
+  - `SynonymEvidence`
+  - `RelatedTermEvidence`
+  - `SpecialtyEvidence`
+  - `CoverageGapEvidence`
+  - `RankingEvidence`
+- Se implementaron servicios read-only que transforman Knowledge Analytics en evidencia.
+- Se incorporó confidence explicable en rango `0.0..1.0`.
+- Se clasificó la fuerza de evidencia mediante:
+  - `noise`
+  - `weak`
+  - `candidate`
+  - `priority`
+
+### Alcance
+
+- No se agregaron endpoints públicos.
+- No se tocó frontend.
+- No se crearon modelos ni migraciones.
+- No se modificó Discovery.
+- No se modificó ranking.
+- No se creó `KnowledgeProposal`.
+
+### Diseño
+
+- `SearchEvent V1` genera evidencia de términos, especialidades y brechas de cobertura.
+- `CoverageGapEvidence` representa baja cobertura detectada desde búsquedas reales.
+- `RankingEvidence` queda reservado para una etapa futura con `SearchSession`, clicks y conversiones.
+- La evidencia es revisable y no aplica cambios automáticos.
+
+### Validación
+
+- Se validó con datos reales existentes en `search_events`.
+- Se generaron evidencias para queries con baja cobertura y no-results.
+- Se confirmó que los servicios no escriben en DB.
+- El conteo de `SearchEvent` antes y después de generar evidencia se mantuvo igual.
+
+### Pendiente
+
+- Crear `KnowledgeProposal` como entidad revisable.
+- Incorporar SearchSession.
+- Incorporar clicks y conversiones.
+- Convertir evidencia validada en propuestas revisables, nunca en cambios automáticos.
