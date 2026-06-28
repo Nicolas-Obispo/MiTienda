@@ -1289,3 +1289,44 @@ Discovery queda considerado arquitectónicamente estable. La etapa consolida el 
 - Registrar clicks y conversiones.
 - Diseñar e implementar `KnowledgeProposal`.
 - Construir el futuro Knowledge Builder sobre eventos agregados.
+
+---
+
+## ETAPA 79.3 — Knowledge Analytics Base
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el submódulo interno `backend/app/modules/knowledge/analytics/`.
+- Se agregaron schemas internos para analytics read-only sobre `SearchEvent`.
+- Se implementaron servicios internos read-only:
+  - `top_queries`
+  - `top_queries_no_results`
+  - `discovery_failures`
+  - `query_summary`
+- Los servicios leen `SearchEvent` y devuelven agregados para alimentar futuro Knowledge Builder.
+
+### Alcance
+
+- No se agregaron endpoints públicos.
+- No se tocó frontend.
+- No se crearon modelos ni migraciones.
+- No se modificó `SearchEvent`.
+- No se modificó Discovery.
+- No se modificó ranking.
+
+### Validación
+
+- Se validaron los servicios contra datos reales existentes en `search_events`.
+- `top_queries` devolvió queries registradas como `pizza`, `contador`, `cubiertas` y búsquedas parciales.
+- `top_queries_no_results` y `discovery_failures` detectaron búsquedas sin resultados.
+- `query_summary` tolera queries existentes y queries sin eventos.
+
+### Pendiente
+
+- Analytics por `rubro_ids_json`.
+- Analytics por `taxonomy_node_ids_json`.
+- Snapshots diarios agregados.
+- Diseño e implementación de `KnowledgeProposal`.
+- Integración futura con Knowledge Builder.
