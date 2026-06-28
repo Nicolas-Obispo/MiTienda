@@ -30,6 +30,9 @@ from app.modules.discovery.models.taxonomy_models import (
     TaxonomyNode,
 )
 
+# SEARCH
+from app.modules.search.models.search_event_models import SearchEvent
+
 # POSTS
 from app.modules.posts.models.publicaciones_models import Publicacion
 

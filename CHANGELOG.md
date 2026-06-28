@@ -1240,3 +1240,52 @@ Discovery queda considerado arquitectónicamente estable. La etapa consolida el 
 
 - Eliminar hardcodes duplicados de `spaces` cuando Knowledge quede consolidado como fuente única.
 - Agregar pruebas automatizadas cuando exista estructura de tests backend.
+
+---
+
+## ETAPA 79.2 — SearchEvent V1
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el modelo `SearchEvent` y la tabla `search_events`.
+- Se agregó el registro de búsquedas reales desde `GET /comercios/activos`.
+- Se registra:
+  - query original y normalizada
+  - modo de búsqueda
+  - `result_count`
+  - `no_results`
+  - `taxonomy_node_ids_json`
+  - `rubro_ids_json`
+  - `comercio_result_ids_json`
+  - `metadata_json`
+- El registro es best-effort y no bloquea la respuesta del buscador si falla.
+- Se incorporó `backend/crear_search_events.py` como script idempotente para crear la tabla.
+- `create_tables.py` importa el modelo para el flujo manual existente de creación de tablas.
+
+### Privacidad
+
+- No se registra IP.
+- No se registra User-Agent.
+- No se guardan `lat`/`lng` exactos.
+- Solo se registra `has_location` y `radio_km` cuando corresponde.
+
+### Validación
+
+- Se creó la tabla `search_events` con el script idempotente.
+- Se validó el endpoint real `GET /comercios/activos` con `smart_semantic=true`.
+- Queries validadas:
+  - `pizza`
+  - `prendas`
+  - `cubiertas`
+  - `contador`
+- Todas respondieron `200` y generaron filas nuevas en `search_events`.
+- Se verificaron campos persistidos: query, modo, resultados, nodos, rubros, comercios y metadata.
+
+### Pendiente
+
+- Diseñar e implementar `SearchSession`.
+- Registrar clicks y conversiones.
+- Diseñar e implementar `KnowledgeProposal`.
+- Construir el futuro Knowledge Builder sobre eventos agregados.

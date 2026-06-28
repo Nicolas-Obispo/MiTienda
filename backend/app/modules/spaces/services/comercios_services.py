@@ -46,6 +46,10 @@ from app.modules.knowledge.services.knowledge_legacy_intent_services import (
     _terminos_familia_intencion as _knowledge_terminos_familia_intencion,
     _tiene_intencion_conocida as _knowledge_tiene_intencion_conocida,
 )
+from app.modules.search.services.search_event_services import (
+    build_search_event_from_comercios_activos,
+    registrar_search_event_best_effort,
+)
 
 
 class RubroInvalidoError(ValueError):
@@ -707,6 +711,29 @@ def listar_comercios_activos(
     if not q_normalizada:
         q_normalizada = ""
 
+    def _registrar_search_event(
+        resultados: list[Comercio],
+        *,
+        taxonomy_node_ids: list[int] | set[int] | None = None,
+        rubro_ids: list[int] | set[int] | None = None,
+        metadata: dict | None = None,
+    ) -> None:
+        payload = build_search_event_from_comercios_activos(
+            query_original=q,
+            smart=smart,
+            smart_semantic=smart_semantic,
+            limit=limit,
+            offset=offset,
+            radio_km=radio_km,
+            has_location=lat is not None and lng is not None,
+            result_count=len(resultados),
+            taxonomy_node_ids=taxonomy_node_ids,
+            rubro_ids=rubro_ids,
+            comercio_result_ids=[comercio.id for comercio in resultados],
+            metadata=metadata,
+        )
+        registrar_search_event_best_effort(db, payload)
+
     # ============================================================
     # SEMANTIC MODE (ETAPA 53.2 - primer híbrido)
     # ============================================================
@@ -770,7 +797,17 @@ def listar_comercios_activos(
         if intencion_discovery_fuerte and not (
             rubro_ids_detectados or comercio_ids_discovery
         ):
-            return []
+            resultados: list[Comercio] = []
+            _registrar_search_event(
+                resultados,
+                taxonomy_node_ids=node_ids_discovery,
+                rubro_ids=rubro_ids_detectados,
+                metadata={
+                    "intencion_discovery_fuerte": intencion_discovery_fuerte,
+                    "candidate_count": 0,
+                },
+            )
+            return resultados
 
         # NO filtramos por nombre:
         # usamos un pool amplio de comercios activos y rankeamos por similitud.
@@ -798,7 +835,17 @@ def listar_comercios_activos(
 
         if (rubro_ids_detectados or comercio_ids_discovery) and not candidatos:
             if intencion_discovery_fuerte:
-                return []
+                resultados = []
+                _registrar_search_event(
+                    resultados,
+                    taxonomy_node_ids=node_ids_discovery,
+                    rubro_ids=rubro_ids_detectados,
+                    metadata={
+                        "intencion_discovery_fuerte": intencion_discovery_fuerte,
+                        "candidate_count": 0,
+                    },
+                )
+                return resultados
 
             candidatos = (
                 query
@@ -808,7 +855,17 @@ def listar_comercios_activos(
             )
 
         if not candidatos:
-            return []
+            resultados = []
+            _registrar_search_event(
+                resultados,
+                taxonomy_node_ids=node_ids_discovery,
+                rubro_ids=rubro_ids_detectados,
+                metadata={
+                    "intencion_discovery_fuerte": intencion_discovery_fuerte,
+                    "candidate_count": 0,
+                },
+            )
+            return resultados
 
         comercio_ids = [c.id for c in candidatos]
 
@@ -943,6 +1000,16 @@ def listar_comercios_activos(
 
         # Paginado sobre ranking final
         pagina = comercios_rankeados[offset: offset + limit]
+        _registrar_search_event(
+            pagina,
+            taxonomy_node_ids=node_ids_discovery,
+            rubro_ids=rubro_ids_detectados,
+            metadata={
+                "intencion_discovery_fuerte": intencion_discovery_fuerte,
+                "candidate_count": len(candidatos),
+                "scored_count": len(scored),
+            },
+        )
         return pagina
 
     # ============================================================
@@ -985,7 +1052,14 @@ def listar_comercios_activos(
         )
 
         if not candidatos:
-            return []
+            resultados = []
+            _registrar_search_event(
+                resultados,
+                metadata={
+                    "candidate_count": 0,
+                },
+            )
+            return resultados
 
         # Precomputamos señales (historias/publicaciones) en batch para esta ventana
         comercio_ids = [c.id for c in candidatos]
@@ -1044,6 +1118,13 @@ def listar_comercios_activos(
         # Paginado sobre ranking final
         pagina = comercios_rankeados[offset: offset + limit]
 
+        _registrar_search_event(
+            pagina,
+            metadata={
+                "candidate_count": len(candidatos),
+                "scored_count": len(scored),
+            },
+        )
         return pagina
 
     # ============================================================
@@ -1098,6 +1179,12 @@ def listar_comercios_activos(
             )
         )
 
+    _registrar_search_event(
+        comercios,
+        metadata={
+            "candidate_count": len(comercios),
+        },
+    )
     return comercios
 
 
