@@ -33,6 +33,9 @@ from app.modules.discovery.models.taxonomy_models import (
 # SEARCH
 from app.modules.search.models.search_event_models import SearchEvent
 
+# KNOWLEDGE
+from app.modules.knowledge.models.knowledge_proposal_models import KnowledgeProposal
+
 # POSTS
 from app.modules.posts.models.publicaciones_models import Publicacion
 

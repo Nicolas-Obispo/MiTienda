@@ -1384,3 +1384,54 @@ Discovery queda considerado arquitectónicamente estable. La etapa consolida el 
 - Incorporar SearchSession.
 - Incorporar clicks y conversiones.
 - Convertir evidencia validada en propuestas revisables, nunca en cambios automáticos.
+
+---
+
+## ETAPA 79.5 — KnowledgeProposal V1
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el modelo `KnowledgeProposal` y la tabla `knowledge_proposals`.
+- Se agregó `proposal_services.py` para generar propuestas revisables desde Evidence.
+- Las propuestas se crean únicamente con `status="pending"`.
+- Se incorporó `dedupe_key` único para evitar propuestas duplicadas.
+- Estados definidos:
+  - `pending`
+  - `approved`
+  - `rejected`
+  - `applied`
+- Se agregó el script idempotente `backend/crear_knowledge_proposals.py`.
+- `create_tables.py` importa el modelo para el flujo manual existente de creación de tablas.
+
+### Alcance
+
+- No se agregaron endpoints públicos.
+- No se tocó frontend.
+- No se modificó Discovery.
+- No se modificó ranking.
+- No se modificó `TaxonomyNode`.
+- No se modificó `metadata_json`.
+- No se aplica ninguna propuesta automáticamente.
+
+### Decisión técnica
+
+- En V1, `taxonomy_node_id`, `reviewed_by_usuario_id` y `applied_by_usuario_id` quedan como IDs nullable sin constraints ORM.
+- Esta decisión evita dependencias laterales de mappers y mantiene Proposal V1 desacoplado para validación temprana.
+
+### Validación
+
+- Se creó la tabla `knowledge_proposals`.
+- Se generó 1 propuesta `pending` real desde Evidence:
+  - `proposal_type=add_search_term`
+  - `query=car`
+  - `dedupe_key=add_search_term:none:car`
+- Una segunda ejecución no generó duplicados.
+- Se verificó que `TaxonomyNode` y `metadata_json` permanecieron intactos.
+
+### Pendiente
+
+- Diseñar revisión/aprobación de propuestas.
+- Diseñar endpoints/admin internos de revisión.
+- Aplicación controlada de propuestas aprobadas en una etapa futura.
