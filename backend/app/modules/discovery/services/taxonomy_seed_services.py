@@ -131,6 +131,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Prendas, indumentaria, moda y accesorios para mujer.",
         parent_slug="ropa-calzado",
         orden=10,
+        metadata_json={
+            "search_terms": [
+                "ropa mujer",
+                "ropa femenina",
+                "remeras mujer",
+                "vestidos",
+                "blusas",
+                "pantalones mujer",
+                "moda mujer",
+            ],
+            "synonyms": [
+                "indumentaria femenina",
+                "moda femenina",
+            ],
+            "related_terms": [
+                "outfits",
+                "temporada",
+                "talles",
+                "casual",
+                "elegante",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="ropa-hombre",
@@ -139,6 +161,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Prendas, indumentaria, moda y accesorios para hombre.",
         parent_slug="ropa-calzado",
         orden=20,
+        metadata_json={
+            "search_terms": [
+                "ropa hombre",
+                "ropa masculina",
+                "remeras hombre",
+                "camisas",
+                "pantalones hombre",
+                "buzos hombre",
+                "moda hombre",
+            ],
+            "synonyms": [
+                "indumentaria masculina",
+                "moda masculina",
+            ],
+            "related_terms": [
+                "urbano",
+                "formal",
+                "casual",
+                "talles",
+                "temporada",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="ropa-ninos",
@@ -147,6 +191,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Prendas, indumentaria y accesorios para ninos.",
         parent_slug="ropa-calzado",
         orden=30,
+        metadata_json={
+            "search_terms": [
+                "ropa ninos",
+                "ropa chicos",
+                "ropa infantil",
+                "ropa bebes",
+                "ropa nenas",
+                "ropa nenes",
+                "indumentaria infantil",
+            ],
+            "synonyms": [
+                "moda infantil",
+                "ropa para chicos",
+            ],
+            "related_terms": [
+                "colegio",
+                "jardin",
+                "talles infantiles",
+                "temporada",
+                "algodon",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="ropa-deportiva",
@@ -155,6 +221,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Indumentaria deportiva, fitness, entrenamiento y actividad fisica.",
         parent_slug="ropa-calzado",
         orden=40,
+        metadata_json={
+            "search_terms": [
+                "ropa deportiva",
+                "indumentaria deportiva",
+                "calzas",
+                "short deportivo",
+                "remeras deportivas",
+                "conjuntos deportivos",
+                "ropa gimnasio",
+            ],
+            "synonyms": [
+                "indumentaria fitness",
+                "ropa fitness",
+            ],
+            "related_terms": [
+                "entrenamiento",
+                "running",
+                "gym",
+                "actividad fisica",
+                "dry fit",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="ropa-casual",
@@ -163,6 +251,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Prendas casuales, urbanas y de uso diario.",
         parent_slug="ropa-calzado",
         orden=50,
+        metadata_json={
+            "search_terms": [
+                "ropa casual",
+                "ropa urbana",
+                "jeans",
+                "buzos",
+                "camperas",
+                "remeras",
+                "ropa diaria",
+            ],
+            "synonyms": [
+                "indumentaria casual",
+                "moda urbana",
+            ],
+            "related_terms": [
+                "outfit diario",
+                "streetwear",
+                "temporada",
+                "basicos",
+                "comodidad",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="calzado-deportivo",
@@ -171,6 +281,27 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Zapatillas y calzado para deportes, fitness y entrenamiento.",
         parent_slug="ropa-calzado",
         orden=60,
+        metadata_json={
+            "search_terms": [
+                "zapatillas deportivas",
+                "calzado deportivo",
+                "zapatillas running",
+                "zapatillas entrenamiento",
+                "botines",
+                "zapatillas gym",
+            ],
+            "synonyms": [
+                "calzado fitness",
+                "zapas deportivas",
+            ],
+            "related_terms": [
+                "amortiguacion",
+                "suela",
+                "deporte",
+                "entrenamiento",
+                "alto impacto",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="calzado-urbano",
@@ -179,6 +310,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Zapatos, zapatillas y calzado casual para uso urbano.",
         parent_slug="ropa-calzado",
         orden=70,
+        metadata_json={
+            "search_terms": [
+                "calzado urbano",
+                "zapatillas urbanas",
+                "zapatos",
+                "botas",
+                "sandalias",
+                "calzado casual",
+                "zapas",
+            ],
+            "synonyms": [
+                "calzado de calle",
+                "zapateria urbana",
+            ],
+            "related_terms": [
+                "cuero",
+                "suela",
+                "comodidad",
+                "uso diario",
+                "temporada",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="accesorios-moda",
@@ -187,6 +340,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Bolsos, bijouterie, cinturones, lentes y accesorios de moda.",
         parent_slug="ropa-calzado",
         orden=80,
+        metadata_json={
+            "search_terms": [
+                "accesorios moda",
+                "carteras",
+                "bolsos",
+                "bijouterie",
+                "cinturones",
+                "lentes",
+                "aros",
+            ],
+            "synonyms": [
+                "complementos de moda",
+                "accesorios fashion",
+            ],
+            "related_terms": [
+                "look",
+                "estilo",
+                "regalos",
+                "temporada",
+                "detalles",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="accesorios-deportivos",
@@ -195,6 +370,27 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Accesorios para deportes, entrenamiento y actividad fisica.",
         parent_slug="ropa-calzado",
         orden=90,
+        metadata_json={
+            "search_terms": [
+                "accesorios deportivos",
+                "mochilas deportivas",
+                "botellas deportivas",
+                "guantes gimnasio",
+                "medias deportivas",
+                "bolsos deportivos",
+            ],
+            "synonyms": [
+                "complementos deportivos",
+                "accesorios fitness",
+            ],
+            "related_terms": [
+                "entrenamiento",
+                "hidratacion",
+                "running",
+                "gym",
+                "equipamiento",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="zapateria",
@@ -277,6 +473,13 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
                 "comida rapida",
                 "fast food",
             ],
+            "related_terms": [
+                "delivery",
+                "cena",
+                "almuerzo",
+                "comida para llevar",
+                "combo",
+            ],
         },
     ),
     TaxonomyNodeSeed(
@@ -302,6 +505,13 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
                 "bar",
                 "bares",
                 "cocteleria",
+            ],
+            "related_terms": [
+                "salida",
+                "noche",
+                "bebidas",
+                "happy hour",
+                "after office",
             ],
         },
     ),
@@ -368,6 +578,27 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Trabajos de albanileria, obra, reparaciones y construccion.",
         parent_slug="servicios-construccion",
         orden=10,
+        metadata_json={
+            "search_terms": [
+                "albanil",
+                "albanileria",
+                "trabajos de albanileria",
+                "levantar pared",
+                "hacer pared",
+                "reparacion de pared",
+            ],
+            "synonyms": [
+                "servicio de albanil",
+                "obra de albanileria",
+            ],
+            "related_terms": [
+                "ladrillos",
+                "cemento",
+                "revoque",
+                "obra",
+                "mamposteria",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="pintura",
@@ -376,6 +607,27 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Pintura de interiores, exteriores, mantenimiento y terminaciones.",
         parent_slug="servicios-construccion",
         orden=20,
+        metadata_json={
+            "search_terms": [
+                "pintor",
+                "pintura",
+                "pintar casa",
+                "pintura interior",
+                "pintura exterior",
+                "pintar local",
+            ],
+            "synonyms": [
+                "servicio de pintura",
+                "trabajos de pintura",
+            ],
+            "related_terms": [
+                "paredes",
+                "latex",
+                "enduidos",
+                "terminaciones",
+                "mantenimiento",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="colocacion-ceramicos",
@@ -384,6 +636,27 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Colocacion de ceramicos, porcelanatos, pisos y revestimientos.",
         parent_slug="servicios-construccion",
         orden=30,
+        metadata_json={
+            "search_terms": [
+                "colocacion ceramicos",
+                "colocar ceramicos",
+                "colocador ceramicos",
+                "colocar porcelanato",
+                "colocacion porcelanato",
+                "colocar pisos",
+            ],
+            "synonyms": [
+                "colocacion de pisos",
+                "instalacion de ceramicos",
+            ],
+            "related_terms": [
+                "pegamento",
+                "pastina",
+                "nivelacion",
+                "revestimiento",
+                "obra fina",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="revestimientos",
@@ -392,6 +665,27 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Revestimientos para paredes, pisos, frentes y terminaciones.",
         parent_slug="servicios-construccion",
         orden=40,
+        metadata_json={
+            "search_terms": [
+                "revestimientos",
+                "revestimiento",
+                "revestir pared",
+                "revestimiento pared",
+                "revestimiento frente",
+                "revestimiento piso",
+            ],
+            "synonyms": [
+                "terminaciones de obra",
+                "revestimiento decorativo",
+            ],
+            "related_terms": [
+                "ceramicos",
+                "porcelanato",
+                "piedra",
+                "frentes",
+                "acabado",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="reformas",
@@ -400,6 +694,27 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Reformas de hogares, locales, oficinas y espacios comerciales.",
         parent_slug="servicios-construccion",
         orden=50,
+        metadata_json={
+            "search_terms": [
+                "reformas",
+                "reformar casa",
+                "reforma local",
+                "remodelacion",
+                "refaccion",
+                "arreglos casa",
+            ],
+            "synonyms": [
+                "remodelaciones",
+                "refacciones",
+            ],
+            "related_terms": [
+                "obra",
+                "ampliacion",
+                "mantenimiento",
+                "terminaciones",
+                "mejoras",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="mantenimiento-hogar",
@@ -408,6 +723,27 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Mantenimiento, reparaciones y mejoras generales del hogar.",
         parent_slug="servicios-construccion",
         orden=60,
+        metadata_json={
+            "search_terms": [
+                "mantenimiento hogar",
+                "arreglos hogar",
+                "reparaciones casa",
+                "mantenimiento casa",
+                "arreglos generales",
+                "reparaciones hogar",
+            ],
+            "synonyms": [
+                "mantenimiento domiciliario",
+                "reparaciones domesticas",
+            ],
+            "related_terms": [
+                "plomeria",
+                "electricidad",
+                "pintura",
+                "herramientas",
+                "urgencias",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="servicios-profesionales",
@@ -422,32 +758,118 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         nombre="Contabilidad e impuestos",
         type="especialidad",
         descripcion="Contabilidad, impuestos, balances, monotributo y liquidaciones.",
-        parent_slug="servicios-profesionales",
+        parent_slug="estudio-contable",
         orden=10,
+        metadata_json={
+            "search_terms": [
+                "contador",
+                "contabilidad",
+                "impuestos",
+                "monotributo",
+                "iva",
+                "ganancias",
+                "balance",
+            ],
+            "synonyms": [
+                "estudio contable",
+                "asesor contable",
+            ],
+            "related_terms": [
+                "afip",
+                "declaracion jurada",
+                "liquidaciones",
+                "facturacion",
+                "vencimientos",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="asesoramiento-legal",
         nombre="Asesoramiento legal",
         type="especialidad",
         descripcion="Asesoramiento legal, contratos, reclamos y tramites juridicos.",
-        parent_slug="servicios-profesionales",
-        orden=20,
+        parent_slug="estudio-juridico-abogado",
+        orden=10,
+        metadata_json={
+            "search_terms": [
+                "abogado",
+                "asesoramiento legal",
+                "consulta abogado",
+                "abogado laboral",
+                "contratos",
+                "sucesiones",
+                "reclamos legales",
+            ],
+            "synonyms": [
+                "estudio juridico",
+                "asesoria legal",
+            ],
+            "related_terms": [
+                "derecho laboral",
+                "derecho civil",
+                "tramites",
+                "documentacion",
+                "audiencias",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="gestion-administrativa",
         nombre="Gestion administrativa",
         type="especialidad",
         descripcion="Gestion administrativa, tramites, documentacion y gestoria.",
-        parent_slug="servicios-profesionales",
-        orden=30,
+        parent_slug="estudio-contable",
+        orden=20,
+        metadata_json={
+            "search_terms": [
+                "gestoria",
+                "tramites",
+                "gestion administrativa",
+                "habilitaciones",
+                "documentacion",
+                "tramites comerciales",
+            ],
+            "synonyms": [
+                "servicios administrativos",
+                "gestion de tramites",
+            ],
+            "related_terms": [
+                "formularios",
+                "presentaciones",
+                "municipalidad",
+                "expedientes",
+                "turnos",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="consultoria-negocios",
         nombre="Consultoria de negocios",
         type="especialidad",
         descripcion="Consultoria empresarial, estrategia, gestion y desarrollo de negocios.",
-        parent_slug="servicios-profesionales",
-        orden=40,
+        parent_slug="estudio-contable",
+        orden=30,
+        metadata_json={
+            "search_terms": [
+                "consultoria",
+                "consultoria negocios",
+                "asesoramiento empresarial",
+                "gestion negocios",
+                "plan de negocios",
+                "consultor empresarial",
+            ],
+            "synonyms": [
+                "consultoria empresarial",
+                "asesoria de negocios",
+            ],
+            "related_terms": [
+                "estrategia",
+                "procesos",
+                "costos",
+                "administracion",
+                "crecimiento",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="estudio-contable",
@@ -536,6 +958,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Mecanica general, reparaciones, mantenimiento y puesta a punto.",
         parent_slug="automotor",
         orden=10,
+        metadata_json={
+            "search_terms": [
+                "mecanico",
+                "mecanica",
+                "mecanica general",
+                "taller mecanico",
+                "arreglo auto",
+                "reparacion auto",
+                "service auto",
+            ],
+            "synonyms": [
+                "taller automotor",
+                "reparacion mecanica",
+            ],
+            "related_terms": [
+                "motor",
+                "mantenimiento",
+                "puesta a punto",
+                "filtros",
+                "revision",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="gomeria",
@@ -544,6 +988,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Venta, reparacion, cambio y mantenimiento de neumaticos.",
         parent_slug="automotor",
         orden=20,
+        metadata_json={
+            "search_terms": [
+                "gomeria",
+                "cubierta",
+                "cubiertas",
+                "neumatico",
+                "neumaticos",
+                "pinchadura",
+                "arreglo cubierta",
+            ],
+            "synonyms": [
+                "venta de neumaticos",
+                "reparacion de cubiertas",
+            ],
+            "related_terms": [
+                "alineacion",
+                "balanceo",
+                "rotacion",
+                "llantas",
+                "presion",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="electromecanica",
@@ -552,6 +1018,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Electricidad automotor, arranque, alternadores y sistemas electricos.",
         parent_slug="automotor",
         orden=30,
+        metadata_json={
+            "search_terms": [
+                "electromecanica",
+                "electricidad auto",
+                "electricista auto",
+                "arranque",
+                "alternador",
+                "bateria auto",
+                "luces auto",
+            ],
+            "synonyms": [
+                "electricidad automotor",
+                "electricista automotor",
+            ],
+            "related_terms": [
+                "sistema electrico",
+                "fusibles",
+                "cableado",
+                "diagnostico",
+                "carga",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="chapa-pintura",
@@ -560,6 +1048,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Chapa, pintura, reparacion de carroceria y terminaciones.",
         parent_slug="automotor",
         orden=40,
+        metadata_json={
+            "search_terms": [
+                "chapa y pintura",
+                "chapista",
+                "pintura auto",
+                "arreglo choque",
+                "carroceria",
+                "rayon auto",
+                "abolladura",
+            ],
+            "synonyms": [
+                "taller de chapa",
+                "reparacion carroceria",
+            ],
+            "related_terms": [
+                "paragolpes",
+                "pulido",
+                "repintado",
+                "siniestro",
+                "terminaciones",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="lubricentro",
@@ -568,6 +1078,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Cambio de aceite, filtros, lubricantes y mantenimiento preventivo.",
         parent_slug="automotor",
         orden=50,
+        metadata_json={
+            "search_terms": [
+                "lubricentro",
+                "cambio de aceite",
+                "aceite auto",
+                "filtros",
+                "lubricantes",
+                "service aceite",
+                "cambio filtros",
+            ],
+            "synonyms": [
+                "servicio de lubricacion",
+                "mantenimiento de aceite",
+            ],
+            "related_terms": [
+                "motor",
+                "kilometraje",
+                "service",
+                "aceite sintetico",
+                "mantenimiento preventivo",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="frenos-suspension",
@@ -576,6 +1108,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Revision, reparacion y mantenimiento de frenos y suspension.",
         parent_slug="automotor",
         orden=60,
+        metadata_json={
+            "search_terms": [
+                "frenos",
+                "suspension",
+                "pastillas de freno",
+                "amortiguadores",
+                "ruidos suspension",
+                "arreglo frenos",
+                "tren delantero",
+            ],
+            "synonyms": [
+                "reparacion de frenos",
+                "servicio de suspension",
+            ],
+            "related_terms": [
+                "seguridad",
+                "discos",
+                "liquido de freno",
+                "parrillas",
+                "control vehicular",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="alineacion-balanceo",
@@ -584,6 +1138,28 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Alineacion, balanceo, tren delantero y control de rodado.",
         parent_slug="automotor",
         orden=70,
+        metadata_json={
+            "search_terms": [
+                "alineacion",
+                "balanceo",
+                "alineacion y balanceo",
+                "tren delantero",
+                "vibra volante",
+                "auto tira para un lado",
+                "control rodado",
+            ],
+            "synonyms": [
+                "alinear auto",
+                "balancear ruedas",
+            ],
+            "related_terms": [
+                "cubiertas",
+                "neumaticos",
+                "rotacion",
+                "direccion",
+                "desgaste",
+            ],
+        },
     ),
     TaxonomyNodeSeed(
         slug="diagnostico-computarizado",
@@ -592,6 +1168,27 @@ TAXONOMY_NODES_SEED: tuple[TaxonomyNodeSeed, ...] = (
         descripcion="Diagnostico electronico y computarizado de fallas automotor.",
         parent_slug="automotor",
         orden=80,
+        metadata_json={
+            "search_terms": [
+                "scanner auto",
+                "diagnostico computarizado",
+                "diagnostico auto",
+                "fallas electronicas",
+                "check engine",
+                "escaneo auto",
+            ],
+            "synonyms": [
+                "scanner automotor",
+                "diagnostico electronico",
+            ],
+            "related_terms": [
+                "computadora",
+                "sensores",
+                "inyeccion",
+                "codigos de falla",
+                "testigo tablero",
+            ],
+        },
     ),
 )
 

@@ -1137,3 +1137,60 @@ Reemplazar el antiguo concepto de "rubros secundarios" por un modelo basado en e
 
 - FeedGo deja de clasificar espacios mediante rubros secundarios.
 - La información queda estructurada como:
+
+---
+
+# ETAPA 78 — Discovery Enterprise (Cierre)
+
+**Estado:** Cerrada
+
+Discovery queda considerado arquitectónicamente estable. La etapa consolida el buscador de Explorar, la conexión con Taxonomy y la base inicial de conocimiento para que FeedGo pueda crecer desde datos y no desde hardcodes.
+
+## Arquitectura
+
+- Integración de Discovery dentro del pipeline de búsqueda `smart_semantic`.
+- Unificación de query options del buscador entre hook y prefetch.
+- Conexión entre Discovery y `TaxonomyAssignment`.
+- Incorporación de candidatos por rubros y comercios desde Discovery.
+- Protección contra resultados irrelevantes cuando Discovery detecta una intención fuerte.
+- El buscador devuelve "sin resultados" antes que resultados incorrectos.
+
+## Taxonomía
+
+- Reorganización de la jerarquía de especialidades.
+- Las especialidades pasan a depender directamente del rubro principal correspondiente.
+- Preparación de la estructura para abandonar definitivamente el concepto de rubros secundarios.
+
+## Creación de espacios
+
+- Incorporación de `especialidad_ids` en backend.
+- Incorporación del selector dinámico de especialidades por rubro en frontend.
+- Persistencia mediante `TaxonomyAssignment` con `source="especialidad_manual"`.
+- La creación de espacios comienza a alimentar directamente el motor Discovery.
+
+## Knowledge Base
+
+- Enriquecimiento de las 29 especialidades existentes.
+- Metadata estandarizada mediante:
+  - `search_terms`
+  - `synonyms`
+  - `related_terms`
+- Totales aproximados:
+  - 198 `search_terms`
+  - 59 `synonyms`
+  - 145 `related_terms`
+
+## Buscador
+
+- Discovery deja de depender únicamente de hardcodes.
+- El conocimiento comienza a vivir en la base de datos.
+- Preparación para reemplazar progresivamente `_INTENCIONES_BUSQUEDA_V2` por Knowledge.
+
+## Estado final
+
+- La arquitectura de Discovery queda considerada estable.
+- A partir de la ETAPA 79, el foco pasa a ser:
+  - ampliar el conocimiento,
+  - integrar datasets externos,
+  - incorporar Knowledge Builder,
+  - mejorar continuamente la inteligencia del buscador sin volver a modificar la arquitectura.
