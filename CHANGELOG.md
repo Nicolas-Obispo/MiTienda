@@ -1474,3 +1474,52 @@ Discovery queda considerado arquitectónicamente estable. La etapa consolida el 
 - Diseñar e implementar `apply_services.py`.
 - Diseñar auditoría de aplicación.
 - Aplicar propuestas aprobadas solo en una etapa futura y controlada.
+
+---
+
+## ETAPA 79.7 — Knowledge Workspace Base
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el módulo interno `backend/app/modules/knowledge/workspace/`.
+- Se agregó `proposal_workspace_services.py` para consultar propuestas sin modificarlas.
+- Se agregaron schemas internos:
+  - `ProposalListItem`
+  - `ProposalDetail`
+  - `ProposalStats`
+- Se implementaron funciones read-only:
+  - `list_pending_proposals`
+  - `list_approved_proposals`
+  - `list_rejected_proposals`
+  - `list_applied_proposals`
+  - `proposal_detail`
+  - `proposal_stats`
+
+### Alcance
+
+- No se agregaron endpoints públicos.
+- No se tocó frontend.
+- No se modificó Discovery.
+- No se modificó ranking.
+- No se modificó `TaxonomyNode`.
+- No se modificó `metadata_json`.
+- El Workspace Base es solo lectura.
+
+### Validación
+
+- Se validó con la propuesta real `id=1`.
+- `proposal_detail` devolvió la propuesta aprobada.
+- `proposal_stats` informó:
+  - `approved=1`
+  - `pending=0`
+  - `rejected=0`
+  - `applied=0`
+- Se confirmó que la consulta no cambió estados ni escribió en DB.
+
+### Pendiente
+
+- Crear endpoints/admin internos para operar el workspace.
+- Diseñar e implementar `apply_services.py`.
+- Mantener aplicación de propuestas para una etapa futura y controlada.
