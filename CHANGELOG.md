@@ -1106,3 +1106,34 @@ Principios consolidados:
 - Mantener cache TanStack consistente entre búsqueda visible y prefetch.
 - Evitar divergencias entre `useInfiniteQuery` y `prefetchInfiniteQuery`.
 - Reducir duplicación en query keys, query functions y paginado incremental.
+
+## ETAPA 78.4 — Especialidades por Rubro (Discovery)
+
+### Objetivo
+
+Reemplazar el antiguo concepto de "rubros secundarios" por un modelo basado en especialidades dependientes del rubro principal, mejorando la calidad del Discovery, el buscador y el ranking.
+
+### Backend
+
+- Se agregó `especialidad_ids` a `ComercioCreate`, `ComercioUpdate` y `ComercioResponse`.
+- Se implementó la sincronización de especialidades mediante `TaxonomyAssignment`.
+- Nueva fuente de asignación: `especialidad_manual`.
+- `confidence=1.0`.
+- `principal=False`.
+- La sincronización de rubros ya no elimina assignments creados manualmente para especialidades.
+- Se mantienen temporalmente `rubro_secundario_ids` por compatibilidad.
+
+### Frontend
+
+- Se eliminó del flujo de usuario el selector de rubros secundarios.
+- Se incorporó el hook cache-first `useRubroEspecialidades`.
+- Se agregó el service `GET /rubros/{id}/especialidades`.
+- Al cambiar el rubro principal se recargan automáticamente las especialidades correspondientes.
+- Se limpian las especialidades anteriores al cambiar de rubro.
+- El formulario ahora envía `especialidad_ids` al backend.
+- Al editar un espacio se restauran las especialidades guardadas.
+
+### Impacto
+
+- FeedGo deja de clasificar espacios mediante rubros secundarios.
+- La información queda estructurada como:
