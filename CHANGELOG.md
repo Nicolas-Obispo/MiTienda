@@ -1435,3 +1435,42 @@ Discovery queda considerado arquitectónicamente estable. La etapa consolida el 
 - Diseñar revisión/aprobación de propuestas.
 - Diseñar endpoints/admin internos de revisión.
 - Aplicación controlada de propuestas aprobadas en una etapa futura.
+
+---
+
+## ETAPA 79.6 — Knowledge Review V1
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó `review_services.py` para revisar propuestas de Knowledge.
+- Se creó `review_schemas.py` con schemas internos de resultado de revisión.
+- Se implementó `approve_proposal()`.
+- Se implementó `reject_proposal()`.
+- Solo propuestas con `status="pending"` pueden revisarse.
+- Aprobar cambia estado a `approved` y registra `reviewed_at`.
+- Rechazar cambia estado a `rejected`, registra `rejected_reason` y `reviewed_at`.
+
+### Alcance
+
+- No se agregaron endpoints públicos.
+- No se tocó frontend.
+- No se modificó Discovery.
+- No se modificó ranking.
+- No se modificó `TaxonomyNode`.
+- No se modificó `metadata_json`.
+- No se aplican propuestas todavía.
+
+### Validación
+
+- Se validó con la propuesta real `id=1`.
+- La propuesta fue aprobada correctamente.
+- Una segunda aprobación falló controladamente porque la propuesta ya no estaba `pending`.
+- Se confirmó que `TaxonomyNode` y `metadata_json` permanecieron intactos.
+
+### Pendiente
+
+- Diseñar e implementar `apply_services.py`.
+- Diseñar auditoría de aplicación.
+- Aplicar propuestas aprobadas solo en una etapa futura y controlada.
