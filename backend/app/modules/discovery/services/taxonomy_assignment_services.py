@@ -86,7 +86,7 @@ def sincronizar_assignments_comercio_desde_rubros(
     secundarios_actuales_node_ids = {
         assignment.taxonomy_node_id
         for assignment in assignments_actuales
-        if not assignment.principal
+        if assignment.source == "rubro_secundario"
     }
 
     secundarios_reemplazados = rubro_ids_secundarios is not None
@@ -127,7 +127,10 @@ def sincronizar_assignments_comercio_desde_rubros(
         node_ids_actuales.add(principal_node_id)
 
     for assignment in assignments_actuales:
-        if assignment.taxonomy_node_id not in node_ids_actuales:
+        if (
+            assignment.source in {"rubro_principal", "rubro_secundario"}
+            and assignment.taxonomy_node_id not in node_ids_actuales
+        ):
             db.delete(assignment)
 
     if principal_node_id is not None:
@@ -152,6 +155,140 @@ def sincronizar_assignments_comercio_desde_rubros(
             entity_id=comercio_id,
             source="rubro_secundario",
             confidence=0.8,
+            principal=False,
+        )
+
+
+def _normalizar_ids(ids: list[int] | None) -> list[int]:
+    resultado: list[int] = []
+    vistos: set[int] = set()
+
+    for item in ids or []:
+        try:
+            item_id = int(item)
+        except (TypeError, ValueError):
+            continue
+
+        if item_id > 0 and item_id not in vistos:
+            resultado.append(item_id)
+            vistos.add(item_id)
+
+    return resultado
+
+
+def obtener_especialidad_ids_por_comercio(
+    db: Session,
+    comercio_ids: list[int],
+) -> dict[int, list[int]]:
+    comercio_ids_normalizados = _normalizar_ids(comercio_ids)
+    if not comercio_ids_normalizados:
+        return {}
+
+    rows = (
+        db.query(TaxonomyAssignment.entity_id, TaxonomyAssignment.taxonomy_node_id)
+        .join(TaxonomyNode, TaxonomyNode.id == TaxonomyAssignment.taxonomy_node_id)
+        .filter(TaxonomyAssignment.entity_type == "comercio")
+        .filter(TaxonomyAssignment.entity_id.in_(comercio_ids_normalizados))
+        .filter(TaxonomyAssignment.source == "especialidad_manual")
+        .filter(TaxonomyNode.type == "especialidad")
+        .order_by(TaxonomyNode.orden.asc(), TaxonomyNode.nombre.asc())
+        .all()
+    )
+
+    resultado: dict[int, list[int]] = {
+        comercio_id: []
+        for comercio_id in comercio_ids_normalizados
+    }
+    for comercio_id, taxonomy_node_id in rows:
+        resultado.setdefault(comercio_id, []).append(taxonomy_node_id)
+
+    return resultado
+
+
+def obtener_especialidad_ids_comercio(
+    db: Session,
+    comercio_id: int,
+) -> list[int]:
+    return obtener_especialidad_ids_por_comercio(db, [comercio_id]).get(
+        comercio_id,
+        [],
+    )
+
+
+def adjuntar_especialidad_ids_comercios(
+    db: Session,
+    comercios: list[Comercio],
+) -> list[Comercio]:
+    especialidad_ids_por_comercio = obtener_especialidad_ids_por_comercio(
+        db,
+        [comercio.id for comercio in comercios],
+    )
+
+    for comercio in comercios:
+        comercio.especialidad_ids = especialidad_ids_por_comercio.get(
+            comercio.id,
+            [],
+        )
+
+    return comercios
+
+
+def sincronizar_especialidades_comercio(
+    db: Session,
+    comercio_id: int,
+    rubro_id_principal: int,
+    especialidad_ids: list[int] | None,
+) -> None:
+    especialidad_ids_normalizados = _normalizar_ids(especialidad_ids)
+
+    assignments_actuales = (
+        db.query(TaxonomyAssignment)
+        .filter(TaxonomyAssignment.entity_type == "comercio")
+        .filter(TaxonomyAssignment.entity_id == comercio_id)
+        .filter(TaxonomyAssignment.source == "especialidad_manual")
+        .all()
+    )
+
+    if not especialidad_ids_normalizados:
+        for assignment in assignments_actuales:
+            db.delete(assignment)
+        return
+
+    assignment_principal = (
+        db.query(TaxonomyAssignment)
+        .filter(TaxonomyAssignment.entity_type == "rubro")
+        .filter(TaxonomyAssignment.entity_id == rubro_id_principal)
+        .first()
+    )
+    if not assignment_principal:
+        for assignment in assignments_actuales:
+            db.delete(assignment)
+        return
+
+    especialidad_node_ids_validos = {
+        node_id
+        for (node_id,) in (
+            db.query(TaxonomyNode.id)
+            .filter(TaxonomyNode.id.in_(especialidad_ids_normalizados))
+            .filter(TaxonomyNode.parent_id == assignment_principal.taxonomy_node_id)
+            .filter(TaxonomyNode.type == "especialidad")
+            .filter(TaxonomyNode.activo == True)
+            .all()
+        )
+    }
+
+    for assignment in assignments_actuales:
+        if assignment.taxonomy_node_id not in especialidad_node_ids_validos:
+            db.delete(assignment)
+
+    for node_id in especialidad_node_ids_validos:
+        asegurar_assignment(
+            db,
+            taxonomy_node_id=node_id,
+            entity_type="comercio",
+            entity_id=comercio_id,
+            source="especialidad_manual",
+            confidence=1.0,
             principal=False,
         )
 

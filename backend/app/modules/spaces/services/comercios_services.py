@@ -29,7 +29,9 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.modules.ai.models.comercios_embeddings_models import ComercioEmbedding
 from app.modules.discovery.services.taxonomy_assignment_services import (
+    obtener_especialidad_ids_comercio,
     sincronizar_assignments_comercio_desde_rubros,
+    sincronizar_especialidades_comercio,
 )
 from app.modules.spaces.models.comercios_models import Comercio
 from app.modules.stories.models.historias_models import Historia
@@ -609,7 +611,14 @@ def crear_comercio(
         rubro_id_principal=comercio.rubro_id,
         rubro_ids_secundarios=data.rubro_secundario_ids,
     )
+    sincronizar_especialidades_comercio(
+        db=db,
+        comercio_id=comercio.id,
+        rubro_id_principal=comercio.rubro_id,
+        especialidad_ids=data.especialidad_ids,
+    )
     db.commit()
+    comercio.especialidad_ids = obtener_especialidad_ids_comercio(db, comercio.id)
     upsert_embedding_comercio(db=db, comercio=comercio)
 
     return comercio
@@ -623,12 +632,19 @@ def obtener_comercio_por_id(
     db: Session,
     comercio_id: int
 ) -> Comercio | None:
-    return (
+    comercio = (
         db.query(Comercio)
         .options(selectinload(Comercio.rubro))
         .filter(Comercio.id == comercio_id, Comercio.activo == True)
         .first()
     )
+    if comercio:
+        comercio.especialidad_ids = obtener_especialidad_ids_comercio(
+            db,
+            comercio.id,
+        )
+
+    return comercio
 
 
 # ============================================================
@@ -1134,10 +1150,17 @@ def actualizar_comercio(
     sincronizar_assignments = (
         "rubro_id" in payload or "rubro_secundario_ids" in payload
     )
+    sincronizar_especialidades = (
+        "rubro_id" in payload or "especialidad_ids" in payload
+    )
     rubro_secundario_ids = payload.get("rubro_secundario_ids")
+    especialidad_ids = payload.get(
+        "especialidad_ids",
+        [] if "rubro_id" in payload else None,
+    )
 
     for campo, valor in payload.items():
-        if campo == "rubro_secundario_ids":
+        if campo in {"rubro_secundario_ids", "especialidad_ids"}:
             continue
 
         if campo == "rubro_id":
@@ -1155,6 +1178,15 @@ def actualizar_comercio(
             rubro_ids_secundarios=rubro_secundario_ids,
         )
         db.commit()
+    if sincronizar_especialidades:
+        sincronizar_especialidades_comercio(
+            db=db,
+            comercio_id=comercio.id,
+            rubro_id_principal=comercio.rubro_id,
+            especialidad_ids=especialidad_ids,
+        )
+        db.commit()
+    comercio.especialidad_ids = obtener_especialidad_ids_comercio(db, comercio.id)
     upsert_embedding_comercio(db=db, comercio=comercio)
 
     return comercio

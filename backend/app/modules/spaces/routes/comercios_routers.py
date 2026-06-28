@@ -43,6 +43,9 @@ from app.modules.spaces.services.comercios_services import (
     desactivar_comercio,
     RubroInvalidoError,
 )
+from app.modules.discovery.services.taxonomy_assignment_services import (
+    adjuntar_especialidad_ids_comercios,
+)
 
 
 router = APIRouter(
@@ -181,7 +184,7 @@ def listar_mis_comercios_endpoint(
         .all()
     )
 
-    return comercios
+    return adjuntar_especialidad_ids_comercios(db, comercios)
 
 
 # ============================================================

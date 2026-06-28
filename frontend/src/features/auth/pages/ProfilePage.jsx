@@ -37,6 +37,7 @@ import {
   actualizarComercio,
   reactivarComercio,
   useMisComercios,
+  useRubroEspecialidades,
   useRubros,
 } from "@features/spaces";
 
@@ -393,14 +394,12 @@ export default function ProfilePage() {
   const [showActivarEspacioInfo, setShowActivarEspacioInfo] = useState(false);
   const [editingComercioId, setEditingComercioId] = useState(null);
   const [createErrorMessage, setCreateErrorMessage] = useState("");
-  const [rubrosSecundariosTouched, setRubrosSecundariosTouched] =
-    useState(false);
   const [createForm, setCreateForm] = useState({
     nombre: "",
     descripcion: "",
     portada_url: "",
     rubro_id: 1,
-    rubro_secundario_ids: [],
+    especialidad_ids: [],
     provincia: "",
     ciudad: "",
     direccion: "",
@@ -410,6 +409,10 @@ export default function ProfilePage() {
     latitud: null,
     longitud: null,
   });
+  const {
+    data: especialidadesRubro = [],
+    isLoading: isLoadingEspecialidades,
+  } = useRubroEspecialidades(createForm.rubro_id);
 
   function setComercioLock(comercioId, value) {
     setIsActingComercioById((prev) => ({ ...prev, [comercioId]: value }));
@@ -419,13 +422,12 @@ export default function ProfilePage() {
     setEditingComercioId(null);
     setCreateErrorMessage("");
     setPortadaErrorMessage("");
-    setRubrosSecundariosTouched(false);
     setCreateForm({
       nombre: "",
       descripcion: "",
       portada_url: "",
       rubro_id: 1,
-      rubro_secundario_ids: [],
+      especialidad_ids: [],
       provincia: "",
       ciudad: "",
       direccion: "",
@@ -444,14 +446,13 @@ export default function ProfilePage() {
     setPortadaErrorMessage("");
     setEditingComercioId(comercio.id);
     setShowCreateForm(true);
-    setRubrosSecundariosTouched(false);
 
     setCreateForm({
       nombre: comercio.nombre || "",
       descripcion: comercio.descripcion || "",
       portada_url: getMediaUrlFromAny(comercio) || "",
       rubro_id: comercio.rubro_id || 1,
-      rubro_secundario_ids: comercio.rubro_secundario_ids || [],
+      especialidad_ids: comercio.especialidad_ids || [],
       provincia: comercio.provincia || "",
       ciudad: comercio.ciudad || "",
       direccion: comercio.direccion || "",
@@ -507,9 +508,7 @@ export default function ProfilePage() {
       setCreateForm((prev) => ({
         ...prev,
         [name]: rubroId,
-        rubro_secundario_ids: prev.rubro_secundario_ids.filter(
-          (id) => Number(id) !== rubroId
-        ),
+        especialidad_ids: [],
       }));
       return;
     }
@@ -517,40 +516,29 @@ export default function ProfilePage() {
     setCreateForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  function handleAgregarRubroSecundario(e) {
-    const rubroIdNumerico = Number(e.target.value);
+  function handleEspecialidadesChange(event) {
+    const especialidadIds = Array.from(event.target.selectedOptions)
+      .map((option) => Number(option.value))
+      .filter(Boolean);
 
-    if (!rubroIdNumerico) return;
-
-    setRubrosSecundariosTouched(true);
     setCreateForm((prev) => {
-      const secundariosActuales = prev.rubro_secundario_ids.map(Number);
-
-      if (
-        rubroIdNumerico === Number(prev.rubro_id) ||
-        secundariosActuales.includes(rubroIdNumerico)
-      ) {
-        return prev;
-      }
-
       return {
         ...prev,
-        rubro_secundario_ids: [...secundariosActuales, rubroIdNumerico],
+        especialidad_ids: especialidadIds,
       };
     });
   }
 
-  function handleQuitarRubroSecundario(rubroId) {
-    const rubroIdNumerico = Number(rubroId);
+  function handleQuitarEspecialidad(especialidadId) {
+    const especialidadIdNumerico = Number(especialidadId);
 
-    setRubrosSecundariosTouched(true);
     setCreateForm((prev) => {
-      const secundariosActuales = prev.rubro_secundario_ids.map(Number);
+      const especialidadesActuales = prev.especialidad_ids.map(Number);
 
       return {
         ...prev,
-        rubro_secundario_ids: secundariosActuales.filter(
-          (id) => id !== rubroIdNumerico
+        especialidad_ids: especialidadesActuales.filter(
+          (id) => id !== especialidadIdNumerico
         ),
       };
     });
@@ -578,9 +566,9 @@ export default function ProfilePage() {
       const payload = {
         ...createForm,
         rubro_id: Number(createForm.rubro_id),
-        rubro_secundario_ids: createForm.rubro_secundario_ids
+        especialidad_ids: createForm.especialidad_ids
           .map(Number)
-          .filter((id) => id && id !== Number(createForm.rubro_id)),
+          .filter(Boolean),
         direccion: createForm.direccion?.trim()
           ? createForm.direccion.trim()
           : null,
@@ -609,9 +597,7 @@ export default function ProfilePage() {
               : null,
       };
 
-      if (editingComercioId && !rubrosSecundariosTouched) {
-        delete payload.rubro_secundario_ids;
-      }
+      delete payload.rubro_secundario_ids;
 
       if (editingComercioId) {
         await actualizarComercio(editingComercioId, payload);
@@ -1088,65 +1074,65 @@ export default function ProfilePage() {
 
                     <div className="sm:col-span-2 rounded-xl border border-gray-800 bg-gray-900/50 p-3">
                       <p className="text-xs font-semibold text-gray-300">
-                        Rubros secundarios / servicios adicionales
+                        Especialidades
                       </p>
                       <p className="mt-1 text-xs text-gray-500">
-                        Opcional. Agregá otros servicios o rubros que también
-                        ofrece tu espacio.
+                        Opcional. Selecciona especialidades reales del rubro
+                        principal.
                       </p>
 
                       <select
-                        value=""
-                        onChange={handleAgregarRubroSecundario}
-                        disabled={isLoadingRubros || rubros.length <= 1}
+                        multiple
+                        value={createForm.especialidad_ids.map(String)}
+                        onChange={handleEspecialidadesChange}
+                        disabled={
+                          isLoadingEspecialidades ||
+                          especialidadesRubro.length === 0
+                        }
                         className="mt-3 w-full rounded-xl bg-gray-950 border border-gray-800 px-3 py-2 text-sm"
                       >
-                        <option value="">Agregar rubro secundario</option>
-                        {rubros
-                          .filter((rubro) => {
-                            const rubroId = Number(rubro.id);
-                            return (
-                              rubroId !== Number(createForm.rubro_id) &&
-                              !createForm.rubro_secundario_ids
-                                .map(Number)
-                                .includes(rubroId)
-                            );
-                          })
-                          .map((rubro) => (
-                            <option key={rubro.id} value={rubro.id}>
-                              {rubro.nombre}
+                        {especialidadesRubro.length === 0 ? (
+                          <option value="">
+                            {isLoadingEspecialidades
+                              ? "Cargando especialidades..."
+                              : "Sin especialidades disponibles"}
+                          </option>
+                        ) : (
+                          especialidadesRubro.map((especialidad) => (
+                            <option
+                              key={especialidad.id}
+                              value={especialidad.id}
+                            >
+                              {especialidad.nombre}
                             </option>
-                          ))}
+                          ))
+                        )}
                       </select>
 
-                      {createForm.rubro_secundario_ids.length > 0 && (
+                      {createForm.especialidad_ids.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {createForm.rubro_secundario_ids
+                          {createForm.especialidad_ids
                             .map(Number)
-                            .filter(
-                              (rubroId) =>
-                                rubroId !== Number(createForm.rubro_id)
-                            )
-                            .map((rubroId) => {
-                              const rubro = rubros.find(
-                                (item) => Number(item.id) === rubroId
+                            .map((especialidadId) => {
+                              const especialidad = especialidadesRubro.find(
+                                (item) => Number(item.id) === especialidadId
                               );
 
-                              if (!rubro) return null;
+                              if (!especialidad) return null;
 
                               return (
                                 <span
-                                  key={rubroId}
+                                  key={especialidadId}
                                   className="inline-flex items-center gap-2 rounded-full border border-orange-400 bg-orange-500 px-3 py-1 text-xs font-semibold text-white"
                                 >
-                                  {rubro.nombre}
+                                  {especialidad.nombre}
                                   <button
                                     type="button"
                                     onClick={() =>
-                                      handleQuitarRubroSecundario(rubroId)
+                                      handleQuitarEspecialidad(especialidadId)
                                     }
                                     className="rounded-full px-1 text-white/80 hover:bg-white/20 hover:text-white"
-                                    aria-label={`Quitar ${rubro.nombre}`}
+                                    aria-label={`Quitar ${especialidad.nombre}`}
                                   >
                                     x
                                   </button>

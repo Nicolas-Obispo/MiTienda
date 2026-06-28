@@ -38,6 +38,7 @@ class ComercioBase(BaseModel):
 
 class ComercioCreate(ComercioBase):
     rubro_secundario_ids: list[int] = Field(default_factory=list)
+    especialidad_ids: list[int] = Field(default_factory=list)
 
 
 # ============================================================
@@ -51,6 +52,7 @@ class ComercioUpdate(BaseModel):
 
     rubro_id: Optional[int] = None
     rubro_secundario_ids: Optional[list[int]] = None
+    especialidad_ids: Optional[list[int]] = None
     provincia: Optional[str] = None
     ciudad: Optional[str] = None
     direccion: Optional[str] = None
@@ -73,6 +75,7 @@ class ComercioResponse(ComercioBase):
     usuario_id: int
     activo: bool
     rubro_nombre: Optional[str] = None
+    especialidad_ids: list[int] = Field(default_factory=list)
     distancia_km: Optional[float] = None
 
     model_config = {

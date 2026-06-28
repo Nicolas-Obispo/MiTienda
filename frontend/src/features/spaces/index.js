@@ -16,5 +16,6 @@ export * from "@features/spaces/hooks/usePublicacionesComercio";
 export * from "@features/spaces/hooks/useMisComercios";
 export * from "@features/spaces/hooks/useMisEspaciosSeguidos";
 export * from "@features/spaces/hooks/useRubros";
+export * from "@features/spaces/hooks/useRubroEspecialidades";
 
 export { default as VerSeguidosPage } from '@features/spaces/pages/VerSeguidosPage';
