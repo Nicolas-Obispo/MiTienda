@@ -1194,3 +1194,49 @@ Discovery queda considerado arquitectónicamente estable. La etapa consolida el 
   - integrar datasets externos,
   - incorporar Knowledge Builder,
   - mejorar continuamente la inteligencia del buscador sin volver a modificar la arquitectura.
+
+---
+
+## ETAPA 79.1 — Knowledge Core base
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el módulo interno `backend/app/modules/knowledge/`.
+- Se agregaron schemas internos:
+  - `KnowledgeQueryInput`
+  - `KnowledgeQueryInterpretation`
+- Se incorporó un adapter legacy de intención para encapsular la interpretación actual de queries.
+- Se creó `knowledge_legacy_intent_services.py` como fuente interna de intención legacy dentro de Knowledge.
+- `spaces/services/comercios_services.py` ahora delega intención y expansión en Knowledge.
+- Se mantuvo `_normalizar_texto` y `_tokenizar` local en `spaces` porque siguen participando en scoring/ranking.
+
+### Compatibilidad
+
+- No se tocaron frontend, modelos, migraciones, contratos API ni ranking.
+- No se modificó Discovery Retrieval.
+- Los hardcodes duplicados en `spaces` quedan temporalmente como fallback hasta una limpieza posterior.
+
+### Validación
+
+- Equivalencia de intención legacy validada para 16 queries representativas.
+- Endpoint `GET /comercios/activos` validado con `smart_semantic=true`.
+- Queries validadas:
+  - `pizza`
+  - `ropa`
+  - `calzado`
+  - `cerveza`
+  - `construcción`
+  - `revestimientos`
+  - `cubiertas`
+  - `abogado`
+  - `contador`
+  - `iphone`
+  - `lomitos`
+- Todas las consultas respondieron `200`, mantuvieron paginación y conservaron el shape de respuesta.
+
+### Pendiente
+
+- Eliminar hardcodes duplicados de `spaces` cuando Knowledge quede consolidado como fuente única.
+- Agregar pruebas automatizadas cuando exista estructura de tests backend.

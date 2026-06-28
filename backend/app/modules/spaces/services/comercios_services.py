@@ -40,6 +40,12 @@ from app.modules.users.models.usuarios_models import Usuario
 from app.modules.spaces.schemas.comercios_schemas import ComercioCreate, ComercioUpdate
 from app.modules.ai.services.comercios_embeddings_services import upsert_embedding_comercio
 from app.modules.products.services.rubros_services import obtener_rubro_por_id
+from app.modules.knowledge.services.knowledge_legacy_intent_services import (
+    _expandir_intencion_busqueda as _knowledge_expandir_intencion_busqueda,
+    _obtener_familia_intencion as _knowledge_obtener_familia_intencion,
+    _terminos_familia_intencion as _knowledge_terminos_familia_intencion,
+    _tiene_intencion_conocida as _knowledge_tiene_intencion_conocida,
+)
 
 
 class RubroInvalidoError(ValueError):
@@ -334,28 +340,11 @@ def _normalizar_lista_terminos(terminos: list[str]) -> list[str]:
 
 
 def _obtener_familia_intencion(q: str) -> str | None:
-    q_normalizada = _normalizar_texto(q)
-
-    if not q_normalizada:
-        return None
-
-    if q_normalizada in _INTENCION_A_FAMILIA_V2:
-        return _INTENCION_A_FAMILIA_V2[q_normalizada]
-
-    for token in _tokenizar(q_normalizada):
-        if token in _INTENCION_A_FAMILIA_V2:
-            return _INTENCION_A_FAMILIA_V2[token]
-
-    return None
+    return _knowledge_obtener_familia_intencion(q)
 
 
 def _terminos_familia_intencion(q: str) -> list[str]:
-    familia = _obtener_familia_intencion(q)
-
-    if not familia:
-        return []
-
-    return _normalizar_lista_terminos(_FAMILIAS_INTENCION_V2.get(familia, []))
+    return _knowledge_terminos_familia_intencion(q)
 
 
 def _expandir_intencion_busqueda(q: str) -> list[str]:
@@ -365,25 +354,11 @@ def _expandir_intencion_busqueda(q: str) -> list[str]:
     La expansion vive en backend para mantener React como capa de UI/cache.
     Si no hay match, conserva la busqueda original.
     """
-    q_normalizada = _normalizar_texto(q)
-
-    if not q_normalizada:
-        return []
-
-    terminos: list[str] = [q_normalizada]
-
-    for token in _tokenizar(q_normalizada):
-        terminos.extend(_INTENCIONES_BUSQUEDA_V2.get(token, []))
-
-    if q_normalizada in _INTENCIONES_BUSQUEDA_V2:
-        terminos.extend(_INTENCIONES_BUSQUEDA_V2[q_normalizada])
-
-    resultado = _normalizar_lista_terminos(terminos)
-    return resultado or [q_normalizada]
+    return _knowledge_expandir_intencion_busqueda(q)
 
 
 def _tiene_intencion_conocida(q: str) -> bool:
-    return _obtener_familia_intencion(q) is not None
+    return _knowledge_tiene_intencion_conocida(q)
 
 
 def _calcular_score_comercio(
