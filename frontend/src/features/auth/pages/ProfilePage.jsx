@@ -517,14 +517,21 @@ export default function ProfilePage() {
   }
 
   function handleEspecialidadesChange(event) {
-    const especialidadIds = Array.from(event.target.selectedOptions)
-      .map((option) => Number(option.value))
-      .filter(Boolean);
+    const especialidadId = Number(event.target.value);
+    event.target.value = "";
+
+    if (!especialidadId) return;
 
     setCreateForm((prev) => {
+      const especialidadesActuales = prev.especialidad_ids.map(Number);
+
+      if (especialidadesActuales.includes(especialidadId)) {
+        return prev;
+      }
+
       return {
         ...prev,
-        especialidad_ids: especialidadIds,
+        especialidad_ids: [...especialidadesActuales, especialidadId],
       };
     });
   }
@@ -1082,31 +1089,42 @@ export default function ProfilePage() {
                       </p>
 
                       <select
-                        multiple
-                        value={createForm.especialidad_ids.map(String)}
+                        value=""
                         onChange={handleEspecialidadesChange}
                         disabled={
                           isLoadingEspecialidades ||
-                          especialidadesRubro.length === 0
+                          especialidadesRubro.length === 0 ||
+                          especialidadesRubro.every((especialidad) =>
+                            createForm.especialidad_ids
+                              .map(Number)
+                              .includes(Number(especialidad.id))
+                          )
                         }
                         className="mt-3 w-full rounded-xl bg-gray-950 border border-gray-800 px-3 py-2 text-sm"
                       >
-                        {especialidadesRubro.length === 0 ? (
-                          <option value="">
-                            {isLoadingEspecialidades
-                              ? "Cargando especialidades..."
-                              : "Sin especialidades disponibles"}
+                        <option value="">
+                          {isLoadingEspecialidades
+                            ? "Cargando especialidades..."
+                            : especialidadesRubro.length === 0
+                            ? "Sin especialidades disponibles"
+                            : "Agregar especialidad..."}
+                        </option>
+
+                        {especialidadesRubro
+                          .filter(
+                            (especialidad) =>
+                              !createForm.especialidad_ids
+                                .map(Number)
+                                .includes(Number(especialidad.id))
+                          )
+                          .map((especialidad) => (
+                          <option
+                            key={especialidad.id}
+                            value={especialidad.id}
+                          >
+                            {especialidad.nombre}
                           </option>
-                        ) : (
-                          especialidadesRubro.map((especialidad) => (
-                            <option
-                              key={especialidad.id}
-                              value={especialidad.id}
-                            >
-                              {especialidad.nombre}
-                            </option>
-                          ))
-                        )}
+                        ))}
                       </select>
 
                       {createForm.especialidad_ids.length > 0 && (

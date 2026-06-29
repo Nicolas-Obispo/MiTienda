@@ -265,16 +265,54 @@ def sincronizar_especialidades_comercio(
             db.delete(assignment)
         return
 
-    especialidad_node_ids_validos = {
+    especialidad_query_base = (
+        db.query(TaxonomyNode.id)
+        .filter(TaxonomyNode.id.in_(especialidad_ids_normalizados))
+        .filter(TaxonomyNode.type == "especialidad")
+        .filter(TaxonomyNode.activo == True)
+    )
+    tiene_especialidades_directas = (
+        db.query(TaxonomyNode.id)
+        .filter(TaxonomyNode.parent_id == assignment_principal.taxonomy_node_id)
+        .filter(TaxonomyNode.type == "especialidad")
+        .filter(TaxonomyNode.activo == True)
+        .first()
+        is not None
+    )
+    especialidad_node_ids_directos = {
         node_id
         for (node_id,) in (
-            db.query(TaxonomyNode.id)
-            .filter(TaxonomyNode.id.in_(especialidad_ids_normalizados))
+            especialidad_query_base
             .filter(TaxonomyNode.parent_id == assignment_principal.taxonomy_node_id)
-            .filter(TaxonomyNode.type == "especialidad")
-            .filter(TaxonomyNode.activo == True)
             .all()
         )
+    }
+
+    parent_id_fallback: int | None = None
+    if not tiene_especialidades_directas:
+        node_principal = (
+            db.query(TaxonomyNode)
+            .filter(TaxonomyNode.id == assignment_principal.taxonomy_node_id)
+            .filter(TaxonomyNode.activo == True)
+            .first()
+        )
+        if node_principal is not None:
+            parent_id_fallback = node_principal.parent_id
+
+    especialidad_node_ids_validos = {
+        *especialidad_node_ids_directos,
+        *(
+            {
+                node_id
+                for (node_id,) in (
+                    especialidad_query_base
+                    .filter(TaxonomyNode.parent_id == parent_id_fallback)
+                    .all()
+                )
+            }
+            if parent_id_fallback is not None
+            else set()
+        ),
     }
 
     for assignment in assignments_actuales:

@@ -217,9 +217,29 @@ def listar_especialidades_por_rubro(
     if not assignment_principal:
         return []
 
-    return (
+    especialidades_directas = (
         db.query(TaxonomyNode)
         .filter(TaxonomyNode.parent_id == assignment_principal.taxonomy_node_id)
+        .filter(TaxonomyNode.type == "especialidad")
+        .filter(TaxonomyNode.activo == True)
+        .order_by(TaxonomyNode.orden.asc(), TaxonomyNode.nombre.asc())
+        .all()
+    )
+    if especialidades_directas:
+        return especialidades_directas
+
+    node_principal = (
+        db.query(TaxonomyNode)
+        .filter(TaxonomyNode.id == assignment_principal.taxonomy_node_id)
+        .filter(TaxonomyNode.activo == True)
+        .first()
+    )
+    if not node_principal or node_principal.parent_id is None:
+        return []
+
+    return (
+        db.query(TaxonomyNode)
+        .filter(TaxonomyNode.parent_id == node_principal.parent_id)
         .filter(TaxonomyNode.type == "especialidad")
         .filter(TaxonomyNode.activo == True)
         .order_by(TaxonomyNode.orden.asc(), TaxonomyNode.nombre.asc())
