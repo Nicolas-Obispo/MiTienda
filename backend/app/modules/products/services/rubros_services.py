@@ -99,6 +99,23 @@ CATALOGO_RUBROS_DESCRIPCIONES = {
         "Inmobiliaria, alquileres, ventas, propiedades, casas, "
         "departamentos, terrenos, tasaciones y administración de inmuebles."
     ),
+    "Estética y Cuidado Personal": (
+        "Estética, cuidado personal, bronceado, depilación, cejas, "
+        "pestañas, maquillaje, manicuría, peluquerías, barberías, "
+        "tatuajes y piercings."
+    ),
+    "Carpintería y Herrería": (
+        "Carpintería, herrería, aberturas, muebles a medida, estructuras "
+        "metálicas, restauración de muebles, vidrierías y trabajos de obra."
+    ),
+    "Seguridad y Vigilancia": (
+        "Seguridad, vigilancia, blindajes, cerrajeros, consultoría de "
+        "riesgo, seguridad privada, cámaras, alarmas y matafuegos."
+    ),
+    "Turismo, Viajes y Logística": (
+        "Turismo, viajes, agencias, alquiler de vehículos, paquetería, "
+        "fletes, mudanzas, guías turísticos, remises y traslados."
+    ),
 }
 
 
