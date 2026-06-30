@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 
 class SugerenciaBusqueda(BaseModel):
-    type: Literal["rubro", "categoria", "subcategoria"]
+    type: Literal["rubro", "categoria", "subcategoria", "especialidad"]
     id: int
     label: str
     score: float
