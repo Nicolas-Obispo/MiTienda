@@ -1523,3 +1523,48 @@ Discovery queda considerado arquitectónicamente estable. La etapa consolida el 
 - Crear endpoints/admin internos para operar el workspace.
 - Diseñar e implementar `apply_services.py`.
 - Mantener aplicación de propuestas para una etapa futura y controlada.
+
+## ETAPA 79.8 — Catálogo Oficial de Rubros y Especialidades
+
+### Objetivo
+
+Completar el catálogo oficial de FeedGo incorporando el conjunto definitivo de rubros visibles y especialidades oficiales que alimentará Discovery, Knowledge Engine, Buscador Inteligente y futuras etapas del producto.
+
+### Cambios realizados
+
+- Se actualizó el catálogo oficial de rubros y especialidades.
+- Se implementaron las TANDAS A, B, C y D.
+- Se ampliaron las especialidades oficiales para los rubros existentes.
+- Se incorporaron cuatro nuevos rubros visibles:
+  - Estética y Cuidado Personal.
+  - Carpintería y Herrería.
+  - Seguridad y Vigilancia.
+  - Turismo, Viajes y Logística.
+- Se agregaron los correspondientes `TaxonomyNode` tipo `rubro`.
+- Se agregaron todas las especialidades oficiales asociadas.
+- Se actualizaron los mappings de `RUBRO_NOMBRE_A_TAXONOMY_SLUG`.
+- Se reutilizaron slugs e IDs existentes cuando existía equivalencia clara.
+- Se conservaron nodos legacy para mantener compatibilidad histórica.
+- No se eliminaron nodos existentes.
+
+### Validaciones realizadas
+
+Se ejecutó la actualización oficial de taxonomía.
+
+Se validó:
+
+- creación de rubros visibles;
+- creación y actualización de `TaxonomyNode`;
+- creación de `TaxonomyAssignment`;
+- endpoints `GET /rubros`;
+- endpoints `GET /rubros/{id}/especialidades`;
+- nombres oficiales;
+- shape de respuesta;
+- compatibilidad con rubros existentes.
+
+No se detectaron errores durante la actualización.
+
+### Archivos modificados
+
+- `backend/app/modules/discovery/services/taxonomy_seed_services.py`
+- `backend/app/modules/products/services/rubros_services.py`
