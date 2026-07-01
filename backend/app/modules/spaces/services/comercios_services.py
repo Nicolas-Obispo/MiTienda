@@ -751,12 +751,17 @@ def listar_comercios_activos(
             buscar_rubro_ids_asignados_a_nodos_taxonomia,
         )
         from app.modules.discovery.models.taxonomy_models import TaxonomyAssignment
+        from app.modules.search.services.candidate_engine import (
+            CandidateGenerationContext,
+            generate_candidates,
+        )
 
         provider = get_embedding_provider()
 
         # Embedding de la query enriquecida por intencion.
         query_texto = _normalizar_texto(q_normalizada)
         terminos_intencion = _expandir_intencion_busqueda(query_texto)
+        familia_intencion = _obtener_familia_intencion(query_texto)
         tiene_intencion_conocida = _tiene_intencion_conocida(query_texto)
         terminos_filtro_intencion = _terminos_familia_intencion(query_texto)
         query_texto_embedding = " ".join(terminos_intencion)
@@ -770,32 +775,130 @@ def listar_comercios_activos(
             nodo.text_score >= 0.85 or nodo.source in {"text", "mixed"}
             for nodo in nodos_discovery
         )
-        node_ids_discovery = [node.node_id for node in nodos_discovery]
-        rubro_ids_discovery = buscar_rubro_ids_asignados_a_nodos_taxonomia(
-            db,
-            node_ids_discovery,
+        candidate_context = CandidateGenerationContext(
+            query_original=q or "",
+            query_normalizada=query_texto,
+            terminos_expandidos=terminos_intencion,
+            familia_intencion=familia_intencion,
+            discovery_nodes=nodos_discovery,
         )
-        comercio_ids_discovery = set()
-        if node_ids_discovery:
-            comercio_ids_discovery = {
+        candidate_set = generate_candidates(candidate_context, db)
+        candidate_engine_comercio_ids = set(
+            candidate_set.candidates_by_comercio_id.keys()
+        )
+        node_ids_discovery = [node.node_id for node in nodos_discovery]
+        if not candidate_engine_comercio_ids:
+            resultados: list[Comercio] = []
+            _registrar_search_event(
+                resultados,
+                taxonomy_node_ids=node_ids_discovery,
+                rubro_ids=[],
+                metadata={
+                    "intencion_discovery_fuerte": intencion_discovery_fuerte,
+                    "candidate_engine_total": candidate_set.total_candidates,
+                    "candidate_count": 0,
+                },
+            )
+            return resultados
+        nodos_discovery_confiables = [
+            nodo
+            for nodo in nodos_discovery
+            if nodo.text_score >= 0.85
+            or (nodo.source in {"text", "mixed"} and nodo.text_score >= 0.85)
+        ]
+        node_ids_discovery_confiables = [
+            node.node_id for node in nodos_discovery_confiables
+        ]
+        nodos_especialidad_fuertes = [
+            nodo
+            for nodo in nodos_discovery_confiables
+            if nodo.type == "especialidad"
+        ]
+        node_ids_especialidad_fuertes = [
+            node.node_id for node in nodos_especialidad_fuertes
+        ]
+        comercio_ids_especialidad_fuerte = set()
+        if node_ids_especialidad_fuertes:
+            comercio_ids_especialidad_fuerte = {
                 comercio_id
                 for (comercio_id,) in (
                     db.query(TaxonomyAssignment.entity_id)
-                    .filter(TaxonomyAssignment.taxonomy_node_id.in_(node_ids_discovery))
+                    .filter(
+                        TaxonomyAssignment.taxonomy_node_id.in_(
+                            node_ids_especialidad_fuertes
+                        )
+                    )
                     .filter(TaxonomyAssignment.entity_type == "comercio")
                     .all()
                 )
             }
-        rubros_detectados = detectar_rubros_por_query(db, query_texto)
-        rubro_ids_detectados = list(
-            {
-                *[rubro.rubro_id for rubro in rubros_detectados],
-                *rubro_ids_discovery,
-            }
+            if not comercio_ids_especialidad_fuerte and not candidate_engine_comercio_ids:
+                resultados: list[Comercio] = []
+                _registrar_search_event(
+                    resultados,
+                    taxonomy_node_ids=node_ids_discovery,
+                    rubro_ids=[],
+                    metadata={
+                        "intencion_discovery_fuerte": intencion_discovery_fuerte,
+                        "especialidad_fuerte_sin_comercios": True,
+                        "candidate_count": 0,
+                    },
+                )
+                return resultados
+        rubro_ids_discovery = buscar_rubro_ids_asignados_a_nodos_taxonomia(
+            db,
+            [] if node_ids_especialidad_fuertes else node_ids_discovery_confiables,
         )
+        comercio_ids_discovery = set()
+        if node_ids_discovery_confiables:
+            comercio_ids_discovery = {
+                comercio_id
+                for (comercio_id,) in (
+                    db.query(TaxonomyAssignment.entity_id)
+                    .filter(
+                        TaxonomyAssignment.taxonomy_node_id.in_(
+                            node_ids_discovery_confiables
+                        )
+                    )
+                    .filter(TaxonomyAssignment.entity_type == "comercio")
+                    .all()
+                )
+            }
+        if comercio_ids_especialidad_fuerte:
+            comercio_ids_discovery = comercio_ids_especialidad_fuerte
+        rubros_detectados = (
+            []
+            if node_ids_discovery_confiables
+            else detectar_rubros_por_query(db, query_texto)
+        )
+        rubro_ids_detectados = list(
+            rubro_ids_discovery
+            or {rubro.rubro_id for rubro in rubros_detectados}
+        )
+        like_publicaciones = f"%{q_normalizada}%"
+        comercio_ids_publicaciones_match = {
+            comercio_id
+            for (comercio_id,) in (
+                db.query(Publicacion.comercio_id)
+                .filter(Publicacion.is_activa.is_(True))
+                .filter(
+                    or_(
+                        Publicacion.titulo.ilike(like_publicaciones),
+                        Publicacion.descripcion.ilike(like_publicaciones),
+                    )
+                )
+                .distinct()
+                .all()
+            )
+        }
+        if node_ids_especialidad_fuertes:
+            comercio_ids_publicaciones_match = set()
 
         if intencion_discovery_fuerte and not (
-            rubro_ids_detectados or comercio_ids_discovery
+            rubro_ids_detectados
+            or comercio_ids_discovery
+            or comercio_ids_publicaciones_match
+            or candidate_engine_comercio_ids
         ):
             resultados: list[Comercio] = []
             _registrar_search_event(
@@ -817,14 +920,9 @@ def listar_comercios_activos(
         if fetch_size > 500:
             fetch_size = 500
 
-        query_candidatos = query
-        if rubro_ids_detectados or comercio_ids_discovery:
-            query_candidatos = query_candidatos.filter(
-                or_(
-                    Comercio.rubro_id.in_(rubro_ids_detectados),
-                    Comercio.id.in_(comercio_ids_discovery),
-                )
-            )
+        query_candidatos = query.filter(
+            Comercio.id.in_(candidate_engine_comercio_ids)
+        )
 
         candidatos: list[Comercio] = (
             query_candidatos
@@ -832,27 +930,6 @@ def listar_comercios_activos(
             .limit(fetch_size)
             .all()
         )
-
-        if (rubro_ids_detectados or comercio_ids_discovery) and not candidatos:
-            if intencion_discovery_fuerte:
-                resultados = []
-                _registrar_search_event(
-                    resultados,
-                    taxonomy_node_ids=node_ids_discovery,
-                    rubro_ids=rubro_ids_detectados,
-                    metadata={
-                        "intencion_discovery_fuerte": intencion_discovery_fuerte,
-                        "candidate_count": 0,
-                    },
-                )
-                return resultados
-
-            candidatos = (
-                query
-                .order_by(Comercio.id.desc())
-                .limit(fetch_size)
-                .all()
-            )
 
         if not candidatos:
             resultados = []
@@ -862,6 +939,7 @@ def listar_comercios_activos(
                 rubro_ids=rubro_ids_detectados,
                 metadata={
                     "intencion_discovery_fuerte": intencion_discovery_fuerte,
+                    "candidate_engine_total": candidate_set.total_candidates,
                     "candidate_count": 0,
                 },
             )
@@ -931,6 +1009,7 @@ def listar_comercios_activos(
             if (
                 tiene_intencion_conocida
                 and terminos_filtro_intencion
+                and c.id not in candidate_engine_comercio_ids
                 and not any(
                     termino in texto_relevancia
                     for termino in terminos_filtro_intencion
@@ -975,7 +1054,11 @@ def listar_comercios_activos(
             if c.id in comercios_con_publicaciones:
                 bonus_senales += 0.02
 
-            score_total = sim + bonus_textual + bonus_senales
+            bonus_publicacion_match = 0.0
+            if c.id in comercio_ids_publicaciones_match:
+                bonus_publicacion_match += 0.45
+
+            score_total = sim + bonus_textual + bonus_senales + bonus_publicacion_match
             scored.append((score_total, c.id, c))
 
         comercios_rankeados = [item[2] for item in scored]
@@ -1026,12 +1109,28 @@ def listar_comercios_activos(
         # - es case-insensitive con ilike
         # (Esto NO existe en modo clásico; solo afecta cuando smart=True)
         like = f"%{q_normalizada}%"
+        comercio_ids_publicaciones_match = {
+            comercio_id
+            for (comercio_id,) in (
+                db.query(Publicacion.comercio_id)
+                .filter(Publicacion.is_activa.is_(True))
+                .filter(
+                    or_(
+                        Publicacion.titulo.ilike(like),
+                        Publicacion.descripcion.ilike(like),
+                    )
+                )
+                .distinct()
+                .all()
+            )
+        }
         query = query.filter(
             or_(
                 Comercio.nombre.ilike(like),
                 Comercio.descripcion.ilike(like),
                 Comercio.ciudad.ilike(like),
                 Comercio.provincia.ilike(like),
+                Comercio.id.in_(comercio_ids_publicaciones_match),
             )
         )
 
@@ -1092,6 +1191,8 @@ def listar_comercios_activos(
                 tiene_historias=(c.id in comercios_con_historias),
                 tiene_publicaciones=(c.id in comercios_con_publicaciones),
             )
+            if c.id in comercio_ids_publicaciones_match:
+                score += 80
             scored.append((score, c.id, c))
 
         comercios_rankeados = [item[2] for item in scored]

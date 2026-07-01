@@ -33,6 +33,7 @@ class _TaxonomySearchCacheItem:
     descripcion_normalizada: str
     slug_normalizado: str
     terminos_normalizados: str
+    related_terms_normalizados: str
 
 
 _TAXONOMY_SEARCH_CACHE: list[_TaxonomySearchCacheItem] | None = None
@@ -66,6 +67,17 @@ def _extraer_terminos_metadata(metadata: dict | None) -> list[str]:
         terminos.extend(str(valor) for valor in valores if valor)
 
     return terminos
+
+
+def _extraer_related_terms_metadata(metadata: dict | None) -> list[str]:
+    if not isinstance(metadata, dict):
+        return []
+
+    valores = metadata.get("related_terms")
+    if not isinstance(valores, list):
+        return []
+
+    return [str(valor) for valor in valores if valor]
 
 
 def invalidar_cache_busqueda_taxonomia() -> None:
@@ -102,6 +114,13 @@ def _obtener_cache_nodos_taxonomia(db: Session) -> list[_TaxonomySearchCacheItem
             terminos_normalizados=_normalizar_texto(
                 " ".join(_extraer_terminos_metadata(getattr(node, "metadata_json", None)))
             ),
+            related_terms_normalizados=_normalizar_texto(
+                " ".join(
+                    _extraer_related_terms_metadata(
+                        getattr(node, "metadata_json", None)
+                    )
+                )
+            ),
         )
         for node in nodes
     ]
@@ -115,9 +134,27 @@ def buscar_rubro_ids_asignados_a_nodos_taxonomia(
     if not node_ids:
         return set()
 
+    node_ids_con_ancestros = set(node_ids)
+    pendientes = set(node_ids)
+
+    while pendientes:
+        rows = (
+            db.query(TaxonomyNode.id, TaxonomyNode.parent_id)
+            .filter(TaxonomyNode.activo == True)
+            .filter(TaxonomyNode.id.in_(pendientes))
+            .all()
+        )
+
+        pendientes = {
+            parent_id
+            for _, parent_id in rows
+            if parent_id is not None and parent_id not in node_ids_con_ancestros
+        }
+        node_ids_con_ancestros.update(pendientes)
+
     rows = (
         db.query(TaxonomyAssignment.entity_id)
-        .filter(TaxonomyAssignment.taxonomy_node_id.in_(node_ids))
+        .filter(TaxonomyAssignment.taxonomy_node_id.in_(node_ids_con_ancestros))
         .filter(TaxonomyAssignment.entity_type == "rubro")
         .all()
     )
@@ -132,6 +169,7 @@ def _calcular_score_textual(
     descripcion: str,
     slug: str,
     terminos: str,
+    related_terms: str,
 ) -> float:
     if not query:
         return 0.0
@@ -147,6 +185,9 @@ def _calcular_score_textual(
 
     if query in terminos:
         return 0.90
+
+    if query in related_terms:
+        return 0.86
 
     if query in descripcion:
         return 0.60
@@ -175,6 +216,7 @@ def buscar_nodos_taxonomia_por_texto(
             descripcion=node.descripcion_normalizada,
             slug=node.slug_normalizado,
             terminos=node.terminos_normalizados,
+            related_terms=node.related_terms_normalizados,
         )
         if score <= 0:
             continue
