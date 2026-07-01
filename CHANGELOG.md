@@ -1568,3 +1568,55 @@ No se detectaron errores durante la actualización.
 
 - `backend/app/modules/discovery/services/taxonomy_seed_services.py`
 - `backend/app/modules/products/services/rubros_services.py`
+
+## ETAPA 80 — Candidate Engine
+
+### Objetivo
+
+- Separar generación de candidatos del ranking.
+- Crear una arquitectura extensible para el buscador inteligente.
+
+### Cambios principales
+
+- Se creó Candidate Engine.
+- Se incorporó CandidateRegistry.
+- Se implementaron CandidateEvidence, CandidateSet y CandidateGenerationContext.
+- Se implementó CandidateGenerator.
+- Se implementó CandidateUnion.
+- Se implementaron las fuentes:
+  - ComercioNombreCandidateSource
+  - PublicacionCandidateSource
+  - EspecialidadCandidateSource
+  - AssignmentCandidateSource
+  - RubroCandidateSource
+  - DiscoveryCandidateSource
+- Discovery ahora utiliza también related_terms durante la búsqueda textual.
+- Se mejoró la resolución de rubros desde ancestros taxonómicos.
+- Cuando Candidate Engine no encuentra candidatos confiables el endpoint devuelve [] y ya no expande mediante embeddings débiles.
+- Cuando existen candidatos, el ranking solamente ordena ese pool sin incorporar comercios externos.
+
+### Validaciones realizadas
+
+Se validaron mediante baterías completas de búsqueda:
+
+- mascotas
+- gastronomía
+- indumentaria
+- tecnología
+- construcción
+- automotor
+- servicios
+- publicaciones
+- sinónimos
+- búsquedas sin cobertura
+
+Se verificó:
+
+- desaparición de falsos positivos producidos por embeddings débiles
+- integración correcta entre Discovery y Candidate Engine
+- búsquedas por publicaciones
+- búsquedas por especialidades
+- búsquedas por rubros
+- búsquedas por assignments
+- búsquedas mediante related_terms
+- comportamiento esperado cuando no existe cobertura (respuesta [])
