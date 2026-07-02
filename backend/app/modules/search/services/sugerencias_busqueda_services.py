@@ -4,11 +4,14 @@ sugerencias_busqueda_services.py
 Orquestacion backend para sugerencias predictivas del buscador.
 """
 
+from __future__ import annotations
+
 from sqlalchemy.orm import Session
 
 from app.modules.ai.services.rubros_embeddings_services import (
     detectar_rubros_por_query,
 )
+from app.modules.discovery.models.taxonomy_models import TaxonomyNode
 from app.modules.discovery.services.taxonomy_search_services import (
     buscar_rubro_ids_asignados_a_nodos_taxonomia,
     buscar_nodos_taxonomia_por_texto,
@@ -23,6 +26,13 @@ _SCORE_SEMANTICO_MINIMO = 0.34
 _SCORE_SEMANTICO_CON_TEXTO_MINIMO = 0.30
 _SCORE_TEXTO_NOMBRE = 0.95
 _SCORE_TEXTO_DESCRIPCION = 0.85
+_SCORE_TAXONOMIA_RELACIONADA = 0.72
+_TIPOS_TAXONOMIA_SUGERIBLES = {
+    "rubro",
+    "categoria",
+    "subcategoria",
+    "especialidad",
+}
 
 
 def obtener_sugerencias_busqueda(
@@ -82,6 +92,14 @@ def obtener_sugerencias_busqueda(
         )
         for node in nodos_taxonomia
     ]
+
+    suggestions.extend(
+        _buscar_sugerencias_relacionadas_taxonomia(
+            db=db,
+            nodos_taxonomia_fuertes=nodos_taxonomia_fuertes,
+            limit=limit_normalizado,
+        )
+    )
 
     suggestions.extend(
         _SugerenciaOrdenable(
@@ -179,6 +197,70 @@ def _buscar_rubros_por_texto(
     return suggestions
 
 
+def _buscar_sugerencias_relacionadas_taxonomia(
+    db: Session,
+    nodos_taxonomia_fuertes: list,
+    limit: int,
+) -> list[_SugerenciaOrdenable]:
+    node_ids_fuertes = [node.node_id for node in nodos_taxonomia_fuertes]
+    if not node_ids_fuertes:
+        return []
+
+    nodos_fuertes = (
+        db.query(TaxonomyNode)
+        .filter(TaxonomyNode.id.in_(node_ids_fuertes))
+        .filter(TaxonomyNode.activo == True)
+        .all()
+    )
+    if not nodos_fuertes:
+        return []
+
+    grupo_ids: set[int] = set()
+    for node in nodos_fuertes:
+        if node.parent_id is not None:
+            grupo_ids.add(node.parent_id)
+
+        if node.type != "especialidad":
+            grupo_ids.add(node.id)
+
+    if not grupo_ids:
+        return []
+
+    relacionados = (
+        db.query(TaxonomyNode)
+        .filter(TaxonomyNode.activo == True)
+        .filter(TaxonomyNode.type.in_(_TIPOS_TAXONOMIA_SUGERIBLES))
+        .filter(
+            (TaxonomyNode.id.in_(grupo_ids))
+            | (TaxonomyNode.parent_id.in_(grupo_ids))
+        )
+        .order_by(TaxonomyNode.orden.asc(), TaxonomyNode.nombre.asc())
+        .limit(max(limit * 3, limit))
+        .all()
+    )
+
+    node_ids_fuertes_set = set(node_ids_fuertes)
+    suggestions: list[_SugerenciaOrdenable] = []
+    for node in relacionados:
+        if node.id in node_ids_fuertes_set:
+            continue
+
+        suggestions.append(
+            _SugerenciaOrdenable(
+                suggestion=SugerenciaBusqueda(
+                    type=node.type,
+                    id=node.id,
+                    label=node.nombre,
+                    score=_SCORE_TAXONOMIA_RELACIONADA,
+                ),
+                match_en_nombre=False,
+                prioridad=2,
+            )
+        )
+
+    return suggestions
+
+
 def _prioridad_sugerencia_textual(
     sugerencia: SugerenciaBusqueda,
     rubro_ids_discovery_fuertes: set[int],
@@ -213,25 +295,23 @@ def _deduplicar_y_ordenar_sugerencias(
     suggestions: list[_SugerenciaOrdenable],
 ) -> list[_SugerenciaOrdenable]:
     deduplicadas: dict[tuple[str, int], _SugerenciaOrdenable] = {}
+    labels: dict[str, tuple[str, int]] = {}
 
     for item in suggestions:
         key = (item.suggestion.type, item.suggestion.id)
-        existente = deduplicadas.get(key)
+        label_key = _normalizar_label_sugerencia(item.suggestion.label)
+        key_por_label = labels.get(label_key)
+        key_final = key_por_label or key
+        existente = deduplicadas.get(key_final)
 
         if existente is None:
-            deduplicadas[key] = item
+            deduplicadas[key_final] = item
+            labels[label_key] = key_final
             continue
 
-        if item.suggestion.score > existente.suggestion.score:
-            deduplicadas[key] = item
+        if _debe_reemplazar_sugerencia(item, existente):
+            deduplicadas[key_final] = item
             continue
-
-        if (
-            item.suggestion.score == existente.suggestion.score
-            and item.match_en_nombre
-            and not existente.match_en_nombre
-        ):
-            deduplicadas[key] = item
 
     return sorted(
         deduplicadas.values(),
@@ -242,3 +322,26 @@ def _deduplicar_y_ordenar_sugerencias(
             item.suggestion.label.lower(),
         ),
     )
+
+
+def _debe_reemplazar_sugerencia(
+    item: _SugerenciaOrdenable,
+    existente: _SugerenciaOrdenable,
+) -> bool:
+    if item.prioridad < existente.prioridad:
+        return True
+
+    if item.prioridad > existente.prioridad:
+        return False
+
+    if item.suggestion.score > existente.suggestion.score:
+        return True
+
+    if item.suggestion.score < existente.suggestion.score:
+        return False
+
+    return item.match_en_nombre and not existente.match_en_nombre
+
+
+def _normalizar_label_sugerencia(label: str) -> str:
+    return " ".join(str(label or "").strip().lower().split())
