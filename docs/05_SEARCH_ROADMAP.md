@@ -84,9 +84,25 @@ P0
 - ☑ Definir origen, evidencia, confianza y peso.
 - ☑ Definir runtime liviano e indexación pesada.
 - ☑ Crear documentación oficial.
+- ☑ Definir separación entre Taxonomía estable y Knowledge System dinámico.
+- ☑ Definir naturaleza del Documento de Índice.
+- ☑ Definir que el Documento de Índice es un artefacto derivado.
+- ☑ Definir la regeneración mediante el Indexador.
+- ☑ Definir que el Buscador consume conocimiento y no lo genera.
+- ☑ Aprobar el contrato conceptual basado en bloques de conocimiento.
+- ☑ Auditar componentes existentes reutilizables para Conceptos y Relaciones.
+- ☑ Diseñar el contrato conceptual de Concepto.
+- ☑ Diseñar el contrato conceptual de Relación.
+- ☑ Implementar contrato inicial de Concept.
+- ☑ Implementar contrato inicial de Relation.
+- ☑ Implementar Graph Service inicial en memoria.
+- ☐ Diseñar el contrato conceptual del Documento de Índice de Comercio.
+- ☐ Diseñar y auditar la integración entre Taxonomía estable y Knowledge Graph.
 - ☐ Diseñar contrato del Documento de Índice.
 - ☐ Diseñar contrato del Documento de Índice de Publicaciones.
 - ☐ Diseñar Índices Sintetizados.
+- ☐ Definir cómo se representan y persisten las relaciones entre Conceptos y entidades dentro del Documento de Índice.
+- ☐ Diseñar el contrato definitivo de Concepto y Relación.
 - ☐ Diseñar estrategia de actualización.
 - ☐ Diseñar estrategia de reindexación.
 - ☐ Auditoría final.

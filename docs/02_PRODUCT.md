@@ -16,6 +16,24 @@
 - Guiar al usuario mediante ayudas contextuales.
 - Cada dato solicitado debe aportar valor al buscador.
 
+### Descubrimiento Guiado
+
+El buscador debe ayudar al usuario incluso antes de que escriba.
+
+Cuando no exista una búsqueda activa, FeedGo podrá mostrar elementos de descubrimiento como:
+
+- rubros
+- categorías
+- búsquedas frecuentes
+- historial del usuario
+- sugerencias inteligentes
+- promociones o campañas
+- recomendaciones relevantes
+
+El objetivo es reducir el esfuerzo del usuario y facilitar el descubrimiento de comercios, profesionales, servicios y publicaciones.
+
+El sistema debe poder evolucionar incorporando nuevas fuentes de descubrimiento sin modificar la arquitectura del buscador.
+
 ## Espacios
 
 - El espacio posee una identidad principal.
