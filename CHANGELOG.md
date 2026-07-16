@@ -1620,3 +1620,107 @@ Se verificó:
 - búsquedas por assignments
 - búsquedas mediante related_terms
 - comportamiento esperado cuando no existe cobertura (respuesta [])
+
+---
+
+## ETAPA 85 — Knowledge Graph (Inicio de implementación)
+
+### Resumen
+
+Luego del diseño arquitectónico realizado entre las ETAPAS 81 y 84, comienza la implementación del nuevo núcleo del Buscador Inteligente de FeedGo.
+
+Esta etapa marca el nacimiento del Knowledge Graph, componente que servirá como base del Knowledge System, del Documento de Índice, del Indexador y del nuevo pipeline de búsqueda.
+
+## 85.1 — Gobierno y Arquitectura
+
+### Documentación oficial
+
+Se incorporó el nuevo sistema de documentación viva del proyecto mediante la carpeta `/docs`.
+
+Documentos creados:
+
+- 00_GOVERNANCE.md
+- 01_ENGINEERING.md
+- 02_PRODUCT.md
+- 03_SEARCH.md
+- 04_CURRENT_STAGE.md
+- 05_SEARCH_ROADMAP.md
+
+Posteriormente se agregaron los documentos de diseño:
+
+- 10_INDEX_DESIGN.md
+- 11_KNOWLEDGE_DESIGN.md
+
+Estos documentos pasan a constituir la fuente oficial de verdad para arquitectura, diseño y roadmap.
+
+---
+
+## 85.2 — Núcleo del Knowledge Graph
+
+Se creó el nuevo submódulo:
+
+backend/app/modules/knowledge/graph/
+
+Implementaciones iniciales:
+
+- Concept
+- Relation
+- KnowledgeGraphService
+
+Características:
+
+- contratos independientes de persistencia;
+- validaciones de dominio;
+- sin SQLAlchemy;
+- sin tablas;
+- sin endpoints;
+- sin integración con runtime;
+- arquitectura preparada para evolución futura.
+
+---
+
+## 85.3 — Integración inicial con Taxonomía
+
+Se implementó la primera proyección controlada:
+
+Taxonomía
+↓
+
+Knowledge Graph
+
+Componentes incorporados:
+
+- TaxonomyNodeToConceptMapper
+- TaxonomyAssignmentToRelationMapper
+- TaxonomyKnowledgeGraphProjectionService
+
+Características:
+
+- proyección unidireccional;
+- regenerable;
+- idempotente;
+- IDs determinísticos;
+- Taxonomía continúa siendo la fuente oficial;
+- Knowledge Graph representa una vista derivada.
+
+---
+
+## Estado al cierre
+
+Implementado:
+
+✔ Concept
+
+✔ Relation
+
+✔ KnowledgeGraphService
+
+✔ Proyección Taxonomía → Knowledge Graph
+
+Pendiente:
+
+- Documento de Índice de Comercio.
+- Indexador.
+- Integración Discovery.
+- Integración Candidate Engine.
+- Integración Ranking.
