@@ -165,3 +165,30 @@ No reemplaza la documentación oficial existente.
 - Decisión: Todo componente debe nacer con la configuración más segura posible. Las excepciones deberán habilitarse explícitamente. Nunca al revés.
 - Motivo: Las configuraciones permisivas por defecto aumentan el riesgo operativo y técnico.
 - Impacto: El comportamiento inicial de módulos, endpoints e integraciones debe priorizar protección, mínimo privilegio y acceso denegado.
+
+## DEC-020
+
+- ID: DEC-020
+- Título: Documentación autoclasificada
+- Estado: Aprobada
+- Decisión: Toda documentación oficial deberá declarar explícitamente su categoría y responsabilidad.
+- Motivo: Permitir que cualquier IA pueda descubrir automáticamente qué documentos debe leer y en qué orden.
+- Impacto: El Sistema de Gobierno deja de depender de listas fijas de archivos y pasa a ser escalable.
+
+## DEC-021
+
+- ID: DEC-021
+- Título: El Sistema de Gobierno gobierna a la IA
+- Estado: Aprobada
+- Decisión: Los prompts nunca deberán reemplazar el Sistema de Gobierno. Los prompts únicamente ordenan seguir el procedimiento oficial.
+- Motivo: El conocimiento debe vivir en el proyecto y no en instrucciones externas.
+- Impacto: Cualquier cambio futuro del procedimiento deberá realizarse modificando la documentación oficial y no los prompts.
+
+## DEC-022
+
+- ID: DEC-022
+- Título: Normalización de texto compartida
+- Estado: Aprobada
+- Decisión: La normalización de texto debe existir como contrato compartido reutilizable del backend.
+- Motivo: Evitar implementaciones paralelas entre Indexador, Discovery, Embeddings y futuros consumidores.
+- Impacto: SearchRepresentationBuilder y futuros consumidores deben depender del contrato compartido, no de contratos locales duplicados.

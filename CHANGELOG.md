@@ -1757,3 +1757,34 @@ Pendiente:
 ### Próxima etapa
 
 ETAPA 86 — Implementación del Indexador.
+
+---
+
+## ETAPA 86 — Cierre técnico del Indexador
+
+### Resumen
+
+Se implementó el módulo inicial del Indexador de FeedGo:
+
+`backend/app/modules/indexer/`
+
+El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes oficiales, sin persistencia, endpoints, scheduler ni colas.
+
+### Implementación
+
+- Contratos de dominio del `CommerceIndexDocument`.
+- Contratos de bloques del documento.
+- `SourceSnapshots` como frontera entre fuentes y builders.
+- Contratos de evidencias, trazabilidad y resultado de validación.
+- Collectors de Comercio, Taxonomía, Contenido, Señales y Knowledge Graph.
+- Builders para los diez bloques del `CommerceIndexDocument`.
+- `IndexDocumentValidationService`.
+- `CommerceIndexerService` como orquestador del flujo completo.
+
+### Validación
+
+- Auditoría final de integración aprobada.
+- Se verificó separación entre Collectors, Builders, Validator y orquestador.
+- Se confirmó ausencia de persistencia, endpoints, scheduler, colas e integración runtime.
+- Se corrigió la duplicación de `TextNormalizationContract`.
+- `SearchRepresentationBuilder` depende exclusivamente del contrato compartido de normalización.

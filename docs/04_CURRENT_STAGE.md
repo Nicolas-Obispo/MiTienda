@@ -10,31 +10,43 @@ Estado:
 
 Cerrada.
 
+## ETAPA 86
+
+Estado:
+
+Cerrada.
+
 ## Resultado
 
-- Sistema de Gobierno consolidado.
-- Knowledge Graph inicial implementado.
-- Proyección Taxonomía → Knowledge Graph implementada.
-- Commerce Index Document diseñado conceptualmente.
-- Pipeline conceptual del Indexador diseñado conceptualmente.
-- Reglas de regeneración, invalidación y escalabilidad aprobadas.
+- Modulo Indexador implementado en `backend/app/modules/indexer/`.
+- Contratos de dominio del `CommerceIndexDocument` implementados.
+- `SourceSnapshots` implementados como frontera entre fuentes y builders.
+- Collectors implementados para Comercio, Taxonomia, Contenido, Senales y Knowledge Graph.
+- Builders implementados para los diez bloques del `CommerceIndexDocument`.
+- `IndexDocumentValidationService` implementado.
+- `CommerceIndexerService` implementado como orquestador del flujo completo.
+- Contrato compartido de normalizacion de texto implementado.
+- Flujo completo del Indexador implementado sin persistencia.
+
+## Fuera de alcance de ETAPA 86
+
+- Persistencia del Documento de Indice.
+- Reindexacion.
+- Indices Sintetizados fisicos.
+- Scheduler.
+- Colas.
+- Integracion con Discovery.
+- Integracion con Candidate Engine.
+- Integracion con Ranking.
 
 ## Etapa actual siguiente
 
-ETAPA 86 — Implementación del Indexador.
+ETAPA 87 — Sistema de Disponibilidad.
 
 Estado:
 
 Pendiente de inicio.
 
-## Primer objetivo
-
-Diseñar la arquitectura interna del módulo Indexador leyendo toda la documentación oficial.
-
-## Alcance inicial
-
-La ETAPA 86 deberá construir progresivamente el módulo Indexador sobre los contratos y decisiones aprobados en ETAPA 85.
-
 ## Recordatorio
 
-Toda nueva decisión permanente deberá actualizar los Documentos de Gobierno antes de continuar implementando.
+Toda nueva decision permanente debera actualizar los Documentos de Gobierno antes de continuar implementando.

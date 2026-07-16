@@ -4,7 +4,11 @@
 - Estos documentos son la fuente oficial de verdad.
 - La carpeta `/docs` constituye la memoria técnica oficial del proyecto.
 - Si una instrucción o sugerencia contradice estos documentos, prevalecen los documentos.
-- CHANGELOG.md continúa siendo únicamente el historial ejecutivo.
+- CHANGELOG.md registra el historial técnico y funcional de lo implementado.
+- CHANGELOG.md no constituye la fuente de verdad del estado actual.
+- CHANGELOG.md no reemplaza al Sistema de Gobierno.
+- CHANGELOG.md no reemplaza el Roadmap.
+- CHANGELOG.md no reemplaza la documentación técnica.
 - PROJECT.md, NUEVOPROJECT.md, HISTORY.md y NUEVOHISTORY.md pasan a ser documentación histórica.
 - Nunca utilizar esos documentos históricos como referencia principal.
 - Toda decisión arquitectónica aprobada debe quedar registrada en `/docs` antes de continuar implementando.
@@ -16,17 +20,7 @@
 - Cuando se incorpore un nuevo documento oficial al Sistema de Gobierno, deberán actualizarse también el orden de lectura, el procedimiento de continuidad, la generación de Prompt Maestro y cualquier referencia cruzada afectada.
 - El Sistema de Gobierno debe permanecer siempre sincronizado.
 
-Antes de cualquier auditoría o modificación, Codex debe leer obligatoriamente:
-
-1. `/docs/00_GOVERNANCE.md`
-2. `/docs/01_ENGINEERING.md`
-3. `/docs/02_PRODUCT.md`
-4. `/docs/03_SEARCH.md`
-5. `/docs/04_CURRENT_STAGE.md`
-6. `/docs/05_SEARCH_ROADMAP.md`
-7. `/docs/06_CHAT_CONTINUATION.md`
-8. `/docs/07_DECISIONS.md`
-9. `/docs/08_ENGINEERING_PRINCIPLES.md`
+Antes de cualquier auditoría o modificación, Codex debe seguir obligatoriamente el Procedimiento Universal de Reconstrucción del Proyecto definido por este documento.
 
 ## Sistema de Gobierno
 
@@ -44,18 +38,96 @@ El Sistema de Gobierno de FeedGo está compuesto por:
 
 Los documentos `10+` son documentos técnicos especializados.
 
-## Proceso obligatorio
+## Clasificación Oficial de Documentos
 
-1. Auditar.
-2. Mostrar evidencia.
-3. Analizar.
-4. Diseñar.
-5. Aprobar.
-6. Implementar.
-7. Validar.
+Todo documento nuevo incorporado al directorio `/docs` deberá declarar explícitamente su categoría.
+
+Las categorías oficiales iniciales son:
+
+### Sistema de Gobierno
+
+Documentos que gobiernan el funcionamiento general del proyecto.
+
+Ejemplos:
+
+- Gobierno
+- Ingeniería
+- Producto
+- Estado actual
+- Roadmap
+- Continuidad
+- Decisiones
+- Principios de Ingeniería
+
+### Documento Técnico
+
+Documentos que describen arquitectura, diseño o funcionamiento de componentes específicos.
+
+Ejemplos:
+
+- Index Design
+- Knowledge Design
+- futuros documentos del Indexador
+- Discovery
+- Candidate Engine
+- Ranking
+
+### Documento Operativo
+
+Documentos que describan procesos operativos, despliegues, herramientas o mantenimiento.
+
+### Documento Histórico
+
+Documentos conservados únicamente como referencia histórica.
+
+Reglas permanentes:
+
+- Todo documento nuevo deberá indicar su categoría.
+- Todo documento nuevo deberá indicar su objetivo.
+- Todo documento nuevo deberá indicar si forma parte del Sistema de Gobierno.
+- Todo documento técnico deberá indicar claramente qué componente documenta.
+- La clasificación deberá mantenerse actualizada.
+
+## Procedimiento Universal de Reconstrucción del Proyecto
+
+Toda IA deberá seguir este procedimiento antes de realizar cualquier tarea de desarrollo.
+
+La IA debe:
+
+- descubrir automáticamente toda la documentación oficial;
+- identificar la categoría de cada documento;
+- determinar el orden de lectura según el propio Sistema de Gobierno;
+- reconstruir completamente el estado del proyecto;
+- identificar la etapa vigente;
+- identificar el roadmap;
+- identificar decisiones permanentes;
+- identificar principios de ingeniería;
+- identificar la documentación técnica necesaria para la tarea solicitada;
+- verificar consistencia documental antes de continuar.
+
+Este procedimiento es independiente de la estructura futura del repositorio.
+
+Los prompts nunca reemplazan este procedimiento.
+
+Cualquier evolución del procedimiento deberá realizarse modificando la documentación oficial.
+
+## Flujo oficial de trabajo
+
+El flujo oficial de trabajo de FeedGo es único y obligatorio:
+
+1. Auditoría.
+2. Evidencia.
+3. Diseño.
+4. Documentación.
+5. Implementación.
+6. Validación.
+7. CHANGELOG.
 8. Commit.
-9. CHANGELOG.
-10. Push.
+9. Push.
+
+No debe existir ningún otro flujo alternativo.
+
+CHANGELOG siempre ocurre antes del Commit.
 
 ## Reglas
 

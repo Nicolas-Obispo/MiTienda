@@ -43,12 +43,9 @@ Duplicar código es el último recurso.
 
 ## 4. Auditar antes de implementar
 
-Toda implementación comienza con:
+Toda implementación debe comenzar con auditoría y evidencia.
 
-- auditoría;
-- comprensión;
-- diseño;
-- implementación.
+La auditoría debe permitir comprender el sistema antes de diseñar o modificar.
 
 Nunca al revés.
 
@@ -219,7 +216,7 @@ Antes de considerar terminada una implementación debe verificarse:
 - funcionamiento;
 - limpieza residual;
 - documentación;
-- changelog cuando corresponda;
+- CHANGELOG antes del commit;
 - consistencia arquitectónica.
 
 Una etapa no termina únicamente porque el código funciona.
@@ -364,3 +361,29 @@ Evitar componentes que hagan múltiples tareas.
 Si una solución requiere demasiadas excepciones para funcionar, probablemente la arquitectura necesita rediseñarse.
 
 Preferir mejorar el diseño antes que seguir agregando casos especiales.
+
+## 34. La documentación también evoluciona arquitectónicamente
+
+La documentación oficial forma parte de la arquitectura del proyecto.
+
+Debe mantenerse:
+
+- organizada;
+- clasificada;
+- sin duplicaciones;
+- sin contradicciones;
+- escalable.
+
+Toda modificación importante deberá mantener la coherencia del sistema documental.
+
+## 35. El conocimiento pertenece al proyecto
+
+La inteligencia documental debe residir en la documentación oficial.
+
+Los prompts deben permanecer simples.
+
+El Sistema de Gobierno define el comportamiento esperado de cualquier IA.
+
+Evitar duplicar reglas en prompts y documentación.
+
+Toda evolución del proceso debe incorporarse al Sistema de Gobierno.

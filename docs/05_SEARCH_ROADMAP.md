@@ -1,16 +1,16 @@
 # Objetivo
 
-El Roadmap representa el plan oficial de construcción del buscador.
+El Roadmap representa el plan oficial de construccion del buscador.
 
 Debe mantenerse actualizado durante todo el proyecto.
 
 No documenta conversaciones.
 
-No documenta hipótesis.
+No documenta hipotesis.
 
-No documenta auditorías.
+No documenta auditorias.
 
-Documenta únicamente trabajo aprobado.
+Documenta unicamente trabajo aprobado.
 
 ## Estados
 
@@ -38,21 +38,21 @@ Mejora futura.
 
 ## Regla
 
-Solo la etapa actual podrá estar completamente desarrollada.
+Solo la etapa actual podra estar completamente desarrollada.
 
-Las etapas futuras deberán contener únicamente:
+Las etapas futuras deberan contener unicamente:
 
 - nombre
 - objetivo
 - estado
 
-Se desarrollarán cuando pasen a ser la etapa activa.
+Se desarrollaran cuando pasen a ser la etapa activa.
 
-Toda etapa cerrada deberá reflejarse también en:
+Toda etapa cerrada debera reflejarse tambien en:
 
-- documentación técnica;
+- documentacion tecnica;
 - decisiones permanentes;
-- principios de ingeniería;
+- principios de ingenieria;
 
 cuando corresponda.
 
@@ -60,7 +60,7 @@ cuando corresponda.
 
 ### ☑ ETAPA 83
 
-Sistema de Indexación y Knowledge Base.
+Sistema de Indexacion y Knowledge Base.
 
 Estado:
 
@@ -70,7 +70,7 @@ Cerrada.
 
 ### ☑ ETAPA 84
 
-Consolidación de arquitectura del Buscador.
+Consolidacion de arquitectura del Buscador.
 
 Estado:
 
@@ -80,7 +80,7 @@ Cerrada.
 
 ### ☑ ETAPA 85
 
-Documento de Índice e Índices Sintetizados.
+Documento de Indice e Indices Sintetizados.
 
 Estado:
 
@@ -89,69 +89,89 @@ Cerrada.
 P0
 
 - ☑ Crear Documentos de Gobierno.
-- ☑ Definir filosofía del Documento de Índice.
+- ☑ Definir filosofia del Documento de Indice.
 - ☑ Definir que representa una entidad indexable.
 - ☑ Definir identidad principal y cobertura secundaria.
 - ☑ Definir que las publicaciones enriquecen el espacio.
 - ☑ Definir origen, evidencia, confianza y peso.
-- ☑ Definir runtime liviano e indexación pesada.
-- ☑ Crear documentación oficial.
-- ☑ Definir separación entre Taxonomía estable y Knowledge System dinámico.
-- ☑ Definir naturaleza del Documento de Índice.
-- ☑ Definir que el Documento de Índice es un artefacto derivado.
-- ☑ Definir la regeneración mediante el Indexador.
+- ☑ Definir runtime liviano e indexacion pesada.
+- ☑ Crear documentacion oficial.
+- ☑ Definir separacion entre Taxonomia estable y Knowledge System dinamico.
+- ☑ Definir naturaleza del Documento de Indice.
+- ☑ Definir que el Documento de Indice es un artefacto derivado.
+- ☑ Definir la regeneracion mediante el Indexador.
 - ☑ Definir que el Buscador consume conocimiento y no lo genera.
 - ☑ Aprobar el contrato conceptual basado en bloques de conocimiento.
 - ☑ Auditar componentes existentes reutilizables para Conceptos y Relaciones.
-- ☑ Diseñar el contrato conceptual de Concepto.
-- ☑ Diseñar el contrato conceptual de Relación.
+- ☑ Disenar el contrato conceptual de Concepto.
+- ☑ Disenar el contrato conceptual de Relacion.
 - ☑ Implementar contrato inicial de Concept.
 - ☑ Implementar contrato inicial de Relation.
 - ☑ Implementar Graph Service inicial en memoria.
-- ☑ Auditar integración entre Taxonomía estable y Knowledge Graph.
-- ☑ Implementar proyección inicial Taxonomía → Knowledge Graph en memoria.
-- ☑ Diseñar el contrato conceptual del Documento de Índice de Comercio.
-- ☑ Diseñar contrato del Documento de Índice.
-- ☑ Diseñar el pipeline conceptual de construcción del Commerce Index Document.
+- ☑ Auditar integracion entre Taxonomia estable y Knowledge Graph.
+- ☑ Implementar proyeccion inicial Taxonomia → Knowledge Graph en memoria.
+- ☑ Disenar el contrato conceptual del Documento de Indice de Comercio.
+- ☑ Disenar contrato del Documento de Indice.
+- ☑ Disenar el pipeline conceptual de construccion del Commerce Index Document.
 - ☑ Definir bloques conceptuales del Commerce Index Document.
-- ☑ Definir reglas de regeneración e invalidación del Commerce Index Document.
-- ☑ Definir estrategia conceptual de escalabilidad del proceso de indexación.
-- ☑ Diseñar estrategia conceptual de actualización.
-- ☑ Diseñar estrategia conceptual de reindexación.
-- ☑ Auditoría final documental.
+- ☑ Definir reglas de regeneracion e invalidacion del Commerce Index Document.
+- ☑ Definir estrategia conceptual de escalabilidad del proceso de indexacion.
+- ☑ Disenar estrategia conceptual de actualizacion.
+- ☑ Disenar estrategia conceptual de reindexacion.
+- ☑ Auditoria final documental.
 - ☑ Cierre de ETAPA 85.
 
 No forman parte del cierre de ETAPA 85:
 
-- implementación interna del módulo Indexador;
-- implementación del Commerce Index Document;
-- Documento de Índice de Publicación;
-- Índices Sintetizados físicos;
+- implementacion interna del modulo Indexador;
+- implementacion del Commerce Index Document;
+- Documento de Indice de Publicacion;
+- Indices Sintetizados fisicos;
 - persistencia;
-- integración con Discovery, Candidate Engine y Ranking.
+- integracion con Discovery, Candidate Engine y Ranking.
 
 ---
 
-### ☐ ETAPA 86 — Implementación del Indexador
+### ☑ ETAPA 86 — Implementacion del Indexador
 
 Estado:
 
-Pendiente.
+Cerrada.
 
 Objetivo:
 
-Construir progresivamente el módulo Indexador sobre los contratos y decisiones aprobados en ETAPA 85.
+Construir progresivamente el modulo Indexador sobre los contratos y decisiones aprobados en ETAPA 85.
 
-Objetivos resumidos:
+P0
 
-- diseñar arquitectura interna del módulo Indexador;
-- implementar CommerceIndexDocument como contrato de dominio;
-- implementar builders por bloque;
-- implementar CommerceIndexerService;
-- integrar Taxonomía y Knowledge Graph;
-- generar el primer documento completo de un Comercio;
-- validar;
-- actualizar documentación y changelog.
+- ☑ Auditar arquitectura existente para disenar el modulo Indexador.
+- ☑ Disenar arquitectura interna del modulo Indexador.
+- ☑ Implementar estructura base del modulo `backend/app/modules/indexer/`.
+- ☑ Implementar contratos de dominio del `CommerceIndexDocument`.
+- ☑ Implementar `SourceSnapshots`.
+- ☑ Implementar contratos de evidencias y trazabilidad.
+- ☑ Implementar contrato compartido de normalizacion de texto.
+- ☑ Implementar Collectors de Comercio, Taxonomia, Contenido, Senales y Knowledge Graph.
+- ☑ Implementar Builders de Identidad, Perfil Publico y Cobertura Geografica.
+- ☑ Implementar Builders de Conocimiento Semantico y Contexto Derivado.
+- ☑ Implementar Builders de Intenciones y Representacion de Busqueda.
+- ☑ Implementar Builders de Senales, Evidencias y Trazabilidad.
+- ☑ Implementar `IndexDocumentValidationService`.
+- ☑ Implementar `CommerceIndexerService`.
+- ☑ Validar auditoria final de integracion.
+- ☑ Corregir duplicacion del contrato `TextNormalizationContract`.
+- ☑ Actualizar documentacion oficial de cierre.
+
+Fuera de alcance:
+
+- persistencia;
+- reindexacion;
+- Indices Sintetizados fisicos;
+- scheduler;
+- colas;
+- integracion con Discovery;
+- integracion con Candidate Engine;
+- integracion con Ranking.
 
 ---
 
@@ -173,11 +193,11 @@ Pedidos, Carrito y Pagos.
 
 ### ☐ ETAPA 91
 
-Mensajería.
+Mensajeria.
 
 ### ☐ ETAPA 92
 
-Reputación.
+Reputacion.
 
 ### ☐ ETAPA 93
 
@@ -201,7 +221,7 @@ Calidad de Datos.
 
 ### ☐ ETAPA 98
 
-Moderación.
+Moderacion.
 
 ### ☐ ETAPA 99
 

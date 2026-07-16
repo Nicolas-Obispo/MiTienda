@@ -10,23 +10,17 @@ Toda conversación debe poder reconstruir el estado del proyecto desde la docume
 
 ## 2. Regla permanente
 
-Antes de responder cualquier consulta sobre FeedGo, la IA debe leer obligatoriamente:
+Antes de responder cualquier consulta sobre FeedGo, la IA debe seguir el Procedimiento Universal de Reconstrucción del Proyecto definido por el Sistema de Gobierno.
 
-1. `/docs/00_GOVERNANCE.md`
-2. `/docs/01_ENGINEERING.md`
-3. `/docs/02_PRODUCT.md`
-4. `/docs/03_SEARCH.md`
-5. `/docs/04_CURRENT_STAGE.md`
-6. `/docs/05_SEARCH_ROADMAP.md`
-7. `/docs/06_CHAT_CONTINUATION.md`
-8. `/docs/07_DECISIONS.md`
-9. `/docs/08_ENGINEERING_PRINCIPLES.md`
+El procedimiento oficial indica cómo:
 
-Luego, cuando corresponda, debe leer:
+- descubrir la documentación oficial;
+- identificar categorías;
+- definir el orden de lectura;
+- reconstruir el estado del proyecto;
+- identificar la documentación técnica relevante para la tarea solicitada.
 
-- `/docs/10_INDEX_DESIGN.md`
-- `/docs/11_KNOWLEDGE_DESIGN.md`
-- cualquier otro documento técnico relacionado con la tarea solicitada
+Ningún chat nuevo debe depender de listas fijas de documentos ni de nombres concretos de archivos.
 
 ## 3. Fuente oficial de verdad
 
@@ -40,26 +34,22 @@ Si existe una contradicción entre una conversación y la documentación, preval
 
 Cuando el usuario solicite un Prompt Maestro para continuar el proyecto, la IA deberá construirlo exclusivamente utilizando la documentación oficial.
 
-Todo Prompt Maestro deberá construirse leyendo primero:
+Todo Prompt Maestro deberá construirse siguiendo el Procedimiento Universal de Reconstrucción del Proyecto.
 
-1. `/docs/00_GOVERNANCE.md`
-2. `/docs/01_ENGINEERING.md`
-3. `/docs/02_PRODUCT.md`
-4. `/docs/03_SEARCH.md`
-5. `/docs/04_CURRENT_STAGE.md`
-6. `/docs/05_SEARCH_ROADMAP.md`
-7. `/docs/06_CHAT_CONTINUATION.md`
-8. `/docs/07_DECISIONS.md`
-9. `/docs/08_ENGINEERING_PRINCIPLES.md`
+El Prompt Maestro guía el trabajo, resume el estado y orienta la etapa actual.
 
-Luego deberá leer automáticamente toda la documentación técnica relacionada con la etapa o tarea solicitada.
+El Prompt Maestro nunca reemplaza la lectura directa de la documentación oficial.
 
-Para el Buscador, deberá incluir:
+Toda implementación debe volver a consultar la documentación vigente antes de modificar el sistema.
 
-- `/docs/10_INDEX_DESIGN.md`
-- `/docs/11_KNOWLEDGE_DESIGN.md`
+El Prompt Maestro deberá derivarse de:
 
-Para el Indexador, deberá incluir todos los documentos de diseño del Indexador cuando existan.
+- el Sistema de Gobierno descubierto por categoría;
+- el estado vigente del proyecto;
+- el roadmap vigente;
+- las decisiones permanentes;
+- los principios de ingeniería;
+- la documentación técnica relacionada con la tarea solicitada.
 
 Nunca generar un Prompt Maestro únicamente con documentos de gobierno.
 
@@ -83,8 +73,8 @@ El Prompt Maestro no deberá depender del historial conversacional.
 
 Toda conversación nueva debería comenzar:
 
-1. leyendo la documentación oficial;
-2. reconstruyendo el contexto desde `/docs`;
+1. siguiendo el Procedimiento Universal de Reconstrucción del Proyecto;
+2. reconstruyendo el contexto desde la documentación oficial;
 3. identificando la etapa actual;
 4. continuando exactamente donde quedó el proyecto.
 
