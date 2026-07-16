@@ -1724,3 +1724,36 @@ Pendiente:
 - Integración Discovery.
 - Integración Candidate Engine.
 - Integración Ranking.
+
+## ETAPA 85 — Cierre
+
+### Gobierno
+
+- Sistema de Gobierno `00`–`08` consolidado.
+- Continuidad entre chats y generación de Prompt Maestro desde `/docs`.
+- Registro de decisiones y principios permanentes.
+- Security by Design, Secure by Default y Defense in Depth incorporados como principios permanentes.
+- Integraciones desacopladas y limpieza residual incorporadas como principios de ingeniería.
+
+### Implementación
+
+- `Concept`.
+- `Relation`.
+- `KnowledgeGraphService` en memoria.
+- Proyección Taxonomía → Knowledge Graph.
+- IDs determinísticos e idempotencia.
+
+### Diseño aprobado
+
+- Separación Taxonomía / Knowledge Graph.
+- Contrato conceptual de Concepto y Relación.
+- Commerce Index Document.
+- Diez bloques del documento.
+- Pipeline conceptual del Indexador.
+- Regeneración completa V1.
+- Futura regeneración parcial.
+- Invalidación y escalabilidad.
+
+### Próxima etapa
+
+ETAPA 86 — Implementación del Indexador.

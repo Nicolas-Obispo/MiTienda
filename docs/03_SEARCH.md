@@ -106,6 +106,48 @@ Ranking
 - Candidate Engine selecciona.
 - Ranking ordena.
 - El runtime nunca crea conocimiento nuevo.
+- El runtime nunca construye conocimiento.
+- El runtime únicamente consume conocimiento previamente preparado.
+- Todo conocimiento pesado se construye durante la indexación.
+- El Indexador prepara.
+
+## Pipeline conceptual de indexación
+
+Fuente Oficial
+
+↓
+
+Evento de Indexación
+
+↓
+
+Indexador
+
+↓
+
+Commerce Index Document
+
+↓
+
+Validación
+
+↓
+
+Persistencia futura
+
+↓
+
+Índices Sintetizados
+
+↓
+
+Runtime
+
+La persistencia es un detalle de implementación.
+
+El Documento existe porque el Indexador lo construye.
+
+Luego podrá persistirse utilizando cualquier estrategia futura.
 
 ### Discovery Pasivo
 
@@ -204,6 +246,18 @@ El Indexador:
 
 El Indexador no modifica las fuentes originales.
 
+El Indexador es el constructor del Commerce Index Document.
+
+Cada bloque del Documento posee una fuente de verdad claramente definida.
+
+El Documento nunca obtiene información desde el frontend.
+
+El Documento nunca es construido por Discovery.
+
+El Documento nunca es construido por Candidate Engine.
+
+El Documento nunca es construido por Ranking.
+
 ## Arquitectura conceptual
 
 El Documento de Índice se organiza mediante bloques de conocimiento.
@@ -223,6 +277,12 @@ Los bloques oficiales son:
 Estos bloques representan el contrato conceptual permanente del Documento de Índice.
 
 La implementación física podrá cambiar sin modificar este contrato.
+
+Los bloques generales definidos en este documento representan el contrato común de cualquier Documento de Índice.
+
+`/docs/10_INDEX_DESIGN.md` contiene la especialización vigente del Commerce Index Document.
+
+Ante mayor nivel de detalle, prevalece el documento técnico especializado, siempre que no contradiga la arquitectura general.
 
 ## Consumo
 

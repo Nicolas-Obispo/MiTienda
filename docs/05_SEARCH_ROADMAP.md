@@ -48,6 +48,14 @@ Las etapas futuras deberán contener únicamente:
 
 Se desarrollarán cuando pasen a ser la etapa activa.
 
+Toda etapa cerrada deberá reflejarse también en:
+
+- documentación técnica;
+- decisiones permanentes;
+- principios de ingeniería;
+
+cuando corresponda.
+
 ## Roadmap
 
 ### ☑ ETAPA 83
@@ -70,9 +78,13 @@ Cerrada.
 
 ---
 
-### ◐ ETAPA 85
+### ☑ ETAPA 85
 
 Documento de Índice e Índices Sintetizados.
+
+Estado:
+
+Cerrada.
 
 P0
 
@@ -98,72 +110,103 @@ P0
 - ☑ Implementar Graph Service inicial en memoria.
 - ☑ Auditar integración entre Taxonomía estable y Knowledge Graph.
 - ☑ Implementar proyección inicial Taxonomía → Knowledge Graph en memoria.
-- ☐ Diseñar el contrato conceptual del Documento de Índice de Comercio.
-- ☐ Diseñar e implementar el contrato inicial del Documento de Índice de Comercio.
-- ☐ Diseñar contrato del Documento de Índice.
-- ☐ Diseñar contrato del Documento de Índice de Publicaciones.
-- ☐ Diseñar Índices Sintetizados.
-- ☐ Definir cómo se representan y persisten las relaciones entre Conceptos y entidades dentro del Documento de Índice.
-- ☐ Diseñar el contrato definitivo de Concepto y Relación.
-- ☐ Diseñar estrategia de actualización.
-- ☐ Diseñar estrategia de reindexación.
-- ☐ Auditoría final.
-- ☐ Cierre de ETAPA 85.
+- ☑ Diseñar el contrato conceptual del Documento de Índice de Comercio.
+- ☑ Diseñar contrato del Documento de Índice.
+- ☑ Diseñar el pipeline conceptual de construcción del Commerce Index Document.
+- ☑ Definir bloques conceptuales del Commerce Index Document.
+- ☑ Definir reglas de regeneración e invalidación del Commerce Index Document.
+- ☑ Definir estrategia conceptual de escalabilidad del proceso de indexación.
+- ☑ Diseñar estrategia conceptual de actualización.
+- ☑ Diseñar estrategia conceptual de reindexación.
+- ☑ Auditoría final documental.
+- ☑ Cierre de ETAPA 85.
+
+No forman parte del cierre de ETAPA 85:
+
+- implementación interna del módulo Indexador;
+- implementación del Commerce Index Document;
+- Documento de Índice de Publicación;
+- Índices Sintetizados físicos;
+- persistencia;
+- integración con Discovery, Candidate Engine y Ranking.
 
 ---
 
-### ☐ ETAPA 86
+### ☐ ETAPA 86 — Implementación del Indexador
 
-Sistema de Disponibilidad.
+Estado:
+
+Pendiente.
+
+Objetivo:
+
+Construir progresivamente el módulo Indexador sobre los contratos y decisiones aprobados en ETAPA 85.
+
+Objetivos resumidos:
+
+- diseñar arquitectura interna del módulo Indexador;
+- implementar CommerceIndexDocument como contrato de dominio;
+- implementar builders por bloque;
+- implementar CommerceIndexerService;
+- integrar Taxonomía y Knowledge Graph;
+- generar el primer documento completo de un Comercio;
+- validar;
+- actualizar documentación y changelog.
+
+---
 
 ### ☐ ETAPA 87
 
-Agenda y Reservas.
+Sistema de Disponibilidad.
 
 ### ☐ ETAPA 88
 
-Productos e Inventario.
+Agenda y Reservas.
 
 ### ☐ ETAPA 89
 
-Pedidos, Carrito y Pagos.
+Productos e Inventario.
 
 ### ☐ ETAPA 90
 
-Mensajería.
+Pedidos, Carrito y Pagos.
 
 ### ☐ ETAPA 91
 
-Reputación.
+Mensajería.
 
 ### ☐ ETAPA 92
 
-IA Conversacional.
+Reputación.
 
 ### ☐ ETAPA 93
 
-Recomendaciones.
+IA Conversacional.
 
 ### ☐ ETAPA 94
 
-Analytics.
+Recomendaciones.
 
 ### ☐ ETAPA 95
 
-Inteligencia Global.
+Analytics.
 
 ### ☐ ETAPA 96
 
-Calidad de Datos.
+Inteligencia Global.
 
 ### ☐ ETAPA 97
 
-Moderación.
+Calidad de Datos.
 
 ### ☐ ETAPA 98
 
-Observabilidad.
+Moderación.
 
 ### ☐ ETAPA 99
+
+Observabilidad.
+
+### ☐ ETAPA 100
 
 Backend Universal.

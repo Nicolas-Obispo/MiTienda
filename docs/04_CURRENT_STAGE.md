@@ -4,52 +4,37 @@ Proyecto:
 
 FeedGo
 
-Etapa actual:
-
-ETAPA 85
+## ETAPA 85
 
 Estado:
 
-En construcción.
+Cerrada.
 
-## Objetivo actual
+## Resultado
 
-Construir el nuevo sistema de búsqueda basado en:
+- Sistema de Gobierno consolidado.
+- Knowledge Graph inicial implementado.
+- Proyección Taxonomía → Knowledge Graph implementada.
+- Commerce Index Document diseñado conceptualmente.
+- Pipeline conceptual del Indexador diseñado conceptualmente.
+- Reglas de regeneración, invalidación y escalabilidad aprobadas.
 
-- Knowledge System
-- Documento de Índice
-- Índices Sintetizados
+## Etapa actual siguiente
 
-El objetivo principal es reducir el trabajo realizado durante el runtime y trasladarlo al proceso de indexación.
+ETAPA 86 — Implementación del Indexador.
 
-## Prioridad absoluta
+Estado:
 
-Finalizar completamente el Buscador Inteligente.
+Pendiente de inicio.
 
-No comenzar funcionalidades nuevas hasta cerrar esta etapa.
+## Primer objetivo
 
-## Próximos pasos
+Diseñar la arquitectura interna del módulo Indexador leyendo toda la documentación oficial.
 
-1. Diseñar el contrato del Documento de Índice.
-2. Diseñar los Índices Sintetizados.
-3. Implementar el Indexador.
-4. Integrar Espacios.
-5. Integrar Publicaciones.
-6. Reemplazar progresivamente la búsqueda actual.
+## Alcance inicial
 
-## Restricciones
-
-Todavía NO:
-
-- crear tablas nuevas
-- definir almacenamiento físico
-- implementar código del Indexador
-- modificar Discovery
-- modificar Candidate Engine
-- modificar Ranking
-
-Primero debe cerrarse completamente el diseño.
+La ETAPA 86 deberá construir progresivamente el módulo Indexador sobre los contratos y decisiones aprobados en ETAPA 85.
 
 ## Recordatorio
 
-Toda nueva decisión permanente deberá actualizar los Documentos de Gobierno antes del cierre de la etapa.
+Toda nueva decisión permanente deberá actualizar los Documentos de Gobierno antes de continuar implementando.
