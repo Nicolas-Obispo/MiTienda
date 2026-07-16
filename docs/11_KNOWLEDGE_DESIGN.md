@@ -329,6 +329,30 @@ El centro del sistema es el Knowledge Graph construido mediante Conceptos y Rela
 - La ausencia de persistencia es intencional.
 - El objetivo del servicio es validar el modelo antes de definir almacenamiento.
 
+## Proyección Taxonomía hacia Knowledge Graph
+
+- Se implementó una proyección controlada y unidireccional desde Taxonomía hacia Knowledge Graph.
+- Se implementó `TaxonomyNodeToConceptMapper`.
+- Se implementó `TaxonomyAssignmentToRelationMapper`.
+- Se implementó `TaxonomyKnowledgeGraphProjectionService`.
+- La proyección inicial se limita a rubros y especialidades activos.
+- La Taxonomía continúa siendo la fuente oficial.
+- El Knowledge Graph recibe una representación derivada y regenerable.
+- La proyección utiliza IDs determinísticos.
+- La ejecución es idempotente para la misma entrada.
+- La ausencia de persistencia es intencional.
+- La sincronización bidireccional queda prohibida en esta fase.
+
+### Escala temporal de confianza
+
+- `>= 0.95` → muy alta
+- `>= 0.80` → alta
+- `>= 0.60` → media
+- `>= 0.30` → baja
+- `< 0.30` → experimental
+
+Esta escala está aislada y puede evolucionar.
+
 ## Relación con el Documento de Índice
 
 El Indexador combina:

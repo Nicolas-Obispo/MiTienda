@@ -96,8 +96,10 @@ P0
 - ☑ Implementar contrato inicial de Concept.
 - ☑ Implementar contrato inicial de Relation.
 - ☑ Implementar Graph Service inicial en memoria.
+- ☑ Auditar integración entre Taxonomía estable y Knowledge Graph.
+- ☑ Implementar proyección inicial Taxonomía → Knowledge Graph en memoria.
 - ☐ Diseñar el contrato conceptual del Documento de Índice de Comercio.
-- ☐ Diseñar y auditar la integración entre Taxonomía estable y Knowledge Graph.
+- ☐ Diseñar e implementar el contrato inicial del Documento de Índice de Comercio.
 - ☐ Diseñar contrato del Documento de Índice.
 - ☐ Diseñar contrato del Documento de Índice de Publicaciones.
 - ☐ Diseñar Índices Sintetizados.
