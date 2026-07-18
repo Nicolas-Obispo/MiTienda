@@ -9,8 +9,6 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
----
-
 ## ETAPA 71 — Cierre Definitivo de Migración Enterprise
 
 **Commit:** `0b5de97`  
@@ -1788,3 +1786,64 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 - Se confirmó ausencia de persistencia, endpoints, scheduler, colas e integración runtime.
 - Se corrigió la duplicación de `TextNormalizationContract`.
 - `SearchRepresentationBuilder` depende exclusivamente del contrato compartido de normalización.
+
+---
+
+## ETAPA 87 — Sistema de Disponibilidad
+
+**Estado:** Cerrada
+
+### Implementación
+
+- Módulo backend `availability` para horarios habituales semanales de comercios.
+- Tabla `comercios_horarios_atencion` registrada en metadata y creada mediante `create_tables.py`.
+- Endpoints `GET /comercios/{comercio_id}/horarios` y `PUT /comercios/{comercio_id}/horarios`.
+- Cálculo backend de estado horario y texto contextual.
+- Integración informativa en detalle, `/comercios/mis` y `/comercios/activos`.
+- Badge frontend reutilizable y editor privado de horarios.
+- Soporte de múltiples franjas por día, reemplazo completo y eliminación mediante `franjas=[]`.
+- Acceso al editor de horarios desde el flujo de edición del comercio.
+
+### Corrección de regresiones
+
+- Los endpoints históricos de Spaces degradan `horario_atencion` a `null` si Availability falla por infraestructura.
+- Los endpoints propios de Availability conservan sus errores normales.
+- Se corrigió un literal genérico de publicaciones del perfil para usar el nombre real del comercio.
+- Se sincronizó `Base.metadata` con MySQL para `comercios_horarios_atencion`.
+- Se corrigió la identidad estable del editor frontend para evitar que una franja modificara otra.
+- Se ocultó temporalmente el mapa de ubicación mientras el editor de horarios está abierto.
+
+### Gobierno
+
+- Se incorporaron reglas permanentes de compatibilidad hacia atrás.
+- Se incorporó auditoría obligatoria antes de crear tablas.
+- Se incorporó clasificación oficial del modelo de datos.
+- Se incorporó validación obligatoria de schema físico antes de cerrar etapas.
+- Se incorporó el Design System oficial para botones secundarios.
+
+### Validación de cierre
+
+- `python -m compileall app main.py create_tables.py reset_db.py` ejecutado con el venv backend.
+- `create_tables.py` ejecutado correctamente como mecanismo oficial no destructivo.
+- `Base.metadata` y MySQL sincronizados: 22 tablas en metadata, 22 tablas físicas, sin faltantes ni extras.
+- `comercios_horarios_atencion` existe en metadata y MySQL.
+- Schemas de Availability validados para día válido, día fuera de rango, apertura igual al cierre, cruce de medianoche y lista vacía.
+- Servicio de Availability validado para franjas contiguas, solapamientos, semana circular, datetimes aware y cálculo batch sin N+1.
+- API de Availability validada para configuración, edición, eliminación, horarios partidos, guardado y lectura posterior con restauración de datos originales.
+- Endpoints históricos validados: `/comercios/mis`, `/comercios/activos`, detalle de comercio, `/publicaciones/` e `/historias/bar`.
+- Frontend validado con build de producción, lint acotado sin errores y flujo local del editor con identidad estable.
+
+### Fuera de alcance
+
+- Agenda.
+- Reservas.
+- Turnos.
+- Servicios con horarios independientes.
+- Feriados.
+- Excepciones por fecha.
+- Cruces de medianoche.
+- Filtros o ranking por disponibilidad.
+
+### Deuda controlada
+
+- Queda diferida a ETAPA 101 la unificación visual completa del Design System: botones secundarios restantes, espaciados, alineaciones, iconografía, jerarquía visual, formularios y responsive.

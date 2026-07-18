@@ -192,3 +192,57 @@ No reemplaza la documentación oficial existente.
 - Decisión: La normalización de texto debe existir como contrato compartido reutilizable del backend.
 - Motivo: Evitar implementaciones paralelas entre Indexador, Discovery, Embeddings y futuros consumidores.
 - Impacto: SearchRepresentationBuilder y futuros consumidores deben depender del contrato compartido, no de contratos locales duplicados.
+
+## DEC-023
+
+- ID: DEC-023
+- Título: Estado público y horarios de atención separados
+- Estado: Aprobada
+- Decisión: El estado público del espacio usa exclusivamente `Activo` y `En pausa`; el estado horario usa exclusivamente `Abierto`, `Cerrado` y `No hay horarios declarados`.
+- Motivo: Separar publicación y visibilidad del espacio de los horarios de atención evita mezclar `Comercio.activo` con disponibilidad operativa.
+- Impacto: El backend debe ser propietario de la regla de cálculo del estado horario; el frontend no lo inventa; el estado horario no modifica automáticamente `Activo` o `En pausa`; pasar a `En pausa` no elimina ni modifica horarios; al volver a `Activo` se reutilizan los horarios existentes.
+
+## DEC-024
+
+- ID: DEC-024
+- Titulo: Gobierno del Modelo de Datos
+- Estado: Aprobada
+- Decision: Antes de crear cualquier tabla nueva debe auditarse el modelo de datos existente y demostrarse que no hay una tabla propietaria natural, columna o relacion existente mas correcta.
+- Motivo: Preservar responsabilidad unica, evitar segundas fuentes de verdad y sostener una arquitectura enterprise.
+- Impacto: Toda nueva tabla debe justificar su responsabilidad, propietario del dato, clasificacion y compatibilidad con el modelo existente antes de implementarse.
+
+## DEC-025
+
+- ID: DEC-025
+- Titulo: Compatibilidad hacia atras obligatoria
+- Estado: Aprobada
+- Decision: Toda nueva funcionalidad debe auditar su impacto sobre endpoints, servicios, tablas, contratos y pantallas existentes antes de cerrar una etapa.
+- Motivo: Evitar regresiones sobre funcionalidades historicas cuando se incorporan modulos nuevos.
+- Impacto: Una etapa no puede cerrarse sin evidencia de que las funcionalidades anteriores siguen funcionando o degradan de forma controlada.
+
+## DEC-026
+
+- ID: DEC-026
+- Titulo: Tablas derivadas no son fuente de verdad
+- Estado: Aprobada
+- Decision: Caches, indices, embeddings, snapshots, eventos y tablas analiticas nunca reemplazan a la fuente oficial del dominio.
+- Motivo: Mantener consistencia, regenerabilidad y trazabilidad de la informacion.
+- Impacto: La documentacion tecnica debe declarar que tablas son fuente de verdad, relaciones, configuracion, indices, IA, eventos, historicas, caches o analiticas.
+
+## DEC-027
+
+- ID: DEC-027
+- Titulo: Validacion obligatoria de schema fisico
+- Estado: Aprobada
+- Decision: Antes de cerrar una etapa que agregue o use tablas nuevas debe compararse `Base.metadata` contra las tablas reales de MySQL.
+- Motivo: Evitar regresiones donde una tabla registrada en metadata sea usada por runtime pero no exista fisicamente.
+- Impacto: Una etapa no puede cerrarse si existen diferencias entre metadata y MySQL que afecten endpoints o servicios existentes.
+
+## DEC-028
+
+- ID: DEC-028
+- Titulo: Design System oficial para acciones secundarias
+- Estado: Aprobada
+- Decision: Los botones secundarios de FeedGo deben mostrarse sin borde, capsula ni marco permanente en estado normal, usando icono y texto cuando corresponda, y mostrar resaltado solo en hover, focus o interaccion.
+- Motivo: Mantener una experiencia visual uniforme, moderna y accesible en toda la aplicacion.
+- Impacto: Nuevas pantallas y ajustes visuales deben respetar este criterio; los botones primarios pueden conservar un tratamiento diferenciado cuando su jerarquia lo justifique.

@@ -111,6 +111,28 @@ Ranking
 - Todo conocimiento pesado se construye durante la indexación.
 - El Indexador prepara.
 
+## Disponibilidad en búsqueda
+
+Durante ETAPA 87, el estado horario es únicamente información contextual para el usuario.
+
+Durante ETAPA 87, el estado horario no participa en filtros, ranking ni exclusión de resultados.
+
+Esta decisión no constituye una restricción permanente del buscador.
+
+Una etapa futura podrá incorporar búsquedas específicas relacionadas con horarios sin contradecir esta decisión.
+
+Un espacio `Activo` puede aparecer en búsqueda aunque esté `Cerrado` por horario.
+
+Un espacio `En pausa` no debe aparecer públicamente, independientemente de los horarios que tenga guardados.
+
+La búsqueda podrá mostrar información horaria como dato informativo:
+
+- `Abierto`;
+- `Cerrado`;
+- `No hay horarios declarados`.
+
+La regla de cálculo del estado horario pertenece al backend y al Sistema de Disponibilidad.
+
 ## Pipeline conceptual de indexación
 
 Fuente Oficial

@@ -13,7 +13,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { PublicacionCard } from "@features/posts";
 import { CrearHistoriaModal } from "@features/stories";
 import { HistoriasViewer } from "@features/stories";
-import { MessageCircle, Camera, MapPin } from "lucide-react";
+import {
+  BarChart3,
+  Camera,
+  MapPin,
+  MessageCircle,
+  PlusCircle,
+} from "lucide-react";
 import { getMediaUrlFromAny, uploadImagen } from "@shared";
 
 import {
@@ -54,6 +60,7 @@ import {
 } from "@features/spaces";
 
 import { useAuth } from "@features/auth";
+import EstadoHorarioBadge from "@features/availability/components/EstadoHorarioBadge";
 
 const seguimientoPerfilComercioCache = new Map();
 
@@ -538,7 +545,7 @@ function esComercioMio(comercioData, userData) {
           const token = getAccessToken();
 
           if (!token) {
-            throw new Error("No hay sesiÃ³n activa.");
+            throw new Error("No hay sesión activa.");
           }
 
           const data = await uploadImagen(imagenFile, token);
@@ -622,7 +629,7 @@ function esComercioMio(comercioData, userData) {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800"
+            className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-gray-300 transition hover:bg-gray-900 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
           >
             ← Volver
           </button>
@@ -772,80 +779,90 @@ function esComercioMio(comercioData, userData) {
 
                   </div>
 
-                  {/* INFO DEL ESPACIO */}
-                  <div className="mt-4 -ml-24 flex items-center gap-1 flex-nowrap">
-
-                    {/* WHATSAPP */}
-                    {comercio?.whatsapp && (
-                      <a
-                        href={`https://wa.me/${String(comercio.whatsapp).replace(/\D/g, "")}?text=Hola%2C%20te%20encontré%20en%20MiPlaza%20y%20quiero%20consultarte`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-2 py-1 text-[10px] font-semibold text-green-400 hover:bg-gray-900"
-                      >
-                        <MessageCircle size={14} />
-                        WhatsApp
-                      </a>
-                    )}
-
-                    {/* INSTAGRAM */}
-                    {comercio?.instagram && (
-                      <a
-                        href={`https://instagram.com/${String(comercio.instagram).replace("@", "")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-2 py-1 text-[10px] font-semibold text-pink-400 hover:bg-gray-900"
-                      >
-                        <Camera size={14} />
-                        Instagram
-                      </a>
-                    )}
-
-                    {/* MAPS */}
-                    {(comercio?.latitud && comercio?.longitud) || comercio?.maps_url ? (
-                      <a
-                        href={
-                          comercio?.latitud && comercio?.longitud
-                            ? `https://www.google.com/maps?q=${comercio.latitud},${comercio.longitud}`
-                            : comercio.maps_url
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-2 py-1 text-[10px] font-semibold text-blue-400 hover:bg-gray-900"
-                      >
-                        <MapPin size={14} />
-                        Cómo llegar
-                      </a>
-                    ) : null}
-
-                  </div>
                 </div>
               </div>
 
+              {/* INFO DEL ESPACIO */}
+              <div className="mt-4 flex w-full flex-wrap items-center gap-x-4 gap-y-2">
+
+                {/* WHATSAPP */}
+                {comercio?.whatsapp && (
+                  <a
+                    href={`https://wa.me/${String(comercio.whatsapp).replace(/\D/g, "")}?text=Hola%2C%20te%20encontré%20en%20MiPlaza%20y%20quiero%20consultarte`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-xs font-semibold text-green-400 transition hover:bg-gray-900 hover:text-green-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-400"
+                  >
+                    <MessageCircle size={14} aria-hidden="true" />
+                    WhatsApp
+                  </a>
+                )}
+
+                {/* INSTAGRAM */}
+                {comercio?.instagram && (
+                  <a
+                    href={`https://instagram.com/${String(comercio.instagram).replace("@", "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-xs font-semibold text-pink-400 transition hover:bg-gray-900 hover:text-pink-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-400"
+                  >
+                    <Camera size={14} aria-hidden="true" />
+                    Instagram
+                  </a>
+                )}
+
+                {/* MAPS */}
+                {(comercio?.latitud && comercio?.longitud) || comercio?.maps_url ? (
+                  <a
+                    href={
+                      comercio?.latitud && comercio?.longitud
+                        ? `https://www.google.com/maps?q=${comercio.latitud},${comercio.longitud}`
+                        : comercio.maps_url
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-xs font-semibold text-blue-400 transition hover:bg-gray-900 hover:text-blue-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+                  >
+                    <MapPin size={14} aria-hidden="true" />
+                    Cómo llegar
+                  </a>
+                ) : null}
+
+                <EstadoHorarioBadge
+                  horarioAtencion={comercio?.horario_atencion}
+                  variant="inline"
+                  className="ml-auto justify-end"
+                />
+
+              </div>
+
               {puedoCrearHistoria && (
-                <div className="mt-4 -ml-3 flex items-center gap-4 flex-nowrap">
+                <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
                   <button
                     type="button"
-                    className="rounded-xl bg-white px-2 py-1 text-sm font-semibold text-gray-900 hover:opacity-90"
+                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-sm font-semibold text-gray-200 transition hover:bg-gray-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                     onClick={() => setIsCrearHistoriaOpen(true)}
                   >
-                    + Historia
+                    <PlusCircle size={16} aria-hidden="true" />
+                    Historia
                   </button>
 
                   <button
                     type="button"
-                    className="rounded-xl bg-white px-2 py-1 text-sm font-semibold text-gray-900 hover:opacity-90"
+                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-sm font-semibold text-gray-200 transition hover:bg-gray-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                     onClick={() => setIsCrearPublicacionOpen(true)}
                   >
-                    + Publicación
+                    <PlusCircle size={16} aria-hidden="true" />
+                    Publicación
                   </button>
 
                   <button
                     type="button"
-                    className="rounded-xl bg-white px-2 py-1 text-sm font-semibold text-gray-900 hover:opacity-90"
+                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-sm font-semibold text-gray-200 transition hover:bg-gray-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                     onClick={() => setIsEstadisticasOpen(true)}
                   >
-                    ⚙Estadísticas
+                    <BarChart3 size={16} aria-hidden="true" />
+                    Estadísticas
                   </button>
 
                 </div>
@@ -875,7 +892,7 @@ function esComercioMio(comercioData, userData) {
                     <PublicacionCard
                       key={p.id}
                       pub={p}
-                      headerRightBadgeText="Comercio"
+                      headerRightBadgeText={comercio?.nombre}
                       isActingLike={Boolean(likeLocks[p.id])}
                       isActingSave={Boolean(saveLocks[p.id])}
                       onToggleLike={() => handleToggleLike(p.id)}

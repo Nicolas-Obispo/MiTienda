@@ -30,6 +30,8 @@ import {
 import { actualizarPerfilUsuario, getMe, useAuth } from "@features/auth";
 import { cambiarModoUsuario } from "@features/auth/services/usuarioService";
 import { useQueryClient } from "@tanstack/react-query";
+import EstadoHorarioBadge from "@features/availability/components/EstadoHorarioBadge";
+import HorariosAtencionEditor from "@features/availability/components/HorariosAtencionEditor";
 
 import {
   crearComercio,
@@ -389,6 +391,7 @@ export default function ProfilePage() {
 
   const [isCreatingComercio, setIsCreatingComercio] = useState(false);
   const [isActingComercioById, setIsActingComercioById] = useState({});
+  const [horariosEditorComercio, setHorariosEditorComercio] = useState(null);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showActivarEspacioInfo, setShowActivarEspacioInfo] = useState(false);
@@ -422,6 +425,7 @@ export default function ProfilePage() {
     setEditingComercioId(null);
     setCreateErrorMessage("");
     setPortadaErrorMessage("");
+    setHorariosEditorComercio(null);
     setCreateForm({
       nombre: "",
       descripcion: "",
@@ -444,6 +448,7 @@ export default function ProfilePage() {
 
     setCreateErrorMessage("");
     setPortadaErrorMessage("");
+    setHorariosEditorComercio(null);
     setEditingComercioId(comercio.id);
     setShowCreateForm(true);
 
@@ -462,6 +467,18 @@ export default function ProfilePage() {
       latitud: comercio.latitud ?? null,
       longitud: comercio.longitud ?? null,
     });
+  }
+
+  function abrirEditorHorariosDesdeFormulario() {
+    if (!editingComercioId) return;
+
+    const comercioEditando = misComercios.find(
+      (comercio) => Number(comercio.id) === Number(editingComercioId)
+    );
+
+    if (!comercioEditando) return;
+
+    setHorariosEditorComercio(comercioEditando);
   }
 
   async function manejarLogout() {
@@ -1323,7 +1340,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <div>
+                  <div className={horariosEditorComercio ? "hidden" : undefined}>
                     <label className="text-xs text-gray-400">
                       Ubicación del espacio
                     </label>
@@ -1349,6 +1366,29 @@ export default function ProfilePage() {
                       Buscá la dirección, mové el pin y guardá la ubicación exacta.
                     </p>
                   </div>
+
+                  {editingComercioId ? (
+                    <div className="rounded-xl bg-gray-900/50 p-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-gray-300">
+                            Horarios de atención
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Administrá las franjas semanales de este espacio.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={abrirEditorHorariosDesdeFormulario}
+                          className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-200 transition hover:bg-gray-800 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600"
+                        >
+                          Horarios de atención
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div className="flex items-center gap-3 pt-2">
                     <button
@@ -1431,6 +1471,12 @@ export default function ProfilePage() {
                             <p className="truncate text-xs font-semibold text-white">
                               {c.nombre}
                             </p>
+
+                            <EstadoHorarioBadge
+                              horarioAtencion={c.horario_atencion}
+                              compact
+                              className="mt-1"
+                            />
                           </div>
 
                           {/* BADGE ESTADO */}
@@ -1471,6 +1517,13 @@ export default function ProfilePage() {
                     })}
                 </div>
               )}
+
+            {horariosEditorComercio ? (
+              <HorariosAtencionEditor
+                comercio={horariosEditorComercio}
+                onClose={() => setHorariosEditorComercio(null)}
+              />
+            ) : null}
           </section>
         )}
 

@@ -4,6 +4,8 @@ El Roadmap representa el plan oficial de construccion del buscador.
 
 Debe mantenerse actualizado durante todo el proyecto.
 
+Cualquier evolución del roadmap debe seguir el procedimiento formal definido en `00_GOVERNANCE.md`.
+
 No documenta conversaciones.
 
 No documenta hipotesis.
@@ -175,9 +177,29 @@ Fuera de alcance:
 
 ---
 
-### ☐ ETAPA 87
+### ☑ ETAPA 87
 
 Sistema de Disponibilidad.
+
+Estado:
+
+Cerrada.
+
+P0
+
+- ☑ Auditar disponibilidad, frontend, UX y permisos.
+- ☑ Definir estado público del espacio: `Activo` / `En pausa`.
+- ☑ Definir estado horario: `Abierto` / `Cerrado` / `No hay horarios declarados`.
+- ☑ Definir que horarios declarados son fuente de verdad.
+- ☑ Definir que el estado horario no excluye de búsqueda.
+- ☑ Diseñar implementación técnica del Sistema de Disponibilidad.
+- ☑ Implementar persistencia y contratos de horarios habituales.
+- ☑ Implementar servicio de lectura, reemplazo, solapamientos y estado horario.
+- ☑ Implementar endpoints `GET` y `PUT` bajo `/comercios/{comercio_id}/horarios`.
+- ☑ Integrar estado horario en detalle, `/comercios/mis` y `/comercios/activos`.
+- ☑ Implementar visualización frontend y editor del propietario.
+- ☑ Validar schema físico contra `Base.metadata` y MySQL.
+- ☑ Cerrar técnicamente ETAPA 87.
 
 ### ☐ ETAPA 88
 
@@ -230,3 +252,15 @@ Observabilidad.
 ### ☐ ETAPA 100
 
 Backend Universal.
+
+### ☐ ETAPA 101
+
+Unificación del Design System.
+
+Objetivo:
+
+Auditar y unificar la interfaz visual de FeedGo sin modificar lógica de negocio, contratos, backend ni funcionalidades.
+
+Estado:
+
+Pendiente.

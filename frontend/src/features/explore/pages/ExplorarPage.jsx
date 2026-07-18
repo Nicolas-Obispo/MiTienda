@@ -29,9 +29,37 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useSearchSuggestions } from "@features/search/hooks/useSearchSuggestions";
 import { getMediaUrlFromAny } from "@shared";
+import EstadoHorarioBadge from "@features/availability/components/EstadoHorarioBadge";
 
 const HISTORIAL_BUSQUEDA_KEY = "miplaza_explorar_historial_busqueda";
 const HISTORIAL_BUSQUEDA_MAX = 5;
+
+function normalizarBusqueda(valor) {
+  if (!valor) return null;
+  const t = valor.trim();
+  return t ? t : null;
+}
+
+function usarModoIA(q, modoExplorar) {
+  return Boolean(q) && modoExplorar === "espacios";
+}
+
+function leerHistorialBusqueda() {
+  try {
+    const historial = JSON.parse(
+      localStorage.getItem(HISTORIAL_BUSQUEDA_KEY) || "[]"
+    );
+
+    if (!Array.isArray(historial)) return [];
+
+    return historial
+      .map((item) => String(item || "").trim())
+      .filter(Boolean)
+      .slice(0, HISTORIAL_BUSQUEDA_MAX);
+  } catch {
+    return [];
+  }
+}
 
 export default function ExplorarPage() {
   const [busqueda, setBusqueda] = useState("");
@@ -89,12 +117,12 @@ export default function ExplorarPage() {
     );
   }, []);
 
-  const busquedaNormalizada = _normalizarBusqueda(busqueda);
-  const usarSmartSemantic = _usarModoIA(busquedaNormalizada);
+  const busquedaNormalizada = normalizarBusqueda(busqueda);
+  const usarSmartSemantic = usarModoIA(busquedaNormalizada, modoExplorar);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setBusquedaSugerenciasDebounced(_normalizarBusqueda(busqueda));
+      setBusquedaSugerenciasDebounced(normalizarBusqueda(busqueda));
     }, 300);
 
     return () => clearTimeout(timer);
@@ -110,7 +138,7 @@ export default function ExplorarPage() {
 
   const espaciosQuery = useExplorarEspacios({
     q: busquedaNormalizada,
-    smart: usarSmartSemantic ? false : _usarModoIA(busquedaNormalizada),
+    smart: usarSmartSemantic ? false : usarModoIA(busquedaNormalizada, modoExplorar),
     smart_semantic: usarSmartSemantic,
     lat: ubicacion.lista ? ubicacion.lat : null,
     lng: ubicacion.lista ? ubicacion.lng : null,
@@ -145,40 +173,13 @@ export default function ExplorarPage() {
 
   const navigate = useNavigate();
 
-  function _normalizarBusqueda(valor) {
-    if (!valor) return null;
-    const t = valor.trim();
-    return t ? t : null;
-  }
-
-  function _usarModoIA(q) {
-    return Boolean(q) && modoExplorar === "espacios";
-  }
-
   function cambiarModoExplorar(nuevoModo) {
     setModoExplorar(nuevoModo);
     localStorage.setItem("miplaza_explorar_modo", nuevoModo);
   }
 
-  function leerHistorialBusqueda() {
-    try {
-      const historial = JSON.parse(
-        localStorage.getItem(HISTORIAL_BUSQUEDA_KEY) || "[]"
-      );
-
-      if (!Array.isArray(historial)) return [];
-
-      return historial
-        .map((item) => String(item || "").trim())
-        .filter(Boolean)
-        .slice(0, HISTORIAL_BUSQUEDA_MAX);
-    } catch {
-      return [];
-    }
-  }
-
   function guardarEnHistorialBusqueda(valor) {
-    const q = _normalizarBusqueda(valor);
+    const q = normalizarBusqueda(valor);
     if (!q) return;
 
     const historialActualizado = [
@@ -196,7 +197,7 @@ export default function ExplorarPage() {
   }
 
   function prefetchBusquedaEspacios(valor) {
-    const q = _normalizarBusqueda(valor);
+    const q = normalizarBusqueda(valor);
     if (!q) return;
 
     const paramsBusqueda = {
@@ -215,7 +216,7 @@ export default function ExplorarPage() {
   }
 
   function confirmarBusqueda(valor) {
-    const q = _normalizarBusqueda(valor);
+    const q = normalizarBusqueda(valor);
     if (!q) return;
 
     setBusqueda(q);
@@ -232,24 +233,6 @@ export default function ExplorarPage() {
     if (event.key === "Escape") {
       setBuscadorActivo(false);
     }
-  }
-
-  function publicacionCoincideConBusqueda(publicacion, q) {
-    if (!q) return true;
-
-    const texto = [
-      publicacion?.titulo,
-      publicacion?.descripcion,
-      publicacion?.comercio_nombre,
-      publicacion?.nombre_comercio,
-      publicacion?.comercio?.nombre,
-      publicacion?.comercio?.nombre_comercio,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    return texto.includes(q.toLowerCase());
   }
 
   function getNombrePublicacion(publicacion) {
@@ -291,7 +274,7 @@ export default function ExplorarPage() {
   }
 
   const qUI = busquedaNormalizada;
-  const modoIAActivo = _usarModoIA(qUI);
+  const modoIAActivo = usarModoIA(qUI, modoExplorar);
 
   const publicacionesFiltradas = publicacionesQueryData;
 
@@ -489,6 +472,12 @@ export default function ExplorarPage() {
                       {ubicacion.error}
                     </p>
                   )}
+
+                  <EstadoHorarioBadge
+                    horarioAtencion={c.horario_atencion}
+                    compact
+                    className="mt-1"
+                  />
                 </div>
               </div>
             );

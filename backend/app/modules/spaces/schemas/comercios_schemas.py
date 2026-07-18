@@ -10,6 +10,10 @@ No contienen lógica de negocio.
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 from typing import Optional
 
+from app.modules.availability.schemas.horarios_atencion_schemas import (
+    EstadoHorarioResponse,
+)
+
 
 # ============================================================
 # Base
@@ -110,6 +114,7 @@ class ComercioResponse(ComercioBase):
     rubro_nombre: Optional[str] = None
     especialidad_ids: list[int] = Field(default_factory=list)
     distancia_km: Optional[float] = None
+    horario_atencion: Optional[EstadoHorarioResponse] = None
 
     model_config = {
         "from_attributes": True

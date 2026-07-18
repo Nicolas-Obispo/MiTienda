@@ -41,6 +41,7 @@ from app.modules.spaces.services.comercios_services import (
     obtener_comercio_por_id,
     actualizar_comercio,
     desactivar_comercio,
+    adjuntar_horario_atencion_comercios,
     RubroInvalidoError,
 )
 from app.modules.discovery.services.taxonomy_assignment_services import (
@@ -184,7 +185,8 @@ def listar_mis_comercios_endpoint(
         .all()
     )
 
-    return adjuntar_especialidad_ids_comercios(db, comercios)
+    comercios = adjuntar_especialidad_ids_comercios(db, comercios)
+    return adjuntar_horario_atencion_comercios(db, comercios)
 
 
 # ============================================================

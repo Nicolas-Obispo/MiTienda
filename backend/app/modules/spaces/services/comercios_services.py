@@ -25,6 +25,7 @@ import json
 import math
 
 from sqlalchemy import case, or_
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session, selectinload
 
 from app.modules.ai.models.comercios_embeddings_models import ComercioEmbedding
@@ -50,10 +51,42 @@ from app.modules.search.services.search_event_services import (
     build_search_event_from_comercios_activos,
     registrar_search_event_best_effort,
 )
+from app.modules.availability.services.horarios_atencion_services import (
+    calcular_estados_horarios_lote,
+)
 
 
 class RubroInvalidoError(ValueError):
     pass
+
+
+def adjuntar_horario_atencion_comercios(
+    db: Session,
+    comercios: list[Comercio],
+) -> list[Comercio]:
+    comercio_ids = [comercio.id for comercio in comercios]
+    if not comercio_ids:
+        return comercios
+
+    try:
+        estados_por_comercio = calcular_estados_horarios_lote(db, comercio_ids)
+    except (OperationalError, ProgrammingError):
+        db.rollback()
+        for comercio in comercios:
+            comercio.horario_atencion = None
+        return comercios
+
+    for comercio in comercios:
+        comercio.horario_atencion = estados_por_comercio.get(comercio.id)
+
+    return comercios
+
+
+def adjuntar_horario_atencion_comercio(
+    db: Session,
+    comercio: Comercio,
+) -> Comercio:
+    return adjuntar_horario_atencion_comercios(db, [comercio])[0]
 
 
 # ============================================================
@@ -622,6 +655,7 @@ def obtener_comercio_por_id(
             db,
             comercio.id,
         )
+        adjuntar_horario_atencion_comercio(db, comercio)
 
     return comercio
 
@@ -647,7 +681,8 @@ def listar_comercios(
     if rubro_id:
         query = query.filter(Comercio.rubro_id == rubro_id)
 
-    return query.all()
+    comercios = query.all()
+    return adjuntar_horario_atencion_comercios(db, comercios)
 
 
 # ============================================================
@@ -1093,7 +1128,7 @@ def listar_comercios_activos(
                 "scored_count": len(scored),
             },
         )
-        return pagina
+        return adjuntar_horario_atencion_comercios(db, pagina)
 
     # ============================================================
     # SMART MODE (ETAPA 50)
@@ -1226,7 +1261,7 @@ def listar_comercios_activos(
                 "scored_count": len(scored),
             },
         )
-        return pagina
+        return adjuntar_horario_atencion_comercios(db, pagina)
 
     # ============================================================
     # CLÁSICO (ETAPA 48/49) - comportamiento existente
@@ -1286,7 +1321,7 @@ def listar_comercios_activos(
             "candidate_count": len(comercios),
         },
     )
-    return comercios
+    return adjuntar_horario_atencion_comercios(db, comercios)
 
 
 # ============================================================

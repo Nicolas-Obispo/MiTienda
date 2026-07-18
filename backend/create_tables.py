@@ -19,6 +19,11 @@ from app.modules.users.models.tokens_models import TokenRevocado
 # SPACES
 from app.modules.spaces.models.comercios_models import Comercio
 
+# AVAILABILITY
+from app.modules.availability.models.horarios_atencion_models import (
+    ComercioHorarioAtencion,
+)
+
 # PRODUCTS
 from app.modules.products.models.productos_models import Producto
 from app.modules.products.models.rubros_models import Rubro

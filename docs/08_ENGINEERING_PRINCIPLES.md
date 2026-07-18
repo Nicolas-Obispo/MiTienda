@@ -109,6 +109,19 @@ Cada dato debe tener un único propietario.
 
 Evitar múltiples fuentes oficiales para la misma información.
 
+Las tablas derivadas, caches, indices, embeddings, snapshots y eventos nunca
+pueden transformarse en fuente oficial del dominio.
+
+La documentacion tecnica de cada capacidad debe declarar explicitamente que
+tablas son:
+
+- fuente de verdad;
+- derivadas;
+- analiticas;
+- indices;
+- historicas;
+- cache.
+
 ## 9. Todo derivado debe ser regenerable
 
 Aplica para:
@@ -387,3 +400,98 @@ El Sistema de Gobierno define el comportamiento esperado de cualquier IA.
 Evitar duplicar reglas en prompts y documentación.
 
 Toda evolución del proceso debe incorporarse al Sistema de Gobierno.
+
+## 36. Prompts sin duplicación documental
+
+Los prompts de continuidad deben ser instrucciones operativas breves.
+
+No deben duplicar documentación oficial.
+
+No deben convertirse en una segunda fuente de verdad.
+
+El contexto, la arquitectura, el roadmap y las decisiones permanentes deben reconstruirse desde `/docs`.
+
+## 37. Gobierno del Modelo de Datos
+
+Antes de crear cualquier tabla nueva debe realizarse una auditoria del modelo
+de datos existente.
+
+La auditoria debe demostrar obligatoriamente:
+
+- que no existe una tabla propietaria natural del dato;
+- que agregar columnas o relaciones a una tabla existente no seria una solucion
+  mas correcta;
+- que la nueva tabla tendra una unica responsabilidad;
+- que la nueva tabla no generara una segunda fuente de verdad;
+- que la incorporacion esta alineada con la arquitectura enterprise de FeedGo.
+
+Crear una tabla nueva sin esta evidencia queda fuera del flujo oficial de
+trabajo.
+
+## 38. Compatibilidad hacia atras
+
+Toda nueva funcionalidad debe auditar su impacto sobre funcionalidades
+existentes antes de ser aprobada o cerrada.
+
+La auditoria debe verificar:
+
+- que endpoints existentes se modifican;
+- que servicios pasan a depender del nuevo modulo;
+- que tablas nuevas se vuelven obligatorias;
+- que contratos backend/frontend cambian;
+- que pantallas existentes pueden verse afectadas.
+
+No puede cerrarse una etapa sin demostrar que la implementacion nueva no rompio
+funcionalidades anteriores.
+
+## 39. Validacion obligatoria de schema
+
+Antes de cerrar una etapa que agregue o use tablas nuevas debe verificarse:
+
+- `Base.metadata`;
+- tablas reales de MySQL;
+- diferencias entre metadata y base fisica;
+- imports necesarios para registrar modelos en metadata;
+- ausencia de tablas usadas por runtime que no existan fisicamente.
+
+Si existe una diferencia que afecte runtime, la etapa no puede cerrarse.
+
+## 40. Clasificacion oficial de tablas
+
+La documentacion tecnica debe clasificar explicitamente cada tabla relevante
+como:
+
+- fuente de verdad;
+- relacion;
+- configuracion;
+- indice;
+- IA;
+- evento;
+- historica;
+- cache;
+- analitica.
+
+La clasificacion no cambia el modelo por si misma; define propiedad,
+responsabilidad y riesgo de cada dato.
+
+## 41. Design System oficial
+
+Toda nueva pantalla, componente o flujo visible debe respetar el Design System
+oficial de FeedGo.
+
+Los botones secundarios deben mantener un estilo uniforme:
+
+- sin borde, capsula ni marco permanente;
+- icono, cuando corresponda, y texto como estado normal;
+- fondo suave o resaltado solo en hover, focus o interaccion;
+- area de click comoda y accesible;
+- transiciones suaves y consistentes.
+
+Esta regla aplica a acciones de navegacion, perfil, busqueda, publicaciones,
+historias, comercios y futuras funcionalidades.
+
+Los botones primarios pueden conservar una jerarquia visual distinta cuando el
+producto lo justifique.
+
+No deben incorporarse nuevos estilos de botones sin justificacion
+arquitectonica o de producto.

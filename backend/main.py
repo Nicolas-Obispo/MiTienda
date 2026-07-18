@@ -14,6 +14,9 @@ from app.modules.products.routes.secciones_routers import router as secciones_ro
 from app.modules.search.routes.sugerencias_busqueda_routers import (
     router as sugerencias_busqueda_router,
 )
+from app.modules.availability.routes.horarios_atencion_routers import (
+    router as horarios_atencion_router,
+)
 
 from app.modules.social.routes.publicaciones_guardadas_routers import router as publicaciones_guardadas_router
 from app.modules.posts.routes.publicaciones_routers import router as publicaciones_router
@@ -95,6 +98,7 @@ app.include_router(comercios_router)
 app.include_router(rubros_routers)
 app.include_router(secciones_router)
 app.include_router(sugerencias_busqueda_router)
+app.include_router(horarios_atencion_router)
 
 # IMPORTANTE: guardadas antes que publicaciones
 app.include_router(publicaciones_guardadas_router)

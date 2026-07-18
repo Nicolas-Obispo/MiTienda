@@ -36,7 +36,9 @@ Cuando el usuario solicite un Prompt Maestro para continuar el proyecto, la IA d
 
 Todo Prompt Maestro deberá construirse siguiendo el Procedimiento Universal de Reconstrucción del Proyecto.
 
-El Prompt Maestro guía el trabajo, resume el estado y orienta la etapa actual.
+El Prompt Maestro es una instrucción operativa de arranque.
+
+El Prompt Maestro guía el inicio del trabajo, pero no define arquitectura, roadmap ni estado detallado del proyecto.
 
 El Prompt Maestro nunca reemplaza la lectura directa de la documentación oficial.
 
@@ -55,19 +57,36 @@ Nunca generar un Prompt Maestro únicamente con documentos de gobierno.
 
 Siempre incorporar también la documentación técnica vigente.
 
-El Prompt Maestro deberá incluir como mínimo:
+El Prompt Maestro debe ser breve.
 
-- estado actual del proyecto
-- etapa actual
-- etapas completadas
-- objetivos pendientes
-- arquitectura vigente
-- reglas de gobierno
-- restricciones permanentes
-- próximos pasos del roadmap
-- responsabilidades de los módulos involucrados
+Extensión recomendada:
+
+- entre 40 y 80 líneas.
+
+El Prompt Maestro deberá incluir únicamente:
+
+- procedimiento de reconstrucción;
+- prevalencia de `/docs`;
+- tarea inicial;
+- restricciones operativas;
+- obligación de reportar contradicciones.
+
+El Prompt Maestro no debe:
+
+- definir arquitectura;
+- definir roadmap;
+- definir el estado detallado del proyecto;
+- copiar decisiones permanentes;
+- resumir extensamente etapas cerradas;
+- duplicar documentación oficial.
 
 El Prompt Maestro no deberá depender del historial conversacional.
+
+`04_CURRENT_STAGE` define la etapa vigente.
+
+`05_SEARCH_ROADMAP` define la posición y secuencia de la etapa.
+
+Cualquier contradicción entre un prompt y la documentación oficial se resuelve a favor de `/docs`.
 
 ## 5. Inicio de un nuevo chat
 
