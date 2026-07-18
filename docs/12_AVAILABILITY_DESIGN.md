@@ -1,8 +1,8 @@
 # Availability Design
 
-Categoría:
+Categoria:
 
-Documento Técnico.
+Documento Tecnico.
 
 Forma parte del Sistema de Gobierno:
 
@@ -14,233 +14,414 @@ Sistema de Disponibilidad.
 
 ## Objetivo
 
-Este documento registra las decisiones de producto y arquitectura aprobadas para la ETAPA 87.
+Este documento describe el diseno tecnico vigente del Sistema de Disponibilidad de FeedGo y su estado implementado luego del cierre de ETAPA 87.
 
-No contiene implementación.
+No reemplaza a `04_CURRENT_STAGE.md`.
 
-No contiene tablas.
+No reemplaza al roadmap.
 
-No contiene modelos físicos.
+No reemplaza al CHANGELOG.
 
-No contiene endpoints.
-
-No contiene componentes frontend.
+No es un historial de cambios.
 
 ## Estado
 
-En diseño.
+ETAPA 87 cerrada.
 
-## Estado público del espacio
+El Sistema de Disponibilidad esta implementado como capacidad informativa para horarios habituales semanales de comercios.
 
-El lenguaje oficial del estado público del espacio es exclusivamente:
+La etapa actual siguiente es ETAPA 88 - Agenda y Reservas, registrada como pendiente en el roadmap.
+
+## Responsabilidad del sistema
+
+Availability modela unicamente horarios habituales semanales de atencion del comercio.
+
+El sistema permite:
+
+- declarar franjas horarias por dia de la semana;
+- declarar varias franjas en un mismo dia;
+- eliminar todos los horarios mediante una lista vacia;
+- calcular si el comercio esta `abierto`, `cerrado` o `sin_horarios`;
+- generar texto contextual listo para mostrar;
+- exponer el estado horario como dato informativo en respuestas existentes.
+
+El propietario declara horarios.
+
+El backend calcula el estado.
+
+El frontend representa el resultado.
+
+## Estado publico del espacio
+
+El lenguaje oficial del estado publico del espacio es exclusivamente:
 
 - `Activo`
 - `En pausa`
 
-### Activo
-
-`Activo` significa que el espacio está operativo y publicado en FeedGo.
+`Activo` significa que el espacio esta publicado en FeedGo.
 
 Un espacio `Activo`:
 
-- existe públicamente;
-- puede aparecer en búsqueda;
+- existe publicamente;
+- puede aparecer en busqueda;
 - puede aparecer en Explorar;
-- puede accederse desde su perfil público;
-- continúa siendo público independientemente de si está `Abierto` o `Cerrado` por horario.
+- puede accederse desde su perfil publico;
+- continua siendo publico aunque este `cerrado` por horario.
 
-### En pausa
-
-`En pausa` significa que el propietario decidió dejar de publicar temporalmente el espacio.
+`En pausa` significa que el propietario decidio dejar de publicar temporalmente el espacio.
 
 Un espacio `En pausa`:
 
-- deja de aparecer públicamente;
-- no debe aparecer en búsqueda;
+- deja de aparecer publicamente;
+- no debe aparecer en busqueda;
 - no debe aparecer en Explorar;
 - no debe estar disponible para usuarios externos;
-- puede seguir siendo visible para su propietario dentro de la administración o perfil privado.
+- puede seguir siendo visible para su propietario dentro de la administracion o perfil privado.
 
-`Activo` y `En pausa` representan publicación y visibilidad del espacio.
+`Activo` y `En pausa` representan publicacion y visibilidad.
 
-No representan horarios de atención.
+No representan horarios de atencion.
 
-No representan si el establecimiento está `Abierto` o `Cerrado` en ese momento.
+No representan si el establecimiento esta abierto o cerrado en ese momento.
 
-## Horarios de atención
+## Fuente de verdad
 
-El propietario debe poder decidir si desea declarar horarios de atención.
-
-Si decide declararlos, podrá cargar los días y rangos horarios habituales en los que atiende al público.
-
-Los horarios declarados son la fuente de verdad.
-
-El propietario no selecciona manualmente `Abierto` o `Cerrado`.
-
-FeedGo determina automáticamente el estado comparando:
-
-- fecha y hora actuales;
-- zona horaria correspondiente;
-- horarios declarados por el espacio.
-
-## Fuente de verdad y dato derivado
-
-### Fuente de verdad
-
-Los horarios de atención declarados por el propietario son la fuente de verdad.
-
-### Dato derivado
+Los horarios de atencion declarados por el propietario son la fuente de verdad del Sistema de Disponibilidad.
 
 El estado horario calculado es un dato derivado.
 
-Los valores visibles del estado horario son exclusivamente:
+Reglas:
 
-- `Abierto`
-- `Cerrado`
-- `No hay horarios declarados`
+- los horarios se persisten;
+- el backend calcula el estado horario;
+- el frontend no calcula horarios, proximas aperturas ni textos contextuales;
+- la cache puede conservar temporalmente el resultado calculado;
+- la cache y el estado calculado nunca reemplazan a los horarios declarados como fuente de verdad;
+- pausar un comercio no elimina ni modifica sus horarios;
+- reactivar un comercio reutiliza los horarios existentes.
+
+## Modelo de datos implementado
+
+La tabla implementada es:
+
+```text
+comercios_horarios_atencion
+```
+
+Clasificacion:
+
+- fuente de verdad;
+- configuracion operativa declarada por el propietario;
+- no es cache;
+- no es indice;
+- no es analitica;
+- no es historica;
+- no es IA.
+
+Responsabilidad:
+
+- persistir franjas semanales habituales de atencion de un comercio.
+
+Campos principales:
+
+- `id`;
+- `comercio_id`;
+- `dia_semana`;
+- `hora_apertura`;
+- `hora_cierre`;
+- timestamps segun la convencion real del backend.
+
+Reglas fisicas y de dominio:
+
+- `comercio_id` referencia a `comercios.id`;
+- la eliminacion del comercio elimina sus horarios en cascada;
+- `dia_semana` usa `0 = lunes` hasta `6 = domingo`;
+- `hora_apertura` debe ser menor que `hora_cierre`;
+- no se permiten cruces de medianoche;
+- pueden existir varias franjas por comercio y dia;
+- ausencia de filas significa que no hay horarios declarados;
+- los solapamientos se validan en el servicio, no mediante una relacion ORM innecesaria en `Comercio`.
+
+La tabla esta registrada en el mecanismo real de creacion de tablas del proyecto y fue validada contra `Base.metadata` y MySQL durante el cierre tecnico de ETAPA 87.
+
+## Arquitectura backend implementada
+
+El modulo backend vive en:
+
+```text
+backend/app/modules/availability/
+```
+
+Estructura funcional:
+
+- modelos ORM para persistencia de franjas;
+- schemas Pydantic para request y response;
+- servicio de lectura, reemplazo, validacion y calculo;
+- router FastAPI para los endpoints oficiales.
+
+El backend es propietario de:
+
+- validacion de reglas de dominio;
+- rechazo de solapamientos;
+- rechazo de cruces de medianoche;
+- reemplazo completo de configuracion;
+- calculo del estado horario;
+- calculo de cierre actual y proxima apertura;
+- generacion del texto contextual listo para mostrar.
+
+La zona horaria oficial inicial es:
+
+```text
+America/Argentina/Buenos_Aires
+```
+
+La implementacion usa `ZoneInfo`.
+
+El fallback UTC-03:00 existe solo como proteccion controlada cuando la infraestructura de zona horaria no esta disponible.
+
+## Estados horarios
+
+El contrato tecnico usa valores internos en minuscula:
+
+- `abierto`;
+- `cerrado`;
+- `sin_horarios`.
+
+Los textos publicos son generados por backend.
+
+Ejemplos:
+
+- `Abierto · Hasta las 20:00`;
+- `Cerrado · Abre a las 16:00`;
+- `Cerrado · Abre mañana a las 08:00`;
+- `No hay horarios declarados`.
+
+El frontend debe mostrar el texto recibido.
+
+No debe reconstruirlo.
+
+## Endpoints implementados
+
+Los endpoints oficiales son:
+
+```text
+GET /comercios/{comercio_id}/horarios
+PUT /comercios/{comercio_id}/horarios
+```
+
+No existen endpoints adicionales para esta capacidad.
+
+No forman parte del diseno de ETAPA 87:
+
+- `DELETE`;
+- `PATCH`;
+- `/availability`;
+- rutas administrativas nuevas;
+- rutas por agenda o reservas.
+
+### GET
+
+`GET /comercios/{comercio_id}/horarios` devuelve la configuracion completa de horarios y el estado calculado.
 
 Reglas:
 
-- Los horarios se persisten.
-- El backend calcula el estado horario.
-- El frontend solamente consume y representa el resultado.
-- La cache puede conservar temporalmente el resultado calculado.
-- La cache y el estado calculado nunca reemplazan los horarios como fuente de verdad.
+- responde para comercios activos publicos;
+- no expone publicamente comercios en pausa;
+- permite al propietario consultar sus comercios en pausa cuando existe autenticacion aplicable;
+- devuelve `404` cuando el comercio no existe;
+- devuelve `404` para consulta publica de comercio en pausa.
 
-## Estado horario
+### PUT
 
-El lenguaje visible del estado horario es exclusivamente:
+`PUT /comercios/{comercio_id}/horarios` reemplaza la configuracion completa.
 
-- `Abierto`
-- `Cerrado`
-- `No hay horarios declarados`
+Reglas:
 
-### Abierto
+- requiere autenticacion;
+- requiere que el usuario sea propietario del comercio;
+- acepta multiples franjas;
+- acepta `franjas=[]` para eliminar todos los horarios declarados;
+- no modifica `Comercio.activo`;
+- devuelve la configuracion persistida y el estado calculado posterior al guardado.
 
-`Abierto` se muestra cuando la fecha y hora actuales se encuentran dentro de alguno de los horarios declarados.
+## Contrato de respuesta
 
-Debe mostrarse en verde.
+El contrato envolvente de horarios contiene:
 
-También debe mostrarse el horario correspondiente escrito, incluyendo las horas.
+```text
+comercio_id
+zona_horaria
+franjas
+estado_horario
+```
 
-Ejemplo conceptual:
+Cada franja contiene:
 
-`Abierto · 08:00 a 12:00`
+```text
+id
+dia_semana
+hora_apertura
+hora_cierre
+```
 
-### Cerrado
+El bloque `estado_horario` contiene:
 
-`Cerrado` se muestra cuando existen horarios declarados, pero la fecha y hora actuales se encuentran fuera de ellos.
+```text
+estado
+texto
+zona_horaria
+evaluado_en
+cierre_actual
+proxima_apertura
+```
 
-Debe mostrarse en rojo.
+Los campos temporales permiten `null` cuando no aplican.
 
-También debe mostrarse información horaria escrita que ayude a interpretar el estado, sin inventar información.
+Los datetimes devueltos por el backend son conscientes de zona horaria.
 
-Ejemplo conceptual:
+## Integracion backend con Spaces
 
-`Cerrado · Abre a las 16:00`
+Availability se integra como enriquecimiento informativo en respuestas historicas de Spaces.
 
-La redacción exacta será definida durante el diseño de UX, pero siempre deberá incluir información horaria cuando pueda calcularse correctamente.
+Las respuestas afectadas son:
 
-### No hay horarios declarados
+- detalle publico de comercio;
+- `/comercios/mis`;
+- `/comercios/activos`.
 
-`No hay horarios declarados` se muestra cuando el propietario no configuró horarios.
+El campo agregado es:
 
-Debe mostrarse en gris.
+```text
+horario_atencion
+```
 
-No debe interpretarse como `Abierto` ni como `Cerrado`.
+Reglas de integracion:
 
-## Ubicación visual
+- el campo es opcional;
+- no cambia el significado de `activo`;
+- no filtra resultados;
+- no modifica ranking;
+- no altera score;
+- no altera el orden de busqueda;
+- no excluye comercios cerrados;
+- no excluye comercios sin horarios;
+- en listados se calcula en lote para evitar N+1;
+- el calculo batch se aplica sobre los comercios finales de la respuesta.
 
-En el perfil del espacio ya existe un sector donde se muestra:
+Compatibilidad:
 
-- burbuja verde para `Activo`;
-- burbuja roja para `En pausa`, visible para el propietario.
+- los endpoints historicos de Spaces no deben romperse si Availability falla temporalmente por infraestructura;
+- en ese caso, el enriquecimiento puede degradar a `horario_atencion = null`;
+- los endpoints propios de Availability conservan sus errores normales;
+- no se devuelve `sin_horarios` cuando el problema real es infraestructura.
 
-En ese mismo sector deberá incorporarse, como información independiente, el estado calculado según los horarios:
+## Integracion frontend implementada
 
-- verde: `Abierto` y horario escrito;
-- rojo: `Cerrado` e información horaria escrita;
-- gris: `No hay horarios declarados`.
+El frontend consume el estado horario entregado por backend.
 
-Los dos indicadores deben convivir sin mezclarse:
+Componentes y flujos implementados:
 
-- estado de publicación: `Activo` / `En pausa`;
-- estado horario: `Abierto` / `Cerrado` / `No hay horarios declarados`.
+- badge reutilizable de estado horario;
+- visualizacion en perfil publico del comercio;
+- visualizacion en vista privada del propietario;
+- visualizacion informativa en Explorar cuando existe espacio visual adecuado;
+- editor privado de horarios semanales;
+- acceso al editor desde el flujo de edicion del comercio.
 
-## Comportamiento en búsqueda
+El editor:
 
-Durante ETAPA 87, el estado horario es únicamente información contextual para el usuario.
+- carga la configuracion completa mediante `GET /comercios/{comercio_id}/horarios`;
+- guarda mediante `PUT /comercios/{comercio_id}/horarios`;
+- permite varias franjas por dia;
+- permite eliminar franjas;
+- permite guardar `franjas=[]`;
+- usa identidad local estable para franjas nuevas durante la edicion;
+- no envia campos auxiliares frontend al backend;
+- mantiene validaciones UX sin reemplazar la autoridad del backend;
+- oculta temporalmente el mapa de ubicacion mientras esta abierto para evitar superposicion visual.
 
-Durante ETAPA 87, el estado horario no participa en:
+El frontend no debe:
+
+- usar `Date` para calcular disponibilidad;
+- usar la zona horaria del navegador;
+- buscar proxima apertura;
+- interpretar dias;
+- construir textos como `abre mañana`;
+- decidir si un comercio esta abierto o cerrado.
+
+## Comportamiento en busqueda y Explorar
+
+Durante ETAPA 87, el estado horario es unicamente contextual.
+
+No participa en:
 
 - filtros;
 - ranking;
-- exclusión de resultados.
+- exclusion de resultados;
+- score;
+- reordenamiento.
 
-Esta decisión no constituye una restricción permanente del buscador.
+Un comercio `Activo` puede aparecer publicamente aunque este `cerrado` por horario.
 
-Una etapa futura podrá incorporar búsquedas específicas relacionadas con horarios sin contradecir esta decisión.
+Un comercio `En pausa` no debe aparecer publicamente aunque tenga horarios cargados.
 
-Un espacio `Activo` debe aparecer en la búsqueda aunque esté `Cerrado` por horario.
+Esta decision no impide que una etapa futura incorpore busquedas especificas relacionadas con horarios.
 
-El resultado puede mostrar:
+## Reglas oficiales de horarios
 
-- `Abierto`;
-- `Cerrado`;
-- `No hay horarios declarados`;
-- información horaria correspondiente.
+Reglas implementadas para ETAPA 87:
 
-Un espacio `En pausa` no debe aparecer públicamente, independientemente de los horarios que tenga guardados.
+- los horarios son semanales y habituales;
+- cada franja pertenece a un dia de la semana;
+- una franja no puede terminar al dia siguiente;
+- `hora_apertura` debe ser menor que `hora_cierre`;
+- los cruces de medianoche se rechazan explicitamente;
+- no se interpretan ni corrigen automaticamente cruces de medianoche;
+- las franjas contiguas estan permitidas;
+- las franjas solapadas se rechazan;
+- la semana se evalua circularmente de domingo a lunes;
+- la misma referencia temporal se usa para calculos batch;
+- no se consideran feriados ni excepciones.
 
-Regla:
+## Fuera de alcance de ETAPA 87
 
-```text
-Activo:
-puede aparecer públicamente, esté Abierto o Cerrado.
+No pertenecen al Sistema de Disponibilidad implementado en ETAPA 87:
 
-En pausa:
-no aparece públicamente.
-```
-
-## Separación de responsabilidades
-
-- `Activo` y `En pausa` pertenecen al estado de publicación del espacio.
-- Los horarios pertenecen al Sistema de Disponibilidad.
-- `Abierto` y `Cerrado` son resultados calculados.
-- El frontend no calcula ni inventa el estado horario por su cuenta.
-- El backend debe ser propietario de la regla de cálculo.
-- La cache puede conservar el resultado calculado, pero no reemplaza a los horarios como fuente de verdad.
-- El estado horario no modifica automáticamente `Activo` o `En pausa`.
-- Pasar un espacio de `Activo` a `En pausa` no elimina ni modifica sus horarios.
-- `En pausa` solamente cambia la publicación y visibilidad del espacio.
-- Al volver de `En pausa` a `Activo`, se reutilizan los horarios existentes.
-- El estado público del espacio y la configuración de horarios son dominios separados.
-
-## Alcance de ETAPA 87
-
-Pertenece a ETAPA 87:
-
-- activación opcional de horarios;
-- carga de horarios habituales;
-- cálculo de `Abierto` o `Cerrado`;
-- estado `No hay horarios declarados`;
-- exposición del horario escrito;
-- visualización en el perfil;
-- futura exposición informativa en resultados de búsqueda;
-- cache del resultado cuando corresponda.
-
-No pertenece a ETAPA 87:
-
-- turnos;
 - agenda;
 - reservas;
+- turnos;
 - cupos;
-- disponibilidad por profesional;
+- profesionales;
+- calendarios de profesionales;
 - disponibilidad por servicio;
-- stock;
+- horarios independientes por servicio;
+- productos;
 - inventario;
-- feriados automáticos;
-- excepciones avanzadas;
+- stock;
+- feriados;
+- excepciones por fecha;
+- cierres extraordinarios;
 - bloqueos de calendario;
-- cambios de ranking por estar `Abierto` o `Cerrado`;
-- exclusión de resultados por horario.
+- cruces de medianoche;
+- filtros por abierto o cerrado;
+- ranking por disponibilidad;
+- exclusion de resultados por horario.
+
+ETAPA 88 continua siendo Agenda y Reservas.
+
+## Deuda diferida
+
+La deuda visual no bloqueante queda diferida a ETAPA 101 - Unificacion del Design System.
+
+Incluye:
+
+- unificacion visual de botones secundarios restantes;
+- revision de alineaciones;
+- revision de espaciados;
+- consistencia de hover, focus y active;
+- consistencia de iconografia;
+- jerarquia visual;
+- formularios;
+- responsive.
+
+Esta deuda no modifica el contrato ni el alcance funcional del Sistema de Disponibilidad.
