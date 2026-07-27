@@ -495,3 +495,109 @@ producto lo justifique.
 
 No deben incorporarse nuevos estilos de botones sin justificacion
 arquitectonica o de producto.
+
+## 42. Modularidad sin sobreingenieria
+
+Cuando una capacidad tenga dominio propio, debe disenarse como modulo autonomo
+dentro del monorepo antes de acoplarla a una pantalla concreta.
+
+La modularidad debe permitir extraccion futura razonable, pero no implica crear
+microservicios, librerias externas ni repositorios separados sin evidencia.
+
+Reglas:
+
+- el nucleo del modulo no debe depender de pantallas, rutas ni navegacion
+  especifica;
+- las dependencias con otros dominios deben vivir en capas de integracion;
+- reutilizable no significa generico sin necesidad concreta;
+- evitar abstracciones prematuras;
+- conservar la arquitectura por capas de FeedGo.
+
+Para Agenda, el nucleo no debe depender de Profile, Spaces, Discovery, Search,
+Ranking, Posts, Stories, Availability ni componentes concretos de una pantalla.
+
+El nucleo de Agenda debe conservar independencia tecnica real:
+
+- `ElementoAgenda` debe depender de una entidad propia `ContextoAgendable`;
+- no debe tener FK directa a `comercios`, medicos, consultorios, sedes ni
+  recursos externos de una aplicacion host;
+- cada aplicacion host debe integrar sus recursos con `ContextoAgendable`
+  mediante una capa propia;
+- FeedGo debe vincular `Comercio` con `ContextoAgendable` fuera del nucleo de
+  Agenda;
+- Agenda no debe copiar nombre, rubro, direccion, propietario ni datos del
+  comercio;
+- las preferencias de interfaz de Agenda permanecen en frontend durante el MVP
+  salvo que exista una necesidad funcional demostrada para persistirlas en
+  backend.
+
+## 43. Mutaciones concurrentes sin sobrescritura silenciosa
+
+Cuando un modulo permita edicion desde mas de una sesion, usuario o dispositivo,
+las mutaciones sobre registros compartidos deben protegerse contra
+sobrescrituras silenciosas.
+
+La politica "ultima escritura gana" no es aceptable para datos del dominio si
+puede ocultar cambios de otro usuario.
+
+Agenda debe exigir `version_esperada` en toda mutacion concurrente de
+`ElementoAgenda` y debe rechazar la operacion si la version persistida cambio.
+
+El frontend debe informar el conflicto y refrescar datos, pero no debe
+sobrescribir automaticamente la version remota.
+
+## 44. Respaldo, historial y ciclo de vida no destructivo
+
+El diseno de dominios persistentes debe separar tres responsabilidades:
+
+- respaldo fisico y restauracion, responsabilidad de infraestructura;
+- historial funcional o auditoria de cambios, responsabilidad de dominio solo
+  cuando exista necesidad funcional demostrada;
+- ciclo de vida no destructivo, modelado mediante estados cuando alcance para
+  preservar informacion.
+
+Agenda debe contemplar uso simultaneo desde varios usuarios o equipos,
+prevencion de sobrescrituras silenciosas, concurrencia transaccional para
+futuras reservas y prevencion de doble reserva antes de confirmar.
+
+No debe copiar registros manualmente en cada operacion como sustituto de una
+estrategia real de backup o auditoria.
+
+## 45. Solapamientos tecnicos y politicas consumidoras
+
+Agenda puede detectar solapamientos tecnicos entre intervalos del mismo
+contexto agendable.
+
+Detectar no significa bloquear.
+
+Las politicas de bloqueo, advertencia confirmable, capacidad o doble reserva
+pertenecen al modulo consumidor, especialmente Reservas, o a la aplicacion host
+cuando corresponda.
+
+El frontend no debe inventar esas politicas.
+
+## 46. Notificaciones transversales desacopladas
+
+Las notificaciones deben modelarse como capacidad transversal cuando puedan ser
+consumidas por mas de un dominio.
+
+Reglas:
+
+- el dominio emisor produce sucesos, no mensajes de proveedor;
+- una notificacion local generada no es lo mismo que una comunicacion externa;
+- Agenda Core y Reservas no deben depender directamente de correo, WhatsApp,
+  push, plantillas, verificacion ni proveedores externos;
+- la notificacion local dentro de FeedGo no debe confundirse con push web o
+  push movil;
+- la campana de notificaciones debe tener un unico dueno global autenticado y
+  no duplicarse por pantalla;
+- la infraestructura futura de comunicaciones externas debe ser transversal,
+  reutilizable y accesible mediante contratos estables;
+- cada proveedor externo debe tener un unico adaptador oficial;
+- ningun modulo debe reimplementar verificacion de destinos o integracion con
+  proveedores para su propio caso particular;
+- los canales pagos o limitados futuros deben consultarse mediante una
+  politica externa de capacidades, beneficios, entitlements o feature access.
+
+El sistema de notificaciones y la infraestructura de comunicaciones no deben
+ser duenos de planes comerciales, pagos, precios, suscripciones ni facturacion.

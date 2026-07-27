@@ -60,6 +60,7 @@ import {
 } from "@features/spaces";
 
 import { useAuth } from "@features/auth";
+import AgendaPrivadaModal from "@features/agenda/components/AgendaPrivadaModal";
 import EstadoHorarioBadge from "@features/availability/components/EstadoHorarioBadge";
 
 const seguimientoPerfilComercioCache = new Map();
@@ -90,6 +91,7 @@ export default function CommerceProfilePage() {
   const [isCrearHistoriaOpen, setIsCrearHistoriaOpen] = useState(false);
   const [isCrearPublicacionOpen, setIsCrearPublicacionOpen] = useState(false);
   const [isEstadisticasOpen, setIsEstadisticasOpen] = useState(false);
+  const [agendaComercio, setAgendaComercio] = useState(null);
 
   const [publicacionForm, setPublicacionForm] = useState({
     titulo: "",
@@ -623,15 +625,17 @@ function esComercioMio(comercioData, userData) {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <main className="mx-auto max-w-5xl px-0 py-4 sm:px-4 sm:py-6">
+      <main className="mx-auto max-w-5x1 px-0 py-4 sm:px-4 sm:py-6">
 
         <div className="mb-4">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-gray-300 transition hover:bg-gray-900 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+            className="interactive-bubble cursor-pointer text-sm font-medium"
           >
+            <span>
             ← Volver
+            </span>
           </button>
         </div>
         
@@ -655,37 +659,69 @@ function esComercioMio(comercioData, userData) {
 
         {!isInitialLoading && !errorMessage && (
           <>
-            <section className="relative rounded-2xl border border-gray-800 bg-gray-900 p-4 sm:rounded-3xl sm:p-6">
+            <section className="relative rounded-[1rem] border border-gray-800 bg-gray-900 p-4 sm:p-6">
               
-{esComercioMio(comercio, usuarioActivo) && (
-  <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
+        {esComercioMio(comercio, usuarioActivo) && (
+          <div className="absolute right-3 top-1 flex flex-col items-end gap-1">
 
-    <div className="group relative">
-      <span className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-700 bg-gray-950 text-xs">
-        {comercio?.is_activo === false ? "🔴" : "🟢"}
-      </span>
+            <div className="group relative">
+              <span
+                className="interactive-bubble aspect-square !h-10 !min-h-10 !w-10 !p-0 ![border-radius:50%] text-base leading-none"
+              >
+                {comercio?.is_activo === false ? "🔴" : "🟢"}
+              </span>
 
-      <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg bg-black px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
-        {comercio?.is_activo === false ? "Inactivo" : "Activo"}
-      </div>
-    </div>
+              <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg bg-black px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+                {comercio?.is_activo === false ? "Inactivo" : "Activo"}
+              </div>
+            </div>
 
-    <div className="group relative">
+            <div className="group relative">
       <button
         type="button"
         onClick={() => navigate(`/perfil?editarEspacioId=${comercio.id}`)}
-        className="rounded-full border border-gray-700 bg-gray-950 px-1 py-1 text-[15px] font-semibold text-orange-400 hover:bg-gray-900"
+        className="interactive-bubble aspect-square !h-10 !min-h-10 !w-10 !p-0 ![border-radius:50%] text-lg font-semibold text-orange-400"
       >
+        <span className="text-orange-400">
         ✏️
+        </span>
       </button>
 
-      <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg bg-black px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
-        Editar
-      </div>
-    </div>
+              <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg bg-black px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+                Editar
+              </div>
+            </div>
 
-  </div>
-)}
+            <div className="group relative">
+              <button
+                type="button"
+                onClick={() => setAgendaComercio(comercio)}
+                className="interactive-bubble aspect-square !h-10 !min-h-10 !w-10 !p-0 ![border-radius:50%] text-xs font-semibold text-orange-400"
+                aria-label="Abrir agenda"
+              >
+                <span className="relative inline-flex h-6 w-5 flex-col overflow-hidden rounded-[px] bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.22)]">
+                  <span className="absolute -top-0.5 left-1 right-1 flex justify-between">
+                    <span className="h-1 w-0.5 rounded-full bg-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.18)]" />
+                    <span className="h-1 w-0.5 rounded-full bg-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.18)]" />
+                    <span className="h-1 w-0.5 rounded-full bg-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.18)]" />
+                    <span className="h-1 w-0.5 rounded-full bg-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.18)]" />
+                  </span>
+                  <span className="flex h-2 items-center justify-center bg-red-600 pt-.5 text-[3px] font-black leading-none tracking-[0.08em] text-white">
+                    MARZO
+                  </span>
+                  <span className="flex flex-1 items-center justify-center text-[10px] font-black leading-none text-gray-950">
+                    11
+                  </span>
+                </span>
+              </button>
+
+              <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg bg-black px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+                Agenda
+              </div>
+            </div>
+
+          </div>
+        )}
               
               <div className="flex items-start justify-between">
   
@@ -791,10 +827,12 @@ function esComercioMio(comercioData, userData) {
                     href={`https://wa.me/${String(comercio.whatsapp).replace(/\D/g, "")}?text=Hola%2C%20te%20encontré%20en%20MiPlaza%20y%20quiero%20consultarte`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-xs font-semibold text-green-400 transition hover:bg-gray-900 hover:text-green-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-400"
+                    className="interactive-bubble group cursor-pointer text-xs font-semibold"
                   >
-                    <MessageCircle size={14} aria-hidden="true" />
-                    WhatsApp
+                    <span className="inline-flex items-center gap-2 text-green-400 group-hover:text-green-300">
+                      <MessageCircle size={14} aria-hidden="true" />
+                      WhatsApp
+                    </span>
                   </a>
                 )}
 
@@ -804,10 +842,12 @@ function esComercioMio(comercioData, userData) {
                     href={`https://instagram.com/${String(comercio.instagram).replace("@", "")}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-xs font-semibold text-pink-400 transition hover:bg-gray-900 hover:text-pink-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-400"
+                    className="interactive-bubble group cursor-pointer text-xs font-semibold"
                   >
-                    <Camera size={14} aria-hidden="true" />
-                    Instagram
+                    <span className="inline-flex items-center gap-2 text-pink-400 group-hover:text-pink-300">
+                      <Camera size={14} aria-hidden="true" />
+                      Instagram
+                    </span>
                   </a>
                 )}
 
@@ -821,10 +861,12 @@ function esComercioMio(comercioData, userData) {
                     }
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-xs font-semibold text-blue-400 transition hover:bg-gray-900 hover:text-blue-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+                    className="interactive-bubble group cursor-pointer text-xs font-semibold"
                   >
+                    <span className="inline-flex items-center gap-2 text-blue-400 group-hover:text-blue-300">
                     <MapPin size={14} aria-hidden="true" />
                     Cómo llegar
+                    </span>
                   </a>
                 ) : null}
 
@@ -840,29 +882,35 @@ function esComercioMio(comercioData, userData) {
                 <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
                   <button
                     type="button"
-                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-sm font-semibold text-gray-200 transition hover:bg-gray-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+                    className="interactive-bubble group cursor-pointer text-sm font-semibold"
                     onClick={() => setIsCrearHistoriaOpen(true)}
                   >
-                    <PlusCircle size={16} aria-hidden="true" />
-                    Historia
+                    <span className="inline-flex items-center gap-2 text-gray-200 group-hover:text-white">
+                      <PlusCircle size={16} aria-hidden="true" />
+                      Historia
+                    </span>
                   </button>
 
                   <button
                     type="button"
-                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-sm font-semibold text-gray-200 transition hover:bg-gray-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+                    className="interactive-bubble group cursor-pointer text-sm font-semibold"
                     onClick={() => setIsCrearPublicacionOpen(true)}
                   >
-                    <PlusCircle size={16} aria-hidden="true" />
+                    <span className="inline-flex items-center gap-2 text-gray-200 group-hover:text-white">
+                      <PlusCircle size={16} aria-hidden="true" />
                     Publicación
+                    </span>
                   </button>
 
                   <button
                     type="button"
-                    className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-sm font-semibold text-gray-200 transition hover:bg-gray-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+                    className="interactive-bubble group cursor-pointer text-sm font-semibold"
                     onClick={() => setIsEstadisticasOpen(true)}
                   >
-                    <BarChart3 size={16} aria-hidden="true" />
+                    <span className="inline-flex items-center gap-2 text-gray-200 group-hover:text-white">
+                      <BarChart3 size={16} aria-hidden="true" />
                     Estadísticas
+                    </span>
                   </button>
 
                 </div>
@@ -1176,16 +1224,13 @@ function esComercioMio(comercioData, userData) {
           historias={viewerHistorias}
           titulo={comercio?.nombre || "Historias"}
         />
+        {agendaComercio ? (
+          <AgendaPrivadaModal
+            comercio={agendaComercio}
+            onClose={() => setAgendaComercio(null)}
+          />
+        ) : null}
       </main>
     </div>
   );
 }
-
-
-
-
-
-
-
-
-

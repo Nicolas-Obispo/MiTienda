@@ -79,7 +79,7 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
               <button
                 key={item.comercioId}
                 type="button"
-                className="flex w-[70px] shrink-0 flex-col items-center gap-2"
+                className="interactive-bubble interactive-bubble--avatar-circle flex w-[70px] shrink-0 flex-col items-center gap-2"
                 onClick={() => {
                   if (typeof onClickComercio === "function") {
                     onClickComercio(item.comercioId);
@@ -89,7 +89,7 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
                 title={`Ver historias de ${item.nombre}`}
               >
                 <div className="relative">
-                  <div className={`rounded-full p-[2px] ${aroClass}`}>
+                  <div className={`relative rounded-full p-[2px] ${aroClass}`}>
                     <div className="h-14 w-14 overflow-hidden rounded-full bg-white/10">
                       {thumbnailUrl ? (
                         <img
@@ -109,7 +109,7 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
 
                   {/* Contador: SOLO si hay pendientes */}
                   {tienePendientes ? (
-                    <div className="absolute -right-1 -top-1 rounded-full bg-white px-1.5 py-0.5 text-[10px] text-black">
+                    <div className="absolute right-0 top-0 rounded-full bg-white px-1.5 py-0.5 text-[10px] text-black">
                       {pendientes}
                     </div>
                   ) : null}

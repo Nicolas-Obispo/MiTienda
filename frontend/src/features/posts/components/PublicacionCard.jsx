@@ -194,9 +194,9 @@ export default function PublicacionCard({
           {comercioId ? (
             <Link
               to={`/comercios/${comercioId}`}
-              className="inline-flex items-center rounded-md border border-gray-800 bg-gray-900 px-2 py-1 text-xs text-gray-300 hover:bg-gray-800 hover:text-white"
+              className="interactive-bubble text-xs"
             >
-              Ver espacio
+              <span>Ver espacio</span>
             </Link>
           ) : null}
 

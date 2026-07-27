@@ -30,7 +30,9 @@ ETAPA 87 cerrada.
 
 El Sistema de Disponibilidad esta implementado como capacidad informativa para horarios habituales semanales de comercios.
 
-La etapa actual siguiente es ETAPA 88 - Agenda y Reservas, registrada como pendiente en el roadmap.
+ETAPA 88 - Agenda y Reservas queda cerrada con Agenda privada y Agenda general.
+Availability permanece cerrada y no absorbe responsabilidades de Agenda ni
+Reservas.
 
 ## Responsabilidad del sistema
 
@@ -407,7 +409,9 @@ No pertenecen al Sistema de Disponibilidad implementado en ETAPA 87:
 - ranking por disponibilidad;
 - exclusion de resultados por horario.
 
-ETAPA 88 continua siendo Agenda y Reservas.
+ETAPA 88 continua siendo Agenda y Reservas. Agenda privada avanza como dominio
+separado; Reservas y disponibilidad publica reservable siguen fuera de
+Availability.
 
 ## Deuda diferida
 

@@ -24,6 +24,17 @@ from app.modules.availability.models.horarios_atencion_models import (
     ComercioHorarioAtencion,
 )
 
+# AGENDA
+from app.modules.agenda.models.agenda_models import (
+    ContextoAgendable,
+    ElementoAgenda,
+)
+
+# FEEDGO AGENDA
+from app.modules.feedgo_agenda.models.feedgo_agenda_contextos_models import (
+    FeedGoAgendaContexto,
+)
+
 # PRODUCTS
 from app.modules.products.models.productos_models import Producto
 from app.modules.products.models.rubros_models import Rubro

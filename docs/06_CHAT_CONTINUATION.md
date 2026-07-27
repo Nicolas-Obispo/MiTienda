@@ -12,6 +12,10 @@ Toda conversación debe poder reconstruir el estado del proyecto desde la docume
 
 Antes de responder cualquier consulta sobre FeedGo, la IA debe seguir el Procedimiento Universal de Reconstrucción del Proyecto definido por el Sistema de Gobierno.
 
+Antes de cualquier auditoría, diseño o modificación, la IA debe leer todos los documentos existentes dentro de `/docs`, respetando el orden lógico definido por el Sistema de Gobierno, y luego leer `CHANGELOG.md` únicamente como historial cronológico.
+
+Los prompts de continuidad no deben enumerar manualmente archivos específicos de `/docs` como sustituto de esa lectura completa.
+
 El procedimiento oficial indica cómo:
 
 - descubrir la documentación oficial;
@@ -35,6 +39,10 @@ Si existe una contradicción entre una conversación y la documentación, preval
 Cuando el usuario solicite un Prompt Maestro para continuar el proyecto, la IA deberá construirlo exclusivamente utilizando la documentación oficial.
 
 Todo Prompt Maestro deberá construirse siguiendo el Procedimiento Universal de Reconstrucción del Proyecto.
+
+Los Prompt Maestro, Prompt Universal, Prompt de Continuidad y prompts técnicos del proyecto deberán mantenerse bajo el único estándar documental definido por la gobernanza vigente.
+
+Todo Prompt Maestro deberá entregarse en Markdown puro, sin explicaciones externas al contenido copiable, para garantizar reutilización, trazabilidad, portabilidad y compatibilidad con futuras herramientas.
 
 El Prompt Maestro es una instrucción operativa de arranque.
 

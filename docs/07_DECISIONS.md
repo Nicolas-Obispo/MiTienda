@@ -207,7 +207,7 @@ No reemplaza la documentación oficial existente.
 - ID: DEC-024
 - Titulo: Gobierno del Modelo de Datos
 - Estado: Aprobada
-- Decision: Antes de crear cualquier tabla nueva debe auditarse el modelo de datos existente y demostrarse que no hay una tabla propietaria natural, columna o relacion existente mas correcta.
+- Decision: Antes de crear cualquier tabla nueva debe auditarse el modelo de datos existente y demostrarse que no hay una tabla propietaria natural, que no corresponde ampliar una tabla o relacion existente y que la nueva tabla tendra una unica responsabilidad sin duplicar datos.
 - Motivo: Preservar responsabilidad unica, evitar segundas fuentes de verdad y sostener una arquitectura enterprise.
 - Impacto: Toda nueva tabla debe justificar su responsabilidad, propietario del dato, clasificacion y compatibilidad con el modelo existente antes de implementarse.
 
@@ -246,3 +246,93 @@ No reemplaza la documentación oficial existente.
 - Decision: Los botones secundarios de FeedGo deben mostrarse sin borde, capsula ni marco permanente en estado normal, usando icono y texto cuando corresponda, y mostrar resaltado solo en hover, focus o interaccion.
 - Motivo: Mantener una experiencia visual uniforme, moderna y accesible en toda la aplicacion.
 - Impacto: Nuevas pantallas y ajustes visuales deben respetar este criterio; los botones primarios pueden conservar un tratamiento diferenciado cuando su jerarquia lo justifique.
+
+## DEC-029
+
+- ID: DEC-029
+- Titulo: Agenda como modulo autonomo dentro del monorepo
+- Estado: Aprobada
+- Decision: Agenda se disenara como modulo propio y potencialmente reutilizable dentro del monorepo actual, con backend en `backend/app/modules/agenda/` y frontend en `frontend/src/features/agenda/`.
+- Motivo: Agenda tiene dominio propio y no debe quedar atada a Mi Perfil, Comercios, Discovery, publicaciones ni navegacion especifica de FeedGo.
+- Impacto: FeedGo consumira Agenda mediante una capa de integracion. El nucleo de Agenda no debe depender de Profile, Spaces, Discovery, Search, Ranking, Posts, Stories, Availability ni rutas concretas de FeedGo.
+
+## DEC-030
+
+- ID: DEC-030
+- Titulo: Separacion entre Availability, Agenda y Reservas
+- Estado: Aprobada
+- Decision: Availability, Agenda y Reservas son capacidades distintas. Availability modela horarios habituales; Agenda organiza eventos privados del propietario; Reservas utiliza Agenda sin exponerla completa al cliente.
+- Motivo: Evitar mezclar horarios habituales, organizacion interna y solicitudes publicas en una unica fuente de verdad.
+- Impacto: Las reglas, estados y permisos de cada capacidad deben mantenerse separados. El frontend no debe inferir disponibilidad reservable desde horarios habituales ni exponer la agenda privada.
+
+## DEC-031
+
+- ID: DEC-031
+- Titulo: ActiveLayer como infraestructura transversal de capas activas
+- Estado: Aprobada
+- Decision: ActiveLayer es la infraestructura transversal reutilizable para modales, overlays y capas activas nuevas de FeedGo.
+- Motivo: Evitar sistemas paralelos de overlays y mantener una sola regla UX para bloquear fondo, foco e interaccion cuando existe una capa activa.
+- Impacto: Agenda debe reutilizar ActiveLayer y no crear un sistema propio de overlays.
+
+## DEC-032
+
+- ID: DEC-032
+- Titulo: Contexto agendable y solicitud publica desacoplados
+- Estado: Aprobada
+- Decision: La Agenda pertenece a un contexto agendable. En FeedGo, el primer contexto agendable sera un espacio, pero el nucleo de Agenda no debe nombrarlo como `comercio`. Un propietario con varios espacios tendra una agenda por contexto y una vista unificada. Turno y reserva seran variantes funcionales de una solicitud publica comun durante el MVP; la solicitud conserva identidad propia y puede reflejarse como elemento vinculado de Agenda.
+- Motivo: Evitar acoplar el nucleo de Agenda al modelo de Comercio y evitar que Reservas se mezcle irreversiblemente con elementos internos de Agenda.
+- Impacto: La integracion FeedGo resolvera la relacion entre contexto agendable y espacio. Reservas mantendra su frontera propia y no convertira solicitudes en elementos de Agenda como unica fuente de verdad.
+
+## DEC-033
+
+- ID: DEC-033
+- Titulo: Persistencia autonoma del nucleo de Agenda
+- Estado: Aprobada
+- Decision: El nucleo de Agenda tendra entidades propias `ContextoAgendable` y `ElementoAgenda`. `ElementoAgenda` dependera unicamente de `ContextoAgendable` y no tendra FK directa a `comercios`, medicos, consultorios ni otros recursos externos de una aplicacion host.
+- Motivo: Agenda debe ser un modulo realmente reutilizable e independiente. Una FK directa a un recurso de FeedGo haria que sus modelos, migraciones y pruebas dependan de Spaces y bloquearia su uso en otra aplicacion, como una aplicacion medica sin comercios.
+- Impacto: Cada aplicacion host debera implementar su propia capa de integracion entre sus recursos y `ContextoAgendable`. FeedGo vinculara `Comercio` con `ContextoAgendable` fuera del nucleo de Agenda. Agenda no copiara nombre, rubro, direccion, propietario ni datos del comercio. No se implementa microservicio en esta etapa.
+
+## DEC-034
+
+- ID: DEC-034
+- Titulo: Agenda sin sobrescritura silenciosa
+- Estado: Aprobada
+- Decision: Toda mutacion concurrente sobre `ElementoAgenda` debe exigir una version esperada y rechazar la operacion cuando la version persistida haya cambiado. No se permite la politica "ultima escritura gana" para Agenda.
+- Motivo: La Agenda puede ser usada desde varios usuarios, equipos o sesiones. Sobrescribir silenciosamente cambios remotos produciria perdida de informacion y decisiones operativas incorrectas.
+- Impacto: Los contratos privados de Agenda deben exponer la version actual y las mutaciones deben enviar `version_esperada`. Los conflictos deben traducirse a errores controlados y el frontend debe refrescar datos sin reintentar automaticamente.
+
+## DEC-035
+
+- ID: DEC-035
+- Titulo: Solapamientos informativos en Agenda
+- Estado: Aprobada
+- Decision: Agenda detecta solapamientos tecnicos entre intervalos, pero no aplica por si sola politicas bloqueantes. Las politicas de advertencia, bloqueo, capacidad y doble reserva pertenecen al modulo consumidor, especialmente Reservas, o a la aplicacion host.
+- Motivo: Un solapamiento privado puede ser valido en Agenda, mientras que una reserva publica puede requerir reglas estrictas de capacidad y recurso. Mezclar ambas politicas acoplaria dominios distintos.
+- Impacto: Los endpoints privados pueden informar solapamientos guardados sin convertirlos en error. Reservas debera revalidar disponibilidad dentro de transacciones propias antes de confirmar solicitudes.
+
+## DEC-036
+
+- ID: DEC-036
+- Titulo: Respaldo, historial y ciclo de vida separados
+- Estado: Aprobada
+- Decision: FeedGo separa backup/restauracion fisica, historial funcional de cambios y ciclo de vida no destructivo. Agenda no debe copiar registros manualmente por operacion como sustituto de backup o auditoria.
+- Motivo: Backup pertenece a infraestructura, historial funcional requiere justificacion de dominio y los estados no destructivos protegen el ciclo de vida operativo sin crear tablas prematuras.
+- Impacto: Agenda debe contemplar restauracion de MySQL como responsabilidad de infraestructura, versionado/concurrencia para evitar perdida por edicion simultanea y estados como `archivado`, `cancelado` o `completado` cuando correspondan.
+
+## DEC-037
+
+- ID: DEC-037
+- Titulo: Prompts del proyecto desde documentacion oficial completa
+- Estado: Aprobada
+- Decision: Todo Prompt Maestro, Prompt Universal, Prompt de Continuidad o prompt tecnico del proyecto debe mantenerse bajo el unico estandar documental definido por la gobernanza vigente, entregarse en Markdown puro e indicar la lectura completa de todos los documentos existentes dentro de `/docs`, respetando el orden logico definido por el Sistema de Gobierno, y luego `CHANGELOG.md` solo como historial cronologico. No debe enumerar manualmente archivos especificos de `/docs` como sustituto de esa lectura.
+- Motivo: La documentacion oficial crece continuamente; las listas fijas se desactualizan y pueden convertir el prompt en una segunda fuente de verdad. El estandar debe ser portable y no depender de una IA, proveedor o herramienta especifica.
+- Impacto: Futuros prompts deben mantenerse breves, copiables, trazables, reutilizables y compatibles con la evolucion documental y con futuras herramientas. `00_GOVERNANCE.md` gobierna el procedimiento y `06_CHAT_CONTINUATION.md` aplica la regla de continuidad.
+
+## DEC-038
+
+- ID: DEC-038
+- Titulo: Sistema transversal de notificaciones desacoplado
+- Estado: Aprobada
+- Decision: Las notificaciones de FeedGo se disenaran como una capacidad transversal separada de Agenda, Reservas, autenticacion, planes comerciales, infraestructura de comunicaciones y proveedores externos. Agenda podra ser el primer productor de sucesos notificables, pero no sera duena del sistema. La notificacion local dentro de FeedGo sera el primer canal implementable, mediante campana global autenticada. Correo y WhatsApp quedan diferidos a una infraestructura transversal de comunicaciones externas, con proveedores reemplazables y contratos reutilizables.
+- Motivo: Agenda y futuras Reservas necesitan notificaciones, pero acoplarlas a proveedores, verificaciones o una pantalla generaria duplicacion, riesgos de entrega y una frontera incorrecta para futuros canales, modulos y planes.
+- Impacto: El cierre actual de ETAPA 88 no implementa notificaciones. La notificacion local queda como canal base futuro de FeedGo. Correo, WhatsApp, verificacion de destinos, plantillas, intentos de entrega, reintentos, webhooks e infraestructura asincronica pertenecen a una etapa futura de comunicaciones externas. Ningun modulo debe reimplementar proveedores ni verificacion por su cuenta. La futura monetizacion se resolvera mediante una politica externa de capacidades o feature access, no con condiciones rigidas dentro de notificaciones ni comunicaciones.

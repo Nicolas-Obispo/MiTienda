@@ -30,6 +30,8 @@ import {
 import { actualizarPerfilUsuario, getMe, useAuth } from "@features/auth";
 import { cambiarModoUsuario } from "@features/auth/services/usuarioService";
 import { useQueryClient } from "@tanstack/react-query";
+import AgendaGeneralModal from "@features/agenda/components/AgendaGeneralModal";
+import AgendaPrivadaModal from "@features/agenda/components/AgendaPrivadaModal";
 import EstadoHorarioBadge from "@features/availability/components/EstadoHorarioBadge";
 import HorariosAtencionEditor from "@features/availability/components/HorariosAtencionEditor";
 
@@ -391,6 +393,8 @@ export default function ProfilePage() {
 
   const [isCreatingComercio, setIsCreatingComercio] = useState(false);
   const [isActingComercioById, setIsActingComercioById] = useState({});
+  const [isAgendaGeneralOpen, setIsAgendaGeneralOpen] = useState(false);
+  const [agendaComercio, setAgendaComercio] = useState(null);
   const [horariosEditorComercio, setHorariosEditorComercio] = useState(null);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -775,9 +779,9 @@ export default function ProfilePage() {
                     type="button"
                     onClick={abrirEdicionPerfil}
                     disabled={isLoadingMe || !usuarioMe || showPerfilForm}
-                    className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-gray-800 disabled:opacity-60"
+                    className="interactive-bubble text-xs font-semibold leading-4"
                   >
-                    Editar perfil
+                    <span>Editar perfil</span>
                   </button>
 
                   <button
@@ -788,9 +792,18 @@ export default function ProfilePage() {
                       setShowActivarEspacioInfo(misComercios.length === 0);
                       setShowCreateForm(misComercios.length > 0);
                     }}
-                    className="rounded-xl bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-400"
+                    className="interactive-bubble interactive-bubble--primary text-xs font-semibold leading-4"
                   >
-                    Crear nuevo espacio
+                    <span>Crear nuevo espacio</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAgendaGeneralOpen(true)}
+                    disabled={misComercios.length === 0}
+                    className="interactive-bubble text-xs font-semibold leading-4"
+                  >
+                    <span>Agenda general</span>
                   </button>
                 </div>
 
@@ -805,9 +818,9 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={manejarLogout}
-                  className="mt-2 rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-gray-800"
+                  className="interactive-bubble interactive-bubble--danger mt-2 text-xs font-semibold leading-4"
                 >
-                  Cerrar sesión
+                  <span>Cerrar sesión</span>
                 </button>
 
                 {avatarErrorMessage && (
@@ -1489,18 +1502,27 @@ export default function ProfilePage() {
                             <button
                               onClick={() => handleEditarComercio(c)}
                               disabled={isActing}
-                              className="bg-black/70 text-[10px] px-2 py-1 rounded"
+                              className="interactive-bubble text-[10px]"
                             >
-                              Editar
+                              <span>Editar</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setAgendaComercio(c)}
+                              disabled={isActing}
+                              className="interactive-bubble text-[10px]"
+                            >
+                              <span>Agenda</span>
                             </button>
 
                             {c.activo ? (
                               <button
                                 onClick={() => handleDesactivarComercio(c.id)}
                                 disabled={isActing}
-                                className="bg-black/70 text-[10px] px-2 py-1 rounded"
+                                className="interactive-bubble interactive-bubble--warning text-[10px]"
                               >
-                                {isActing ? "..." : "Pausar"}
+                                <span>{isActing ? "..." : "Pausar"}</span>
                               </button>
                             ) : (
                               <button
@@ -1524,9 +1546,23 @@ export default function ProfilePage() {
                 onClose={() => setHorariosEditorComercio(null)}
               />
             ) : null}
+
+            {agendaComercio ? (
+              <AgendaPrivadaModal
+                comercio={agendaComercio}
+                onClose={() => setAgendaComercio(null)}
+              />
+            ) : null}
+
           </section>
         )}
 
+        {isAgendaGeneralOpen ? (
+          <AgendaGeneralModal
+            comercios={misComercios}
+            onClose={() => setIsAgendaGeneralOpen(false)}
+          />
+        ) : null}
       </main>
     </div>
   );

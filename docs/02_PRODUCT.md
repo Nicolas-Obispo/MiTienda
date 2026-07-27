@@ -81,6 +81,31 @@ El sistema debe poder evolucionar incorporando nuevas fuentes de descubrimiento 
 - El estado horario visible usa exclusivamente `Abierto`, `Cerrado` y `No hay horarios declarados`.
 - Un espacio `Activo` continúa siendo público aunque esté `Cerrado` por horario.
 
+## Agenda y Reservas
+
+- La Agenda es una herramienta privada de organizacion del propietario.
+- Agenda y Reservas son conceptos distintos.
+- La Agenda administra organizacion: eventos, tareas, recordatorios, bloqueos,
+  turnos y reservas reflejadas.
+- Las Reservas utilizan Agenda, pero no son la Agenda completa.
+- Availability, Agenda y Reservas deben permanecer separadas.
+- No todos los espacios habilitan reservas publicas.
+- Mi Perfil es el punto de entrada inicial a Agenda, pero Agenda no pertenece a
+  Mi Perfil.
+- La vista inicial de Agenda es `Hoy`, en formato cronologico.
+- Vista Semana, Vista Mes y persistencia de ultima vista, filtros o contexto
+  quedan como evolucion futura.
+- El cliente nunca debe ver la agenda privada completa del propietario.
+- Agenda general podra exponer `Configurar notificaciones` como acceso inicial
+  a la configuracion de notificaciones del usuario.
+- Las notificaciones son una capacidad transversal de FeedGo, no una
+  funcionalidad exclusiva de Agenda.
+- La notificacion local dentro de FeedGo es el canal base futuro, pero queda
+  fuera del cierre actual de ETAPA 88.
+- Correo electronico y WhatsApp son canales futuros; requieren una
+  infraestructura transversal de comunicaciones, verificacion de destino,
+  consentimiento y configuracion independiente antes de habilitarse.
+
 ## Publicaciones
 
 - Una publicación puede ampliar la cobertura del espacio.

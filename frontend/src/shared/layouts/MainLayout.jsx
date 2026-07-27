@@ -24,7 +24,10 @@ export default function MainLayout() {
       <header className="sticky top-0 z-30 border-b border-gray-800 bg-gray-950/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-3 py-2 sm:gap-0 sm:px-4 sm:py-3">
           {/* LOGO */}
-          <Link to="/" className="flex shrink-0 items-center">
+          <Link
+            to="/"
+            className="interactive-bubble interactive-bubble--flush shrink-0 items-center"
+          >
             <div className="h-9 w-9 overflow-hidden rounded-full border border-gray-700 bg-gray-900 sm:h-12 sm:w-12">
               <img
                 src="/logo_Feedgo.png"
@@ -40,13 +43,17 @@ export default function MainLayout() {
             {estaAutenticado && (
               <Link
                 to="/feed"
-                className={`shrink-0 text-xs sm:text-sm ${
-                  location.pathname.startsWith("/feed")
-                    ? "text-purple-300"
-                    : "text-gray-300 hover:text-white"
-                }`}
+                className="interactive-bubble group shrink-0 text-xs sm:text-sm"
               >
+                <span
+                  className={
+                    location.pathname.startsWith("/feed")
+                      ? "text-purple-300"
+                      : "text-gray-300 group-hover:text-white"
+                  }
+                >
                 🌎Feed
+                </span>
               </Link>
             )}
 
@@ -61,26 +68,34 @@ export default function MainLayout() {
                         "Creá tu cuenta para tener tu perfil en MiPlaza, guardar publicaciones y mostrar lo que hacés.",
                     }
               }
-              className={`shrink-0 text-xs font-semibold sm:text-sm ${
-                location.pathname.startsWith("/perfil")
-                  ? "text-purple-300"
-                  : "text-gray-300 hover:text-white"
-              }`}
+              className="interactive-bubble group shrink-0 text-xs font-semibold sm:text-sm"
             >
+              <span
+                className={
+                  location.pathname.startsWith("/perfil")
+                    ? "text-purple-300"
+                    : "text-gray-300 group-hover:text-white"
+                }
+              >
               Mi Perfil
+              </span>
             </Link>
 
             {/* RANKING */}
             {estaAutenticado && (
               <Link
                 to="/ranking"
-                className={`shrink-0 text-xs sm:text-sm ${
-                  location.pathname.startsWith("/ranking")
-                    ? "text-purple-300"
-                    : "text-gray-300 hover:text-white"
-                }`}
+                className="interactive-bubble group shrink-0 text-xs sm:text-sm"
               >
+                <span
+                  className={
+                    location.pathname.startsWith("/ranking")
+                      ? "text-purple-300"
+                      : "text-gray-300 group-hover:text-white"
+                  }
+                >
                 Tendencias
+                </span>
               </Link>
             )}
 
@@ -88,26 +103,34 @@ export default function MainLayout() {
             {estaAutenticado && (
               <Link
                 to="/ver-seguidos"
-                className={`shrink-0 text-xs sm:text-sm ${
-                  location.pathname.startsWith("/ver-seguidos")
-                    ? "text-purple-300"
-                    : "text-gray-300 hover:text-white"
-                }`}
+                className="interactive-bubble group shrink-0 text-xs sm:text-sm"
               >
+                <span
+                  className={
+                    location.pathname.startsWith("/ver-seguidos")
+                      ? "text-purple-300"
+                      : "text-gray-300 group-hover:text-white"
+                  }
+                >
                 Seguidos
+                </span>
               </Link>
             )}
 
             {/* EXPLORAR */}
             <Link
               to="/explorar"
-              className={`shrink-0 text-xs font-semibold sm:text-sm ${
-                location.pathname.startsWith("/explorar")
-                  ? "text-purple-300"
-                  : "text-gray-300 hover:text-white"
-              }`}
+              className="interactive-bubble group shrink-0 text-xs font-semibold sm:text-sm"
             >
+              <span
+                className={
+                  location.pathname.startsWith("/explorar")
+                    ? "text-purple-300"
+                    : "text-gray-300 group-hover:text-white"
+                }
+              >
               🔎Explorar
+              </span>
             </Link>
           </nav>
 

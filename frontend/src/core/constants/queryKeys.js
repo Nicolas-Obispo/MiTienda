@@ -62,6 +62,45 @@ export const queryKeys = {
     espacio: (espacioId) => ["analytics", "espacio", espacioId],
   },
 
+  agenda: {
+    all: ["agenda"],
+    contexto: (comercioId) => ["agenda", "contexto", Number(comercioId)],
+    elementos: ({
+      comercioId,
+      inicio = null,
+      fin = null,
+      estado = null,
+      tipo = null,
+    } = {}) => [
+      "agenda",
+      "elementos",
+      Number(comercioId),
+      {
+        inicio,
+        fin,
+        estado,
+        tipo,
+      },
+    ],
+    general: ({
+      inicio = null,
+      fin = null,
+      estado = null,
+      tipo = null,
+      comercioId = null,
+    } = {}) => [
+      "agenda",
+      "general",
+      {
+        inicio,
+        fin,
+        estado,
+        tipo,
+        comercioId,
+      },
+    ],
+  },
+
   search: {
     all: ["search"],
     suggestions: ({ q = null, limit = 5 } = {}) => [

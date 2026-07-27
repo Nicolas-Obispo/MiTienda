@@ -548,27 +548,9 @@ export default function FeedPage() {
           <button
             type="button"
             onClick={() => setShowWelcomeModal(false)}
-            className="
-              mt-7
-              w-full
-              rounded-2xl
-              bg-gradient-to-r
-              from-orange-500
-              via-orange-400
-              to-amber-300
-              px-4
-              py-3
-              text-sm
-              font-black
-              text-white
-              shadow-xl
-              transition
-              hover:scale-[1.02]
-              hover:opacity-95
-              active:scale-[0.99]
-            "
+            className="interactive-bubble interactive-bubble--primary mt-7 text-sm font-black leading-5"
           >
-            Empezar a explorar
+            <span>Empezar a explorar</span>
           </button>
         </div>
       </div>
@@ -587,7 +569,6 @@ export default function FeedPage() {
     </div>
   );
 }
-
 
 
 

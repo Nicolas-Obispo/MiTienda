@@ -1847,3 +1847,72 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 ### Deuda controlada
 
 - Queda diferida a ETAPA 101 la unificación visual completa del Design System: botones secundarios restantes, espaciados, alineaciones, iconografía, jerarquía visual, formularios y responsive.
+
+---
+
+## ETAPA 88 — Agenda privada y Agenda general
+
+**Estado:** Cerrada
+
+### Avance técnico comprobado
+
+- Se implementó Agenda Core reutilizable e independiente de FeedGo en `backend/app/modules/agenda/`.
+- Se implementaron `ContextoAgendable` y `ElementoAgenda` como entidades propias de Agenda.
+- Se creó la integración separada `feedgo_agenda` para vincular `Comercio` con `ContextoAgendable`.
+- Se implementaron schemas, repositorios y servicios internos de Agenda con política UTC.
+- Se ajustó la política transaccional para que el caller u orquestador controle `commit` y `rollback`.
+- Se implementó control optimista de concurrencia con `version` y `version_esperada`.
+- Se implementó detección técnica informativa de solapamientos sin política bloqueante.
+- Se implementaron endpoints privados bajo `/feedgo-agenda`.
+- Se implementó endpoint agregado `GET /feedgo-agenda/mis/elementos` para Agenda general sin N requests por comercio.
+- Se implementó ownership backend para accesos privados.
+- Se implementó frontend privado de Agenda individual y Agenda general en `frontend/src/features/agenda/`.
+- Se agregaron accesos desde Perfil, tarjetas de espacios y Perfil de comercio.
+- Se corrigió navegación `Atrás`, `Cerrar` y `Cancelar` en la experiencia modal.
+- Se agregó protección local de cambios sin guardar en formularios de Agenda.
+
+### Preparación de cierre documental
+
+- Se definió el alcance final de cierre de ETAPA 88 alrededor de Agenda Core,
+  integración FeedGo-Agenda, Agenda privada por comercio y Agenda general del
+  propietario.
+- Se registró que Agenda permite crear, editar, completar y cancelar elementos,
+  filtrar por comercio, tipo, estado y rango temporal, validar ownership,
+  manejar conflictos optimistas `409`, informar solapamientos, normalizar UTC y
+  trabajar con elementos de todo el día.
+- Se corrigió la arquitectura por capas de Agenda general para mantener ORM,
+  joins, filtros y ordenamiento fuera del router HTTP.
+- Se validó el schema físico de MySQL contra los modelos de Agenda y
+  FeedGo-Agenda sin diferencias bloqueantes.
+- Se aprobó la validación funcional backend automatizada de Agenda con datos
+  temporales revertidos.
+- Se validó `compileall` de Agenda y FeedGo-Agenda, build frontend, ESLint
+  específico de Agenda y `git diff --check`.
+- Quedaron como observaciones no bloqueantes: lint global con errores ajenos a
+  ETAPA 88, ausencia de suite formal específica de Agenda y validación manual
+  en navegador no ejecutada.
+- Se difirieron fuera del cierre actual Reservas públicas, Notificaciones
+  locales, campana global, correo, WhatsApp, workers, colas, schedulers,
+  proveedores externos, Vista Semana, Vista Mes y persistencia de última vista,
+  filtros o contexto.
+
+### Cierre formal
+
+- ETAPA 88 queda cerrada formalmente con alcance Agenda.
+- El cierre incluye Agenda Core, integración FeedGo-Agenda, Agenda privada por
+  comercio, Agenda general del propietario, mutaciones privadas, filtros,
+  ownership, conflictos `409`, solapamientos informativos, UTC, elementos de
+  todo el día, cache TanStack Query, ActiveLayer y separación respecto de
+  Disponibilidad, visibilidad y estado del comercio.
+- Reservas públicas, Notificaciones locales, campana global, correo, WhatsApp,
+  workers, colas, schedulers, proveedores externos, Vista Semana, Vista Mes y
+  persistencia de última vista, filtros o contexto quedan diferidos.
+
+### Fuera de alcance aún no implementado
+
+- Reservas públicas.
+- Turnos públicos.
+- Servicios reservables.
+- Recursos y capacidad.
+- Prevención transaccional de doble reserva.
+- Flujo público de reservas.

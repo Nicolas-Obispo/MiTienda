@@ -133,6 +133,20 @@ La búsqueda podrá mostrar información horaria como dato informativo:
 
 La regla de cálculo del estado horario pertenece al backend y al Sistema de Disponibilidad.
 
+## Agenda y Reservas en busqueda
+
+Durante ETAPA 88, Agenda y Reservas no participan en filtros, ranking ni
+exclusion de resultados.
+
+El buscador no debe depender de la agenda privada del propietario.
+
+Una etapa futura podra incorporar busquedas contextuales relacionadas con
+turnos, reservas o disponibilidad reservable solo si existe una decision
+arquitectonica aprobada y documentada.
+
+Un espacio debe seguir pudiendo aparecer en busqueda aunque no tenga reservas
+publicas habilitadas.
+
 ## Pipeline conceptual de indexación
 
 Fuente Oficial

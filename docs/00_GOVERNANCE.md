@@ -23,7 +23,21 @@
 - Cuando se incorpore un nuevo documento oficial al Sistema de Gobierno, deberán actualizarse también el orden de lectura, el procedimiento de continuidad, la generación de Prompt Maestro y cualquier referencia cruzada afectada.
 - El Sistema de Gobierno debe permanecer siempre sincronizado.
 
-Antes de cualquier auditoría o modificación, Codex debe seguir obligatoriamente el Procedimiento Universal de Reconstrucción del Proyecto definido por este documento.
+Antes de cualquier auditoría, diseño o modificación, toda IA asistente del proyecto debe seguir obligatoriamente el Procedimiento Universal de Reconstrucción del Proyecto definido por este documento.
+
+La lectura obligatoria antes de actuar es la lectura completa de todos los documentos existentes dentro de `/docs`.
+
+La lectura debe respetar el orden lógico definido por el propio Sistema de Gobierno:
+
+- primero documentos de gobierno;
+- luego decisiones y principios;
+- luego documentos técnicos, diseños y documentos `10+` aplicables.
+
+Después de reconstruir `/docs`, debe leerse `CHANGELOG.md` únicamente como historial cronológico.
+
+La carpeta `/docs` siempre prevalece sobre la memoria del modelo, prompts anteriores y el historial conversacional.
+
+Ningún Prompt Maestro, Prompt Universal, Prompt de Continuidad o prompt técnico del proyecto debe enumerar manualmente archivos específicos de `/docs` como sustituto de este procedimiento, porque la documentación crece y una lista fija puede quedar desactualizada.
 
 ## Sistema de Gobierno
 
@@ -156,6 +170,14 @@ A partir de ese momento, toda auditoría, diseño, implementación y documentaci
 
 El Prompt Maestro obliga a reconstruir el contexto desde `/docs`.
 
+Todo Prompt Maestro, Prompt Universal, Prompt de Continuidad o prompt técnico del proyecto deberá mantenerse bajo el único estándar documental definido por la gobernanza vigente.
+
+Todo prompt destinado a una IA asistente del proyecto deberá entregarse en Markdown puro, sin explicaciones externas al contenido copiable, para garantizar reutilización, trazabilidad, portabilidad y compatibilidad con futuras herramientas.
+
+Todo prompt destinado a una IA asistente del proyecto deberá indicar la lectura completa de todos los documentos existentes dentro de `/docs`, respetando el orden lógico definido por el Sistema de Gobierno, y la lectura posterior de `CHANGELOG.md` únicamente como historial cronológico.
+
+Todo prompt destinado a una IA asistente del proyecto deberá mantenerse compatible con la evolución futura de `/docs` y no deberá enumerar manualmente archivos específicos como reemplazo de la lectura completa.
+
 El Prompt Maestro no reemplaza ningún documento oficial.
 
 El Prompt Maestro no debe:
@@ -218,6 +240,6 @@ CHANGELOG siempre ocurre antes del Commit.
 - Backend dueño del negocio.
 - Frontend solo UX.
 
-ChatGPT define arquitectura, producto y estrategia junto al usuario.
+La IA utilizada para definición estratégica acompaña al usuario en arquitectura, producto y estrategia.
 
-Codex audita, inspecciona archivos y realiza cambios acotados respetando estos documentos.
+La IA utilizada para ejecución técnica audita, inspecciona archivos y realiza cambios acotados respetando estos documentos.
