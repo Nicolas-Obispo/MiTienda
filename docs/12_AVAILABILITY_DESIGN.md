@@ -1,16 +1,17 @@
 # Availability Design
 
-Categoria:
-
-Documento Tecnico.
-
-Forma parte del Sistema de Gobierno:
-
-No.
-
-Componente documentado:
-
-Sistema de Disponibilidad.
+Estado del documento: Documento Tecnico Oficial de FeedGo v1.0.
+Version: 1.0.
+Categoria: Documento Tecnico.
+Nivel de autoridad: Tecnico especializado para Sistema de Disponibilidad.
+Documento dueno: `docs/12_AVAILABILITY_DESIGN.md`.
+Responsable funcional: Disponibilidad.
+Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
+`02_PRODUCT.md`, `03_SEARCH.md`, `13_AGENDA_RESERVATIONS_DESIGN.md`.
+Cuando debe consultarse: antes de modificar horarios habituales, estado
+horario, textos contextuales de apertura/cierre, integracion informativa de
+disponibilidad en Spaces, busqueda o Explorar, o cualquier frontera entre
+Disponibilidad, Agenda y Reservas.
 
 ## Objetivo
 
@@ -415,7 +416,8 @@ Availability.
 
 ## Deuda diferida
 
-La deuda visual no bloqueante queda diferida a ETAPA 101 - Unificacion del Design System.
+La deuda visual no bloqueante queda diferida a ETAPA 95 - Experiencia de
+Lanzamiento y Design System Critico.
 
 Incluye:
 

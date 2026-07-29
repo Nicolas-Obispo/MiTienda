@@ -1,5 +1,18 @@
 # Search
 
+Estado del documento: Documento Oficial del Sistema de Gobierno FeedGo v1.0.
+Version: 1.0.
+Categoria: Sistema de Gobierno.
+Nivel de autoridad: Alto para busqueda, Discovery, Candidate Engine, Ranking,
+Knowledge, Indexador y runtime de busqueda.
+Documento dueno: `docs/03_SEARCH.md`.
+Responsable funcional: Busqueda y descubrimiento.
+Documentos relacionados: `00_GOVERNANCE.md`, `10_INDEX_DESIGN.md`,
+`11_KNOWLEDGE_DESIGN.md`, `07_DECISIONS.md`,
+`08_ENGINEERING_PRINCIPLES.md`.
+Cuando debe consultarse: antes de modificar busqueda, descubrimiento,
+indexacion, ranking, taxonomia, conocimiento, senales o recomendaciones.
+
 ## Objetivo
 
 - El buscador conecta necesidades con soluciones.

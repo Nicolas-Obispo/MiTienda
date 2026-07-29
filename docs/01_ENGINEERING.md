@@ -1,5 +1,17 @@
 # Engineering
 
+Estado del documento: Documento Oficial del Sistema de Gobierno FeedGo v1.0.
+Version: 1.0.
+Categoria: Sistema de Gobierno.
+Nivel de autoridad: Alto para reglas de ingenieria y arquitectura tecnica.
+Documento dueno: `docs/01_ENGINEERING.md`.
+Responsable funcional: Ingenieria.
+Documentos relacionados: `00_GOVERNANCE.md`,
+`08_ENGINEERING_PRINCIPLES.md`, `07_DECISIONS.md`,
+`15_LEGAL_AND_OPERATIONAL.md`.
+Cuando debe consultarse: antes de disenar, implementar, validar, refactorizar
+o cerrar cambios tecnicos.
+
 ## Arquitectura por capas
 
 Frontend

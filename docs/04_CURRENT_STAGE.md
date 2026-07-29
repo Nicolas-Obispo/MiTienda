@@ -1,5 +1,17 @@
 # Estado actual
 
+Estado del documento: Documento Oficial del Sistema de Gobierno FeedGo v1.0.
+Version: 1.0.
+Categoria: Sistema de Gobierno.
+Nivel de autoridad: Alto para etapa vigente, ultimo cierre formal y proximo
+trabajo autorizado.
+Documento dueno: `docs/04_CURRENT_STAGE.md`.
+Responsable funcional: Gobierno de etapa.
+Documentos relacionados: `00_GOVERNANCE.md`, `05_SEARCH_ROADMAP.md`,
+`07_DECISIONS.md`, `CHANGELOG.md`.
+Cuando debe consultarse: antes de iniciar cualquier tarea para confirmar etapa
+vigente, alcance actual, restricciones y estado de cierre.
+
 Proyecto:
 
 FeedGo
@@ -74,7 +86,8 @@ Cerrada.
 
 ## Deuda visual controlada
 
-Queda registrada para ETAPA 101 - Unificacion del Design System:
+Queda registrada para ETAPA 95 - Experiencia de Lanzamiento y Design System
+Critico:
 
 - Unificar botones secundarios restantes con el Design System oficial.
 - Revisar alineaciones y espaciados del perfil, formularios y tarjetas.
@@ -193,8 +206,7 @@ Fuera del cierre actual:
   disenadas, pero no implementadas en el cierre actual de ETAPA 88.
 - Correo electronico, WhatsApp, verificacion de destinos, proveedores,
   plantillas, workers, colas, schedulers productivos, webhooks e intentos de
-  entrega externa quedan diferidos a ETAPA 91 - Mensajeria y Comunicaciones
-  Externas.
+  entrega externa quedan diferidos a ETAPA 101 - Mensajeria y Cotizaciones.
 - Vista Semana, Vista Mes y persistencia de ultima vista, filtros o contexto
   quedan diferidas.
 
@@ -207,6 +219,42 @@ Estado final actual:
 - ETAPA 88 esta cerrada formalmente.
 - Agenda privada y Agenda general estan implementadas y validadas.
 - El cierre formal se limita al alcance Agenda definido en este documento.
+
+## ETAPA vigente
+
+ETAPA 89 - Reorganizacion del Roadmap y Gobierno de Lanzamiento.
+
+Estado:
+
+Vigente.
+
+Objetivo:
+
+Reorganizar formalmente el roadmap para priorizar un lanzamiento publico
+seguro, estable, legalmente preparado y operable.
+
+Alcance:
+
+- actualizar el roadmap oficial desde ETAPA 89 hasta ETAPA 110;
+- postergar Productos e Inventario hasta ETAPA 102;
+- proyectar el lanzamiento controlado alrededor de ETAPA 97;
+- ordenar ETAPAS 90-96 como preparacion de seguridad, legalidad, datos,
+  operacion, calidad, experiencia y administracion;
+- crear `docs/15_LEGAL_AND_OPERATIONAL.md` como documento transversal del
+  Sistema de Gobierno;
+- registrar las decisiones permanentes asociadas al gobierno de lanzamiento.
+
+Fuera del alcance:
+
+- modificar backend;
+- modificar frontend;
+- modificar base de datos;
+- crear tablas;
+- implementar seguridad, permisos, legalidad, observabilidad o administracion;
+- redactar contratos legales definitivos;
+- iniciar ETAPA 90;
+- cerrar ETAPA 89;
+- reabrir ETAPA 88.
 
 ## Recordatorio
 

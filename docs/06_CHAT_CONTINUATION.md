@@ -1,5 +1,18 @@
 # Continuidad de Conversaciones
 
+Estado del documento: Documento Oficial del Sistema de Gobierno FeedGo v1.0.
+Version: 1.0.
+Categoria: Sistema de Gobierno.
+Nivel de autoridad: Alto para continuidad entre conversaciones y generacion de
+prompts de arranque.
+Documento dueno: `docs/06_CHAT_CONTINUATION.md`.
+Responsable funcional: Continuidad documental.
+Documentos relacionados: `00_GOVERNANCE.md`, `04_CURRENT_STAGE.md`,
+`05_SEARCH_ROADMAP.md`, `07_DECISIONS.md`,
+`08_ENGINEERING_PRINCIPLES.md`, `15_LEGAL_AND_OPERATIONAL.md`.
+Cuando debe consultarse: antes de generar prompts de continuidad o iniciar
+trabajo desde un nuevo chat.
+
 ## 1. Objetivo
 
 Este documento existe para garantizar la continuidad del proyecto entre conversaciones con IA.
@@ -15,6 +28,10 @@ Antes de responder cualquier consulta sobre FeedGo, la IA debe seguir el Procedi
 Antes de cualquier auditoría, diseño o modificación, la IA debe leer todos los documentos existentes dentro de `/docs`, respetando el orden lógico definido por el Sistema de Gobierno, y luego leer `CHANGELOG.md` únicamente como historial cronológico.
 
 Los prompts de continuidad no deben enumerar manualmente archivos específicos de `/docs` como sustituto de esa lectura completa.
+
+Antes de iniciar cualquier auditoria, diseno, propuesta o implementacion debe
+identificarse que documentos del Sistema de Gobierno gobiernan ese tema y
+revisarlos previamente. No puede iniciarse una modificacion sin esa lectura.
 
 El procedimiento oficial indica cómo:
 
@@ -59,6 +76,7 @@ El Prompt Maestro deberá derivarse de:
 - el roadmap vigente;
 - las decisiones permanentes;
 - los principios de ingeniería;
+- el gobierno legal y operativo vigente;
 - la documentación técnica relacionada con la tarea solicitada.
 
 Nunca generar un Prompt Maestro únicamente con documentos de gobierno.
@@ -78,6 +96,12 @@ El Prompt Maestro deberá incluir únicamente:
 - tarea inicial;
 - restricciones operativas;
 - obligación de reportar contradicciones.
+
+Cuando la tarea involucre datos personales, permisos, geolocalizacion,
+contenido publico, moderacion, mensajeria, reservas, productos, pagos,
+notificaciones, IA, backups, seguridad, proveedores externos u operacion en
+produccion, el Prompt Maestro debe recordar que la implementacion debera
+consultar tambien el documento legal y operativo vigente.
 
 El Prompt Maestro no debe:
 

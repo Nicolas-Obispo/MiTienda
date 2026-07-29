@@ -1,5 +1,17 @@
 # Product
 
+Estado del documento: Documento Oficial del Sistema de Gobierno FeedGo v1.0.
+Version: 1.0.
+Categoria: Sistema de Gobierno.
+Nivel de autoridad: Alto para vision, alcance, experiencia y criterios de
+producto.
+Documento dueno: `docs/02_PRODUCT.md`.
+Responsable funcional: Producto.
+Documentos relacionados: `00_GOVERNANCE.md`, `05_SEARCH_ROADMAP.md`,
+`07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`.
+Cuando debe consultarse: antes de definir alcance funcional, experiencia de
+usuario, jerarquia visual, datos solicitados al usuario o cambios de producto.
+
 ## Visión
 
 - FeedGo conecta personas, necesidades y soluciones.

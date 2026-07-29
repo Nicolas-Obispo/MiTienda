@@ -1,16 +1,19 @@
 # Diseno del Sistema de Notificaciones
 
-Categoria: Documento Tecnico
-
-Objetivo: definir el diseno arquitectonico transversal futuro del sistema de
-notificaciones de FeedGo, diferenciando notificaciones locales de la
-infraestructura futura de comunicaciones externas.
-
-Forma parte del Sistema de Gobierno: no.
-
-Componente documentado: sistema transversal futuro de notificaciones locales,
-relacion con Agenda, frontera futura con comunicaciones externas y preparacion
-para capacidades comerciales.
+Estado del documento: Documento Tecnico Oficial de FeedGo v1.0.
+Version: 1.0.
+Categoria: Documento Tecnico.
+Nivel de autoridad: Tecnico especializado para sistema transversal de
+notificaciones y frontera futura con comunicaciones externas.
+Documento dueno: `docs/14_NOTIFICATIONS_DESIGN.md`.
+Responsable funcional: Notificaciones y comunicaciones futuras.
+Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
+`02_PRODUCT.md`, `05_SEARCH_ROADMAP.md`,
+`13_AGENDA_RESERVATIONS_DESIGN.md`, `15_LEGAL_AND_OPERATIONAL.md`.
+Cuando debe consultarse: antes de disenar o implementar notificaciones
+locales, campana global, preferencias de notificacion, eventos notificables,
+correo, WhatsApp, verificacion de destinos, proveedores de comunicaciones,
+plantillas, reintentos, webhooks o capacidades comerciales asociadas a canales.
 
 ## Estado
 
@@ -22,6 +25,15 @@ a nivel tecnico, y antes de Reservas publicas.
 
 ETAPA 88 esta cerrada y su alcance no incluye implementacion de
 notificaciones.
+
+Roadmap vigente:
+
+- ETAPA 101 - Mensajeria y Cotizaciones: comunicaciones externas, correo,
+  WhatsApp, proveedores, verificacion de destinos, plantillas, reintentos y
+  webhooks.
+- ETAPA 105 - Notificaciones Inteligentes: notificaciones locales, campana
+  global, preferencias, integraciones locales e inteligencia futura de
+  notificaciones.
 
 No implementa:
 
@@ -81,7 +93,7 @@ del sistema de notificaciones.
 
 Correo, WhatsApp, verificacion de destinos, proveedores, plantillas,
 infraestructura asincronica, reintentos, webhooks e intentos de entrega quedan
-diferidos a ETAPA 91 - Mensajeria y Comunicaciones Externas.
+diferidos a ETAPA 101 - Mensajeria y Cotizaciones.
 
 ## Separacion conceptual obligatoria
 
@@ -285,7 +297,8 @@ no al futuro MVP local de notificaciones.
 
 ## Diferido fuera del cierre actual de ETAPA 88
 
-Quedan disenados, pero no implementados en el cierre actual de ETAPA 88:
+Quedan disenados, pero no implementados en el cierre actual de ETAPA 88 y
+planificados para ETAPA 105 - Notificaciones Inteligentes:
 
 - modulo transversal de notificaciones locales;
 - campana global para usuarios autenticados;
@@ -308,9 +321,9 @@ No es:
 - permiso del sistema operativo;
 - Service Worker.
 
-## Disenado para ETAPA 91
+## Disenado para ETAPA 101
 
-Quedan fuera de la implementacion de ETAPA 88 y asignados a ETAPA 91:
+Quedan fuera de la implementacion de ETAPA 88 y asignados a ETAPA 101:
 
 - envio real por correo;
 - envio real por WhatsApp;
@@ -349,7 +362,7 @@ modelo de datos vigente.
 La verificacion de correo o telefono no pertenece al futuro MVP local de
 notificaciones.
 
-Cuando se disene en ETAPA 91 debera contemplar:
+Cuando se disene en ETAPA 101 debera contemplar:
 
 - generacion segura de codigos;
 - almacenamiento no reversible;
@@ -541,7 +554,7 @@ UX:
 
 ## Mapa de trabajo
 
-ETAPA futura de notificaciones locales:
+ETAPA 105 - Notificaciones Inteligentes:
 
 1. Diseno detallado del MVP de notificaciones locales.
 2. Implementacion del sistema transversal de notificaciones locales.
@@ -550,7 +563,7 @@ ETAPA futura de notificaciones locales:
 5. Integracion local minima con sucesos de Agenda.
 6. Validacion final del alcance ejecutado.
 
-ETAPA 91 - Mensajeria y Comunicaciones Externas:
+ETAPA 101 - Mensajeria y Cotizaciones:
 
 - servicio transversal de correo;
 - servicio transversal de WhatsApp;
@@ -569,6 +582,6 @@ ETAPA 91 - Mensajeria y Comunicaciones Externas:
 
 Justificacion:
 
-ETAPA 91 ya existe como etapa futura de Mensajeria y es el dueno natural mas
+ETAPA 101 existe como etapa futura de Mensajeria y es el dueno natural mas
 cercano para comunicaciones externas. Crear una etapa nueva antes de activar
-ETAPA 91 aumentaria la fragmentacion del roadmap sin evidencia suficiente.
+ETAPA 101 aumentaria la fragmentacion del roadmap sin evidencia suficiente.

@@ -1916,3 +1916,50 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 - Recursos y capacidad.
 - Prevención transaccional de doble reserva.
 - Flujo público de reservas.
+
+---
+
+## ETAPA 89 — Reorganización del Roadmap y Gobierno de Lanzamiento
+
+**Estado:** Vigente
+
+### Cambiado
+
+- ETAPA 89 deja de ser Productos e Inventario y pasa a ser Reorganizacion del
+  Roadmap y Gobierno de Lanzamiento.
+- Productos e Inventario queda postergado a ETAPA 102 - Catalogo de Productos
+  y Disponibilidad Simple.
+- El lanzamiento controlado queda proyectado alrededor de ETAPA 97.
+- ETAPAS 90-96 quedan orientadas a seguridad, legalidad, datos, operacion,
+  calidad, experiencia de lanzamiento y administracion operativa minima.
+- ETAPAS 98-110 quedan orientadas a evolucion posterior basada en uso real.
+
+### Agregado
+
+- Se crea `docs/15_LEGAL_AND_OPERATIONAL.md` como documento transversal del
+  Sistema de Gobierno.
+- Se registra el principio permanente de no implementar funcionalidades solo
+  porque sean tecnicamente posibles.
+
+### Consolidacion del Sistema de Gobierno v1.0
+
+- Se consolida oficialmente el Sistema de Gobierno FeedGo v1.0.
+- Se homogeneiza el sistema documental con metadatos, autoridad, documento
+  dueno y criterios de consulta.
+- Se incorpora el Arbol de Autoridad del Sistema Documental.
+- Se establece la Fuente Unica de Verdad documental y la Consulta Obligatoria
+  antes de auditorias, disenos, propuestas, prompts, implementaciones,
+  validaciones o cierres.
+- Se incorpora la Estabilidad Documental como regla permanente para evitar
+  modificaciones por mejoras menores.
+- Se documenta el Flujo Oficial del Proyecto desde idea hasta push.
+- Se incorpora Compliance by Design en `docs/08_ENGINEERING_PRINCIPLES.md`.
+- Se oficializa `docs/15_LEGAL_AND_OPERATIONAL.md` como documento transversal
+  del Sistema de Gobierno FeedGo v1.0.
+
+### Sin cambios de codigo
+
+- No se modifico backend.
+- No se modifico frontend.
+- No se modifico base de datos.
+- No se crearon tablas ni funcionalidades nuevas.

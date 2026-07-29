@@ -1,11 +1,27 @@
-# Objetivo
+# Roadmap Oficial de Evolucion de FeedGo
 
-El Roadmap representa el plan oficial de construccion del buscador.
+Estado del documento: Documento Oficial del Sistema de Gobierno FeedGo v1.0.
+Version: 1.0.
+Categoria: Sistema de Gobierno.
+Nivel de autoridad: Alto para secuencia oficial de etapas y alcance aprobado
+por etapa.
+Documento dueno: `docs/05_SEARCH_ROADMAP.md`.
+Responsable funcional: Roadmap de producto y arquitectura.
+Documentos relacionados: `00_GOVERNANCE.md`, `04_CURRENT_STAGE.md`,
+`07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`.
+Cuando debe consultarse: antes de proponer, iniciar, diferir, cerrar o
+reordenar etapas.
+
+El Roadmap representa el plan oficial de evolucion de FeedGo.
 
 Debe mantenerse actualizado durante todo el proyecto.
 
 Cualquier evolucion del roadmap debe seguir el procedimiento formal definido en
 `00_GOVERNANCE.md`.
+
+La busqueda sigue siendo uno de los dominios principales de FeedGo, pero el
+roadmap gobierna tambien disponibilidad, agenda, reservas, notificaciones,
+comunicaciones, inventario, productos, IA, lanzamiento y futuras capacidades.
 
 No documenta conversaciones.
 
@@ -306,23 +322,180 @@ Fuera de alcance inicial:
 - filtros o ranking por agenda;
 - exponer la agenda privada completa al cliente.
 
-Pendiente transversal aproximado para ETAPAS 95-100:
+Pendiente transversal aproximado para una etapa futura de arquitectura
+enterprise:
 
 - evaluar la creacion de `docs/09_ARCHITECTURE.md` con una vista enterprise
   del backend, sin duplicar gobierno, decisiones ni documentos tecnicos
   especificos.
 
-### ☐ ETAPA 89
+### ◐ ETAPA 89
 
-Productos e Inventario.
+Reorganizacion del Roadmap y Gobierno de Lanzamiento.
+
+Objetivo:
+
+Reorganizar formalmente el roadmap para priorizar un lanzamiento publico
+seguro, estable, legalmente preparado y operable.
+
+Estado:
+
+Vigente.
+
+Incluye:
+
+- convertir Productos e Inventario en trabajo posterior al lanzamiento;
+- crear el gobierno legal y operativo transversal;
+- ordenar las etapas previas al lanzamiento controlado;
+- mantener ETAPA 88 cerrada y no iniciar ETAPA 90.
 
 ### ☐ ETAPA 90
 
-Pedidos, Carrito y Pagos.
+Seguridad, Ownership y Permisos.
+
+Objetivo:
+
+Auditar y endurecer permisos, ownership, rutas privadas, acciones sensibles y
+superficies de acceso antes de exponer FeedGo publicamente.
+
+Estado:
+
+Pendiente.
 
 ### ☐ ETAPA 91
 
-Mensajeria y Comunicaciones Externas.
+Cumplimiento Legal, Privacidad y Moderacion.
+
+Objetivo:
+
+Preparar criterios legales, privacidad, contenido publico, denuncias,
+moderacion y consentimiento necesarios para operar una aplicacion publica.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 92
+
+Integridad de Datos, Backups y Recuperacion.
+
+Objetivo:
+
+Validar integridad de datos, estrategia de backups, restauracion, conservacion
+y recuperacion operativa.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 93
+
+Observabilidad y Operacion.
+
+Objetivo:
+
+Preparar logs, monitoreo, diagnostico, configuracion productiva y operacion
+minima sin introducir deuda de infraestructura innecesaria.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 94
+
+QA Integral y Hardening Funcional.
+
+Objetivo:
+
+Ejecutar validacion integral, corregir defectos comprobados y endurecer los
+flujos principales existentes antes del lanzamiento.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 95
+
+Experiencia de Lanzamiento y Design System Critico.
+
+Objetivo:
+
+Ajustar la experiencia central de lanzamiento, accesibilidad, responsive y
+consistencia visual critica sin convertirlo en una reescritura del sistema de
+diseno.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 96
+
+Administracion Operativa Minima.
+
+Objetivo:
+
+Implementar o preparar las capacidades minimas para operar, revisar y resolver
+incidentes de una primera version publica controlada.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 97
+
+Infraestructura y Lanzamiento Controlado.
+
+Objetivo:
+
+Preparar despliegue, configuracion productiva, checklist final y publicacion
+controlada de FeedGo.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 98
+
+Analytics y Aprendizaje de Uso Real.
+
+Objetivo:
+
+Medir uso real de manera respetuosa de privacidad para orientar decisiones
+posteriores al lanzamiento.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 99
+
+Calidad de Datos y Conocimiento Administrable.
+
+Objetivo:
+
+Mejorar datos, conocimiento administrable y trazabilidad de informacion usada
+por busqueda, descubrimiento y futuras capacidades inteligentes.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 100
+
+Reservas Publicas y Carrito de Reserva.
+
+Objetivo:
+
+Disenar e implementar solicitudes publicas, servicios reservables y flujo de
+reserva sin pagos, sin exponer la agenda privada completa del propietario.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 101
+
+Mensajeria y Cotizaciones.
 
 Objetivo:
 
@@ -335,78 +508,119 @@ Estado:
 
 Pendiente.
 
-Incluye el trabajo diferido de correo, WhatsApp, proveedores externos,
-verificacion de destinos, workers, colas, schedulers productivos, plantillas,
-reintentos, webhooks e intentos de entrega externa.
+### ☐ ETAPA 102
 
-### [pendiente] ETAPA futura - Reservas publicas
+Catalogo de Productos y Disponibilidad Simple.
 
 Objetivo:
 
-Disenar e implementar Reservas/Solicitudes publicas, servicios reservables,
-recursos, capacidad y flujo publico sin exponer la agenda privada completa del
-propietario.
+Disenar e implementar productos o catalogo comercial simple, disponibilidad no
+marketplace y datos comerciales minimos solo si la evidencia de uso lo
+justifica.
 
 Estado:
 
 Pendiente.
 
-### [pendiente] ETAPA futura - Notificaciones locales
+### ☐ ETAPA 103
+
+Promociones y Fidelizacion.
 
 Objetivo:
 
-Disenar e implementar el sistema transversal de notificaciones locales dentro
-de FeedGo, incluyendo campana global, contador, listado, marcado como leido,
-configuracion local e integracion inicial con sucesos de Agenda.
+Explorar promociones, beneficios y mecanismos de fidelizacion posteriores al
+lanzamiento basados en uso real.
 
 Estado:
 
 Pendiente.
 
-### ☐ ETAPA 92
+### ☐ ETAPA 104
 
-Reputacion.
+Opiniones y Motor de Reputacion.
 
-### ☐ ETAPA 93
+Objetivo:
+
+Disenar reputacion, opiniones y senales publicas con moderacion, seguridad y
+prevencion de abuso.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 105
+
+Notificaciones Inteligentes.
+
+Objetivo:
+
+Disenar e implementar notificaciones locales y futuras notificaciones
+inteligentes, reutilizando la infraestructura transversal que corresponda.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 106
+
+Preferencias, Recomendaciones y Contexto.
+
+Objetivo:
+
+Incorporar preferencias, contexto y recomendaciones basadas en uso real,
+privacidad y control del usuario.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 107
 
 IA Conversacional.
 
-### ☐ ETAPA 94
+Objetivo:
 
-Recomendaciones.
+Evaluar e incorporar IA conversacional cuando existan datos, gobernanza y
+necesidades de producto suficientes.
 
-### ☐ ETAPA 95
+Estado:
 
-Analytics.
+Pendiente.
 
-### ☐ ETAPA 96
+### ☐ ETAPA 108
 
-Inteligencia Global.
-
-### ☐ ETAPA 97
-
-Calidad de Datos.
-
-### ☐ ETAPA 98
-
-Moderacion.
-
-### ☐ ETAPA 99
-
-Observabilidad.
-
-### ☐ ETAPA 100
-
-Backend Universal.
-
-### ☐ ETAPA 101
-
-Unificacion del Design System.
+Tendencias, Oferta, Demanda y Motor Predictivo.
 
 Objetivo:
 
-Auditar y unificar la interfaz visual de FeedGo sin modificar logica de negocio,
-contratos, backend ni funcionalidades.
+Construir senales predictivas y analiticas avanzadas posteriores al
+lanzamiento.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 109
+
+Ranking Dinamico y Descubrimiento Proactivo.
+
+Objetivo:
+
+Evolucionar ranking y descubrimiento con senales reales, trazabilidad y
+controles de calidad.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 110
+
+Plataforma Comercial y Backend Universal.
+
+Objetivo:
+
+Evaluar la expansion hacia capacidades comerciales y backend universal despues
+de validar uso real, operacion y necesidades del producto.
 
 Estado:
 

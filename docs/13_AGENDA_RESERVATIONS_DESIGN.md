@@ -1,14 +1,19 @@
 # Diseno de Agenda y Reservas
 
-Categoria: Documento Tecnico
-
-Objetivo: definir el diseno funcional, tecnico y el estado implementado de
-ETAPA 88 - Agenda y Reservas.
-
-Forma parte del Sistema de Gobierno: no.
-
-Componente documentado: modulo Agenda, integracion FeedGo-Agenda y futura
+Estado del documento: Documento Tecnico Oficial de FeedGo v1.0.
+Version: 1.0.
+Categoria: Documento Tecnico.
+Nivel de autoridad: Tecnico especializado para Agenda, FeedGo-Agenda y futura
 integracion de Reservas.
+Documento dueno: `docs/13_AGENDA_RESERVATIONS_DESIGN.md`.
+Responsable funcional: Agenda y Reservas.
+Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
+`02_PRODUCT.md`, `05_SEARCH_ROADMAP.md`,
+`12_AVAILABILITY_DESIGN.md`, `14_NOTIFICATIONS_DESIGN.md`.
+Cuando debe consultarse: antes de modificar Agenda Core, FeedGo-Agenda,
+Agenda privada, Agenda general, ActiveLayer aplicado a Agenda, concurrencia de
+Agenda, solapamientos, integracion futura con Reservas o cualquier frontera
+entre Availability, Agenda, Reservas y Notificaciones.
 
 ## Estado
 
@@ -46,7 +51,8 @@ Resumen operativo:
 - Schema fisico MySQL: validado contra modelos.
 - Validacion tecnica y funcional integral: aprobada con observaciones no
   bloqueantes.
-- Reservas publicas: no iniciadas y fuera del cierre actual de ETAPA 88.
+- Reservas publicas: no iniciadas, fuera del cierre actual de ETAPA 88 y
+  planificadas para ETAPA 100 - Reservas Publicas y Carrito de Reserva.
 - Notificaciones: disenadas como trabajo futuro, no implementadas.
 - Cierre formal de ETAPA 88: completado.
 
@@ -621,8 +627,8 @@ Reservas:
   aprobadas;
 - no debe exponer la agenda privada completa.
 - no forma parte del cierre actual de ETAPA 88;
-- debera implementarse en una etapa futura independiente definida por el
-  roadmap.
+- debera implementarse en ETAPA 100 - Reservas Publicas y Carrito de Reserva,
+  segun el roadmap vigente.
 
 Formula conceptual futura:
 
@@ -639,6 +645,8 @@ reservas confirmadas
 Esta formula es conceptual y no esta implementada.
 
 ## Reservas y solicitudes publicas
+
+Roadmap vigente: ETAPA 100 - Reservas Publicas y Carrito de Reserva.
 
 Durante el MVP futuro, turno y reserva seran variantes funcionales de una
 solicitud publica comun.

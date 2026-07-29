@@ -1,5 +1,20 @@
 # Diseno del Documento de Indice
 
+Estado del documento: Documento Tecnico Oficial de FeedGo v1.0.
+Version: 1.0.
+Categoria: Documento Tecnico.
+Nivel de autoridad: Tecnico especializado para Documento de Indice e
+Indexador.
+Documento dueno: `docs/10_INDEX_DESIGN.md`.
+Responsable funcional: Indexador y busqueda.
+Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
+`03_SEARCH.md`, `07_DECISIONS.md`, `08_ENGINEERING_PRINCIPLES.md`,
+`11_KNOWLEDGE_DESIGN.md`.
+Cuando debe consultarse: antes de modificar Indexador, Commerce Index
+Document, SourceSnapshots, builders, validadores, representacion de busqueda,
+evidencias, trazabilidad, regeneracion o futuras persistencias del Documento
+de Indice.
+
 Este documento constituye la fuente oficial de diseno del Documento de Indice.
 
 No define tablas.

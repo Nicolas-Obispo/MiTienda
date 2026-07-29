@@ -1,5 +1,18 @@
 # Knowledge Design
 
+Estado del documento: Documento Tecnico Oficial de FeedGo v1.0.
+Version: 1.0.
+Categoria: Documento Tecnico.
+Nivel de autoridad: Tecnico especializado para Knowledge System.
+Documento dueno: `docs/11_KNOWLEDGE_DESIGN.md`.
+Responsable funcional: Knowledge System y busqueda semantica.
+Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
+`03_SEARCH.md`, `07_DECISIONS.md`, `08_ENGINEERING_PRINCIPLES.md`,
+`10_INDEX_DESIGN.md`.
+Cuando debe consultarse: antes de modificar Conceptos, Relaciones, Knowledge
+Graph, KnowledgeProposal, TaxonomyAssignment, proyecciones, aprendizaje,
+promocion de conocimiento, evidencias o integracion con el Indexador.
+
 ## Estado
 
 En construcción.

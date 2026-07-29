@@ -1,5 +1,17 @@
 # Decisiones Arquitectónicas
 
+Estado del documento: Documento Oficial del Sistema de Gobierno FeedGo v1.0.
+Version: 1.0.
+Categoria: Sistema de Gobierno.
+Nivel de autoridad: Alto para decisiones permanentes aprobadas.
+Documento dueno: `docs/07_DECISIONS.md`.
+Responsable funcional: Arquitectura y gobierno de decisiones.
+Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
+`02_PRODUCT.md`, `05_SEARCH_ROADMAP.md`, `08_ENGINEERING_PRINCIPLES.md`,
+`15_LEGAL_AND_OPERATIONAL.md`.
+Cuando debe consultarse: antes de contradecir, ampliar, reemplazar o registrar
+una decision permanente.
+
 Este documento registra decisiones arquitectónicas permanentes aprobadas.
 
 No reemplaza la documentación oficial existente.
@@ -336,3 +348,12 @@ No reemplaza la documentación oficial existente.
 - Decision: Las notificaciones de FeedGo se disenaran como una capacidad transversal separada de Agenda, Reservas, autenticacion, planes comerciales, infraestructura de comunicaciones y proveedores externos. Agenda podra ser el primer productor de sucesos notificables, pero no sera duena del sistema. La notificacion local dentro de FeedGo sera el primer canal implementable, mediante campana global autenticada. Correo y WhatsApp quedan diferidos a una infraestructura transversal de comunicaciones externas, con proveedores reemplazables y contratos reutilizables.
 - Motivo: Agenda y futuras Reservas necesitan notificaciones, pero acoplarlas a proveedores, verificaciones o una pantalla generaria duplicacion, riesgos de entrega y una frontera incorrecta para futuros canales, modulos y planes.
 - Impacto: El cierre actual de ETAPA 88 no implementa notificaciones. La notificacion local queda como canal base futuro de FeedGo. Correo, WhatsApp, verificacion de destinos, plantillas, intentos de entrega, reintentos, webhooks e infraestructura asincronica pertenecen a una etapa futura de comunicaciones externas. Ningun modulo debe reimplementar proveedores ni verificacion por su cuenta. La futura monetizacion se resolvera mediante una politica externa de capacidades o feature access, no con condiciones rigidas dentro de notificaciones ni comunicaciones.
+
+## DEC-039
+
+- ID: DEC-039
+- Titulo: Roadmap orientado a lanzamiento y gobierno legal-operativo
+- Estado: Aprobada
+- Decision: ETAPA 89 deja de ser Productos e Inventario y pasa a ser Reorganizacion del Roadmap y Gobierno de Lanzamiento. Productos e Inventario se posterga a ETAPA 102. El lanzamiento controlado se proyecta alrededor de ETAPA 97. Las ETAPAS 90-96 deben preparar seguridad, ownership, permisos, legalidad, privacidad, moderacion, integridad de datos, backups, recuperacion, observabilidad, operacion, QA, experiencia critica y administracion operativa minima. `docs/15_LEGAL_AND_OPERATIONAL.md` queda incorporado como documento transversal del Sistema de Gobierno.
+- Motivo: FeedGo es una vidriera digital y motor de descubrimiento, no un marketplace tradicional. Antes de ampliar complejidad comercial, pagos, proveedores, mensajeria, inventario o inteligencia avanzada, el producto debe poder lanzarse de forma segura, estable, legalmente preparada y operable.
+- Impacto: El roadmap prioriza lanzamiento funcional y controlado. FeedGo no implementara funcionalidades unicamente porque sean tecnicamente posibles. Toda funcionalidad que aumente significativamente la complejidad debera estar respaldada por una necesidad del producto, evidencia de uso real o una decision estrategica documentada.

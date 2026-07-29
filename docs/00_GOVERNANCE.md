@@ -1,5 +1,18 @@
 # Reglas de gobierno del proyecto
 
+Estado del documento: Documento Oficial del Sistema de Gobierno FeedGo v1.0.
+Version: 1.0.
+Categoria: Sistema de Gobierno.
+Nivel de autoridad: Maximo dentro de la documentacion del proyecto.
+Documento dueno: `docs/00_GOVERNANCE.md`.
+Responsable funcional: Gobierno documental.
+Documentos relacionados: `01_ENGINEERING.md`, `02_PRODUCT.md`,
+`03_SEARCH.md`, `04_CURRENT_STAGE.md`, `05_SEARCH_ROADMAP.md`,
+`06_CHAT_CONTINUATION.md`, `07_DECISIONS.md`,
+`08_ENGINEERING_PRINCIPLES.md`, `15_LEGAL_AND_OPERATIONAL.md`.
+Cuando debe consultarse: antes de cualquier auditoria, diseno, propuesta,
+prompt, implementacion, validacion, cierre de etapa o cambio documental.
+
 - FeedGo se gobierna mediante documentos vivos.
 - Estos documentos son la fuente oficial de verdad.
 - La carpeta `/docs` constituye la memoria técnica oficial del proyecto.
@@ -22,6 +35,13 @@
 - Cualquier conversación debe poder continuar exactamente donde terminó la anterior únicamente leyendo `/docs`.
 - Cuando se incorpore un nuevo documento oficial al Sistema de Gobierno, deberán actualizarse también el orden de lectura, el procedimiento de continuidad, la generación de Prompt Maestro y cualquier referencia cruzada afectada.
 - El Sistema de Gobierno debe permanecer siempre sincronizado.
+
+El Sistema de Gobierno gobierna decisiones permanentes del proyecto.
+
+No es documentacion historica.
+
+Las decisiones permanentes se incorporan primero al Sistema de Gobierno y luego
+se implementan.
 
 Antes de cualquier auditoría, diseño o modificación, toda IA asistente del proyecto debe seguir obligatoriamente el Procedimiento Universal de Reconstrucción del Proyecto definido por este documento.
 
@@ -52,8 +72,102 @@ El Sistema de Gobierno de FeedGo está compuesto por:
 - `06_CHAT_CONTINUATION`
 - `07_DECISIONS`
 - `08_ENGINEERING_PRINCIPLES`
+- `15_LEGAL_AND_OPERATIONAL`
 
-Los documentos `10+` son documentos técnicos especializados.
+Los documentos `10+` pueden ser documentos tecnicos especializados o
+documentos transversales incorporados explicitamente al Sistema de Gobierno.
+
+## Arbol de Autoridad del Sistema Documental
+
+La jerarquia documental oficial es:
+
+1. Normativa vigente aplicable.
+2. `00_GOVERNANCE`.
+3. Documentos del Sistema de Gobierno:
+   - `01_ENGINEERING`;
+   - `02_PRODUCT`;
+   - `03_SEARCH`;
+   - `04_CURRENT_STAGE`;
+   - `05_SEARCH_ROADMAP`;
+   - `06_CHAT_CONTINUATION`;
+   - `07_DECISIONS`;
+   - `08_ENGINEERING_PRINCIPLES`;
+   - `15_LEGAL_AND_OPERATIONAL`.
+4. Decisiones permanentes registradas en `07_DECISIONS`.
+5. Documentos tecnicos especializados.
+6. CHANGELOG como historial cronologico.
+7. Prompts, conversaciones y memoria de asistentes.
+
+Reglas:
+
+- `04_CURRENT_STAGE` define la etapa vigente.
+- `05_SEARCH_ROADMAP` define la secuencia oficial de etapas.
+- `07_DECISIONS` registra decisiones permanentes aprobadas.
+- `15_LEGAL_AND_OPERATIONAL` gobierna riesgos legales, privacidad,
+  compliance, seguridad operativa y lanzamiento.
+- Los documentos tecnicos gobiernan su componente especifico siempre que no
+  contradigan documentos de mayor jerarquia.
+- CHANGELOG no define estado vigente ni alcance futuro.
+
+## Gobierno por Consulta Obligatoria
+
+Antes de emitir opiniones tecnicas, realizar auditorias, disenar
+funcionalidades, generar prompts o implementar cambios, deberan consultarse los
+documentos oficiales aplicables del Sistema de Gobierno.
+
+Los documentos oficiales prevalecen sobre:
+
+- memoria del asistente;
+- conversaciones anteriores;
+- prompts reutilizados;
+- recomendaciones genericas;
+- buenas practicas externas;
+- decisiones no documentadas.
+
+Si un tema no esta documentado podra proponerse una nueva decision, pero
+unicamente despues de verificar que no contradice el Sistema de Gobierno.
+
+## Fuente unica documental
+
+Cada decision permanente debera tener un unico documento propietario.
+
+Los demas documentos deberan referenciar esa fuente.
+
+No deben:
+
+- copiarla;
+- reinterpretarla;
+- mantener versiones paralelas;
+- convertir una referencia en una segunda fuente de verdad.
+
+## Estabilidad documental
+
+El Sistema de Gobierno debe evolucionar lentamente.
+
+No debe modificarse por mejoras menores.
+
+Solo debera actualizarse cuando exista una decision permanente de:
+
+- arquitectura;
+- ingenieria;
+- producto;
+- gobierno;
+- cumplimiento;
+- operacion.
+
+Las correcciones documentales menores deben limitarse a consistencia,
+referencias cruzadas, estado, version o errores comprobados.
+
+## Indice de consulta
+
+Antes de trabajar sobre un dominio debe identificarse el documento dueno y los
+documentos relacionados que lo gobiernan.
+
+La cabecera de cada documento indica cuando debe consultarse.
+
+Si el dominio no tiene documento dueno, debe proponerse una decision o
+documentacion nueva solo despues de verificar que no contradice el Sistema de
+Gobierno.
 
 ## Clasificación Oficial de Documentos
 
@@ -92,6 +206,16 @@ Ejemplos:
 ### Documento Operativo
 
 Documentos que describan procesos operativos, despliegues, herramientas o mantenimiento.
+
+### Documento Legal y Operativo
+
+Documento transversal del Sistema de Gobierno que define criterios obligatorios
+de producto, ingeniería y operación antes de modificar funciones relacionadas
+con datos personales, permisos, geolocalización, contenido público,
+moderación, mensajería, reservas, productos, pagos, notificaciones, IA,
+backups, seguridad, proveedores externos u operación en producción.
+
+No reemplaza revisión profesional legal ni redacta contratos definitivos.
 
 ### Documento Histórico
 
@@ -211,15 +335,16 @@ Cualquier contradicción entre un prompt y la documentación oficial se resuelve
 
 El flujo oficial de trabajo de FeedGo es único y obligatorio:
 
-1. Auditoría.
-2. Evidencia.
-3. Diseño.
-4. Documentación.
-5. Implementación.
-6. Validación.
-7. CHANGELOG.
-8. Commit.
-9. Push.
+1. Idea.
+2. Auditoría.
+3. Evidencia.
+4. Diseño.
+5. Actualización documental.
+6. Implementación.
+7. Validación.
+8. CHANGELOG.
+9. Commit.
+10. Push.
 
 No debe existir ningún otro flujo alternativo.
 

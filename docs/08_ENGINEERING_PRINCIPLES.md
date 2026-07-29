@@ -1,5 +1,16 @@
 # Principios de Ingeniería
 
+Estado del documento: Documento Oficial del Sistema de Gobierno FeedGo v1.0.
+Version: 1.0.
+Categoria: Sistema de Gobierno.
+Nivel de autoridad: Alto para principios permanentes de ingenieria.
+Documento dueno: `docs/08_ENGINEERING_PRINCIPLES.md`.
+Responsable funcional: Ingenieria y arquitectura.
+Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
+`07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`.
+Cuando debe consultarse: antes de tomar decisiones tecnicas, disenar
+arquitectura, implementar, validar o cerrar etapas.
+
 Este documento registra los principios permanentes de ingeniería utilizados para desarrollar FeedGo.
 
 No contiene decisiones de producto.
@@ -401,7 +412,30 @@ Evitar duplicar reglas en prompts y documentación.
 
 Toda evolución del proceso debe incorporarse al Sistema de Gobierno.
 
-## 36. Prompts sin duplicación documental
+## 36. Consulta Obligatoria al Sistema de Gobierno
+
+Toda decision tecnica debera basarse primero en los documentos oficiales
+aplicables.
+
+La experiencia previa, memoria, prompts y recomendaciones externas nunca
+sustituyen la documentacion oficial.
+
+Antes de disenar o implementar, se debe identificar que documentos gobiernan el
+tema y verificar que la propuesta no los contradiga.
+
+## 37. Compliance by Design
+
+Toda funcionalidad debe disenarse considerando desde el inicio el Sistema de
+Gobierno, Producto, Ingenieria, Seguridad, Privacidad, Operacion y
+Cumplimiento.
+
+El cumplimiento no es una validacion posterior.
+
+Antes del diseno deben consultarse los documentos duenos aplicables.
+
+Una funcionalidad bloqueada por el Sistema de Gobierno no debe implementarse.
+
+## 38. Prompts sin duplicación documental
 
 Los prompts de continuidad deben ser instrucciones operativas breves.
 
@@ -411,7 +445,7 @@ No deben convertirse en una segunda fuente de verdad.
 
 El contexto, la arquitectura, el roadmap y las decisiones permanentes deben reconstruirse desde `/docs`.
 
-## 37. Gobierno del Modelo de Datos
+## 39. Gobierno del Modelo de Datos
 
 Antes de crear cualquier tabla nueva debe realizarse una auditoria del modelo
 de datos existente.
@@ -428,7 +462,7 @@ La auditoria debe demostrar obligatoriamente:
 Crear una tabla nueva sin esta evidencia queda fuera del flujo oficial de
 trabajo.
 
-## 38. Compatibilidad hacia atras
+## 40. Compatibilidad hacia atras
 
 Toda nueva funcionalidad debe auditar su impacto sobre funcionalidades
 existentes antes de ser aprobada o cerrada.
@@ -444,7 +478,7 @@ La auditoria debe verificar:
 No puede cerrarse una etapa sin demostrar que la implementacion nueva no rompio
 funcionalidades anteriores.
 
-## 39. Validacion obligatoria de schema
+## 41. Validacion obligatoria de schema
 
 Antes de cerrar una etapa que agregue o use tablas nuevas debe verificarse:
 
@@ -456,7 +490,7 @@ Antes de cerrar una etapa que agregue o use tablas nuevas debe verificarse:
 
 Si existe una diferencia que afecte runtime, la etapa no puede cerrarse.
 
-## 40. Clasificacion oficial de tablas
+## 42. Clasificacion oficial de tablas
 
 La documentacion tecnica debe clasificar explicitamente cada tabla relevante
 como:
@@ -474,7 +508,7 @@ como:
 La clasificacion no cambia el modelo por si misma; define propiedad,
 responsabilidad y riesgo de cada dato.
 
-## 41. Design System oficial
+## 43. Design System oficial
 
 Toda nueva pantalla, componente o flujo visible debe respetar el Design System
 oficial de FeedGo.
@@ -496,7 +530,7 @@ producto lo justifique.
 No deben incorporarse nuevos estilos de botones sin justificacion
 arquitectonica o de producto.
 
-## 42. Modularidad sin sobreingenieria
+## 44. Modularidad sin sobreingenieria
 
 Cuando una capacidad tenga dominio propio, debe disenarse como modulo autonomo
 dentro del monorepo antes de acoplarla a una pantalla concreta.
@@ -531,7 +565,7 @@ El nucleo de Agenda debe conservar independencia tecnica real:
   salvo que exista una necesidad funcional demostrada para persistirlas en
   backend.
 
-## 43. Mutaciones concurrentes sin sobrescritura silenciosa
+## 45. Mutaciones concurrentes sin sobrescritura silenciosa
 
 Cuando un modulo permita edicion desde mas de una sesion, usuario o dispositivo,
 las mutaciones sobre registros compartidos deben protegerse contra
@@ -546,7 +580,7 @@ Agenda debe exigir `version_esperada` en toda mutacion concurrente de
 El frontend debe informar el conflicto y refrescar datos, pero no debe
 sobrescribir automaticamente la version remota.
 
-## 44. Respaldo, historial y ciclo de vida no destructivo
+## 46. Respaldo, historial y ciclo de vida no destructivo
 
 El diseno de dominios persistentes debe separar tres responsabilidades:
 
@@ -563,7 +597,7 @@ futuras reservas y prevencion de doble reserva antes de confirmar.
 No debe copiar registros manualmente en cada operacion como sustituto de una
 estrategia real de backup o auditoria.
 
-## 45. Solapamientos tecnicos y politicas consumidoras
+## 47. Solapamientos tecnicos y politicas consumidoras
 
 Agenda puede detectar solapamientos tecnicos entre intervalos del mismo
 contexto agendable.
@@ -576,7 +610,7 @@ cuando corresponda.
 
 El frontend no debe inventar esas politicas.
 
-## 46. Notificaciones transversales desacopladas
+## 48. Notificaciones transversales desacopladas
 
 Las notificaciones deben modelarse como capacidad transversal cuando puedan ser
 consumidas por mas de un dominio.
