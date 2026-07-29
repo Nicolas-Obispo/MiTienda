@@ -22,10 +22,14 @@ from app.modules.products.schemas.secciones_schemas import (
     SeccionResponse,
 )
 
+from app.modules.spaces.services.comercios_ownership_services import (
+    ComercioNoEncontradoError,
+    ComercioUsuarioNoPropietarioError,
+)
 from app.modules.products.services.secciones_services import (
+    SeccionNoEncontradaError,
     crear_seccion,
     listar_secciones_por_comercio,
-    obtener_seccion_por_id,
     actualizar_seccion,
 )
 
@@ -49,7 +53,16 @@ def crear_seccion_endpoint(
     Requiere usuario autenticado.
     """
 
-    return crear_seccion(db, payload)
+    try:
+        return crear_seccion(
+            db,
+            payload,
+            usuario_autenticado=usuario_actual,
+        )
+    except ComercioNoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ComercioUsuarioNoPropietarioError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 # ======================================================
@@ -89,11 +102,16 @@ def actualizar_seccion_endpoint(
     Requiere usuario autenticado.
     """
 
-    seccion = obtener_seccion_por_id(db, seccion_id)
-    if not seccion:
-        raise HTTPException(
-            status_code=404,
-            detail="Sección no encontrada"
+    try:
+        return actualizar_seccion(
+            db,
+            seccion_id,
+            payload,
+            usuario_autenticado=usuario_actual,
         )
-
-    return actualizar_seccion(db, seccion, payload)
+    except SeccionNoEncontradaError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ComercioNoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ComercioUsuarioNoPropietarioError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc

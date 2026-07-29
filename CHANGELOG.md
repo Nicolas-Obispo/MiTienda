@@ -1974,16 +1974,44 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 
 ## ETAPA 90 — Seguridad, Ownership y Permisos
 
-**Estado:** Vigente
+**Estado:** Cerrada
 
 ### Inicio documental
 
 - ETAPA 90 queda iniciada documentalmente como etapa vigente.
 - El inicio se limita a la transicion documental oficial desde ETAPA 89.
 
-### Sin cambios de codigo
+### Seguridad y ownership
 
-- No se modifico backend.
+- Se auditaron endpoints, mutaciones privadas, ownership y superficies
+  sensibles.
+- Se incorporo el contrato de ownership `Usuario -> Comercio -> Recurso` para
+  recursos derivados de comercio.
+- Se corrigio authorization backend en publicaciones, historias, secciones,
+  analytics, metricas sociales, snapshots, comparacion y score.
+- Se creo un helper central minimo para validar comercio propio sin conocer
+  HTTP, roles ni dominios consumidores.
+- Se endurecio logout para exigir token valido y evitar revocar tokens ausentes
+  o invalidos.
+- Se bloquearon mutaciones legacy de Productos hasta que ETAPA 102 defina el
+  ownership oficial del dominio.
+- Se agregaron tests automatizados de autorizacion para publicaciones,
+  historias, secciones, analytics, helper de ownership, logout y productos
+  legacy.
+
+### Documentacion
+
+- Se registro la decision permanente de ownership derivado desde Comercio.
+- Se incorporo el principio de ownership backend de recursos derivados.
+- Se asignaron pendientes residuales a ETAPA 91, ETAPA 93, ETAPA 94, ETAPA 95
+  y ETAPA 102.
+
+### Cierre formal
+
+- ETAPA 90 queda cerrada formalmente.
+- ETAPA 91 - Cumplimiento Legal, Privacidad y Moderacion queda vigente.
+- No se modifico backend fuera del alcance de seguridad y ownership de ETAPA
+  90.
 - No se modifico frontend.
 - No se modifico base de datos.
-- No se crearon tablas ni funcionalidades nuevas.
+- No se crearon tablas, modelos, relaciones ni funcionalidades nuevas.

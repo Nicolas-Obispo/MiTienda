@@ -635,3 +635,33 @@ Reglas:
 
 El sistema de notificaciones y la infraestructura de comunicaciones no deben
 ser duenos de planes comerciales, pagos, precios, suscripciones ni facturacion.
+
+## 49. Ownership backend de recursos derivados
+
+Las mutaciones privadas deben validar autorizacion en backend.
+
+Para recursos derivados de un comercio, el contrato base es:
+
+Usuario
+
+↓
+
+Comercio
+
+↓
+
+Recurso
+
+Reglas:
+
+- exigir autenticacion backend en toda mutacion privada;
+- derivar el propietario natural antes de modificar datos;
+- devolver `401` cuando no exista autenticacion valida;
+- devolver `403` cuando el usuario autenticado no sea propietario;
+- devolver `404` cuando el recurso o su comercio propietario no exista;
+- mantener el frontend como capa de interaccion y UX, nunca como barrera de
+  seguridad;
+- evitar roles, permisos, tablas o relaciones nuevas sin evidencia y necesidad
+  comprobada;
+- bloquear mutaciones globales de recursos sin dueno modelado hasta definir su
+  ownership oficial.

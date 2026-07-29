@@ -23,6 +23,7 @@ from app.modules.products.services.productos_services import (
     actualizar_producto,
     eliminar_producto,
     buscar_productos_por_nombre,
+    ProductosLegacyMutacionesDeshabilitadasError,
 )
 
 # Crear router
@@ -77,7 +78,13 @@ def crear_nuevo_producto(
     """
     Crea un nuevo producto — requiere token válido.
     """
-    return crear_producto(db, producto)
+    try:
+        return crear_producto(db, producto)
+    except ProductosLegacyMutacionesDeshabilitadasError:
+        raise HTTPException(
+            status_code=403,
+            detail="Las mutaciones legacy de productos no estÃ¡n habilitadas",
+        )
 
 
 # -----------------------------------------
@@ -113,12 +120,13 @@ def actualizar_producto_existente(
     """
     Actualiza un producto — requiere token válido.
     """
-    producto_actualizado = actualizar_producto(db, producto_id, producto)
-
-    if not producto_actualizado:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-
-    return producto_actualizado
+    try:
+        return actualizar_producto(db, producto_id, producto)
+    except ProductosLegacyMutacionesDeshabilitadasError:
+        raise HTTPException(
+            status_code=403,
+            detail="Las mutaciones legacy de productos no estÃ¡n habilitadas",
+        )
 
 
 # -----------------------------------------
@@ -133,9 +141,10 @@ def eliminar_producto_existente(
     """
     Elimina un producto — requiere token válido.
     """
-    producto_eliminado = eliminar_producto(db, producto_id)
-
-    if not producto_eliminado:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-
-    return {"mensaje": "Producto eliminado correctamente"}
+    try:
+        return eliminar_producto(db, producto_id)
+    except ProductosLegacyMutacionesDeshabilitadasError:
+        raise HTTPException(
+            status_code=403,
+            detail="Las mutaciones legacy de productos no estÃ¡n habilitadas",
+        )

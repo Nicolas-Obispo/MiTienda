@@ -29,6 +29,10 @@ from app.core.auth import (
     obtener_usuario_actual_opcional,
 )
 from app.modules.stories.schemas.historias_schemas import HistoriaCreate, HistoriaRead, HistoriasBarItem
+from app.modules.spaces.services.comercios_ownership_services import (
+    ComercioNoEncontradoError,
+    ComercioUsuarioNoPropietarioError,
+)
 from app.modules.stories.services.historias_services import (
     crear_historia,
     listar_historias_activas_por_comercio,
@@ -52,15 +56,22 @@ def crear_historia_endpoint(
     comercio_id: int,
     historia_in: HistoriaCreate,
     db: Session = Depends(get_db),
+    usuario_actual=Depends(obtener_usuario_actual),
 ):
     """
     Crea una historia para un comercio.
     """
-    return crear_historia(
-        db,
-        comercio_id=comercio_id,
-        historia_in=historia_in,
-    )
+    try:
+        return crear_historia(
+            db,
+            comercio_id=comercio_id,
+            historia_in=historia_in,
+            usuario_autenticado=usuario_actual,
+        )
+    except ComercioNoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ComercioUsuarioNoPropietarioError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @router.get(

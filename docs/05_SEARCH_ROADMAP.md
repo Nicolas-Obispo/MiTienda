@@ -349,7 +349,7 @@ Incluye:
 - ordenar las etapas previas al lanzamiento controlado;
 - mantener ETAPA 88 cerrada e iniciar documentalmente ETAPA 90.
 
-### ◐ ETAPA 90
+### ☑ ETAPA 90
 
 Seguridad, Ownership y Permisos.
 
@@ -360,9 +360,21 @@ superficies de acceso antes de exponer FeedGo publicamente.
 
 Estado:
 
-Vigente.
+Cerrada.
 
-### ☐ ETAPA 91
+Incluye:
+
+- auditoria integral de endpoints, autenticacion, ownership y superficies
+  sensibles;
+- aplicacion del contrato `Usuario -> Comercio -> Recurso`;
+- ownership backend en publicaciones, historias, secciones, analytics,
+  metricas sociales, snapshots, comparacion y score;
+- helper central minimo para validar comercio propio;
+- logout con autenticacion valida obligatoria;
+- bloqueo de mutaciones legacy de Productos hasta definir ownership oficial;
+- tests automatizados de autorizacion.
+
+### ◐ ETAPA 91
 
 Cumplimiento Legal, Privacidad y Moderacion.
 
@@ -373,7 +385,12 @@ moderacion y consentimiento necesarios para operar una aplicacion publica.
 
 Estado:
 
-Pendiente.
+Vigente.
+
+Pendiente programado desde ETAPA 90:
+
+- separar schema publico y privado de usuario para no exponer email en
+  respuestas publicas.
 
 ### ☐ ETAPA 92
 
@@ -401,6 +418,11 @@ Estado:
 
 Pendiente.
 
+Pendiente programado desde ETAPA 90:
+
+- endurecer uploads con tamano real permitido, cuota, asociacion con usuario o
+  recurso, validacion, limpieza y auditoria.
+
 ### ☐ ETAPA 94
 
 QA Integral y Hardening Funcional.
@@ -413,6 +435,12 @@ flujos principales existentes antes del lanzamiento.
 Estado:
 
 Pendiente.
+
+Pendientes programados desde ETAPA 90:
+
+- validar existencia y estado de publicaciones antes de operar likes;
+- validar existencia y estado de comercios antes de operar seguidores;
+- definir comportamiento `404` o idempotente en relaciones sociales.
 
 ### ☐ ETAPA 95
 
@@ -427,6 +455,17 @@ diseno.
 Estado:
 
 Pendiente.
+
+Pendientes programados desde ETAPA 90:
+
+- corregir funcionamiento, precision, seleccion y persistencia del mapa de
+  ubicacion;
+- mejorar visualizacion del mapa, marcadores, controles e informacion
+  contextual preservando funcionalidades existentes;
+- aplicar Cache-First cuando corresponda y evitar recargas o bloqueos
+  innecesarios;
+- completar revision visual general: efecto burbuja pendiente, fondos,
+  contraste, jerarquia visual, legibilidad, identidad visual y accesibilidad.
 
 ### ☐ ETAPA 96
 
@@ -521,6 +560,11 @@ justifica.
 Estado:
 
 Pendiente.
+
+Pendiente programado desde ETAPA 90:
+
+- revisar Productos legacy y definir ownership oficial antes de habilitar
+  mutaciones de catalogo o inventario.
 
 ### ☐ ETAPA 103
 

@@ -97,7 +97,7 @@ Critico:
 
 ## Ultima etapa cerrada
 
-ETAPA 89 - Reorganizacion del Roadmap y Gobierno de Lanzamiento.
+ETAPA 90 - Seguridad, Ownership y Permisos.
 
 Estado:
 
@@ -122,7 +122,63 @@ Alcance cerrado:
 Estado final actual:
 
 - ETAPA 89 esta cerrada formalmente.
-- ETAPA 90 queda vigente.
+- ETAPA 90 queda cerrada formalmente.
+
+## Estado ETAPA 90
+
+ETAPA 90 se encuentra cerrada.
+
+Alcance cerrado:
+
+- Auditoria integral de endpoints, autenticacion, ownership, mutaciones
+  privadas y superficies sensibles.
+- Correccion de ownership en publicaciones, historias, secciones, analytics,
+  metricas sociales, snapshots, comparacion y score.
+- Creacion de un helper central minimo de ownership de comercio propio en
+  `backend/app/modules/spaces/services/comercios_ownership_services.py`.
+- Aplicacion del contrato `Usuario -> Comercio -> Recurso` para recursos
+  derivados de comercio.
+- Endurecimiento de logout para exigir autenticacion valida y evitar revocar
+  tokens ausentes o invalidos.
+- Bloqueo de mutaciones legacy de Productos hasta que el dominio oficial defina
+  ownership.
+- Tests automatizados de autorizacion para publicaciones, historias,
+  secciones, analytics, helper de ownership, logout y productos legacy.
+
+Decisiones aprobadas:
+
+- Las mutaciones privadas requieren autenticacion backend obligatoria.
+- El backend valida ownership; el frontend no es barrera de seguridad.
+- Los recursos derivados deben resolver su propietario natural desde
+  `Usuario -> Comercio -> Recurso`.
+- No se crean roles, permisos, tablas ni relaciones nuevas sin necesidad
+  comprobada.
+- Un recurso sin dueno modelado no puede tener mutaciones globales habilitadas
+  para cualquier usuario autenticado.
+- Los endpoints de score, snapshot y comparacion quedan protegidos por
+  propietario como solucion segura minima hasta que una etapa futura defina
+  flujos internos o administrativos.
+
+Pendientes no bloqueantes programados:
+
+- ETAPA 91: separar schema publico y privado de usuario para no exponer email
+  en lecturas publicas.
+- ETAPA 93: endurecer uploads con tamano real permitido, cuota, asociacion con
+  usuario o recurso, validacion, limpieza y auditoria.
+- ETAPA 94: validar existencia y estado de publicaciones en likes, existencia y
+  estado de comercios en seguidores, y definir comportamiento `404` o
+  idempotente en relaciones sociales.
+- ETAPA 95: corregir mapa de ubicacion y realizar revision visual general,
+  incluyendo coherencia del efecto burbuja, fondos, contraste, jerarquia visual
+  y legibilidad.
+- ETAPA 102: revisar Productos legacy cuando el dominio oficial de Catalogo de
+  Productos y Disponibilidad Simple defina ownership.
+
+Estado final actual:
+
+- ETAPA 90 esta cerrada formalmente.
+- No quedan brechas criticas dentro del alcance de ETAPA 90.
+- No se crearon tablas, modelos ni relaciones nuevas.
 
 ## Estado ETAPA 88
 
@@ -243,7 +299,7 @@ Estado final actual:
 
 ## ETAPA vigente
 
-ETAPA 90 - Seguridad, Ownership y Permisos.
+ETAPA 91 - Cumplimiento Legal, Privacidad y Moderacion.
 
 Estado:
 
@@ -251,24 +307,27 @@ Vigente.
 
 Objetivo:
 
-Auditar y endurecer permisos, ownership, rutas privadas, acciones sensibles y
-superficies de acceso antes de exponer FeedGo publicamente.
+Preparar criterios legales, privacidad, contenido publico, denuncias,
+moderacion y consentimiento necesarios para operar una aplicacion publica.
 
 Alcance:
 
-- auditar seguridad, ownership y permisos existentes;
-- revisar rutas privadas, acciones sensibles y superficies de acceso;
-- detectar accesos inconsistentes o permisos insuficientes;
-- corregir unicamente defectos comprobados y necesarios para el endurecimiento
-  de seguridad de la etapa.
+- auditar cumplimiento legal, privacidad y moderacion existentes;
+- revisar datos personales expuestos en superficies publicas;
+- definir controles previos al lanzamiento relacionados con contenido publico,
+  consentimiento, denuncias y privacidad;
+- corregir unicamente defectos comprobados y necesarios para el alcance legal y
+  operativo de la etapa.
 
 Fuera del alcance:
 
 - modificar base de datos;
 - crear tablas;
-- implementar funcionalidades nuevas ajenas al endurecimiento de seguridad;
-- redactar contratos legales definitivos;
-- cerrar ETAPA 90;
+- implementar funcionalidades nuevas ajenas al alcance legal, privacidad y
+  moderacion;
+- redactar contratos legales definitivos de usuario final sin revision
+  profesional;
+- cerrar ETAPA 91;
 - reabrir ETAPA 88.
 
 ## Recordatorio

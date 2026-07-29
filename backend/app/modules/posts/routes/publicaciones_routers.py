@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.core.auth import obtener_usuario_actual_opcional
+from app.core.auth import obtener_usuario_actual, obtener_usuario_actual_opcional
 from app.core.database import get_db
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.posts.schemas.publicaciones_schemas import (
@@ -14,7 +14,12 @@ from app.modules.posts.schemas.publicaciones_schemas import (
     PublicacionRead,
 )
 
+from app.modules.spaces.services.comercios_ownership_services import (
+    ComercioNoEncontradoError,
+    ComercioUsuarioNoPropietarioError,
+)
 from app.modules.posts.services.publicaciones_services import (
+    PublicacionNoEncontradaError,
     crear_publicacion,
     listar_publicaciones_activas,
     listar_publicaciones_por_comercio,
@@ -147,13 +152,19 @@ def crear_publicacion_endpoint(
     comercio_id: int,
     publicacion_in: PublicacionCreate,
     db: Session = Depends(get_db),
-    usuario_actual: Optional[Usuario] = Depends(obtener_usuario_actual_opcional),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
-    publicacion = crear_publicacion(
-        db,
-        comercio_id=comercio_id,
-        publicacion_in=publicacion_in,
-    )
+    try:
+        publicacion = crear_publicacion(
+            db,
+            comercio_id=comercio_id,
+            publicacion_in=publicacion_in,
+            usuario_autenticado=usuario_actual,
+        )
+    except ComercioNoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ComercioUsuarioNoPropietarioError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
     return construir_publicacion_read(
         db=db,
@@ -216,7 +227,7 @@ def obtener_publicacion_detalle_endpoint(
 def eliminar_publicacion_endpoint(
     publicacion_id: int,
     db: Session = Depends(get_db),
-    usuario_actual: Optional[Usuario] = Depends(obtener_usuario_actual_opcional),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
     """
     Desactiva una publicación.
@@ -227,15 +238,19 @@ def eliminar_publicacion_endpoint(
     - Más adelante permitirá restaurarla desde Papelera / Reciclaje.
     """
 
-    publicacion = desactivar_publicacion(
-        db=db,
-        publicacion_id=publicacion_id,
-    )
-
-    if not publicacion:
-        raise HTTPException(
-            status_code=404,
-            detail="Publicación no encontrada",
+    try:
+        desactivar_publicacion(
+            db=db,
+            publicacion_id=publicacion_id,
+            usuario_autenticado=usuario_actual,
         )
+
+    except (
+        ComercioNoEncontradoError,
+        PublicacionNoEncontradaError,
+    ) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ComercioUsuarioNoPropietarioError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
     return None

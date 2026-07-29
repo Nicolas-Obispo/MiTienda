@@ -24,7 +24,7 @@ from app.modules.users.schemas.usuarios_schemas import (
 # Autenticación y seguridad
 from fastapi.security import HTTPAuthorizationCredentials
 from app.core.auth import obtener_usuario_actual, crear_token_jwt, bearer_scheme
-from jose import jwt, JWTError
+from jose import jwt
 from datetime import datetime
 from app.core.config import settings
 
@@ -90,28 +90,27 @@ def login_endpoint(payload: UsuarioLogin, db: Session = Depends(get_db)):
 @router.post("/logout", summary="Cerrar sesión (logout real)")
 def logout_endpoint(
     credenciales: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    usuario_actual=Depends(obtener_usuario_actual),
     db: Session = Depends(get_db)
 ):
+    if credenciales is None or not credenciales.credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
     token = credenciales.credentials
 
     # Intentamos obtener la expiración
-    try:
-        payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
-        )
-        exp_timestamp = payload.get("exp")
-        usuario_id = payload.get("sub")
-    except JWTError:
-        exp_timestamp = None
-        usuario_id = None
+    payload = jwt.decode(
+        token,
+        settings.SECRET_KEY,
+        algorithms=[settings.ALGORITHM]
+    )
+    exp_timestamp = payload.get("exp")
 
     expira_en = datetime.utcfromtimestamp(exp_timestamp) if exp_timestamp else None
 
     token_revocado = TokenRevocado(
         token=token,
-        usuario_id=int(usuario_id) if usuario_id else None,
+        usuario_id=usuario_actual.id,
         expira_en=expira_en,
     )
 

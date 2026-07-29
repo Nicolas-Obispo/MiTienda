@@ -5,11 +5,16 @@ Endpoints de analytics e insights
 de espacios MiPlaza.
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.auth import obtener_usuario_actual
+from app.modules.spaces.services.comercios_ownership_services import (
+    ComercioNoEncontradoError,
+    ComercioUsuarioNoPropietarioError,
+    obtener_comercio_propio_o_error,
+)
 
 from app.modules.analytics.services.comercios_analytics_services import (
     obtener_analytics_espacio,
@@ -35,6 +40,17 @@ def obtener_analytics_completo_espacio(
     - comparaciones
     - insights
     """
+
+    try:
+        obtener_comercio_propio_o_error(
+            db,
+            comercio_id=comercio_id,
+            usuario_autenticado=usuario_actual,
+        )
+    except ComercioNoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ComercioUsuarioNoPropietarioError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
     return obtener_analytics_espacio(
         db=db,

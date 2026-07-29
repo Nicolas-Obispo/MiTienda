@@ -5,11 +5,16 @@ Endpoints para consultar métricas sociales
 persistentes de los espacios.
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.auth import obtener_usuario_actual
+from app.modules.spaces.services.comercios_ownership_services import (
+    ComercioNoEncontradoError,
+    ComercioUsuarioNoPropietarioError,
+    obtener_comercio_propio_o_error,
+)
 
 from app.modules.analytics.services.comercios_metricas_sociales_services import (
     recalcular_metricas_comercio,
@@ -24,6 +29,24 @@ router = APIRouter(
 )
 
 
+def _validar_comercio_propio_http(
+    db: Session,
+    *,
+    comercio_id: int,
+    usuario_actual,
+):
+    try:
+        obtener_comercio_propio_o_error(
+            db,
+            comercio_id=comercio_id,
+            usuario_autenticado=usuario_actual,
+        )
+    except ComercioNoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ComercioUsuarioNoPropietarioError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
 @router.get("/espacios/{comercio_id}")
 def obtener_metricas_sociales_espacio(
     comercio_id: int,
@@ -36,6 +59,12 @@ def obtener_metricas_sociales_espacio(
     Por ahora recalcula desde la base de datos real
     para asegurar consistencia antes de optimizar.
     """
+
+    _validar_comercio_propio_http(
+        db,
+        comercio_id=comercio_id,
+        usuario_actual=usuario_actual,
+    )
 
     metricas = recalcular_metricas_comercio(
         db=db,
@@ -65,6 +94,12 @@ def generar_snapshot_espacio(
     de métricas sociales del espacio.
     """
 
+    _validar_comercio_propio_http(
+        db,
+        comercio_id=comercio_id,
+        usuario_actual=usuario_actual,
+    )
+
     snapshot = generar_snapshot_metricas_comercio(
         db=db,
         comercio_id=comercio_id,
@@ -93,6 +128,12 @@ def obtener_comparacion_espacio(
     Devuelve comparación real de métricas:
     snapshot actual vs snapshot anterior.
     """
+
+    _validar_comercio_propio_http(
+        db,
+        comercio_id=comercio_id,
+        usuario_actual=usuario_actual,
+    )
 
     return obtener_comparacion_metricas_comercio(
         db=db,

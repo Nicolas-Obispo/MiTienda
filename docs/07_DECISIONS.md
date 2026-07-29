@@ -357,3 +357,12 @@ No reemplaza la documentación oficial existente.
 - Decision: ETAPA 89 deja de ser Productos e Inventario y pasa a ser Reorganizacion del Roadmap y Gobierno de Lanzamiento. Productos e Inventario se posterga a ETAPA 102. El lanzamiento controlado se proyecta alrededor de ETAPA 97. Las ETAPAS 90-96 deben preparar seguridad, ownership, permisos, legalidad, privacidad, moderacion, integridad de datos, backups, recuperacion, observabilidad, operacion, QA, experiencia critica y administracion operativa minima. `docs/15_LEGAL_AND_OPERATIONAL.md` queda incorporado como documento transversal del Sistema de Gobierno.
 - Motivo: FeedGo es una vidriera digital y motor de descubrimiento, no un marketplace tradicional. Antes de ampliar complejidad comercial, pagos, proveedores, mensajeria, inventario o inteligencia avanzada, el producto debe poder lanzarse de forma segura, estable, legalmente preparada y operable.
 - Impacto: El roadmap prioriza lanzamiento funcional y controlado. FeedGo no implementara funcionalidades unicamente porque sean tecnicamente posibles. Toda funcionalidad que aumente significativamente la complejidad debera estar respaldada por una necesidad del producto, evidencia de uso real o una decision estrategica documentada.
+
+## DEC-040
+
+- ID: DEC-040
+- Titulo: Ownership derivado desde Comercio
+- Estado: Aprobada
+- Decision: Las mutaciones privadas sobre recursos derivados de un comercio deben validar ownership en backend mediante el contrato `Usuario -> Comercio -> Recurso`. El frontend no es una barrera de seguridad. Un recurso derivado debe resolver su propietario natural antes de mutar datos. Si un recurso no tiene dueno modelado, sus mutaciones globales no pueden quedar habilitadas para cualquier usuario autenticado.
+- Motivo: FeedGo administra recursos creados por propietarios de espacios. Validar solo JWT no demuestra autorizacion sobre el recurso y permite modificar informacion ajena o global.
+- Impacto: Publicaciones, historias, secciones, analytics, metricas, snapshots, comparacion, score y futuros recursos derivados de comercio deben validar propietario en backend. No se crean roles, permisos, tablas ni relaciones nuevas sin necesidad comprobada. Productos legacy permanece bloqueado hasta que ETAPA 102 defina ownership oficial del dominio.

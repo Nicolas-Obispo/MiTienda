@@ -23,9 +23,17 @@ from sqlalchemy import func, or_
 
 from app.modules.posts.models.publicaciones_models import Publicacion
 from app.modules.spaces.models.comercios_models import Comercio
+from app.modules.spaces.services.comercios_ownership_services import (
+    obtener_comercio_propio_o_error,
+)
 from app.modules.social.models.publicaciones_guardadas_models import PublicacionGuardada
 from app.modules.social.models.likes_publicaciones_models import LikePublicacion
 from app.modules.posts.schemas.publicaciones_schemas import PublicacionCreate
+from app.modules.users.models.usuarios_models import Usuario
+
+
+class PublicacionNoEncontradaError(ValueError):
+    pass
 
 
 # --------------------------------------------------
@@ -37,6 +45,7 @@ def crear_publicacion(
     *,
     comercio_id: int,
     publicacion_in: PublicacionCreate,
+    usuario_autenticado: Usuario,
 ) -> Publicacion:
     """
     Crea una nueva publicación para un comercio.
@@ -45,6 +54,12 @@ def crear_publicacion(
     ETAPA 57:
     - Se persiste imagen_url si viene informada.
     """
+
+    obtener_comercio_propio_o_error(
+        db,
+        comercio_id=comercio_id,
+        usuario_autenticado=usuario_autenticado,
+    )
 
     nueva_publicacion = Publicacion(
         comercio_id=comercio_id,
@@ -359,7 +374,8 @@ def desactivar_publicacion(
     db: Session,
     *,
     publicacion_id: int,
-) -> Optional[Publicacion]:
+    usuario_autenticado: Usuario,
+) -> Publicacion:
     """
     Desactiva una publicación.
 
@@ -377,7 +393,13 @@ def desactivar_publicacion(
     )
 
     if not publicacion:
-        return None
+        raise PublicacionNoEncontradaError("Publicacion no encontrada")
+
+    obtener_comercio_propio_o_error(
+        db,
+        comercio_id=publicacion.comercio_id,
+        usuario_autenticado=usuario_autenticado,
+    )
 
     publicacion.is_activa = False
 

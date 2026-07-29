@@ -15,6 +15,33 @@ from typing import List, Optional
 
 from app.modules.products.models.secciones_models import Seccion
 from app.modules.products.schemas.secciones_schemas import SeccionCreate, SeccionUpdate
+from app.modules.spaces.services.comercios_ownership_services import (
+    obtener_comercio_propio_o_error,
+)
+from app.modules.users.models.usuarios_models import Usuario
+
+
+class SeccionNoEncontradaError(ValueError):
+    pass
+
+
+def _obtener_seccion_propia_o_error(
+    db: Session,
+    *,
+    seccion_id: int,
+    usuario_autenticado: Usuario,
+) -> Seccion:
+    seccion = obtener_seccion_por_id(db, seccion_id)
+    if seccion is None:
+        raise SeccionNoEncontradaError("Seccion no encontrada")
+
+    obtener_comercio_propio_o_error(
+        db,
+        comercio_id=seccion.comercio_id,
+        usuario_autenticado=usuario_autenticado,
+    )
+
+    return seccion
 
 
 # ======================================================
@@ -22,11 +49,18 @@ from app.modules.products.schemas.secciones_schemas import SeccionCreate, Seccio
 # ======================================================
 def crear_seccion(
     db: Session,
-    data: SeccionCreate
+    data: SeccionCreate,
+    usuario_autenticado: Usuario,
 ) -> Seccion:
     """
     Crea una nueva sección para un comercio.
     """
+
+    obtener_comercio_propio_o_error(
+        db,
+        comercio_id=data.comercio_id,
+        usuario_autenticado=usuario_autenticado,
+    )
 
     seccion = Seccion(
         comercio_id=data.comercio_id,
@@ -85,12 +119,19 @@ def obtener_seccion_por_id(
 # ======================================================
 def actualizar_seccion(
     db: Session,
-    seccion: Seccion,
-    data: SeccionUpdate
+    seccion_id: int,
+    data: SeccionUpdate,
+    usuario_autenticado: Usuario,
 ) -> Seccion:
     """
     Actualiza campos permitidos de una sección.
     """
+
+    seccion = _obtener_seccion_propia_o_error(
+        db,
+        seccion_id=seccion_id,
+        usuario_autenticado=usuario_autenticado,
+    )
 
     if data.nombre is not None:
         seccion.nombre = data.nombre

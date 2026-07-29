@@ -22,6 +22,10 @@ from app.modules.stories.models.historias_vistas_models import HistoriaVista
 from app.modules.stories.models.historias_likes_models import HistoriaLike
 from app.modules.stories.schemas.historias_schemas import HistoriaCreate
 from app.modules.spaces.models.comercios_models import Comercio
+from app.modules.spaces.services.comercios_ownership_services import (
+    obtener_comercio_propio_o_error,
+)
+from app.modules.users.models.usuarios_models import Usuario
 
 
 LOCAL_UPLOAD_HOSTS = {
@@ -47,6 +51,7 @@ def crear_historia(
     *,
     comercio_id: int,
     historia_in: HistoriaCreate,
+    usuario_autenticado: Usuario,
 ) -> Historia:
     """
     Crea una historia para un comercio.
@@ -54,6 +59,12 @@ def crear_historia(
     - Solo inserta en DB.
     - No resuelve lógica de vistas.
     """
+
+    obtener_comercio_propio_o_error(
+        db,
+        comercio_id=comercio_id,
+        usuario_autenticado=usuario_autenticado,
+    )
 
     nueva_historia = Historia(
         comercio_id=comercio_id,
