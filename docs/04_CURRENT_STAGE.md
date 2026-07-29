@@ -97,11 +97,32 @@ Critico:
 
 ## Ultima etapa cerrada
 
-ETAPA 88 - Agenda y Reservas.
+ETAPA 89 - Reorganizacion del Roadmap y Gobierno de Lanzamiento.
 
 Estado:
 
 Cerrada.
+
+## Estado ETAPA 89
+
+ETAPA 89 se encuentra cerrada.
+
+Alcance cerrado:
+
+- El roadmap oficial queda reorganizado desde ETAPA 89 hasta ETAPA 110.
+- Productos e Inventario queda postergado hasta ETAPA 102.
+- El lanzamiento controlado queda proyectado alrededor de ETAPA 97.
+- ETAPAS 90-96 quedan ordenadas como preparacion de seguridad, legalidad,
+  datos, operacion, calidad, experiencia y administracion.
+- `docs/15_LEGAL_AND_OPERATIONAL.md` queda creado y oficializado como
+  documento transversal del Sistema de Gobierno.
+- Las decisiones permanentes asociadas al gobierno de lanzamiento quedan
+  registradas.
+
+Estado final actual:
+
+- ETAPA 89 esta cerrada formalmente.
+- ETAPA 90 queda vigente.
 
 ## Estado ETAPA 88
 
@@ -222,7 +243,7 @@ Estado final actual:
 
 ## ETAPA vigente
 
-ETAPA 89 - Reorganizacion del Roadmap y Gobierno de Lanzamiento.
+ETAPA 90 - Seguridad, Ownership y Permisos.
 
 Estado:
 
@@ -230,30 +251,24 @@ Vigente.
 
 Objetivo:
 
-Reorganizar formalmente el roadmap para priorizar un lanzamiento publico
-seguro, estable, legalmente preparado y operable.
+Auditar y endurecer permisos, ownership, rutas privadas, acciones sensibles y
+superficies de acceso antes de exponer FeedGo publicamente.
 
 Alcance:
 
-- actualizar el roadmap oficial desde ETAPA 89 hasta ETAPA 110;
-- postergar Productos e Inventario hasta ETAPA 102;
-- proyectar el lanzamiento controlado alrededor de ETAPA 97;
-- ordenar ETAPAS 90-96 como preparacion de seguridad, legalidad, datos,
-  operacion, calidad, experiencia y administracion;
-- crear `docs/15_LEGAL_AND_OPERATIONAL.md` como documento transversal del
-  Sistema de Gobierno;
-- registrar las decisiones permanentes asociadas al gobierno de lanzamiento.
+- auditar seguridad, ownership y permisos existentes;
+- revisar rutas privadas, acciones sensibles y superficies de acceso;
+- detectar accesos inconsistentes o permisos insuficientes;
+- corregir unicamente defectos comprobados y necesarios para el endurecimiento
+  de seguridad de la etapa.
 
 Fuera del alcance:
 
-- modificar backend;
-- modificar frontend;
 - modificar base de datos;
 - crear tablas;
-- implementar seguridad, permisos, legalidad, observabilidad o administracion;
+- implementar funcionalidades nuevas ajenas al endurecimiento de seguridad;
 - redactar contratos legales definitivos;
-- iniciar ETAPA 90;
-- cerrar ETAPA 89;
+- cerrar ETAPA 90;
 - reabrir ETAPA 88.
 
 ## Recordatorio

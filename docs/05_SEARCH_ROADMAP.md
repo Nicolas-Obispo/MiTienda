@@ -329,7 +329,7 @@ enterprise:
   del backend, sin duplicar gobierno, decisiones ni documentos tecnicos
   especificos.
 
-### ◐ ETAPA 89
+### ☑ ETAPA 89
 
 Reorganizacion del Roadmap y Gobierno de Lanzamiento.
 
@@ -340,16 +340,16 @@ seguro, estable, legalmente preparado y operable.
 
 Estado:
 
-Vigente.
+Cerrada.
 
 Incluye:
 
 - convertir Productos e Inventario en trabajo posterior al lanzamiento;
 - crear el gobierno legal y operativo transversal;
 - ordenar las etapas previas al lanzamiento controlado;
-- mantener ETAPA 88 cerrada y no iniciar ETAPA 90.
+- mantener ETAPA 88 cerrada e iniciar documentalmente ETAPA 90.
 
-### ☐ ETAPA 90
+### ◐ ETAPA 90
 
 Seguridad, Ownership y Permisos.
 
@@ -360,7 +360,7 @@ superficies de acceso antes de exponer FeedGo publicamente.
 
 Estado:
 
-Pendiente.
+Vigente.
 
 ### ☐ ETAPA 91
 

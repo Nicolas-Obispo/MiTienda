@@ -1921,7 +1921,7 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 
 ## ETAPA 89 — Reorganización del Roadmap y Gobierno de Lanzamiento
 
-**Estado:** Vigente
+**Estado:** Cerrada
 
 ### Cambiado
 
@@ -1956,6 +1956,30 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 - Se incorpora Compliance by Design en `docs/08_ENGINEERING_PRINCIPLES.md`.
 - Se oficializa `docs/15_LEGAL_AND_OPERATIONAL.md` como documento transversal
   del Sistema de Gobierno FeedGo v1.0.
+
+### Cierre formal
+
+- ETAPA 89 queda cerrada oficialmente con alcance documental.
+- ETAPA 90 - Seguridad, Ownership y Permisos queda iniciada
+  documentalmente como etapa vigente.
+
+### Sin cambios de codigo
+
+- No se modifico backend.
+- No se modifico frontend.
+- No se modifico base de datos.
+- No se crearon tablas ni funcionalidades nuevas.
+
+---
+
+## ETAPA 90 — Seguridad, Ownership y Permisos
+
+**Estado:** Vigente
+
+### Inicio documental
+
+- ETAPA 90 queda iniciada documentalmente como etapa vigente.
+- El inicio se limita a la transicion documental oficial desde ETAPA 89.
 
 ### Sin cambios de codigo
 
