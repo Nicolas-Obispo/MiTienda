@@ -530,6 +530,17 @@ producto lo justifique.
 No deben incorporarse nuevos estilos de botones sin justificacion
 arquitectonica o de producto.
 
+Cuando se implemente el sistema global de temas, los componentes nuevos no
+deberan usar colores rigidos de fondo, texto o borde para valores que pertenezcan
+al tema.
+
+Deberan utilizar tokens semanticos compatibles con modo oscuro, modo claro y
+configuracion del dispositivo.
+
+La definicion concreta de tokens, valores, migracion y controlador global debera
+resolverse en la etapa tecnica correspondiente, despues de auditar el frontend
+real.
+
 ## 44. Modularidad sin sobreingenieria
 
 Cuando una capacidad tenga dominio propio, debe disenarse como modulo autonomo

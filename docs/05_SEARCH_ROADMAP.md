@@ -467,6 +467,73 @@ Pendientes programados desde ETAPA 90:
 - completar revision visual general: efecto burbuja pendiente, fondos,
   contraste, jerarquia visual, legibilidad, identidad visual y accesibilidad.
 
+Subetapa tecnica prevista:
+
+- Sistema global de temas y tokens semanticos, previo al lanzamiento.
+
+Alcance:
+
+- auditar el frontend completo antes de modificar colores;
+- localizar colores rigidos de fondo, texto y borde, clases utilitarias de
+  blanco/negro, hexadecimales directos, estilos inline de color, overlays,
+  portales, modales y componentes con colores locales;
+- disenar tokens semanticos para `background`, `foreground`, `surface`,
+  `surface-elevated`, `border`, `muted`, `primary`, `danger`, `success`,
+  `warning`, `overlay`, `input`, `disabled`, `focus` y `skeleton`;
+- definir valores consistentes para modo oscuro, modo claro y configuracion del
+  dispositivo;
+- implementar un controlador global del tema con tema seleccionado, tema
+  resuelto, aplicacion al documento, persistencia local, deteccion de
+  `prefers-color-scheme`, respuesta a cambios del sistema y prevencion de
+  destellos incorrectos al cargar;
+- ofrecer las opciones usar configuracion del dispositivo, modo claro y modo
+  oscuro;
+- mantener modo oscuro como valor predeterminado inicial salvo decision
+  documental posterior;
+- migrar primero componentes compartidos como botones, inputs, modales, cards,
+  headers, navegacion, menus, skeletons, overlays, estados vacios y mensajes de
+  error o exito;
+- migrar pantallas por grupos controlados, sin reemplazos automaticos masivos;
+- validar feed, buscador, historias, perfiles, agenda, disponibilidad, mapa,
+  cards, formularios, menus, modales, elementos deshabilitados, hover, focus,
+  errores, advertencias, skeletons, contraste y legibilidad.
+
+Regla futura:
+
+- ningun componente nuevo debera usar colores rigidos de fondo, texto o borde
+  cuando esos colores pertenezcan al tema; debera usar tokens semanticos
+  compatibles con modo claro y oscuro.
+
+Persistencia:
+
+- la primera implementacion usara `localStorage`;
+- la sincronizacion entre dispositivos queda como evolucion posterior;
+- antes de agregar columnas o tablas para preferencias de apariencia debera
+  auditarse el modelo de usuarios y justificarse el dueno natural conforme al
+  Gobierno del Modelo de Datos.
+
+Criterios de cierre:
+
+- inicio directo validado en modo oscuro;
+- inicio directo validado en modo claro;
+- modo del sistema validado;
+- cambio en tiempo real validado;
+- persistencia tras recargar validada;
+- navegacion entre pantallas validada;
+- modales y portales validados;
+- contraste y accesibilidad validados;
+- ausencia de destellos blancos validada;
+- ausencia de regresiones funcionales validada.
+
+Diferenciacion:
+
+- esta subetapa no reemplaza la correccion funcional del mapa;
+- no reemplaza la mejora visual del mapa;
+- no reemplaza la revision general de colores de fondo;
+- no reemplaza la aplicacion del efecto burbuja en botones faltantes;
+- esas tareas pueden preparar la consistencia visual, pero el sistema de temas
+  tendra alcance tecnico propio.
+
 ### ☐ ETAPA 96
 
 Administracion Operativa Minima.

@@ -170,7 +170,10 @@ Pendientes no bloqueantes programados:
   idempotente en relaciones sociales.
 - ETAPA 95: corregir mapa de ubicacion y realizar revision visual general,
   incluyendo coherencia del efecto burbuja, fondos, contraste, jerarquia visual
-  y legibilidad.
+  y legibilidad. Dentro de ETAPA 95 debera existir una subetapa tecnica propia
+  para sistema global de temas y tokens semanticos compatible con modo oscuro,
+  modo claro y configuracion del dispositivo, diferenciada de la correccion del
+  mapa y de la revision visual general.
 - ETAPA 102: revisar Productos legacy cuando el dominio oficial de Catalogo de
   Productos y Disponibilidad Simple defina ownership.
 
