@@ -10,7 +10,8 @@ Documentos relacionados: `01_ENGINEERING.md`, `02_PRODUCT.md`,
 `03_SEARCH.md`, `04_CURRENT_STAGE.md`, `05_SEARCH_ROADMAP.md`,
 `06_CHAT_CONTINUATION.md`, `07_DECISIONS.md`,
 `08_ENGINEERING_PRINCIPLES.md`, `15_LEGAL_AND_OPERATIONAL.md`,
-`16_DATA_INTEGRITY_AND_RECOVERY.md`.
+`16_DATA_INTEGRITY_AND_RECOVERY.md`,
+`17_OBSERVABILITY_AND_OPERATIONS.md`.
 Cuando debe consultarse: antes de cualquier auditoria, diseno, propuesta,
 prompt, implementacion, validacion, cierre de etapa o cambio documental.
 
@@ -75,6 +76,7 @@ El Sistema de Gobierno de FeedGo está compuesto por:
 - `08_ENGINEERING_PRINCIPLES`
 - `15_LEGAL_AND_OPERATIONAL`
 - `16_DATA_INTEGRITY_AND_RECOVERY`
+- `17_OBSERVABILITY_AND_OPERATIONS`
 
 Los documentos `10+` pueden ser documentos tecnicos especializados o
 documentos transversales incorporados explicitamente al Sistema de Gobierno.
@@ -95,7 +97,8 @@ La jerarquia documental oficial es:
    - `07_DECISIONS`;
    - `08_ENGINEERING_PRINCIPLES`;
    - `15_LEGAL_AND_OPERATIONAL`;
-   - `16_DATA_INTEGRITY_AND_RECOVERY`.
+   - `16_DATA_INTEGRITY_AND_RECOVERY`;
+   - `17_OBSERVABILITY_AND_OPERATIONS`.
 4. Decisiones permanentes registradas en `07_DECISIONS`.
 5. Documentos tecnicos especializados.
 6. CHANGELOG como historial cronologico.
@@ -110,6 +113,8 @@ Reglas:
   compliance, seguridad operativa y lanzamiento.
 - `16_DATA_INTEGRITY_AND_RECOVERY` gobierna integridad fisica de datos,
   backup, restore, recuperacion y validacion de schema.
+- `17_OBSERVABILITY_AND_OPERATIONS` gobierna observabilidad, diagnostico,
+  logging seguro, health, metricas, alertas, runbooks y operacion del sistema.
 - Los documentos tecnicos gobiernan su componente especifico siempre que no
   contradigan documentos de mayor jerarquia.
 - CHANGELOG no define estado vigente ni alcance futuro.

@@ -22,6 +22,12 @@ from typing import Callable, Protocol
 from sqlalchemy import text
 
 from app.core.database import engine
+from app.core.operation_metrics import (
+    METRIC_BACKUP_RUN_COUNT,
+    METRIC_BACKUP_RUN_DURATION_MS,
+    increment_counter,
+    record_duration,
+)
 
 DEFAULT_BACKUP_DIR = Path("backups/mysql")
 DEFAULT_RETENTION_DAYS = 14
@@ -347,7 +353,14 @@ class BackupService:
 
         started = _utc_now()
         backup_path = self.storage.backup_file_path(config, now=now or started)
-        self.provider.create_backup(config, backup_path, popen_factory)
+        try:
+            self.provider.create_backup(config, backup_path, popen_factory)
+        except Exception:
+            increment_counter(
+                METRIC_BACKUP_RUN_COUNT,
+                tags={"provider": self.provider.name, "result": "failed"},
+            )
+            raise
 
         finished = _utc_now()
         sha256 = _sha256_file(backup_path)
@@ -396,6 +409,15 @@ class BackupService:
             config.output_dir,
             retention_days=config.retention_days,
             keep_last=config.keep_last,
+        )
+        increment_counter(
+            METRIC_BACKUP_RUN_COUNT,
+            tags={"provider": self.provider.name, "result": manifest.result},
+        )
+        record_duration(
+            METRIC_BACKUP_RUN_DURATION_MS,
+            manifest.duration_seconds * 1000,
+            tags={"provider": self.provider.name, "result": manifest.result},
         )
         return manifest
 

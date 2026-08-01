@@ -51,6 +51,10 @@ from app.modules.search.services.search_event_services import (
     build_search_event_from_comercios_activos,
     registrar_search_event_best_effort,
 )
+from app.core.operation_metrics import (
+    METRIC_SEARCH_NO_RESULTS_COUNT,
+    increment_counter,
+)
 from app.modules.availability.services.horarios_atencion_services import (
     calcular_estados_horarios_lote,
 )
@@ -768,6 +772,11 @@ def listar_comercios_activos(
             metadata=metadata,
         )
         registrar_search_event_best_effort(db, payload)
+        if not resultados:
+            _record_search_no_results_metric(
+                smart=smart,
+                smart_semantic=smart_semantic,
+            )
 
     # ============================================================
     # SEMANTIC MODE (ETAPA 53.2 - primer híbrido)
@@ -1322,6 +1331,24 @@ def listar_comercios_activos(
         },
     )
     return adjuntar_horario_atencion_comercios(db, comercios)
+
+
+def _search_mode(*, smart: bool, smart_semantic: bool) -> str:
+    if smart_semantic:
+        return "smart_semantic"
+    if smart:
+        return "smart"
+    return "classic"
+
+
+def _record_search_no_results_metric(*, smart: bool, smart_semantic: bool) -> None:
+    increment_counter(
+        METRIC_SEARCH_NO_RESULTS_COUNT,
+        tags={
+            "endpoint": "comercios_activos",
+            "mode": _search_mode(smart=smart, smart_semantic=smart_semantic),
+        },
+    )
 
 
 # ============================================================

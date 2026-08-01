@@ -302,7 +302,7 @@ Estado final actual:
 
 ## ETAPA vigente
 
-ETAPA 93 - Observabilidad y Operacion.
+ETAPA 94 - QA Integral y Hardening Funcional.
 
 Estado:
 
@@ -310,10 +310,87 @@ Vigente.
 
 Objetivo:
 
-Preparar logs, monitoreo, diagnostico, configuracion productiva y operacion
-minima sin introducir deuda de infraestructura innecesaria.
+Ejecutar validacion integral, corregir defectos comprobados y endurecer los
+flujos principales existentes antes del lanzamiento.
 
 ## Ultima etapa cerrada
+
+ETAPA 93 - Observabilidad y Operacion.
+
+Estado:
+
+Cerrada.
+
+Resultado:
+
+ETAPA 93 queda cerrada con arquitectura operativa, logging seguro, manejo
+homogeneo de errores, contexto de request, health checks, metricas, alertas
+internas y runbooks iniciales. El cierre no implica proveedores externos,
+dashboards, persistencia historica de metricas o alertas ni operacion
+productiva completa.
+
+Alcance:
+
+- Arquitectura operativa definida en
+  `docs/17_OBSERVABILITY_AND_OPERATIONS.md`.
+- Logger central reutilizable basado en `logging` estandar.
+- Handlers globales para errores HTTP, validacion y excepciones no controladas.
+- Sanitizacion de errores para no exponer secretos, tokens, passwords,
+  payloads, `.env` ni stack traces al frontend.
+- Request Context con `request_id` y `correlation_id`.
+- Headers `X-Request-ID` y `X-Correlation-ID` en respuestas.
+- Endpoints `GET /health/live` y `GET /health/ready`.
+- Checks read-only de API, base de datos, schema, uploads/storage, embeddings,
+  evidencia de backup y evidencia de restore.
+- Metricas minimas de requests, latencia, `4xx`, `5xx`, errores no controlados,
+  autenticacion, autorizacion, readiness, backup, restore, uploads y busquedas
+  sin resultados.
+- Alertas internas por contratos para readiness `unhealthy`, errores `5xx`
+  repetidos, backup fallido o evidencia no saludable, restore fallido y
+  rechazos repetidos de uploads.
+- Runbooks iniciales para API no disponible, readiness `unhealthy`, errores
+  `5xx`, base de datos, backup/restore y uploads/storage.
+
+Subetapas de trabajo:
+
+- 93.1 - Arquitectura Operativa: cerrada.
+- 93.2 - Logging Enterprise y Error Handling: cerrada.
+- 93.3 - Contexto Operativo y Correlacion: cerrada.
+- 93.4 - Health, Readiness y Estado del Sistema: cerrada.
+- 93.5 - Metricas y Senales Operativas: cerrada.
+- 93.6 - Alertas mediante Contratos: cerrada.
+- 93.7 - Runbooks, Validacion y Cierre: cerrada.
+
+Validaciones de cierre:
+
+- Suite backend completa: OK.
+- `compileall app`: OK.
+- ESLint de frontend modificado: OK.
+- Build frontend: OK.
+- `git diff --check`: OK.
+
+Limites del cierre:
+
+- No se crearon tablas ni migraciones.
+- No se integraron Prometheus, Grafana, Sentry, OpenTelemetry, email, Slack,
+  Discord, Telegram ni servicios cloud.
+- No se crearon dashboards ni endpoints de metricas o alertas.
+- No se implemento persistencia historica de metricas o alertas.
+- No se implementaron politicas de guardia, escalamiento ni resolucion manual.
+- Ownership y ciclo de vida persistente de uploads quedan diferidos.
+
+Pendientes derivados:
+
+- ETAPA 94: hardening funcional, relaciones sociales, validacion de recursos
+  inexistentes o inactivos y pruebas integrales.
+- ETAPA 95: experiencia de lanzamiento, design system critico, mapa y sistema
+  de temas.
+- ETAPA 96: administracion operativa minima, incluyendo capacidades de
+  operacion manual que no forman parte de observabilidad base.
+- Etapas operativas futuras: proveedores externos, dashboards, persistencia
+  historica, on-call, escalamiento y monitoreo productivo completo.
+
+## Estado ETAPA 92
 
 ETAPA 92 - Integridad de Datos, Backups y Recuperacion.
 
@@ -391,6 +468,185 @@ Pendientes derivados:
   validaciones de recursos inexistentes o inactivos.
 - Etapas operativas futuras: copia externa cifrada, PITR/binlogs, providers RDS,
   Percona o cloud, automatizacion avanzada y simulacros recurrentes.
+
+## Estado ETAPA 93
+
+Nombre:
+
+ETAPA 93 - Observabilidad y Operacion.
+
+Objetivo:
+
+Preparar logs, monitoreo, diagnostico, configuracion productiva y operacion
+minima sin introducir deuda de infraestructura innecesaria.
+
+Documento dueno tecnico-operativo:
+
+- `docs/17_OBSERVABILITY_AND_OPERATIONS.md`.
+
+Estado:
+
+Cerrada.
+
+Subetapas:
+
+- 93.1 - Arquitectura Operativa: cerrada documentalmente.
+- 93.2 - Logging Enterprise y Error Handling: cerrada tecnicamente.
+- 93.3 - Contexto Operativo y Correlacion: cerrada tecnicamente.
+- 93.4 - Health, Readiness y Estado del Sistema: cerrada tecnicamente.
+- 93.5 - Metricas y Senales Operativas: cerrada tecnicamente.
+- 93.6 - Alertas mediante Contratos: cerrada tecnicamente.
+- 93.7 - Runbooks, Validacion y Cierre: cerrada tecnicamente.
+
+Resultado de 93.1:
+
+- Se define una arquitectura operativa minima basada en contratos estables.
+- Se separan logs, metricas, alertas, health, auditoria, analytics y evidencia
+  de backup/restore.
+- Se aprueba el modelo conceptual de `OperationEvent` y contextos asociados.
+- Se define la politica de datos permitidos y prohibidos para observabilidad.
+- Se define matriz inicial de configuracion productiva.
+- Se define modelo conceptual de liveness, readiness, startup y estado
+  degradado.
+- Se define catalogo minimo de metricas y alertas sin proveedores externos.
+- Uploads queda asignado a ETAPA 93 como deuda operativa a resolver con
+  auditoria previa del modelo de datos.
+
+Restricciones de 93.1:
+
+- No se implemento logging productivo.
+- No se creo middleware.
+- No se crearon endpoints de health.
+- No se crearon tablas ni migraciones.
+- No se integraron Prometheus, Grafana, Sentry, OpenTelemetry, cloud storage ni
+  proveedores externos.
+- `CHANGELOG.md` no se actualiza hasta el cierre operativo del sprint o etapa
+  segun corresponda.
+
+Resultado de 93.2:
+
+- Se implementa logger central reutilizable basado en `logging` estandar.
+- Se define politica tecnica de niveles `DEBUG`, `INFO`, `WARNING`, `ERROR` y
+  `CRITICAL`.
+- Se registra handler central para `HTTPException`,
+  `RequestValidationError` y excepciones no controladas.
+- Los errores no controlados devuelven mensaje generico al frontend.
+- Los errores de validacion devuelven respuesta generica sin eco de payload.
+- Los detalles sensibles en `HTTPException` se reemplazan por mensajes
+  publicos seguros.
+- `http_service.js` deja de propagar cuerpos crudos de error del backend y
+  conserva solo status y mensaje publico.
+- El contexto queda preparado para RequestContext futuro sin implementar todavia
+  correlation ID.
+
+Restricciones de 93.2:
+
+- No se implemento middleware.
+- No se implemento correlation ID.
+- No se crearon endpoints.
+- No se crearon tablas ni migraciones.
+- No se integraron proveedores externos.
+- No se reemplazaron scripts CLI por logger de aplicacion.
+
+Resultado de 93.3:
+
+- Se implementa un middleware unico de Request Context.
+- Cada request recibe un `request_id` unico.
+- `X-Correlation-ID` entrante se reutiliza cuando es seguro; si falta o es
+  invalido se genera uno nuevo.
+- `request_id` y `correlation_id` quedan disponibles durante la request mediante
+  contexto operativo.
+- El logger central incorpora automaticamente ambos identificadores cuando
+  existen.
+- Los handlers globales registran ambos identificadores en errores HTTP,
+  validacion y errores no controlados.
+- Todas las respuestas procesadas por el middleware devuelven `X-Request-ID` y
+  `X-Correlation-ID`.
+- Los errores no controlados conservan headers de correlacion sin exponer
+  secretos ni stack traces.
+
+Restricciones de 93.3:
+
+- No se implementaron health checks.
+- No se crearon endpoints.
+- No se implementaron metricas ni alertas.
+- No se integro OpenTelemetry.
+- No se crearon tablas ni migraciones.
+
+Resultado de 93.4:
+
+- Se implementan endpoints separados `GET /health/live` y
+  `GET /health/ready`.
+- Liveness verifica que la API responde.
+- Readiness ejecuta checks read-only de API, conexion a base de datos,
+  compatibilidad de schema, uploads/storage, configuracion de embeddings,
+  evidencia de backup y evidencia de restore.
+- Cada check devuelve estado, componente, tiempo de respuesta y mensaje seguro.
+- Readiness devuelve `503` solo cuando algun componente queda `unhealthy`.
+- Estados degradados se informan sin impedir liveness ni exponer detalles
+  sensibles.
+- Los endpoints se integran con logger central y Request Context, por lo que
+  devuelven `X-Request-ID` y `X-Correlation-ID`.
+- No se ejecutan backups, restores, escrituras, `create_all`, `drop_all`,
+  migraciones ni operaciones destructivas.
+- No se exponen secretos, rutas internas, SQL, stack traces ni configuracion
+  sensible.
+
+Restricciones de 93.4:
+
+- No se implementaron metricas.
+- No se implementaron alertas.
+- No se integro Prometheus, Grafana ni OpenTelemetry.
+- No se crearon tablas ni migraciones.
+- No se resolvio todavia ownership ni ciclo de vida persistente de uploads.
+
+Resultado de 93.5:
+
+- Se implementan contratos minimos para metricas `counter`, `duration` y
+  `gauge`.
+- Se implementa `MetricSample`, `MetricsRecorder` y `LocalMetricsSink` como
+  sink inicial en memoria, sin proveedor externo.
+- Se registra un catalogo inicial de nombres estables de metricas.
+- Se instrumentan request count, latencia, respuestas `4xx` y `5xx`, errores no
+  controlados, fallos de autenticacion y autorizacion.
+- Se instrumentan readiness, duracion de checks, backup, restore, uploads
+  aceptados/rechazados y busquedas sin resultados.
+- Las metricas quedan desacopladas de logs, alertas y analytics de producto.
+- Las etiquetas se sanitizan para no registrar secretos, tokens, payloads
+  completos ni datos personales.
+
+Restricciones de 93.5:
+
+- No se implementaron alertas.
+- No se crearon endpoints de metricas.
+- No se integro Prometheus, Grafana, Sentry ni OpenTelemetry.
+- No se crearon tablas ni migraciones.
+- No se resolvio todavia ownership ni ciclo de vida persistente de uploads.
+
+Resultado de 93.6:
+
+- Se implementan contratos minimos `AlertRule`, `AlertEvent`, `AlertSeverity` y
+  `AlertSink`.
+- Se implementa `AlertEngine` como evaluador interno de reglas.
+- Se implementa `LocalAlertSink` como sink inicial en memoria, sin proveedor
+  externo.
+- Las alertas se evaluan desde metricas y health existentes, sin parsear logs.
+- Se implementa deduplicacion por regla y contexto seguro.
+- Se implementa cooldown por clave de deduplicacion.
+- Se registran estados `active` y `suppressed`.
+- Se incorpora catalogo inicial para readiness `unhealthy`, errores `5xx`
+  repetidos, backup fallido o evidencia no saludable, restore fallido y
+  rechazos repetidos de uploads.
+
+Restricciones de 93.6:
+
+- No se integraron email, Slack, Discord, Telegram, Sentry ni servicios cloud.
+- No se crearon dashboards.
+- No se crearon endpoints de alertas.
+- No se crearon tablas ni migraciones.
+- No se implemento persistencia historica de alertas.
+- No se implementaron politicas de guardia, escalamiento ni resolucion manual.
+- No se resolvio todavia ownership ni ciclo de vida persistente de uploads.
 
 ## Recordatorio
 

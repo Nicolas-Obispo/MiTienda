@@ -9,7 +9,8 @@ Documento dueno: `docs/16_DATA_INTEGRITY_AND_RECOVERY.md`.
 Responsable funcional: Ingenieria, seguridad operativa y operacion.
 Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
 `04_CURRENT_STAGE.md`, `05_SEARCH_ROADMAP.md`,
-`08_ENGINEERING_PRINCIPLES.md`, `15_LEGAL_AND_OPERATIONAL.md`.
+`08_ENGINEERING_PRINCIPLES.md`, `15_LEGAL_AND_OPERATIONAL.md`,
+`17_OBSERVABILITY_AND_OPERATIONS.md`.
 Cuando debe consultarse: antes de modificar scripts de base de datos,
 procedimientos de backup, restore, retencion, recuperacion, validaciones de
 schema fisico o cualquier operacion que pueda afectar datos persistentes.

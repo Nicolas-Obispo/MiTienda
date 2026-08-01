@@ -9,6 +9,11 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from check_database_schema import SchemaCheckResult
+from app.core.operation_metrics import (
+    METRIC_RESTORE_RUN_COUNT,
+    METRIC_RESTORE_RUN_DURATION_MS,
+    local_metrics_sink,
+)
 from app.core import database_restore
 
 
@@ -30,6 +35,12 @@ def _fake_engine(database="mitienda"):
 
 
 class DatabaseRestoreTests(unittest.TestCase):
+    def setUp(self):
+        local_metrics_sink.clear()
+
+    def tearDown(self):
+        local_metrics_sink.clear()
+
     def _config(
         self,
         tmpdir: str,
@@ -100,6 +111,11 @@ class DatabaseRestoreTests(unittest.TestCase):
             with patch.object(database_restore, "engine", _fake_engine()):
                 with self.assertRaises(database_restore.RestoreExecutionError):
                     database_restore.restore_backup(config)
+
+        self.assertIn(
+            METRIC_RESTORE_RUN_COUNT,
+            [sample.name for sample in local_metrics_sink.snapshot()],
+        )
 
     def test_gzip_invalido_rechaza_restore(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -194,6 +210,9 @@ class DatabaseRestoreTests(unittest.TestCase):
             self.assertTrue(result.evidence_file.exists())
             create_database.assert_called_once_with("feedgo_restore_tmp_test")
             run_mysql.assert_called_once()
+            metric_names = [sample.name for sample in local_metrics_sink.snapshot()]
+            self.assertIn(METRIC_RESTORE_RUN_COUNT, metric_names)
+            self.assertIn(METRIC_RESTORE_RUN_DURATION_MS, metric_names)
 
     def test_restore_provider_conocido_y_desconocido(self):
         provider = database_restore.get_restore_provider("mysql_client")

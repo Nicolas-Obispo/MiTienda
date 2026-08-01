@@ -552,7 +552,7 @@ Diferidos con dueno:
 - Etapas operativas futuras: copia externa cifrada, retencion monitoreada,
   PITR/binlogs, providers RDS/Percona/cloud y simulacros recurrentes.
 
-### ◐ ETAPA 93
+### ☑ ETAPA 93
 
 Observabilidad y Operacion.
 
@@ -563,14 +563,115 @@ minima sin introducir deuda de infraestructura innecesaria.
 
 Estado:
 
-Vigente.
+Cerrada.
+
+Subetapas:
+
+- 93.1 - Arquitectura Operativa: cerrada documentalmente.
+- 93.2 - Logging Enterprise y Error Handling: cerrada tecnicamente.
+- 93.3 - Contexto Operativo y Correlacion: cerrada tecnicamente.
+- 93.4 - Health, Readiness y Estado del Sistema: cerrada tecnicamente.
+- 93.5 - Metricas y Senales Operativas: cerrada tecnicamente.
+- 93.6 - Alertas mediante Contratos: cerrada tecnicamente.
+- 93.7 - Runbooks, Validacion y Cierre: cerrada.
+
+Documento dueno tecnico-operativo:
+
+- `docs/17_OBSERVABILITY_AND_OPERATIONS.md`.
+
+Resultado de 93.1:
+
+- arquitectura operativa minima aprobada;
+- contratos conceptuales para eventos operativos, contextos, sinks, health y
+  registry;
+- politica de minimizacion y datos prohibidos;
+- separacion entre observabilidad, auditoria, analytics y evidencia de
+  backup/restore;
+- matriz inicial de configuracion productiva;
+- modelo conceptual de health, readiness, liveness y startup;
+- catalogo minimo de metricas y alertas sin proveedores externos;
+- destino arquitectonico para uploads/storage dentro de ETAPA 93, sin crear
+  tablas ni modelos antes de auditar el modelo de datos.
+
+Resultado de 93.2:
+
+- logger central basado en `logging` estandar;
+- handlers centrales para excepciones HTTP, validacion y errores no
+  controlados;
+- sanitizacion de errores para no exponer secretos, tokens, passwords,
+  `.env`, payloads ni stack traces al frontend;
+- cliente HTTP frontend ajustado para no propagar cuerpos crudos del backend;
+- contexto preparado para RequestContext futuro sin iniciar 93.3.
+
+Resultado de 93.3:
+
+- middleware unico de Request Context;
+- generacion de `request_id` por request;
+- reutilizacion segura de `X-Correlation-ID` recibido o generacion de uno nuevo;
+- propagacion contextual durante la request mediante `contextvars`;
+- incorporacion automatica de IDs al logger y errores registrados;
+- respuesta con headers `X-Request-ID` y `X-Correlation-ID`;
+- sin health checks, metricas, alertas, endpoints ni OpenTelemetry.
+
+Resultado de 93.4:
+
+- endpoints `GET /health/live` y `GET /health/ready`;
+- checks read-only de API, base de datos, schema, uploads/storage, embeddings,
+  evidencia de backup y evidencia de restore;
+- mensajes seguros sin secretos, rutas internas, SQL ni stack traces;
+- integracion con logger central y Request Context;
+- sin metricas, alertas, Prometheus, Grafana, OpenTelemetry, tablas ni
+  migraciones.
+
+Resultado de 93.5:
+
+- contratos minimos para metricas `counter`, `duration` y `gauge`;
+- sink local inicial en memoria, sin almacenamiento persistente ni exportador;
+- catalogo estable de metricas operativas;
+- instrumentacion de requests, latencia, `4xx`, `5xx`, errores no controlados,
+  autenticacion, autorizacion, readiness, backup, restore, uploads y busquedas
+  sin resultados;
+- separacion entre metricas, logs, alertas, analytics y evidencia operativa;
+- sin Prometheus, Grafana, Sentry, OpenTelemetry, tablas, migraciones ni
+  endpoints de metricas.
+
+Resultado de 93.6:
+
+- contratos minimos `AlertRule`, `AlertEvent`, `AlertSeverity` y `AlertSink`;
+- engine interno de evaluacion de reglas;
+- sink local inicial en memoria, sin proveedor externo;
+- reglas iniciales para readiness `unhealthy`, errores `5xx` repetidos,
+  backup fallido o evidencia no saludable, restore fallido y rechazos repetidos
+  de uploads;
+- deduplicacion y cooldown por contexto seguro;
+- sin email, Slack, Discord, Telegram, Sentry, servicios cloud, dashboards,
+  endpoints, tablas ni migraciones.
 
 Pendiente programado desde ETAPA 90:
 
 - endurecer uploads con tamano real permitido, cuota, asociacion con usuario o
   recurso, validacion, limpieza y auditoria.
 
-### ☐ ETAPA 94
+Resultado de cierre:
+
+- arquitectura operativa mediante contratos estables;
+- logging central y manejo homogeneo de errores;
+- Request Context con `request_id` y `correlation_id`;
+- endpoints separados `GET /health/live` y `GET /health/ready`;
+- metricas operativas minimas con sink local;
+- alertas internas mediante contratos, deduplicacion y cooldown;
+- runbooks iniciales para incidentes operativos minimos.
+
+Limites del cierre:
+
+- sin proveedores externos;
+- sin dashboards;
+- sin endpoints de metricas o alertas;
+- sin tablas ni migraciones;
+- sin persistencia historica de metricas o alertas;
+- ownership y ciclo de vida persistente de uploads quedan diferidos.
+
+### ◐ ETAPA 94
 
 QA Integral y Hardening Funcional.
 
@@ -581,7 +682,7 @@ flujos principales existentes antes del lanzamiento.
 
 Estado:
 
-Pendiente.
+Vigente.
 
 Pendientes programados desde ETAPA 90:
 
@@ -689,6 +790,10 @@ Objetivo:
 
 Implementar o preparar las capacidades minimas para operar, revisar y resolver
 incidentes de una primera version publica controlada.
+
+Incluye como evolucion futura posible, sin implementacion aprobada todavia, un
+Operations Dashboard interno y una AI Operations Console basados en la
+infraestructura operativa creada en ETAPA 93.
 
 Estado:
 

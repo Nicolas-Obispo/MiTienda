@@ -20,6 +20,39 @@
  */
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+export class HttpError extends Error {
+  constructor(status, message) {
+    super(`HTTP ${status} - ${message}`);
+    this.name = "HttpError";
+    this.status = status;
+    this.publicMessage = message;
+  }
+}
+
+const DEFAULT_ERROR_MESSAGES = {
+  400: "Solicitud inválida.",
+  401: "No autenticado.",
+  403: "No autorizado.",
+  404: "Recurso no encontrado.",
+  409: "No se pudo completar la operación por un conflicto.",
+  413: "Archivo demasiado grande.",
+  422: "Payload inválido.",
+};
+
+function safeErrorMessage(status) {
+  return DEFAULT_ERROR_MESSAGES[status] || "No se pudo completar la operación.";
+}
+
+async function throwHttpError(response) {
+  try {
+    await response.text();
+  } catch {
+    // El cuerpo del error no se muestra al usuario ni se propaga.
+  }
+
+  throw new HttpError(response.status, safeErrorMessage(response.status));
+}
+
 /**
  * buildHeaders
  * Construye headers estándar para requests JSON.
@@ -48,10 +81,9 @@ export async function httpGet(path, token = null) {
     headers: buildHeaders(token),
   });
 
-  // Si el backend responde error, leemos texto para tener mensaje útil
+  // Si el backend responde error, no propagamos el cuerpo crudo.
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`HTTP ${response.status} - ${errorText}`);
+    await throwHttpError(response);
   }
 
   return response.json();
@@ -75,8 +107,7 @@ export async function httpPost(path, body = null, token = null) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`HTTP ${response.status} - ${errorText}`);
+    await throwHttpError(response);
   }
 
   // Algunos endpoints devuelven texto simple
@@ -103,8 +134,7 @@ export async function httpDelete(path, token = null) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`HTTP ${response.status} - ${errorText}`);
+    await throwHttpError(response);
   }
 
   // DELETE suele devolver 204 No Content
@@ -128,8 +158,7 @@ export async function httpPut(path, body = null, token = null) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`HTTP ${response.status} - ${errorText}`);
+    await throwHttpError(response);
   }
 
   // PUT normalmente devuelve JSON
@@ -158,8 +187,7 @@ export async function httpPatch(path, body = null, token = null) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`HTTP ${response.status} - ${errorText}`);
+    await throwHttpError(response);
   }
 
   const contentType = response.headers.get("content-type");

@@ -2170,3 +2170,76 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 
 - ETAPA 92 queda cerrada.
 - ETAPA 93 - Observabilidad y Operacion queda vigente.
+
+---
+
+## ETAPA 93 — Observabilidad y Operacion
+
+**Estado:** Cerrada
+
+### Arquitectura operativa
+
+- Se incorporo `docs/17_OBSERVABILITY_AND_OPERATIONS.md` como documento
+  tecnico-operativo dueno de observabilidad, diagnostico, logging, health,
+  metricas, alertas y runbooks.
+- Se aprobo una arquitectura operativa basada en contratos estables antes de
+  acoplarse a proveedores concretos.
+- Se separaron logs, metricas, alertas, auditoria, analytics y evidencia de
+  backup/restore.
+
+### Logging y errores
+
+- Se implemento logger central basado en `logging` estandar.
+- Se agregaron handlers globales para `HTTPException`,
+  `RequestValidationError` y errores no controlados.
+- Se sanitizaron respuestas de error para no exponer secretos, tokens,
+  passwords, payloads completos, `.env` ni stack traces al frontend.
+- El cliente HTTP frontend dejo de propagar cuerpos crudos del backend como
+  mensajes visibles al usuario.
+
+### Contexto, health y metricas
+
+- Se implemento Request Context con `request_id` y `correlation_id`.
+- Las respuestas incluyen `X-Request-ID` y `X-Correlation-ID`.
+- Se agregaron endpoints `GET /health/live` y `GET /health/ready`.
+- Readiness ejecuta checks read-only de API, base de datos, schema,
+  uploads/storage, embeddings, evidencia de backup y evidencia de restore.
+- Se implementaron metricas operativas minimas con `MetricSample`,
+  `MetricsRecorder` y `LocalMetricsSink`.
+- Se instrumentaron requests, latencia, respuestas `4xx` y `5xx`, errores no
+  controlados, autenticacion, autorizacion, readiness, backup, restore, uploads
+  y busquedas sin resultados.
+
+### Alertas y runbooks
+
+- Se implementaron contratos internos `AlertRule`, `AlertEvent`,
+  `AlertSeverity` y `AlertSink`.
+- Se agrego `AlertEngine` con deduplicacion, cooldown y sink local en memoria.
+- Se incorporaron reglas iniciales para readiness `unhealthy`, errores `5xx`
+  repetidos, backup fallido o evidencia no saludable, restore fallido y
+  rechazos repetidos de uploads.
+- Se documentaron runbooks iniciales para API no disponible, readiness
+  `unhealthy`, errores `5xx`, fallo de base de datos, backup/restore fallido y
+  uploads/storage degradado.
+
+### Validaciones
+
+- `unittest discover tests`: OK.
+- `compileall app`: OK.
+- ESLint de frontend modificado: OK.
+- `npm run build`: OK.
+- `git diff --check`: OK.
+
+### Diferidos
+
+- Proveedores externos de observabilidad, alertas o trazas.
+- Dashboards.
+- Endpoints de metricas o alertas.
+- Persistencia historica de metricas o alertas.
+- Politicas de guardia, escalamiento y resolucion manual.
+- Ownership y ciclo de vida persistente de uploads.
+
+### Cierre formal
+
+- ETAPA 93 queda cerrada tecnicamente.
+- ETAPA 94 - QA Integral y Hardening Funcional queda vigente.

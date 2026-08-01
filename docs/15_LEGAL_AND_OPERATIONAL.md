@@ -9,7 +9,8 @@ Documento dueno: `docs/15_LEGAL_AND_OPERATIONAL.md`.
 Responsable funcional: Legal, compliance, seguridad operativa y direccion.
 Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
 `02_PRODUCT.md`, `05_SEARCH_ROADMAP.md`, `07_DECISIONS.md`,
-`08_ENGINEERING_PRINCIPLES.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`.
+`08_ENGINEERING_PRINCIPLES.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`,
+`17_OBSERVABILITY_AND_OPERATIONS.md`.
 Cuando debe consultarse: antes de modificar funcionalidades sensibles,
 proveedores, datos personales, permisos, contenido publico, geolocalizacion,
 comunicaciones, notificaciones, reservas, productos, pagos, IA, logs, backups
@@ -845,6 +846,13 @@ Controles minimos:
 lanzarse.
 
 ## 21. Logs, observabilidad y auditoria
+
+La arquitectura tecnica de observabilidad y operacion pertenece a
+`17_OBSERVABILITY_AND_OPERATIONS`.
+
+Ese documento gobierna eventos operativos, logging estructurado, request
+context, health, metricas, alertas, runbooks y separacion entre observabilidad,
+auditoria, analytics y evidencia de backup/restore.
 
 No registrar innecesariamente:
 

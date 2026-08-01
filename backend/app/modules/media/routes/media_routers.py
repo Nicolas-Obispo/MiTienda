@@ -3,10 +3,18 @@
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Depends
 import os
+import time
 import uuid
 
 # ✅ Auth de MiPlaza/MiTienda (nombre real en tu proyecto)
 from app.core.auth import obtener_usuario_actual
+from app.core.operation_metrics import (
+    METRIC_UPLOAD_ACCEPTED_COUNT,
+    METRIC_UPLOAD_DURATION_MS,
+    METRIC_UPLOAD_REJECTED_COUNT,
+    increment_counter,
+    record_duration,
+)
 from app.modules.users.models.usuarios_models import Usuario
 
 router = APIRouter(
@@ -68,8 +76,10 @@ async def upload_media(
     - Requiere JWT válido (usuario_actual).
     """
     # usuario_actual se usa como guard de seguridad (no hace falta usarlo luego).
+    started = time.perf_counter()
 
     if file.content_type not in ALLOWED_CONTENT_TYPES:
+        _record_upload_metrics(started, accepted=False, reason="content_type")
         raise HTTPException(
             status_code=400,
             detail=f"Tipo de archivo no permitido: {file.content_type}"
@@ -78,6 +88,7 @@ async def upload_media(
     content = await file.read()
 
     if len(content) > MAX_FILE_SIZE_BYTES:
+        _record_upload_metrics(started, accepted=False, reason="size")
         raise HTTPException(
             status_code=413,
             detail="Archivo demasiado grande (máx 5MB)"
@@ -95,4 +106,39 @@ async def upload_media(
 
     public_url = f"/uploads/{filename}"
 
+    _record_upload_metrics(started, accepted=True, media_type=_media_type(file.content_type))
     return {"url": public_url}
+
+
+def _record_upload_metrics(
+    started: float,
+    *,
+    accepted: bool,
+    reason: str | None = None,
+    media_type: str | None = None,
+) -> None:
+    tags = {"result": "accepted" if accepted else "rejected"}
+    if reason:
+        tags["reason"] = reason
+    if media_type:
+        tags["media_type"] = media_type
+
+    increment_counter(
+        METRIC_UPLOAD_ACCEPTED_COUNT if accepted else METRIC_UPLOAD_REJECTED_COUNT,
+        tags=tags,
+    )
+    record_duration(
+        METRIC_UPLOAD_DURATION_MS,
+        round((time.perf_counter() - started) * 1000, 3),
+        tags=tags,
+    )
+
+
+def _media_type(content_type: str | None) -> str:
+    if not content_type:
+        return "unknown"
+    if content_type.startswith("image/"):
+        return "image"
+    if content_type.startswith("video/"):
+        return "video"
+    return "other"

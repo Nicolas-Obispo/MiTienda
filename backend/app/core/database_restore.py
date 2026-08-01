@@ -23,6 +23,12 @@ from sqlalchemy import create_engine, inspect, text
 
 from app.core.database import Base, engine
 from app.core.model_registry import import_all_models
+from app.core.operation_metrics import (
+    METRIC_RESTORE_RUN_COUNT,
+    METRIC_RESTORE_RUN_DURATION_MS,
+    increment_counter,
+    record_duration,
+)
 from check_database_schema import SchemaCheckResult, check_schema
 
 RESTORE_DATABASE_PATTERN = re.compile(r"^feedgo_restore_tmp_[a-z0-9_]+$")
@@ -395,6 +401,15 @@ class RestoreService:
                 cleanup="not_requested",
             )
             _write_evidence(config, evidence)
+            increment_counter(
+                METRIC_RESTORE_RUN_COUNT,
+                tags={"provider": self.provider.name, "result": result},
+            )
+            record_duration(
+                METRIC_RESTORE_RUN_DURATION_MS,
+                evidence.duration_seconds * 1000,
+                tags={"provider": self.provider.name, "result": result},
+            )
             raise RestoreExecutionError(str(exc)) from exc
 
         finished = _utc_now()
@@ -414,6 +429,15 @@ class RestoreService:
             cleanup="not_requested",
         )
         evidence_path = _write_evidence(config, evidence)
+        increment_counter(
+            METRIC_RESTORE_RUN_COUNT,
+            tags={"provider": self.provider.name, "result": result},
+        )
+        record_duration(
+            METRIC_RESTORE_RUN_DURATION_MS,
+            evidence.duration_seconds * 1000,
+            tags={"provider": self.provider.name, "result": result},
+        )
         return RestoreResult(evidence, evidence_path, schema_result)
 
 

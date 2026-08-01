@@ -696,3 +696,32 @@ restriccion al entorno autorizado.
 
 Los scripts de verificacion deben ser read-only por defecto y no deben ejecutar
 `create_all`, `drop_all`, backups, restores ni modificaciones de datos.
+
+## 51. Operacion por contratos estables
+
+Toda capacidad operativa permanente debe definirse mediante contratos claros
+antes de acoplarse a una implementacion o proveedor concreto.
+
+Aplica a capacidades transversales o evolutivas como:
+
+- eventos operativos;
+- logging estructurado;
+- manejo de errores;
+- request context y correlation ID;
+- health checks;
+- metricas;
+- alertas;
+- runbooks;
+- providers de infraestructura.
+
+Reglas:
+
+- una metrica no debe depender de parsear texto de logs;
+- una alerta no debe depender obligatoriamente de un proveedor externo;
+- los logs, metricas, alertas, auditoria y analytics deben conservar
+  responsabilidades separadas;
+- la operacion debe respetar minimizacion de datos y no registrar secretos;
+- no se deben crear interfaces, providers, tablas o capas si no existe una
+  responsabilidad real y diferenciada.
+
+`docs/17_OBSERVABILITY_AND_OPERATIONS.md` gobierna la arquitectura operativa.

@@ -415,3 +415,14 @@ No reemplaza la documentación oficial existente.
 - Alcance actual: Una cuenta puede representar al administrador de espacios propios o de clientes, incluyendo publicistas, community managers, agencias, freelancers, administradores de clientes, profesionales con varios servicios, franquicias o cadenas.
 - Fuera de alcance actual: transferencia de espacios entre cuentas, delegacion, colaboradores, permisos compartidos, roles empresariales y administracion multiusuario.
 - Impacto: El frontend y los textos de producto deben usar terminologia compatible con Mi cuenta, perfil administrador, mis espacios y administrar espacios. Las capacidades futuras de delegacion o transferencia requieren una etapa aprobada con diseno de permisos, ownership, seguridad y operacion.
+
+## DEC-045
+
+- ID: DEC-045
+- Titulo: Arquitectura operativa mediante contratos estables
+- Estado: Aprobada
+- Problema: FeedGo necesita observabilidad, logging, manejo de errores, contexto de requests, health checks, metricas, alertas y runbooks sin acoplar la operacion del sistema a llamadas aisladas, proveedores prematuros o implementaciones incompatibles entre modulos.
+- Decision: Toda capacidad operativa permanente debe definirse mediante contratos estables antes de acoplarse a una implementacion o proveedor concreto. La arquitectura inicial de ETAPA 93 se gobierna desde `docs/17_OBSERVABILITY_AND_OPERATIONS.md` y separa eventos operativos, logs, metricas, alertas, health, auditoria, analytics y evidencia de backup/restore.
+- Regla: El principio se aplica solo cuando la capacidad sea transversal, evolutiva o tenga mas de una implementacion razonablemente posible. No autoriza interfaces vacias, providers especulativos, capas duplicadas, tablas de eventos operativos, OpenTelemetry, Prometheus, Sentry, Grafana, cloud storage ni proveedores externos sin etapa o decision futura aprobada.
+- Relacion con DEC-043: DEC-043 gobierna arquitectura extensible de infraestructura para backup, restore, storage y providers. DEC-045 extiende el mismo criterio de contratos a la operacion observable del sistema, manteniendo limites contra sobreingenieria.
+- Impacto: ETAPA 93.1 aprueba la arquitectura operativa documental. Los sprints posteriores deben implementar logging, error handling, request context, health, metricas, alertas y runbooks respetando esos contratos y la politica de minimizacion de datos.

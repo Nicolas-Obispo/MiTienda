@@ -3,6 +3,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import SessionLocal
+from app.core.error_handlers import register_exception_handlers
+from app.core.operation_logging import configure_logging, get_operation_logger, safe_error_class
+from app.core.operation_alerts import configure_default_alerting
+from app.core.operation_metrics import OperationalMetricsMiddleware
+from app.core.request_context import RequestContextMiddleware
 from app.modules.products.services.rubros_services import asegurar_catalogo_rubros
 
 # Routers
@@ -32,6 +37,7 @@ from app.modules.media.routes.media_routers import router as media_router
 from app.modules.moderation.routes.contenido_denuncias_routers import (
     router as moderation_router,
 )
+from app.modules.operations.routes.health_routers import router as health_router
 
 # 🔥 ETAPA 60 — Seguidores
 from app.modules.social.routes.seguidores_routers import router as seguidores_router
@@ -54,10 +60,17 @@ from app.modules.analytics.routes.comercios_score_routers import (
 from fastapi.staticfiles import StaticFiles
 import os
 
+configure_logging()
+configure_default_alerting()
+logger = get_operation_logger("app")
+
 app = FastAPI(
     title="MiTienda API",
     version="1.0"
 )
+register_exception_handlers(app)
+app.add_middleware(OperationalMetricsMiddleware)
+app.add_middleware(RequestContextMiddleware)
 
 # ------------------------------
 # CORS (CORREGIDO PARA PC + CELULAR)
@@ -86,6 +99,10 @@ def inicializar_catalogos():
     db = SessionLocal()
     try:
         asegurar_catalogo_rubros(db)
+        logger.info("startup_catalogos_inicializados")
+    except Exception as exc:
+        logger.error("startup_catalogos_error error_class=%s", safe_error_class(exc))
+        raise
     finally:
         db.close()
 
@@ -117,6 +134,7 @@ app.include_router(ranking_publicaciones_router)
 app.include_router(feed_publicaciones_router)
 app.include_router(media_router)
 app.include_router(moderation_router)
+app.include_router(health_router)
 
 # 🔥 ETAPA 60 — Seguidores
 app.include_router(seguidores_router)

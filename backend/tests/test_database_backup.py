@@ -10,6 +10,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from app.core.operation_metrics import (
+    METRIC_BACKUP_RUN_COUNT,
+    METRIC_BACKUP_RUN_DURATION_MS,
+    local_metrics_sink,
+)
 from app.core import database_backup
 
 
@@ -57,6 +62,12 @@ class CapturingPopenFactory:
 
 
 class DatabaseBackupTests(unittest.TestCase):
+    def setUp(self):
+        local_metrics_sink.clear()
+
+    def tearDown(self):
+        local_metrics_sink.clear()
+
     def _config(self, tmpdir: str) -> database_backup.BackupConfig:
         defaults_file = Path(tmpdir) / "mysql.cnf"
         defaults_file.write_text("[client]\nuser=test\npassword=secret\n", encoding="utf-8")
@@ -141,6 +152,9 @@ class DatabaseBackupTests(unittest.TestCase):
             self.assertFalse(metadata["database_statements"])
             self.assertTrue(metadata["restore_target_required"])
             self.assertEqual(metadata["critical_table_counts"], {"usuarios": 1})
+            metric_names = [sample.name for sample in local_metrics_sink.snapshot()]
+            self.assertIn(METRIC_BACKUP_RUN_COUNT, metric_names)
+            self.assertIn(METRIC_BACKUP_RUN_DURATION_MS, metric_names)
 
     def test_run_backup_fallido_elimina_archivo_parcial(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -159,6 +173,8 @@ class DatabaseBackupTests(unittest.TestCase):
                     )
 
             self.assertEqual(list((Path(tmpdir) / "backups").glob("*.sql.gz")), [])
+            metric_names = [sample.name for sample in local_metrics_sink.snapshot()]
+            self.assertIn(METRIC_BACKUP_RUN_COUNT, metric_names)
 
     def test_provider_escribe_gzip_desde_stdout_pipe_realista(self):
         with tempfile.TemporaryDirectory() as tmpdir:

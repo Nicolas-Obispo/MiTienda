@@ -10,7 +10,8 @@ Responsable funcional: Continuidad documental.
 Documentos relacionados: `00_GOVERNANCE.md`, `04_CURRENT_STAGE.md`,
 `05_SEARCH_ROADMAP.md`, `07_DECISIONS.md`,
 `08_ENGINEERING_PRINCIPLES.md`, `15_LEGAL_AND_OPERATIONAL.md`,
-`16_DATA_INTEGRITY_AND_RECOVERY.md`.
+`16_DATA_INTEGRITY_AND_RECOVERY.md`,
+`17_OBSERVABILITY_AND_OPERATIONS.md`.
 Cuando debe consultarse: antes de generar prompts de continuidad o iniciar
 trabajo desde un nuevo chat.
 
