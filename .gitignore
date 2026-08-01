@@ -49,3 +49,12 @@ backend/activate.ps1
 # UPLOADS (archivos dinámicos)
 # =========================
 backend/uploads/
+
+# =========================
+# DATABASE BACKUPS / RESTORE
+# =========================
+*.sql
+*.sql.gz
+*.dump
+backups/
+restore_tmp/

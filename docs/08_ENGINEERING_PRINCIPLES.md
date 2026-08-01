@@ -7,7 +7,8 @@ Nivel de autoridad: Alto para principios permanentes de ingenieria.
 Documento dueno: `docs/08_ENGINEERING_PRINCIPLES.md`.
 Responsable funcional: Ingenieria y arquitectura.
 Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
-`07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`.
+`07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`,
+`16_DATA_INTEGRITY_AND_RECOVERY.md`.
 Cuando debe consultarse: antes de tomar decisiones tecnicas, disenar
 arquitectura, implementar, validar o cerrar etapas.
 
@@ -676,3 +677,22 @@ Reglas:
   comprobada;
 - bloquear mutaciones globales de recursos sin dueno modelado hasta definir su
   ownership oficial.
+
+## 50. Scripts operativos de base seguros por defecto
+
+Los scripts de base de datos no deben ejecutar operaciones al importarse.
+
+Toda operacion debe estar dentro de una funcion explicita y protegida por:
+
+- `main()` o punto de entrada equivalente;
+- guardia `if __name__ == "__main__"`;
+- salida clara ante errores;
+- destino mostrado sin secretos;
+- pruebas automatizadas cuando el script pueda afectar datos persistentes.
+
+Las operaciones destructivas, como `drop_all`, `DROP`, `TRUNCATE` o borrados
+masivos, requieren confirmacion no interactiva exacta, destino inequivoco y
+restriccion al entorno autorizado.
+
+Los scripts de verificacion deben ser read-only por defecto y no deben ejecutar
+`create_all`, `drop_all`, backups, restores ni modificaciones de datos.

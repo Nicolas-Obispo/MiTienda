@@ -39,7 +39,7 @@ class Seccion(Base):
     orden = Column(Integer, nullable=False, default=0)
 
     # Estado
-    activo = Column(Boolean, nullable=False, default=True)
+    activo = Column(Boolean, nullable=False, default=True, index=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

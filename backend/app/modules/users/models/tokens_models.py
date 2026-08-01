@@ -34,7 +34,7 @@ class TokenRevocado(Base):
     token = Column(String(512), unique=True, index=True, nullable=False)
 
     # Relación con la tabla de usuarios (usuarios.id)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
 
     # Momento en el que se revocó el token (se hace logout)
     fecha_revocado = Column(

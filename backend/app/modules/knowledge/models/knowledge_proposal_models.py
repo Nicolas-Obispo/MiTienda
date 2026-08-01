@@ -4,7 +4,7 @@ knowledge_proposal_models.py
 Modelo ORM para propuestas revisables de Knowledge.
 """
 
-from sqlalchemy import Column, DateTime, Float, Integer, JSON, String
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, String
 from sqlalchemy.sql import func
 
 from app.core.database import Base
@@ -17,7 +17,12 @@ class KnowledgeProposal(Base):
 
     proposal_type = Column(String(50), nullable=False, index=True)
     status = Column(String(30), nullable=False, default="pending", index=True)
-    taxonomy_node_id = Column(Integer, nullable=True, index=True)
+    taxonomy_node_id = Column(
+        Integer,
+        ForeignKey("taxonomy_nodes.id"),
+        nullable=True,
+        index=True,
+    )
 
     query = Column(String(255), nullable=False, index=True)
     term = Column(String(255), nullable=False, index=True)
@@ -28,8 +33,18 @@ class KnowledgeProposal(Base):
     dedupe_key = Column(String(500), nullable=False, unique=True, index=True)
 
     rejected_reason = Column(String(500), nullable=True)
-    reviewed_by_usuario_id = Column(Integer, nullable=True)
-    applied_by_usuario_id = Column(Integer, nullable=True)
+    reviewed_by_usuario_id = Column(
+        Integer,
+        ForeignKey("usuarios.id"),
+        nullable=True,
+        index=True,
+    )
+    applied_by_usuario_id = Column(
+        Integer,
+        ForeignKey("usuarios.id"),
+        nullable=True,
+        index=True,
+    )
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     reviewed_at = Column(DateTime(timezone=True), nullable=True)

@@ -1,88 +1,87 @@
 """
 reset_db.py
 -----------
-Script de utilidad para desarrollo.
+Script destructivo de utilidad exclusiva para desarrollo local.
 
-Permite:
-
-- eliminar todas las tablas
-- recrear todas las tablas
-- sincronizar la DB con los modelos actuales
-
-⚠️ SOLO DESARROLLO
-⚠️ NUNCA ejecutar en producción
+Importar este modulo no modifica la base de datos.
 """
 
+import argparse
+import sys
+
 from app.core.database import Base, engine
+from app.core.model_registry import import_all_models
 
-# ============================================================
-# IMPORTANTE:
-# Importamos TODOS los modelos para registrar correctamente
-# los mappers y relaciones antes de create_all().
-# ============================================================
+CONFIRMACION_DESTRUCTIVA = "RESET_DB_DROP_ALL"
+HOSTS_LOCALES_PERMITIDOS = {"localhost", "127.0.0.1", "::1"}
 
-# USERS
-from app.modules.users.models.usuarios_models import Usuario
-from app.modules.users.models.tokens_models import TokenRevocado
 
-# SPACES
-from app.modules.spaces.models.comercios_models import Comercio
+class ResetDbAbortadoError(RuntimeError):
+    pass
 
-# AVAILABILITY
-from app.modules.availability.models.horarios_atencion_models import (
-    ComercioHorarioAtencion,
-)
 
-# PRODUCTS
-from app.modules.products.models.productos_models import Producto
-from app.modules.products.models.rubros_models import Rubro
-from app.modules.products.models.secciones_models import Seccion
+def _destino_seguro() -> str:
+    host = engine.url.host
+    database = engine.url.database
 
-# DISCOVERY
-from app.modules.discovery.models.taxonomy_models import (
-    TaxonomyAssignment,
-    TaxonomyNode,
-)
+    if not host or not database:
+        raise ResetDbAbortadoError("Destino de base de datos ambiguo.")
 
-# POSTS
-from app.modules.posts.models.publicaciones_models import Publicacion
+    return f"{engine.dialect.name}://{host}/{database}"
 
-# SOCIAL
-from app.modules.social.models.likes_publicaciones_models import (
-    LikePublicacion,
-)
-from app.modules.social.models.publicaciones_guardadas_models import (
-    PublicacionGuardada,
-)
-from app.modules.social.models.seguidores_models import Seguidores
 
-# STORIES
-from app.modules.stories.models.historias_models import Historia
-from app.modules.stories.models.historias_vistas_models import HistoriaVista
-from app.modules.stories.models.historias_likes_models import HistoriaLike
+def _validar_destino_local() -> None:
+    host = engine.url.host
+    database = engine.url.database
 
-# AI
-from app.modules.ai.models.comercios_embeddings_models import (
-    ComercioEmbedding,
-)
-from app.modules.ai.models.usuarios_embeddings_models import (
-    UsuarioEmbedding,
-)
+    if not host or not database:
+        raise ResetDbAbortadoError("Destino de base de datos ambiguo.")
 
-# ANALYTICS
-from app.modules.analytics.models.comercios_metricas_sociales_models import (
-    ComercioMetricasSociales,
-)
-from app.modules.analytics.models.comercios_metricas_snapshots_models import (
-    ComercioMetricasSnapshot,
-)
+    if host not in HOSTS_LOCALES_PERMITIDOS:
+        raise ResetDbAbortadoError(
+            "reset_db.py solo puede ejecutarse contra un host local."
+        )
 
-print("🧹 Eliminando tablas existentes...")
 
-Base.metadata.drop_all(bind=engine)
+def reset_database(confirmacion: str) -> None:
+    if confirmacion != CONFIRMACION_DESTRUCTIVA:
+        raise ResetDbAbortadoError(
+            f"Confirmacion requerida: {CONFIRMACION_DESTRUCTIVA}"
+        )
 
-print("🧱 Creando tablas nuevas...")
+    _validar_destino_local()
+    import_all_models()
 
-Base.metadata.create_all(bind=engine)
+    print("ADVERTENCIA: esta operacion elimina todas las tablas y datos.")
+    print(f"Destino: {_destino_seguro()}")
+    print("Eliminando tablas existentes...")
+    Base.metadata.drop_all(bind=engine)
+    print("Creando tablas nuevas...")
+    Base.metadata.create_all(bind=engine)
+    print("Base de datos recreada correctamente.")
 
-print("✅ Base de datos actualizada correctamente.")
+
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Recrea todas las tablas de una base local de desarrollo."
+    )
+    parser.add_argument(
+        "--confirm",
+        required=True,
+        help=f"Debe ser exactamente {CONFIRMACION_DESTRUCTIVA}.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parse_args(argv)
+    try:
+        reset_database(args.confirm)
+    except ResetDbAbortadoError as exc:
+        print(f"ABORTADO: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

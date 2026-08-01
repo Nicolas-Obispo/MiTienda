@@ -66,7 +66,7 @@ class Comercio(Base):
     )
 
     provincia = Column(String(100), nullable=False)
-    ciudad = Column(String(100), nullable=False)
+    ciudad = Column(String(100), nullable=False, index=True)
     direccion = Column(String(255))
 
     # -----------------------------

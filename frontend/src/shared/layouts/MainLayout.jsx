@@ -65,7 +65,7 @@ export default function MainLayout() {
                   ? undefined
                   : {
                       message:
-                        "Creá tu cuenta para tener tu perfil en MiPlaza, guardar publicaciones y mostrar lo que hacés.",
+                        "Creá tu cuenta FeedGo para guardar publicaciones y administrar espacios.",
                     }
               }
               className="interactive-bubble group shrink-0 text-xs font-semibold sm:text-sm"
@@ -77,7 +77,7 @@ export default function MainLayout() {
                     : "text-gray-300 group-hover:text-white"
                 }
               >
-              Mi Perfil
+              Perfil administrador
               </span>
             </Link>
 

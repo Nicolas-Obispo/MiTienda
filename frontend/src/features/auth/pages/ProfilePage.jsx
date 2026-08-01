@@ -5,7 +5,7 @@
  * ETAPA 45 (Orden UX navegación) - Admin: espacios publicadores + acciones (Crear / Editar / Desactivar)
  * ETAPA 49 (Avatar usuario) - Subida real + drag & drop + persistencia en BD
  * ETAPA 49 (Portada espacio) - Upload real + drag & drop + botón "Seleccionar imagen"
- * ETAPA 59.1 (Corrección conceptual) - "Mi perfil" como pantalla general del usuario.
+ * ETAPA 59.1 (Corrección conceptual) - Mi cuenta como pantalla general del usuario.
  *
  * Regla de oro:
  * - El frontend NO inventa estado de negocio.
@@ -13,8 +13,8 @@
  *
  * Decisión de producto:
  * - Usuario = cuenta de acceso.
- * - Mi perfil = pantalla personal del usuario dentro de FeedGo!.
- * - Tus espacios = negocios, servicios o perfiles públicos que ese usuario administra.
+ * - Perfil administrador = cuenta de acceso y administración dentro de FeedGo!.
+ * - Mis espacios = negocios, servicios o perfiles públicos que ese usuario administra.
  * - Backend mantiene "comercios" por compatibilidad técnica.
  */
 
@@ -75,7 +75,7 @@ export default function ProfilePage() {
 
 
   // =====================================================
-  // Estado: Perfil personal del usuario
+  // Estado: Mi cuenta del usuario
   // =====================================================
   const [usuarioMe, setUsuarioMe] = useState(null);
   const [isLoadingMe, setIsLoadingMe] = useState(true);
@@ -651,7 +651,7 @@ export default function ProfilePage() {
       setShowCreateForm(false);
       handleResetForm();
     } catch (error) {
-      setCreateErrorMessage(error.message || "Error procesando tu espacio.");
+      setCreateErrorMessage(error.message || "Error procesando el espacio.");
     } finally {
       setIsCreatingComercio(false);
     }
@@ -721,16 +721,16 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gray-900 text-white">
       <main className="mx-auto max-w-3xl px-4 py-8">
         {/* ===================================================== */}
-        {/* Header: Mi perfil */}
+        {/* Header: Perfil administrador */}
         {/* ===================================================== */}
         <section className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-white">
-            Mi perfil
+            Perfil administrador
           </h1>
 
           {!showPerfilForm && (
           <p className="mt-1 text-sm text-gray-400">
-            Gestioná tu actividad, tus espacios y tus publicaciones guardadas.
+            Gestioná tu cuenta, tus espacios y tus publicaciones guardadas.
           </p>
           )}
 
@@ -741,7 +741,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Perfil personal */}
+          {/* Mi cuenta */}
           {!showPerfilForm && (
           <div className="mt-4 rounded-2xl border border-gray-800 bg-gray-950 p-4">
             <div className="flex items-center gap-4">
@@ -766,12 +766,12 @@ export default function ProfilePage() {
               </div>
 
               <div className="flex-1">
-                <p className="font-semibold">Perfil personal</p>
+                <p className="font-semibold">Mi cuenta</p>
 
                 <p className="mt-1 text-sm text-gray-400">
-                  Este es tu perfil dentro de FeedGo!. Podés explorar,
-                  guardar publicaciones, seguir espacios y también administrar
-                  tus propios espacios.
+                  Esta cuenta puede explorar, guardar publicaciones, seguir
+                  espacios y administrar uno o varios espacios propios o de
+                  clientes.
                 </p>
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1000,15 +1000,15 @@ export default function ProfilePage() {
         {!showPerfilForm && showActivarEspacioInfo && (
         <div className="mt-3 rounded-2xl border border-purple-900 bg-purple-950/30 p-6 text-center">
           <p className="text-lg font-bold text-purple-100">
-            Creá tu espacio en FeedGo!
+            Creá o administrá espacios en FeedGo!
           </p>
 
           <p className="mt-2 text-sm leading-6 text-purple-100/80">
-            Un espacio es tu perfil público dentro de FeedGo!. Puede representar
-            un negocio, emprendimiento, servicio, profesión o proyecto personal.
-            Desde allí vas a poder publicar contenido, compartir historias,
-            mostrar información de contacto y construir tu presencia dentro de
-            la comunidad.
+            Un espacio es un perfil público dentro de FeedGo!. Puede
+            representar un negocio, emprendimiento, servicio, profesión,
+            franquicia, cliente o proyecto. Desde esta cuenta vas a poder
+            publicar contenido, compartir historias, mostrar información de
+            contacto y construir presencia dentro de la comunidad.
           </p>
 
           <button
@@ -1027,7 +1027,7 @@ export default function ProfilePage() {
               }}
             className="mt-4 rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-400"
           >
-            Iniciar espacio
+            Crear primer espacio
           </button>
         </div>
         )}
@@ -1036,16 +1036,17 @@ export default function ProfilePage() {
 
 
         {/* ===================================================== */}
-        {/* Sección: Tus espacios */}
+        {/* Sección: Mis espacios */}
         {/* ===================================================== */}
         {!showPerfilForm && (esModoPublicador || showCreateForm) && (
           <section className="mb-8">
             {misComercios.length > 0 && (
               <div className="flex items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold">Tus espacios</h2>
+                  <h2 className="text-lg font-semibold">Mis espacios</h2>
                   <p className="mt-1 text-sm text-gray-400">
-                    Estos son los espacios públicos que administrás.
+                    Estos son los espacios públicos que administrás desde esta
+                    cuenta.
                   </p>
                 </div>
               </div>
@@ -1058,8 +1059,8 @@ export default function ProfilePage() {
                 </p>
 
                 <p className="mt-1 text-sm text-gray-400">
-                  Creá un espacio para mostrar un negocio, servicio, profesión o
-                  emprendimiento.
+                  Creá un espacio para mostrar un negocio, servicio,
+                  profesión, emprendimiento o cliente administrado.
                 </p>
 
                 {createErrorMessage && (
@@ -1276,13 +1277,14 @@ export default function ProfilePage() {
                         title="Click para seleccionar imagen"
                       >
                         <p className="text-sm text-gray-300">
-                          Elege una imagen que represente claramente tu espacio.
+                          Elegí una imagen que represente claramente este espacio.
                         </p>
 
                         <p className="mt-1 text-xs text-gray-500">
-                          Recomendamos utilizar el logo de tu negocio, el nombre de tu emprendimiento,
-                          una imagen de tu marca o una foto que ayude a los usuarios a identificar tu
-                          actividad de forma rápida.
+                          Recomendamos utilizar el logo del negocio, el nombre
+                          del emprendimiento, una imagen de marca o una foto
+                          que ayude a los usuarios a identificar la actividad
+                          de forma rápida.
                         </p>
 
                         <button

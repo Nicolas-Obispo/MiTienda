@@ -8,7 +8,8 @@ por etapa.
 Documento dueno: `docs/05_SEARCH_ROADMAP.md`.
 Responsable funcional: Roadmap de producto y arquitectura.
 Documentos relacionados: `00_GOVERNANCE.md`, `04_CURRENT_STAGE.md`,
-`07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`.
+`07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`,
+`16_DATA_INTEGRITY_AND_RECOVERY.md`.
 Cuando debe consultarse: antes de proponer, iniciar, diferir, cerrar o
 reordenar etapas.
 
@@ -438,7 +439,7 @@ Diferidos con dueno:
   flujo administrativo de moderacion, decisiones, sanciones, apelaciones y rate
   limiting avanzado de denuncias.
 
-### ◐ ETAPA 92
+### ☑ ETAPA 92
 
 Integridad de Datos, Backups y Recuperacion.
 
@@ -449,9 +450,109 @@ y recuperacion operativa.
 
 Estado:
 
-Vigente.
+Cerrada.
 
-### ☐ ETAPA 93
+Subetapas:
+
+- 92.1 - Blindaje operativo y matriz de datos criticos: cerrada.
+- 92.2 - Estrategia y herramienta de backup: cerrada.
+- 92.3 - Restore seguro y prueba de recuperacion: cerrada.
+- 92.3A - Arquitectura extensible de backup/restore: cerrada.
+- 92.4 - Prueba real de backup, alineacion y restore temporal: cerrada.
+- 92.5 - Auditoria final, documentacion, CHANGELOG y cierre: cerrada.
+
+Documento dueno:
+
+- `16_DATA_INTEGRITY_AND_RECOVERY`.
+
+Alcance confirmado de 92.1:
+
+- scripts de base sin efectos laterales al importar;
+- proteccion explicita para operaciones destructivas de desarrollo;
+- verificacion read-only de metadata contra base fisica;
+- matriz de tablas criticas;
+- objetivos iniciales RPO/RTO;
+- procedimientos conceptuales de backup y restore para implementar en 92.2 y
+  92.3.
+
+Alcance confirmado de 92.2:
+
+- procedimiento oficial de backup MySQL mediante `mysqldump`;
+- backup consistente con `--single-transaction`;
+- dump restaurable sobre base temporal, sin `--databases`;
+- compresion gzip;
+- SHA-256 del archivo comprimido;
+- manifiesto operativo con duracion, tamano, resultado y estado de copia
+  externa;
+- manifiesto con conteos criticos para validar restores;
+- retencion y rotacion local;
+- preparacion para copia externa sin implementarla aun;
+- tests con mocks sin ejecutar backups reales.
+
+Alcance confirmado de 92.3:
+
+- procedimiento oficial de restore MySQL mediante cliente `mysql`;
+- rechazo del destino runtime `mitienda`;
+- aceptacion exclusiva de bases temporales `feedgo_restore_tmp_*`;
+- validacion de manifiesto, gzip y SHA-256;
+- creacion de base temporal sin sobrescribir bases existentes;
+- verificacion de schema mediante herramienta read-only;
+- comparacion de conteos de tablas criticas;
+- evidencia JSON de restore;
+- limpieza de base temporal solo mediante accion explicita;
+- tests con mocks sin ejecutar restores reales.
+
+Alcance confirmado de 92.3A:
+
+- contrato `BackupProvider`;
+- provider inicial `MySQLDumpBackupProvider`;
+- contrato `RestoreProvider`;
+- provider inicial `MySQLClientRestoreProvider`;
+- contrato `BackupStorage`;
+- storage local inicial;
+- servicios de backup y restore como orquestadores;
+- manifiesto versionado y neutral compatible con el formato previo;
+- preparacion para futuros providers sin implementar RDS, Percona,
+  almacenamiento externo ni PITR.
+
+Alcance confirmado de 92.4:
+
+- auditoria segura del entorno MySQL local `mitienda`;
+- backup precautorio real previo a cambios de schema;
+- alineacion fisica de `comercios.rubro_id -> rubros.id` mediante script
+  controlado y confirmacion explicita;
+- checker profundo con 27 tablas metadata, 27 tablas fisicas y cero diferencias
+  de columnas, FKs, indices y uniques;
+- backup oficial posterior a la alineacion;
+- restore real en base temporal `feedgo_restore_tmp_*`;
+- validacion de schema profundo, conteos criticos y smoke checks;
+- medicion de duracion de backup, restore y antiguedad del punto recuperado;
+- evidencia JSON conservada fuera del repositorio;
+- limpieza explicita de base temporal aprobada.
+
+Resultado de cierre:
+
+- Backup oficial validado:
+  `C:\FeedGoOps\backups\mysql\mitienda_20260801T181443Z.sql.gz`.
+- Evidencia de restore exitoso:
+  `C:\FeedGoOps\restore_tmp\evidence\feedgo_restore_tmp_20260801_183100_20260801T182747Z_restore.json`.
+- RTO observado: 3.336 s.
+- Antiguedad observada del punto recuperado: ~13 minutos, sin declararlo RPO
+  garantizado.
+- `mitienda` quedo intacta.
+- No quedaron bases temporales activas.
+- Tests backend: 119 OK.
+
+Diferidos con dueno:
+
+- ETAPA 93: automatizacion operativa inicial, logs, monitoreo, diagnostico,
+  configuracion productiva y ownership/ciclo de vida de uploads.
+- ETAPA 94: pruebas recurrentes de restore, hardening funcional y validacion de
+  relaciones sociales y recursos inexistentes o inactivos.
+- Etapas operativas futuras: copia externa cifrada, retencion monitoreada,
+  PITR/binlogs, providers RDS/Percona/cloud y simulacros recurrentes.
+
+### ◐ ETAPA 93
 
 Observabilidad y Operacion.
 
@@ -462,7 +563,7 @@ minima sin introducir deuda de infraestructura innecesaria.
 
 Estado:
 
-Pendiente.
+Vigente.
 
 Pendiente programado desde ETAPA 90:
 
@@ -782,3 +883,32 @@ de validar uso real, operacion y necesidades del producto.
 Estado:
 
 Pendiente.
+
+## Vision futura 100+
+
+Esta seccion registra una vision futura de evolucion enterprise posterior o
+complementaria al roadmap vigente.
+
+No modifica el roadmap actual.
+
+No renombra etapas ya aprobadas.
+
+No autoriza implementacion.
+
+Propuesta conceptual:
+
+- ETAPA 100 - Optimizacion Enterprise.
+- ETAPA 101 - Administracion Multi-Espacio.
+- ETAPA 102 - Growth, Marketing y Adopcion.
+- ETAPA 103 - Frontend Enterprise.
+- ETAPA 104 - Frontend Comercial.
+
+La administracion multi-espacio basica ya es posible con el ownership actual:
+un usuario puede administrar varios espacios vinculados a su cuenta. La futura
+Administracion Multi-Espacio debera resolver transferencia, delegacion,
+colaboradores, permisos compartidos y administracion multiusuario sin asumir
+que esas capacidades existen hoy.
+
+Esta vision debera revisarse formalmente antes de cualquier reorganizacion del
+roadmap. Mientras no exista decision posterior, prevalecen las etapas 100 a 110
+ya definidas en este documento.

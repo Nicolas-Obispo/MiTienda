@@ -9,7 +9,7 @@ Documento dueno: `docs/15_LEGAL_AND_OPERATIONAL.md`.
 Responsable funcional: Legal, compliance, seguridad operativa y direccion.
 Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
 `02_PRODUCT.md`, `05_SEARCH_ROADMAP.md`, `07_DECISIONS.md`,
-`08_ENGINEERING_PRINCIPLES.md`.
+`08_ENGINEERING_PRINCIPLES.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`.
 Cuando debe consultarse: antes de modificar funcionalidades sensibles,
 proveedores, datos personales, permisos, contenido publico, geolocalizacion,
 comunicaciones, notificaciones, reservas, productos, pagos, IA, logs, backups
@@ -889,6 +889,20 @@ Antes del lanzamiento debe definirse:
 - RPO;
 - RTO;
 - procedimiento de desastre.
+
+La definicion tecnica y operativa de tablas criticas, RPO/RTO, backup, restore
+y validacion de schema pertenece a `16_DATA_INTEGRITY_AND_RECOVERY`.
+
+Al cierre de ETAPA 92 existen herramientas oficiales de backup y restore seguro
+sobre base temporal, un backup oficial ejecutado y un restore real validado con
+evidencia operativa fuera del repositorio. La definicion tecnica completa,
+incluyendo rutas, manifiestos, mediciones y riesgos diferidos, pertenece a
+`16_DATA_INTEGRITY_AND_RECOVERY`.
+
+Este control tecnico no equivale todavia a cumplimiento operativo maduro. Antes
+del lanzamiento publico deben resolverse automatizacion periodica, copia externa
+cifrada, retencion operativa real, monitoreo, pruebas recurrentes de restore y,
+si se requiere un RPO menor, evaluacion de PITR/binlogs.
 
 La baja de cuenta y la supresion de datos no son necesariamente identicas.
 

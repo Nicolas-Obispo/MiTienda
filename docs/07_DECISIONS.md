@@ -8,7 +8,7 @@ Documento dueno: `docs/07_DECISIONS.md`.
 Responsable funcional: Arquitectura y gobierno de decisiones.
 Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
 `02_PRODUCT.md`, `05_SEARCH_ROADMAP.md`, `08_ENGINEERING_PRINCIPLES.md`,
-`15_LEGAL_AND_OPERATIONAL.md`.
+`15_LEGAL_AND_OPERATIONAL.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`.
 Cuando debe consultarse: antes de contradecir, ampliar, reemplazar o registrar
 una decision permanente.
 
@@ -393,3 +393,25 @@ No reemplaza la documentación oficial existente.
 - Motivos controlados iniciales: contenido inapropiado, fraude o engano, suplantacion, exposicion de datos personales, propiedad intelectual, producto o servicio restringido, spam y otro.
 - Reglas iniciales: autenticacion obligatoria, recurso existente, recurso visible o denunciable, motivo controlado, idempotencia por usuario, tipo de recurso, identificador de recurso y motivo, denunciante no expuesto publicamente, sin ocultamiento automatico y sin reutilizar la entidad para decisiones futuras de moderacion.
 - Impacto: ETAPA 91 autoriza una excepcion acotada para implementar en 91.4B una entidad minima de denuncias. Esta decision no habilita una plataforma general de moderacion, roles administrativos, sanciones, apelaciones, paneles, automatizacion ni IA.
+
+## DEC-043
+
+- ID: DEC-043
+- Titulo: Arquitectura extensible de infraestructura
+- Estado: Aprobada
+- Problema: Los procedimientos de infraestructura de FeedGo necesitan poder evolucionar hacia nuevas tecnologias sin acoplar los servicios principales a una herramienta o proveedor concreto.
+- Decision: Backup, Restore, Storage y demas servicios de infraestructura deben desacoplarse mediante contratos estables. FeedGo implementara inicialmente una unica tecnologia concreta por capacidad, evitando sobreingenieria y abstracciones prematuras.
+- Regla: La logica de negocio nunca debe depender directamente del proveedor de infraestructura. Los servicios principales deben depender de contratos y delegar la implementacion especifica en providers o adapters.
+- Evolucion: La arquitectura debe permitir incorporar en el futuro nuevos providers, como RDS, Percona, almacenamiento cloud u otras tecnologias equivalentes, sin modificar los servicios principales ni romper compatibilidad con los contratos y manifiestos vigentes.
+- Impacto: ETAPA 92.3A aplica esta decision al dominio de backup, restore y storage manteniendo `mysqldump`, cliente `mysql` y storage local como implementaciones iniciales. RDS, Percona, almacenamiento externo y PITR quedan fuera del alcance actual hasta que el roadmap los autorice.
+
+## DEC-044
+
+- ID: DEC-044
+- Titulo: Mi cuenta y multi-espacio sin delegacion inicial
+- Estado: Aprobada
+- Problema: FeedGo debe comunicar que una cuenta puede administrar multiples espacios sin dar a entender que ya existen transferencia, delegacion, colaboradores o permisos compartidos.
+- Decision: La cuenta pertenece al usuario que la creo. Los espacios creados desde esa cuenta permanecen vinculados a ese usuario. La administracion multi-espacio ya es posible con el ownership actual porque un usuario puede tener varios espacios asociados.
+- Alcance actual: Una cuenta puede representar al administrador de espacios propios o de clientes, incluyendo publicistas, community managers, agencias, freelancers, administradores de clientes, profesionales con varios servicios, franquicias o cadenas.
+- Fuera de alcance actual: transferencia de espacios entre cuentas, delegacion, colaboradores, permisos compartidos, roles empresariales y administracion multiusuario.
+- Impacto: El frontend y los textos de producto deben usar terminologia compatible con Mi cuenta, perfil administrador, mis espacios y administrar espacios. Las capacidades futuras de delegacion o transferencia requieren una etapa aprobada con diseno de permisos, ownership, seguridad y operacion.

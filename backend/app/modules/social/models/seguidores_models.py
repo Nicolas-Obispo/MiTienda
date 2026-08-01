@@ -31,7 +31,7 @@ class Seguidores(Base):
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
 
     # Espacio (comercio) que es seguido
-    comercio_id = Column(Integer, ForeignKey("comercios.id"), nullable=False)
+    comercio_id = Column(Integer, ForeignKey("comercios.id"), nullable=False, index=True)
 
     # Fecha de creación
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -40,4 +40,3 @@ class Seguidores(Base):
     __table_args__ = (
         UniqueConstraint("usuario_id", "comercio_id", name="unique_seguidor"),
     )
-    

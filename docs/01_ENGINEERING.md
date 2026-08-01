@@ -8,7 +8,7 @@ Documento dueno: `docs/01_ENGINEERING.md`.
 Responsable funcional: Ingenieria.
 Documentos relacionados: `00_GOVERNANCE.md`,
 `08_ENGINEERING_PRINCIPLES.md`, `07_DECISIONS.md`,
-`15_LEGAL_AND_OPERATIONAL.md`.
+`15_LEGAL_AND_OPERATIONAL.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`.
 Cuando debe consultarse: antes de disenar, implementar, validar, refactorizar
 o cerrar cambios tecnicos.
 

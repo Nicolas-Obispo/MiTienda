@@ -95,8 +95,8 @@ export default function Registro() {
           <h2 className="text-2xl font-semibold">Crear cuenta</h2>
 
           <p className="mt-1 text-sm text-gray-400">
-            Registrate para guardar publicaciones, dar like y personalizar tu
-            experiencia.
+            Registrate para guardar publicaciones, dar like y administrar uno o
+            varios espacios.
           </p>
         </div>
 

@@ -2089,3 +2089,84 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 
 - ETAPA 91 queda cerrada tecnicamente.
 - ETAPA 92 - Integridad de Datos, Backups y Recuperacion queda vigente.
+
+---
+
+## ETAPA 92 — Integridad de Datos, Backups y Recuperacion
+
+**Estado:** Cerrada
+
+### Integridad y scripts operativos
+
+- `create_tables.py` queda protegido contra efectos laterales al importar.
+- `reset_db.py` queda protegido contra ejecucion destructiva accidental.
+- Se agrego `check_database_schema.py` como verificacion read-only profunda de
+  tablas, columnas, FKs, indices y restricciones unicas.
+- Se incorporo `model_registry` para registrar los modelos requeridos por
+  `Base.metadata`.
+- Se alineo metadata SQLAlchemy con el schema fisico de MySQL local.
+- Se agrego la FK fisica `comercios.rubro_id -> rubros.id` mediante script
+  controlado y confirmacion explicita.
+
+### Backup y restore
+
+- Se implemento arquitectura extensible de backup, restore y storage mediante
+  contracts/providers.
+- El provider inicial de backup usa `mysqldump` con `--single-transaction` y
+  `--quick`.
+- El provider inicial de restore usa cliente `mysql` con streaming por `stdin`
+  desde gzip, sin cargar el dump completo en memoria.
+- Se genero backup oficial posterior a la alineacion:
+  `C:\FeedGoOps\backups\mysql\mitienda_20260801T181443Z.sql.gz`.
+- El backup oficial quedo validado con gzip, SHA-256, manifiesto JSON, tamano y
+  conteos criticos.
+- Se ejecuto restore real en base temporal `feedgo_restore_tmp_*`.
+- Se validaron 27 tablas, columnas, FKs, indices, uniques, conteos criticos y
+  smoke checks de lectura.
+- Se conservo evidencia JSON del restore fuera del repositorio.
+- La base temporal fue eliminada con confirmacion explicita y `mitienda` quedo
+  intacta.
+
+### Producto y documentacion
+
+- Se incorporo el documento `docs/16_DATA_INTEGRITY_AND_RECOVERY.md` como
+  documento tecnico-operativo transversal.
+- Se registro la matriz de tablas criticas y matriz de borrado/integridad.
+- Se documentaron RPO/RTO como objetivos y se registro medicion real inicial.
+- Se agrego DEC-043 para arquitectura extensible de infraestructura.
+- Se amplio la vision de producto hacia presencia digital y administracion de
+  multiples espacios sin delegacion inicial.
+- Se ajustaron textos frontend de cuenta y espacios sin modificar ownership,
+  permisos ni contratos backend.
+
+### Validaciones
+
+- `unittest discover tests`: 119 tests OK.
+- `compileall app`: OK.
+- Checker profundo contra `mitienda`: 27 tablas metadata, 27 tablas fisicas,
+  cero diferencias estructurales.
+- Backup oficial: 0.444 s, 147405 bytes, SHA-256
+  `70c7bd53002c6ac646891a989b1da96181cc1cdde3bef9d5f6b47e9667119970`.
+- Restore real: RTO observado 3.336 s.
+- Antiguedad observada del punto recuperado: ~13 min, sin declararlo RPO
+  garantizado.
+- ESLint especifico de archivos frontend modificados: 0 errores, 1 warning
+  preexistente de `react-hooks/exhaustive-deps`.
+- `npm run build`: OK, con warnings preexistentes de Browserslist, assets
+  Leaflet y tamano de chunk.
+- `git diff --check`: OK.
+
+### Diferidos
+
+- Automatizacion periodica de backups.
+- Copia externa cifrada y verificada.
+- Retencion operativa real y monitoreada.
+- PITR/binlogs.
+- Providers RDS, Percona o cloud.
+- Pruebas recurrentes de restore.
+- Observabilidad, alertas y operacion productiva.
+
+### Cierre formal
+
+- ETAPA 92 queda cerrada.
+- ETAPA 93 - Observabilidad y Operacion queda vigente.

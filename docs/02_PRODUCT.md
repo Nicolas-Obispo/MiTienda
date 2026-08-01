@@ -18,6 +18,55 @@ usuario, jerarquia visual, datos solicitados al usuario o cambios de producto.
 - FeedGo no es únicamente un marketplace.
 - Debe servir para comercios, profesionales, oficios y servicios.
 - El buscador es la capacidad principal del producto.
+- FeedGo nace como vidriera digital y motor de descubrimiento, y evoluciona
+  hacia una plataforma de presencia digital, descubrimiento y administracion de
+  espacios.
+- La administracion de espacios debe poder contemplar, en etapas futuras,
+  personas que gestionan multiples espacios propios o de terceros.
+
+## Casos de uso de administracion multi-espacio
+
+FeedGo debe poder evolucionar para servir a:
+
+- agencias de marketing;
+- community managers;
+- freelancers;
+- disenadores;
+- administradores de multiples clientes;
+- franquicias;
+- cadenas comerciales.
+
+Una persona podra administrar multiples espacios propios o de terceros mediante
+futuros permisos y delegaciones.
+
+Esta vision no convierte a FeedGo en marketplace ni habilita automaticamente
+roles, permisos empresariales, planes comerciales, facturacion, pagos o
+administracion avanzada sin una etapa aprobada.
+
+## Mi cuenta y ownership actual
+
+La cuenta pertenece al usuario que la creo.
+
+Los espacios creados desde esa cuenta permanecen vinculados a ese usuario.
+
+Con el ownership actual, una misma cuenta ya puede administrar multiples
+espacios. Esos espacios pueden representar negocios propios, clientes,
+franquicias, cadenas, servicios profesionales o proyectos administrados por la
+misma persona.
+
+La comunicacion de producto debe evitar presentar la cuenta como si solo
+representara a un consumidor individual.
+
+Todavia no existen:
+
+- transferencia de espacios entre cuentas;
+- delegacion de administracion;
+- colaboradores;
+- permisos compartidos;
+- roles empresariales.
+
+Esas capacidades pertenecen a una etapa futura y requieren diseno especifico de
+permisos, ownership, seguridad y operacion.
 
 ## Principios de Producto
 
