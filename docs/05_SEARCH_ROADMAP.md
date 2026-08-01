@@ -374,7 +374,7 @@ Incluye:
 - bloqueo de mutaciones legacy de Productos hasta definir ownership oficial;
 - tests automatizados de autorizacion.
 
-### ◐ ETAPA 91
+### ☑ ETAPA 91
 
 Cumplimiento Legal, Privacidad y Moderacion.
 
@@ -385,14 +385,60 @@ moderacion y consentimiento necesarios para operar una aplicacion publica.
 
 Estado:
 
-Vigente.
+Cerrada.
 
 Pendiente programado desde ETAPA 90:
 
 - separar schema publico y privado de usuario para no exponer email en
   respuestas publicas.
 
-### ☐ ETAPA 92
+Subetapas aprobadas:
+
+- 91.1 - Contratos publicos y privados de Usuario: cerrada.
+- 91.2 - Clasificacion de datos y contratos de Comercio: cerrada.
+- 91.3A - Decision documental y modelo de evidencia: cerrada.
+- 91.3B - Implementacion minima de aceptacion y persistencia: cerrada.
+- 91.4A - Decision documental de denuncias: cerrada.
+- 91.4B - Canal minimo persistente de denuncias: cerrada.
+- 91.5 - Auditoria final, limpieza, creacion fisica controlada y cierre:
+  cerrada.
+
+Alcance de persistencia autorizado:
+
+- ETAPA 91 mantiene fuera de alcance las modificaciones estructurales generales
+  de base de datos.
+- 91.3B queda autorizada exclusivamente para una entidad persistente minima,
+  separada y de responsabilidad unica para registrar evidencia versionada de
+  aceptacion de documentos publicos aplicables a un usuario.
+- La decision permanente que define el dueno de esa evidencia queda registrada
+  en `DEC-041`.
+- La autorizacion no incluye consentimientos comerciales, comunicaciones
+  externas, marketing, preferencias avanzadas, paneles administrativos ni
+  auditoria general.
+- 91.4B queda autorizada exclusivamente para una entidad persistente minima,
+  separada y de responsabilidad unica para registrar denuncias de usuarios
+  autenticados sobre recursos publicos existentes.
+- La decision permanente que define el dueno de esa denuncia queda registrada en
+  `DEC-042`.
+- La autorizacion de 91.4B no incluye decisiones administrativas de moderacion,
+  retiro o restauracion por plataforma, sanciones, roles de moderador, panel
+  administrativo, cola operativa compleja, apelaciones, automatizacion, IA ni
+  ocultamiento automatico por volumen de denuncias.
+
+Diferidos con dueno:
+
+- ETAPA 92: backups, recuperacion, integridad fisica y procedimientos
+  operativos de base de datos.
+- ETAPA 93: ownership y asociacion persistente de uploads, eliminacion y
+  limpieza de medios, validacion operativa de cargas.
+- ETAPA 94: hardening de likes, guardados, seguidores y recursos inexistentes o
+  inactivos; idempotencia y consistencia funcional adicional.
+- Etapas legales u operativas futuras: documentos legales definitivos,
+  reaceptacion por nuevas versiones, tratamiento de usuarios existentes, panel o
+  flujo administrativo de moderacion, decisiones, sanciones, apelaciones y rate
+  limiting avanzado de denuncias.
+
+### ◐ ETAPA 92
 
 Integridad de Datos, Backups y Recuperacion.
 
@@ -403,7 +449,7 @@ y recuperacion operativa.
 
 Estado:
 
-Pendiente.
+Vigente.
 
 ### ☐ ETAPA 93
 

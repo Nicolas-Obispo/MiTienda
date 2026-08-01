@@ -59,9 +59,10 @@ import {
   obtenerAnalyticsEspacio,
 } from "@features/spaces";
 
-import { useAuth } from "@features/auth";
 import AgendaPrivadaModal from "@features/agenda/components/AgendaPrivadaModal";
 import EstadoHorarioBadge from "@features/availability/components/EstadoHorarioBadge";
+import DenunciaModal from "@features/moderation/components/DenunciaModal";
+import { RECURSO_DENUNCIA_COMERCIO } from "@features/moderation/constants/denuncias";
 
 const seguimientoPerfilComercioCache = new Map();
 
@@ -69,8 +70,6 @@ export default function CommerceProfilePage() {
   const { id } = useParams();
   const comercioId = Number(id);
   const navigate = useNavigate();
-  const { usuario, user } = useAuth();
-  const usuarioActivo = usuario || user || null;
   const seguimientoCacheInicial = seguimientoPerfilComercioCache.get(comercioId);
 
   const [perfilHydratado, setPerfilHydratado] = useState(false);
@@ -92,6 +91,7 @@ export default function CommerceProfilePage() {
   const [isCrearPublicacionOpen, setIsCrearPublicacionOpen] = useState(false);
   const [isEstadisticasOpen, setIsEstadisticasOpen] = useState(false);
   const [agendaComercio, setAgendaComercio] = useState(null);
+  const [isDenunciaComercioOpen, setIsDenunciaComercioOpen] = useState(false);
 
   const [publicacionForm, setPublicacionForm] = useState({
     titulo: "",
@@ -135,23 +135,11 @@ export default function CommerceProfilePage() {
   const [comparacionMetricas, setComparacionMetricas] = useState(null);
   const [analyticsEspacio, setAnalyticsEspacio] = useState(null);
 
-function esComercioMio(comercioData, userData) {
-    if (!comercioData || !userData) return false;
-
-    const comercioOwner =
-      comercioData.owner_user_id ??
-      comercioData.usuario_id ??
-      comercioData.propietario_id ??
-      null;
-
-    const userId = userData.id ?? userData.user_id ?? userData.usuario_id ?? null;
-
-    if (comercioOwner == null || userId == null) return false;
-
-    return Number(comercioOwner) === Number(userId);
+function esComercioMio(comercioData) {
+    return Boolean(comercioData?.es_propietario);
   }
 
-  const puedoCrearHistoria = esComercioMio(comercio, usuarioActivo);
+  const puedoCrearHistoria = esComercioMio(comercio);
   const comercioImagenUrl = getMediaUrlFromAny(comercio);
 
   function getAccessToken() {
@@ -661,7 +649,7 @@ function esComercioMio(comercioData, userData) {
           <>
             <section className="relative rounded-[1rem] border border-gray-800 bg-gray-900 p-4 sm:p-6">
               
-        {esComercioMio(comercio, usuarioActivo) && (
+        {esComercioMio(comercio) && (
           <div className="absolute right-3 top-1 flex flex-col items-end gap-1">
 
             <div className="group relative">
@@ -731,7 +719,7 @@ function esComercioMio(comercioData, userData) {
             </div>
 
             {/* DERECHA (botón) */}
-            {!esComercioMio(comercio, usuarioActivo) && (
+            {!esComercioMio(comercio) && (
               <button
                 type="button"
                 onClick={handleToggleFollow}
@@ -875,6 +863,18 @@ function esComercioMio(comercioData, userData) {
                   variant="inline"
                   className="ml-auto justify-end"
                 />
+
+                {comercio?.id ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsDenunciaComercioOpen(true)}
+                    className="interactive-bubble group cursor-pointer text-xs font-semibold"
+                  >
+                    <span className="inline-flex items-center gap-2 text-gray-300 group-hover:text-white">
+                      Denunciar
+                    </span>
+                  </button>
+                ) : null}
 
               </div>
 
@@ -1230,6 +1230,13 @@ function esComercioMio(comercioData, userData) {
             onClose={() => setAgendaComercio(null)}
           />
         ) : null}
+        <DenunciaModal
+          isOpen={isDenunciaComercioOpen}
+          onClose={() => setIsDenunciaComercioOpen(false)}
+          recursoTipo={RECURSO_DENUNCIA_COMERCIO}
+          recursoId={comercio?.id}
+          titulo="Denunciar comercio"
+        />
       </main>
     </div>
   );

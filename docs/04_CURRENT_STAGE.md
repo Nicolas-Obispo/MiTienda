@@ -302,7 +302,7 @@ Estado final actual:
 
 ## ETAPA vigente
 
-ETAPA 91 - Cumplimiento Legal, Privacidad y Moderacion.
+ETAPA 92 - Integridad de Datos, Backups y Recuperacion.
 
 Estado:
 
@@ -310,28 +310,122 @@ Vigente.
 
 Objetivo:
 
-Preparar criterios legales, privacidad, contenido publico, denuncias,
-moderacion y consentimiento necesarios para operar una aplicacion publica.
+Validar integridad de datos, estrategia de backups, restauracion, conservacion
+y recuperacion operativa.
+
+## Ultima etapa cerrada
+
+ETAPA 91 - Cumplimiento Legal, Privacidad y Moderacion.
+
+Estado:
+
+Cerrada tecnicamente.
+
+Resultado:
+
+ETAPA 91 queda cerrada tecnicamente con los controles minimos de privacidad,
+consentimiento y moderacion aprobados para esta etapa. El cierre no implica que
+FeedGo este legalmente aprobado ni listo para produccion publica.
 
 Alcance:
 
-- auditar cumplimiento legal, privacidad y moderacion existentes;
-- revisar datos personales expuestos en superficies publicas;
-- definir controles previos al lanzamiento relacionados con contenido publico,
-  consentimiento, denuncias y privacidad;
-- corregir unicamente defectos comprobados y necesarios para el alcance legal y
-  operativo de la etapa.
+- contratos publicos y privados de Usuario;
+- contratos publicos y privados de Comercio;
+- ownership contextual mediante `es_propietario` calculado por backend;
+- aceptacion obligatoria de Terminos y Politica de Privacidad durante el
+  registro;
+- validacion backend de ambas aceptaciones;
+- evidencia persistente versionada en `usuarios_documentos_aceptaciones`;
+- referencia documental logica mediante `documento_referencia`;
+- creacion atomica de usuario y evidencias;
+- canal autenticado de denuncias en `POST /moderacion/denuncias`;
+- denuncias sobre comercio, publicacion e historia;
+- motivos controlados;
+- idempotencia por usuario, recurso y motivo;
+- separacion entre denuncia y decision de moderacion;
+- ausencia de ocultamiento automatico, sanciones, paneles o roles de
+  moderacion.
+
+Subetapas de trabajo:
+
+- 91.1 - Contratos publicos y privados de Usuario: cerrada.
+- 91.2 - Clasificacion de datos y contratos de Comercio: cerrada.
+- 91.3A - Decision documental y autorizacion de persistencia minima:
+  cerrada.
+- 91.3B - Implementacion minima de aceptacion y evidencia persistente:
+  cerrada.
+- 91.4A - Decision documental y autorizacion de persistencia minima de
+  denuncias: cerrada.
+- 91.4B - Canal minimo persistente de denuncias: cerrada.
+- 91.5 - Auditoria final, limpieza, creacion fisica controlada y cierre:
+  cerrada.
+
+Excepcion acotada aprobada para 91.3B:
+
+- se autoriza una entidad persistente minima y de responsabilidad unica para
+  evidencia versionada de aceptacion de documentos publicos necesarios para
+  crear y operar una cuenta;
+- la decision permanente que define el dueno de esa evidencia queda registrada
+  en `DEC-041`;
+- la excepcion no habilita una refactorizacion general de base de datos;
+- la excepcion no habilita tablas para consentimientos comerciales,
+  comunicaciones externas, marketing, preferencias avanzadas, moderacion,
+  auditoria general ni paneles administrativos;
+- los usuarios existentes sin evidencia historica deberan tratarse como usuarios
+  sin evidencia, sin inventar aceptaciones retroactivas.
+
+Excepcion acotada aprobada para 91.4B:
+
+- se autoriza una entidad persistente minima y de responsabilidad unica para
+  registrar que un usuario autenticado denuncio un recurso publico existente por
+  un motivo controlado;
+- la decision permanente que define el dueno de esa denuncia queda registrada en
+  `DEC-042`;
+- el canal de denuncia no es una decision de moderacion, no oculta contenido, no
+  sanciona usuarios y no modifica estados operativos;
+- la excepcion no habilita roles de moderador, panel administrativo, cola
+  operativa compleja, apelaciones, automatizacion, IA, decisiones
+  administrativas de moderacion ni ocultamiento automatico por volumen de
+  denuncias;
+- la denuncia no debe mezclarse con aceptaciones legales, analytics, likes,
+  guardados, seguidores ni eventos de busqueda.
 
 Fuera del alcance:
 
-- modificar base de datos;
-- crear tablas;
+- modificar base de datos fuera de las excepciones acotadas aprobadas para 91.3B
+  y 91.4B;
+- crear tablas fuera de la entidad minima de evidencia de aceptacion aprobada
+  para 91.3B y la entidad minima de denuncias aprobada para 91.4B;
 - implementar funcionalidades nuevas ajenas al alcance legal, privacidad y
   moderacion;
+- crear una plataforma general de moderacion;
+- crear roles, paneles, sanciones, apelaciones u ocultamiento automatico;
 - redactar contratos legales definitivos de usuario final sin revision
   profesional;
-- cerrar ETAPA 91;
 - reabrir ETAPA 88.
+
+Bloqueantes de lanzamiento publico:
+
+- textos legales definitivos de Terminos y Politica de Privacidad;
+- Normas de Comunidad versionadas;
+- Politica de Moderacion versionada;
+- revision legal profesional;
+- estrategia para usuarios existentes sin evidencia historica;
+- operacion administrativa de denuncias;
+- ownership y ciclo de vida persistente de uploads.
+
+Pendientes derivados:
+
+- ETAPA 92: backups, recuperacion, integridad fisica y procedimientos
+  operativos de base de datos.
+- ETAPA 93: ownership y asociacion persistente de uploads, eliminacion y
+  limpieza de medios, validacion operativa de cargas.
+- ETAPA 94: hardening de likes, guardados, seguidores y recursos inexistentes o
+  inactivos; idempotencia y consistencia funcional adicional.
+- Etapas legales u operativas futuras: documentos legales definitivos,
+  reaceptacion por nuevas versiones, tratamiento de usuarios existentes, panel o
+  flujo administrativo de moderacion, decisiones, sanciones, apelaciones y rate
+  limiting avanzado de denuncias.
 
 ## Recordatorio
 

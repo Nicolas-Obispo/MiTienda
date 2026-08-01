@@ -24,7 +24,8 @@ import { httpGet, httpPost, httpDelete, httpPut } from "@core";
  */
 export async function getComercioById(comercioId) {
   if (!comercioId) throw new Error("comercioId es requerido");
-  return httpGet(`/comercios/${comercioId}`);
+  const token = localStorage.getItem("access_token");
+  return httpGet(`/comercios/${comercioId}`, token);
 }
 
 /**

@@ -15,6 +15,7 @@ from app.modules.users.schemas.usuarios_schemas import (
     UsuarioCreate,
     UsuarioLogin,
     UsuarioResponse,
+    UsuarioPublicResponse,
     UsuarioOnboarding,
     UsuarioPerfilUpdate,
     UsuarioCambioModo,
@@ -190,7 +191,7 @@ def actualizar_avatar_endpoint(
 # =============================================================
 #  OBTENER USUARIO POR ID
 # =============================================================
-@router.get("/{usuario_id}", response_model=UsuarioResponse)
+@router.get("/{usuario_id}", response_model=UsuarioPublicResponse)
 def obtener_usuario_endpoint(usuario_id: int, db: Session = Depends(get_db)):
     usuario = obtener_usuario_por_id(db, usuario_id)
 

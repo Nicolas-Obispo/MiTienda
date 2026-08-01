@@ -65,11 +65,18 @@ export async function actualizarPerfilUsuario(tokenJWT, payload) {
  * registrarUsuario
  * Crea un nuevo usuario usando /usuarios/registrar.
  */
-export async function registrarUsuario({ email, password }) {
+export async function registrarUsuario({
+  email,
+  password,
+  aceptaTerminos,
+  aceptaPrivacidad,
+}) {
   try {
     return await httpPost("/usuarios/registrar", {
       email,
       password,
+      acepta_terminos: aceptaTerminos,
+      acepta_privacidad: aceptaPrivacidad,
     });
   } catch (error) {
     throw new Error(error.message || "Error al registrar usuario");

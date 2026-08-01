@@ -29,6 +29,9 @@ from app.modules.social.routes.likes_publicaciones_routers import router as like
 from app.modules.posts.routes.ranking_publicaciones_routers import router as ranking_publicaciones_router
 from app.modules.posts.routes.feed_publicaciones_routers import router as feed_publicaciones_router
 from app.modules.media.routes.media_routers import router as media_router
+from app.modules.moderation.routes.contenido_denuncias_routers import (
+    router as moderation_router,
+)
 
 # 🔥 ETAPA 60 — Seguidores
 from app.modules.social.routes.seguidores_routers import router as seguidores_router
@@ -113,6 +116,7 @@ app.include_router(likes_publicaciones_router)
 app.include_router(ranking_publicaciones_router)
 app.include_router(feed_publicaciones_router)
 app.include_router(media_router)
+app.include_router(moderation_router)
 
 # 🔥 ETAPA 60 — Seguidores
 app.include_router(seguidores_router)

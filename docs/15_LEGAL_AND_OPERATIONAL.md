@@ -409,7 +409,7 @@ Cuando corresponda, conservar:
 - metodo de aceptacion;
 - alcance;
 - estado: aceptado, rechazado o revocado;
-- texto o hash de version mostrada;
+- referencia verificable de la version presentada;
 - revocaciones;
 - solicitudes de derechos;
 - acciones administrativas sensibles.
@@ -417,6 +417,59 @@ Cuando corresponda, conservar:
 No conservar indefinidamente IP, user-agent completo, coordenadas exactas,
 payloads completos, mensajes privados, tokens o cookies de sesion sin
 justificacion documentada.
+
+### 7.4 Evidencia persistente separada
+
+Cuando la aceptacion de un documento publico versionado sea necesaria para crear
+u operar una cuenta, la evidencia minima puede requerir una entidad persistente
+separada, con responsabilidad unica y alcance limitado.
+
+La decision permanente que define el dueno persistente separado se registra en
+`DEC-041`. Este documento gobierna los controles legales y operativos aplicables
+a esa evidencia.
+
+El documento aceptado debe ser identificable y versionado. La evidencia tecnica
+debe registrar la aceptacion o estado aplicable, pero no reemplaza la redaccion,
+revision ni aprobacion profesional de Terminos, Politica de Privacidad u otros
+documentos publicos.
+
+Mientras los textos legales definitivos no existan como documentos versionados
+con contenido estable, la evidencia debe conservar una referencia verificable de
+tipo y version presentada. No debe declararse como hash criptografico del
+contenido legal real si ese contenido no fue incorporado al mecanismo tecnico.
+
+Los usuarios existentes sin evidencia historica deben tratarse como usuarios sin
+evidencia. No se deben inventar aceptaciones retroactivas.
+
+La evidencia no debe incluir informacion tecnica excesiva sin justificacion,
+como IP completa, user-agent completo, geolocalizacion, token o sesion, payload
+completo o copia completa del texto legal.
+
+Los consentimientos opcionales, como comunicaciones comerciales, WhatsApp,
+email marketing, push promocional, cookies no esenciales o finalidades futuras
+de IA, deben permanecer separados de las aceptaciones necesarias para crear y
+operar una cuenta.
+
+Estado tecnico al cierre de ETAPA 91:
+
+- el registro exige aceptacion explicita separada de Terminos y Politica de
+  Privacidad;
+- el backend valida ambas aceptaciones;
+- las versiones y referencias documentales son controladas por backend;
+- la evidencia persistente minima queda implementada en
+  `usuarios_documentos_aceptaciones`;
+- `documento_referencia` conserva una referencia logica de tipo y version, no
+  un hash criptografico del contenido legal definitivo;
+- la creacion de usuario y evidencias se realiza atomicamente;
+- los usuarios existentes permanecen sin evidencia historica retroactiva.
+
+Pendiente antes del lanzamiento publico:
+
+- textos definitivos de Terminos y Politica de Privacidad;
+- versionado legal aprobado de esos textos;
+- revision profesional legal;
+- estrategia de reaceptacion para nuevas versiones;
+- tratamiento operativo de usuarios existentes sin evidencia historica.
 
 ## 8. Derechos de usuarios
 
@@ -569,6 +622,50 @@ Debe contemplar:
 
 FeedGo no debe automatizar denuncias penales ni entrega de datos a autoridades
 sin procedimiento aprobado.
+
+### 13.1 Canal minimo de denuncia
+
+FeedGo debe ofrecer un canal minimo para que usuarios autenticados reporten
+contenido publico. La denuncia es una solicitud de revision, no una
+determinacion automatica de incumplimiento.
+
+El denunciante y sus datos deben permanecer protegidos y no deben exponerse
+publicamente al recurso denunciado, al comercio denunciado ni a otros usuarios.
+
+Los motivos deben ser controlados. El texto libre solo puede existir como
+detalle opcional limitado y sujeto a minimizacion.
+
+El contenido no debe ocultarse automaticamente solo por cantidad de denuncias.
+El retiro, restauracion, sancion o cualquier medida de plataforma requiere una
+decision de moderacion separada, proporcional y trazable.
+
+La entidad de denuncias no reemplaza una futura entidad de decisiones de
+moderacion y no debe mezclarse con la evidencia de aceptacion de documentos.
+
+Normas de la Comunidad y Politica de Moderacion deben existir como documentos
+publicos versionados antes del lanzamiento. La implementacion tecnica del canal
+de denuncia no reemplaza la revision ni redaccion legal profesional.
+
+Estado tecnico al cierre de ETAPA 91:
+
+- el canal minimo autenticado de denuncias queda implementado;
+- la entidad persistente `contenido_denuncias` registra denuncias sobre
+  comercio, publicacion e historia;
+- los motivos son controlados;
+- el denunciante no se expone en respuestas publicas;
+- la repeticion exacta por usuario, recurso y motivo es idempotente;
+- la denuncia no oculta contenido, no sanciona usuarios y no modifica estados
+  operativos.
+
+Pendiente antes del lanzamiento publico:
+
+- Normas de Comunidad versionadas;
+- Politica de Moderacion versionada;
+- reglas de contenido incorporadas o referenciadas desde Terminos;
+- revision profesional legal;
+- operacion administrativa de denuncias;
+- decisiones de moderacion, sanciones, apelaciones y restauraciones;
+- criterios de accion manual sobre contenido reportado.
 
 ## 14. Comercios, publicaciones, precios y promociones
 

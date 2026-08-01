@@ -2015,3 +2015,77 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 - No se modifico frontend.
 - No se modifico base de datos.
 - No se crearon tablas, modelos, relaciones ni funcionalidades nuevas.
+
+---
+
+## ETAPA 91 — Cumplimiento Legal, Privacidad y Moderacion
+
+**Estado:** Cerrada
+
+### Seguridad y privacidad
+
+- Se separaron los contratos publicos y privados de Usuario.
+- `GET /usuarios/{usuario_id}` dejo de exponer `email` y datos privados.
+- `/usuarios/me` conserva el contrato privado necesario para el usuario
+  autenticado.
+- Se separaron contratos publicos y privados de Comercio.
+- Las respuestas publicas de Comercio dejaron de exponer `usuario_id`.
+- `es_propietario` queda calculado por backend como contrato contextual para el
+  propietario autenticado, usuario no propietario y visitante anonimo.
+- El frontend dejo de reconstruir ownership mediante identificadores publicos.
+
+### Consentimiento y evidencia
+
+- El registro exige aceptacion explicita separada de Terminos y Politica de
+  Privacidad.
+- El backend valida ambas aceptaciones y rechaza registros incompletos o con
+  valores `false`.
+- Se creo la entidad `usuarios_documentos_aceptaciones` para evidencia
+  versionada minima.
+- La creacion de usuario y las dos evidencias obligatorias ocurre en una unica
+  transaccion.
+- Las versiones y referencias documentales son controladas por backend.
+- La evidencia conserva `documento_referencia` como referencia logica de tipo y
+  version, sin presentarla como hash criptografico del texto legal definitivo.
+- Los usuarios existentes permanecen sin aceptacion retroactiva inventada.
+
+### Moderacion minima
+
+- Se creo el modulo `moderation`.
+- Se creo la entidad `contenido_denuncias`.
+- Se agrego `POST /moderacion/denuncias` como endpoint autenticado.
+- Se habilitaron denuncias sobre comercio, publicacion e historia.
+- Se implementaron motivos controlados e idempotencia por usuario, recurso y
+  motivo.
+- Se agrego un modal frontend reutilizable para enviar denuncias.
+- La denuncia no oculta contenido, no sanciona usuarios, no modifica estados
+  operativos y no expone al denunciante publicamente.
+
+### Validaciones
+
+- `unittest discover tests`: 75 tests OK.
+- `compileall app`: OK.
+- ESLint especifico de archivos frontend modificados: 0 errores, 1 warning
+  preexistente de `react-hooks/exhaustive-deps`.
+- `npm run build`: OK, con warnings preexistentes de Browserslist, assets
+  Leaflet y tamano de chunk.
+- `git diff --check`: OK.
+- Creacion fisica controlada de `usuarios_documentos_aceptaciones` y
+  `contenido_denuncias` completada sobre MySQL local `mitienda`.
+- Verificacion fisica de columnas, FKs, indices y uniques: OK.
+
+### Diferidos
+
+- Textos legales definitivos, Normas de Comunidad, Politica de Moderacion y
+  revision legal profesional.
+- Estrategia para usuarios existentes y reaceptacion por nuevas versiones.
+- Panel administrativo, decisiones de moderacion, sanciones, apelaciones y rate
+  limiting avanzado de denuncias.
+- Ownership y ciclo de vida persistente de uploads.
+- Hardening futuro de likes, guardados, seguidores y recursos inexistentes o
+  inactivos.
+
+### Cierre formal
+
+- ETAPA 91 queda cerrada tecnicamente.
+- ETAPA 92 - Integridad de Datos, Backups y Recuperacion queda vigente.

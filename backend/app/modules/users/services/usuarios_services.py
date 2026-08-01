@@ -9,6 +9,7 @@ import re
 from sqlalchemy.orm import Session
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.schemas.usuarios_schemas import UsuarioCreate, UsuarioLogin
+from app.modules.users.services import documentos_aceptacion_services
 
 # Funciones de seguridad
 from app.core.security import hash_password, verificar_password
@@ -24,6 +25,10 @@ def crear_usuario(db: Session, usuario: UsuarioCreate) -> Usuario | None:
     if existente:
         return None
 
+    documentos_aceptacion_services.validar_aceptaciones_obligatorias_registro(
+        usuario
+    )
+
     hashed = hash_password(usuario.password)
 
     nuevo_usuario = Usuario(
@@ -31,9 +36,18 @@ def crear_usuario(db: Session, usuario: UsuarioCreate) -> Usuario | None:
         hashed_password=hashed
     )
 
-    db.add(nuevo_usuario)
-    db.commit()
-    db.refresh(nuevo_usuario)
+    try:
+        db.add(nuevo_usuario)
+        db.flush()
+        documentos_aceptacion_services.crear_evidencias_aceptacion_registro(
+            db=db,
+            usuario=nuevo_usuario,
+        )
+        db.commit()
+        db.refresh(nuevo_usuario)
+    except Exception:
+        db.rollback()
+        raise
 
     return nuevo_usuario
 

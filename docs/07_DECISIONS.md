@@ -366,3 +366,30 @@ No reemplaza la documentación oficial existente.
 - Decision: Las mutaciones privadas sobre recursos derivados de un comercio deben validar ownership en backend mediante el contrato `Usuario -> Comercio -> Recurso`. El frontend no es una barrera de seguridad. Un recurso derivado debe resolver su propietario natural antes de mutar datos. Si un recurso no tiene dueno modelado, sus mutaciones globales no pueden quedar habilitadas para cualquier usuario autenticado.
 - Motivo: FeedGo administra recursos creados por propietarios de espacios. Validar solo JWT no demuestra autorizacion sobre el recurso y permite modificar informacion ajena o global.
 - Impacto: Publicaciones, historias, secciones, analytics, metricas, snapshots, comparacion, score y futuros recursos derivados de comercio deben validar propietario en backend. No se crean roles, permisos, tablas ni relaciones nuevas sin necesidad comprobada. Productos legacy permanece bloqueado hasta que ETAPA 102 defina ownership oficial del dominio.
+
+## DEC-041
+
+- ID: DEC-041
+- Titulo: Evidencia persistente separada para documentos versionados
+- Estado: Aprobada
+- Problema: FeedGo necesita demostrar la aceptacion de documentos publicos versionados sin mezclar esa evidencia con la cuenta de usuario, eventos de busqueda, tokens, analytics u otras responsabilidades del sistema.
+- Decision: La evidencia de aceptacion tendra un dueno persistente separado, con responsabilidad unica: registrar la aceptacion o el estado de un documento versionado aplicable a un usuario.
+- Motivo: La evidencia puede involucrar multiples documentos, multiples versiones, futuras reaceptaciones e historial. Guardarla en `usuarios` mezcla cuenta con evidencia legal versionada; reutilizar eventos, tokens, analytics u otras tablas mezclaria dominios y dificultaria minimizacion, trazabilidad y retencion.
+- Campos conceptuales minimos: identificador, usuario, tipo o identificador del documento, version, fecha y hora, canal, metodo, estado y referencia verificable de la version presentada. Mientras no existan textos legales definitivos versionados, esa referencia no debe presentarse como hash criptografico del contenido legal.
+- Exclusiones iniciales: IP completa, user-agent completo, geolocalizacion, token o sesion, payload completo, copia completa del texto legal, panel administrativo, revocaciones complejas y consentimientos comerciales.
+- Regla: No se deben inventar aceptaciones retroactivas para usuarios existentes. Un usuario sin evidencia historica debe representarse como usuario sin evidencia hasta que acepte una version aplicable.
+- Impacto: ETAPA 91 autoriza una excepcion acotada para implementar en 91.3B una entidad minima de evidencia de aceptacion. Esta decision no habilita una refactorizacion general de base de datos ni un sistema amplio de consentimientos.
+
+## DEC-042
+
+- ID: DEC-042
+- Titulo: Denuncias persistentes separadas de decisiones de moderacion
+- Estado: Aprobada
+- Problema: FeedGo expone contenido generado por usuarios y comercios, pero no existe un mecanismo para reportar contenido inapropiado, fraudulento o contrario a las reglas publicas.
+- Decision: Las denuncias tendran un dueno persistente separado, con responsabilidad unica: registrar una denuncia realizada por un usuario autenticado sobre un recurso publico.
+- Separacion de responsabilidades: Una denuncia no es una decision de moderacion, no oculta contenido, no sanciona usuarios, no modifica estados operativos, no se mezcla con aceptaciones legales y no se mezcla con analytics, likes, guardados, seguidores ni eventos de busqueda.
+- Recursos iniciales denunciables: comercio, publicacion e historia. Secciones, productos legacy, uploads directos, usuarios, analytics, busqueda y aceptaciones legales quedan fuera del alcance inicial salvo decision futura respaldada por evidencia tecnica y superficie publica clara.
+- Campos conceptuales minimos: identificador, usuario denunciante, tipo de recurso, identificador del recurso, motivo, detalle opcional limitado, estado inicial, fecha y hora.
+- Motivos controlados iniciales: contenido inapropiado, fraude o engano, suplantacion, exposicion de datos personales, propiedad intelectual, producto o servicio restringido, spam y otro.
+- Reglas iniciales: autenticacion obligatoria, recurso existente, recurso visible o denunciable, motivo controlado, idempotencia por usuario, tipo de recurso, identificador de recurso y motivo, denunciante no expuesto publicamente, sin ocultamiento automatico y sin reutilizar la entidad para decisiones futuras de moderacion.
+- Impacto: ETAPA 91 autoriza una excepcion acotada para implementar en 91.4B una entidad minima de denuncias. Esta decision no habilita una plataforma general de moderacion, roles administrativos, sanciones, apelaciones, paneles, automatizacion ni IA.

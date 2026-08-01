@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { InteraccionButton } from "@shared";
-import { useAuth } from "@features/auth";
 import { getMediaUrlFromAny } from "@shared";
 import { usePublicacionDetalle } from "@features/posts";
 import {
@@ -9,13 +8,12 @@ import {
   useToggleLikePublicacionMutation,
 } from "@features/social";
 import { httpDelete } from "@core/services/http_service";
+import DenunciaModal from "@features/moderation/components/DenunciaModal";
+import { RECURSO_DENUNCIA_PUBLICACION } from "@features/moderation/constants/denuncias";
 
 export default function PublicacionDetallePage() {
   const { id } = useParams();
   const navigate = useNavigate();
-
-  const { usuario, user } = useAuth();
-  const usuarioActivo = usuario || user || null;
 
   const {
     data: publicacionQuery,
@@ -33,11 +31,12 @@ export default function PublicacionDetallePage() {
   const [guardada, setGuardada] = useState(false);
   const [isActingLike, setIsActingLike] = useState(false);
   const [isActingSave, setIsActingSave] = useState(false);
-  const [esDuenoComercio, setEsDuenoComercio] = useState(false);
+  const [esDuenoComercio] = useState(false);
 
   const [mostrarConfirmacionEliminar, setMostrarConfirmacionEliminar] =
     useState(false);
   const [isDeletingPublicacion, setIsDeletingPublicacion] = useState(false);
+  const [isDenunciaOpen, setIsDenunciaOpen] = useState(false);
 
   function usuarioDebeLoguearse() {
     const token = localStorage.getItem("access_token");
@@ -64,26 +63,6 @@ export default function PublicacionDetallePage() {
       pub?.comercio?.razon_social ||
       "Comercio"
     );
-  }
-
-  function esPublicacionMia(pub, userData) {
-    if (!pub || !userData) return false;
-
-    const owner =
-      pub.owner_user_id ??
-      pub.usuario_id ??
-      pub.user_id ??
-      null;
-
-    const userId =
-      userData.id ??
-      userData.user_id ??
-      userData.usuario_id ??
-      null;
-
-    if (owner == null || userId == null) return false;
-
-    return Number(owner) === Number(userId);
   }
 
   function getMediaUrl(pub) {
@@ -131,7 +110,6 @@ export default function PublicacionDetallePage() {
 
     setIsActingLike(true);
 
-    const snapshot = publicacion;
     const snapshotLiked = liked;
 
     setLiked((prev) => !prev);
@@ -310,6 +288,16 @@ export default function PublicacionDetallePage() {
                   disabled={isActingSave}
                   label={guardada ? "Guardada" : "Guardar"}
                 />
+
+                <button
+                  type="button"
+                  onClick={() => setIsDenunciaOpen(true)}
+                  className="interactive-bubble group cursor-pointer text-sm font-semibold"
+                >
+                  <span className="inline-flex items-center gap-2 text-gray-300 group-hover:text-white">
+                    Denunciar
+                  </span>
+                </button>
               </div>
 
               <div className="flex items-center justify-between text-sm text-gray-400">
@@ -370,6 +358,14 @@ export default function PublicacionDetallePage() {
           </div>
         </div>
       )}
+
+      <DenunciaModal
+        isOpen={isDenunciaOpen}
+        onClose={() => setIsDenunciaOpen(false)}
+        recursoTipo={RECURSO_DENUNCIA_PUBLICACION}
+        recursoId={publicacionVisible?.id}
+        titulo="Denunciar publicacion"
+      />
     </div>
   );
 }

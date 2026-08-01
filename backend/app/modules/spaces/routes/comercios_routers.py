@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 
 # Auth
-from app.core.auth import obtener_usuario_actual
+from app.core.auth import obtener_usuario_actual, obtener_usuario_actual_opcional
 
 # Models
 from app.modules.spaces.models.comercios_models import Comercio
@@ -30,6 +30,7 @@ from app.modules.spaces.models.comercios_models import Comercio
 from app.modules.spaces.schemas.comercios_schemas import (
     ComercioCreate,
     ComercioUpdate,
+    ComercioPublicResponse,
     ComercioResponse,
 )
 
@@ -53,6 +54,13 @@ router = APIRouter(
     prefix="/comercios",
     tags=["Comercios"]
 )
+
+
+def _adjuntar_estado_propietario(comercio: Comercio, usuario_actual) -> Comercio:
+    comercio.es_propietario = bool(
+        usuario_actual and comercio.usuario_id == usuario_actual.id
+    )
+    return comercio
 
 
 # ============================================================
@@ -87,7 +95,7 @@ def crear_comercio_endpoint(
 # Listar comercios
 # ============================================================
 
-@router.get("", response_model=list[ComercioResponse])
+@router.get("", response_model=list[ComercioPublicResponse])
 def listar_comercios_endpoint(
     ciudad: str | None = None,
     rubro_id: int | None = None,
@@ -100,7 +108,7 @@ def listar_comercios_endpoint(
 # Explorar comercios (público) - ETAPA 48 + ETAPA 50 (smart)
 # ============================================================
 
-@router.get("/activos", response_model=list[ComercioResponse])
+@router.get("/activos", response_model=list[ComercioPublicResponse])
 def listar_comercios_activos_endpoint(
     q: str | None = Query(
         default=None,
@@ -193,10 +201,11 @@ def listar_mis_comercios_endpoint(
 # Obtener comercio por ID
 # ============================================================
 
-@router.get("/{comercio_id}", response_model=ComercioResponse)
+@router.get("/{comercio_id}", response_model=ComercioPublicResponse)
 def obtener_comercio_endpoint(
     comercio_id: int,
     db: Session = Depends(get_db),
+    usuario_actual=Depends(obtener_usuario_actual_opcional),
 ):
     comercio = obtener_comercio_por_id(db, comercio_id)
 
@@ -206,7 +215,7 @@ def obtener_comercio_endpoint(
             detail="Comercio no encontrado"
         )
 
-    return comercio
+    return _adjuntar_estado_propietario(comercio, usuario_actual)
 
 
 # ============================================================

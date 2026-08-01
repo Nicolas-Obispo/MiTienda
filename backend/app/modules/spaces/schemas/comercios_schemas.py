@@ -107,15 +107,19 @@ class ComercioUpdate(BaseModel):
 # Respuesta
 # ============================================================
 
-class ComercioResponse(ComercioBase):
+class ComercioPublicResponse(ComercioBase):
     id: int
-    usuario_id: int
     activo: bool
     rubro_nombre: Optional[str] = None
     especialidad_ids: list[int] = Field(default_factory=list)
     distancia_km: Optional[float] = None
     horario_atencion: Optional[EstadoHorarioResponse] = None
+    es_propietario: bool = False
 
     model_config = {
         "from_attributes": True
     }
+
+
+class ComercioResponse(ComercioPublicResponse):
+    usuario_id: int

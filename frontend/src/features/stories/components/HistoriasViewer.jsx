@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { getMediaUrlFromAny } from "@shared";
 import { toggleLikeHistoria } from "@features/stories";
+import DenunciaModal from "@features/moderation/components/DenunciaModal";
+import { RECURSO_DENUNCIA_HISTORIA } from "@features/moderation/constants/denuncias";
 
 const DURACION_MS_DEFAULT = 4500;
 
@@ -26,6 +28,7 @@ export default function HistoriasViewer({
   const [likedByMe, setLikedByMe] = useState(false);
   const [isLikingHistoria, setIsLikingHistoria] = useState(false);
   const [showFlyingHeart, setShowFlyingHeart] = useState(false);
+  const [isDenunciaOpen, setIsDenunciaOpen] = useState(false);
 
   const imgRef = useRef(null);
   const videoRef = useRef(null);
@@ -171,6 +174,7 @@ export default function HistoriasViewer({
     if (!isOpen) return;
     if (historiasList.length === 0) return;
     if (!mediaLista) return;
+    if (isDenunciaOpen) return;
 
     const myRun = ++runIdRef.current;
 
@@ -201,13 +205,22 @@ export default function HistoriasViewer({
       if (runIdRef.current === myRun) runIdRef.current += 1;
       limpiarRaf();
     };
-  }, [isOpen, historiasList.length, mediaLista, limpiarRaf, irSiguiente]);
+  }, [
+    isOpen,
+    historiasList.length,
+    mediaLista,
+    isDenunciaOpen,
+    limpiarRaf,
+    irSiguiente,
+  ]);
 
   // Teclado
   useEffect(() => {
     if (!isOpen) return;
 
     const onKeyDown = (e) => {
+      if (isDenunciaOpen) return;
+
       if (e.key === "Escape") cerrarViewer();
       if (e.key === "ArrowLeft") irAnterior();
       if (e.key === "ArrowRight") irSiguiente();
@@ -215,7 +228,7 @@ export default function HistoriasViewer({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOpen, cerrarViewer, irAnterior, irSiguiente]);
+  }, [isOpen, isDenunciaOpen, cerrarViewer, irAnterior, irSiguiente]);
 
   if (!isOpen) return null;
   if (historiasList.length === 0) return null;
@@ -313,9 +326,21 @@ export default function HistoriasViewer({
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              cerrarViewer();
+              setIsDenunciaOpen(true);
             }}
             className="relative z-[999] ml-3 rounded-full bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20"
+          >
+            Denunciar
+          </button>
+
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              cerrarViewer();
+            }}
+            className="relative z-[999] ml-2 rounded-full bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20"
           >
             ✕
           </button>
@@ -456,6 +481,13 @@ export default function HistoriasViewer({
           </span>
         </button>
       </div>
+      <DenunciaModal
+        isOpen={isDenunciaOpen}
+        onClose={() => setIsDenunciaOpen(false)}
+        recursoTipo={RECURSO_DENUNCIA_HISTORIA}
+        recursoId={historiaActual?.id}
+        titulo="Denunciar historia"
+      />
     </div>
   );
 }

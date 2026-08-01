@@ -15,6 +15,9 @@ from app.core.database import engine, Base
 # USERS
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.models.tokens_models import TokenRevocado
+from app.modules.users.models.usuarios_documentos_aceptaciones_models import (
+    UsuarioDocumentoAceptacion,
+)
 
 # SPACES
 from app.modules.spaces.models.comercios_models import Comercio
@@ -68,6 +71,11 @@ from app.modules.social.models.seguidores_models import Seguidores
 from app.modules.stories.models.historias_models import Historia
 from app.modules.stories.models.historias_vistas_models import HistoriaVista
 from app.modules.stories.models.historias_likes_models import HistoriaLike
+
+# MODERATION
+from app.modules.moderation.models.contenido_denuncias_models import (
+    ContenidoDenuncia,
+)
 
 # AI
 from app.modules.ai.models.comercios_embeddings_models import (

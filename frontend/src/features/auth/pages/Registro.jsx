@@ -19,6 +19,8 @@ export default function Registro() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmarPassword, setConfirmarPassword] = useState("");
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [aceptaPrivacidad, setAceptaPrivacidad] = useState(false);
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [mostrarConfirmarPassword, setMostrarConfirmarPassword] =
     useState(false);
@@ -38,11 +40,23 @@ export default function Registro() {
       return;
     }
 
+    if (!aceptaTerminos || !aceptaPrivacidad) {
+      setErrorMensaje(
+        "Debes aceptar Terminos y Condiciones y Politica de Privacidad."
+      );
+      return;
+    }
+
     setCargando(true);
 
     try {
       // 1. Registramos el usuario en backend.
-      await registrarUsuario({ email, password });
+      await registrarUsuario({
+        email,
+        password,
+        aceptaTerminos,
+        aceptaPrivacidad,
+      });
 
       // 2. Iniciamos sesión automáticamente.
       const token = await loginUsuario({ email, password });
@@ -222,6 +236,49 @@ export default function Registro() {
                 {mostrarConfirmarPassword ? "🙉" : "🙈"}
               </button>
             </div>
+          </div>
+
+          {/* Aceptaciones obligatorias */}
+          <div className="space-y-3 rounded-xl border border-gray-800 bg-gray-900/50 p-3">
+            <label className="flex items-start gap-3 text-sm text-gray-300">
+              <input
+                type="checkbox"
+                checked={aceptaTerminos}
+                onChange={(e) => setAceptaTerminos(e.target.checked)}
+                required
+                className="mt-1 h-4 w-4 rounded border-gray-600 bg-gray-950 text-orange-500 focus:ring-orange-500"
+              />
+              <span>
+                Acepto los{" "}
+                <Link
+                  to="/terminos-y-condiciones"
+                  className="text-orange-400 hover:text-amber-300"
+                >
+                  Terminos y Condiciones
+                </Link>
+                .
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 text-sm text-gray-300">
+              <input
+                type="checkbox"
+                checked={aceptaPrivacidad}
+                onChange={(e) => setAceptaPrivacidad(e.target.checked)}
+                required
+                className="mt-1 h-4 w-4 rounded border-gray-600 bg-gray-950 text-orange-500 focus:ring-orange-500"
+              />
+              <span>
+                Acepto la{" "}
+                <Link
+                  to="/politica-de-privacidad"
+                  className="text-orange-400 hover:text-amber-300"
+                >
+                  Politica de Privacidad
+                </Link>
+                .
+              </span>
+            </label>
           </div>
 
           {/* Error */}

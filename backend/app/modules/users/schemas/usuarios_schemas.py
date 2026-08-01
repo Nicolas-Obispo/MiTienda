@@ -9,7 +9,7 @@ para no romper flujos existentes.
 """
 
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Literal, Optional
 
 
 # ---------------------------------
@@ -18,6 +18,8 @@ from typing import Optional
 # ---------------------------------
 class UsuarioCreate(BaseModel):
     email: EmailStr
+    acepta_terminos: Literal[True]
+    acepta_privacidad: Literal[True]
     password: str  # 👈 el cliente envía la contraseña sin hash
 
 
@@ -44,6 +46,17 @@ class UsuarioResponse(BaseModel):
     onboarding_completo: bool
     provincia: Optional[str] = None
     ciudad: Optional[str] = None
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
+# ---------------------------------
+# Schema publico para devolver usuario
+# ---------------------------------
+class UsuarioPublicResponse(BaseModel):
+    id: int
 
     model_config = {
         "from_attributes": True
