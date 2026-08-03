@@ -17,6 +17,9 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.modules.social.models.likes_publicaciones_models import LikePublicacion
+from app.modules.posts.services.publicaciones_services import (
+    obtener_publicacion_visible_o_error,
+)
 from app.modules.ai.services.usuarios_embeddings_services import (
     regenerar_embedding_usuario_si_corresponde
 )
@@ -35,6 +38,8 @@ def toggle_like_publicacion(
     - True  -> like creado
     - False -> like eliminado
     """
+
+    obtener_publicacion_visible_o_error(db, publicacion_id=publicacion_id)
 
     like_existente: Optional[LikePublicacion] = (
         db.query(LikePublicacion)

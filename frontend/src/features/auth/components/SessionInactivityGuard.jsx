@@ -7,7 +7,7 @@ const ACTIVITY_EVENTS = ["click", "keydown", "scroll", "touchstart", "pointerdow
 export default function SessionInactivityGuard() {
   const { estaAutenticado, logout } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const lastActivityAtRef = useRef(Date.now());
+  const lastActivityAtRef = useRef(null);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -19,9 +19,19 @@ export default function SessionInactivityGuard() {
     }
 
     if (!estaAutenticado) {
-      setIsModalOpen(false);
       lastActivityAtRef.current = Date.now();
       clearCurrentTimer();
+
+      if (isModalOpen) {
+        const resetModalTimer = window.setTimeout(() => {
+          setIsModalOpen(false);
+        }, 0);
+
+        return () => {
+          window.clearTimeout(resetModalTimer);
+        };
+      }
+
       return;
     }
 

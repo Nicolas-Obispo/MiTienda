@@ -18,7 +18,7 @@
  * - Cards compactas tipo app visual
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   fetchFeedPublicaciones,

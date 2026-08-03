@@ -34,10 +34,12 @@ from app.modules.spaces.services.comercios_ownership_services import (
     ComercioUsuarioNoPropietarioError,
 )
 from app.modules.stories.services.historias_services import (
+    HistoriaNoVisibleError,
     crear_historia,
     listar_historias_activas_por_comercio,
     listar_historias_bar,
 )
+from app.modules.spaces.services.comercios_services import ComercioNoVisibleError
 from app.modules.stories.services.historias_vistas_services import marcar_historia_como_vista
 from app.modules.stories.services.historias_likes_services import toggle_like_historia
 
@@ -92,11 +94,14 @@ def listar_historias_por_comercio_endpoint(
     """
     usuario_id = getattr(usuario_actual, "id", None) if usuario_actual else None
 
-    return listar_historias_activas_por_comercio(
-        db,
-        comercio_id=comercio_id,
-        usuario_id=usuario_id,
-    )
+    try:
+        return listar_historias_activas_por_comercio(
+            db,
+            comercio_id=comercio_id,
+            usuario_id=usuario_id,
+        )
+    except ComercioNoVisibleError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get(
@@ -152,7 +157,7 @@ def marcar_historia_vista_endpoint(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
+        ) from e
 
 # ------------------------------------------------------------------
 # LIKES DE HISTORIAS (ETAPA 61)
@@ -183,8 +188,8 @@ def toggle_like_historia_endpoint(
             usuario_id=usuario_actual.id,
         )
 
-    except ValueError as e:
+    except HistoriaNoVisibleError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
+        ) from e

@@ -302,7 +302,7 @@ Estado final actual:
 
 ## ETAPA vigente
 
-ETAPA 94 - QA Integral y Hardening Funcional.
+ETAPA 95 - Experiencia de Lanzamiento y Design System Critico.
 
 Estado:
 
@@ -310,12 +310,13 @@ Vigente.
 
 Objetivo:
 
-Ejecutar validacion integral, corregir defectos comprobados y endurecer los
-flujos principales existentes antes del lanzamiento.
+Ajustar la experiencia central de lanzamiento, accesibilidad, responsive y
+consistencia visual critica sin convertirlo en una reescritura del sistema de
+diseno.
 
 ## Ultima etapa cerrada
 
-ETAPA 93 - Observabilidad y Operacion.
+ETAPA 94 - QA Integral y Hardening Funcional.
 
 Estado:
 
@@ -323,72 +324,75 @@ Cerrada.
 
 Resultado:
 
-ETAPA 93 queda cerrada con arquitectura operativa, logging seguro, manejo
-homogeneo de errores, contexto de request, health checks, metricas, alertas
-internas y runbooks iniciales. El cierre no implica proveedores externos,
-dashboards, persistencia historica de metricas o alertas ni operacion
-productiva completa.
+ETAPA 94 queda cerrada con hardening funcional de relaciones persistentes,
+visibilidad publica, contratos `404` e idempotencia, integracion frontend/cache,
+QA basado en riesgo y estabilizacion final de lint. El cierre no implica una
+reescritura general de API, frontend, agenda, productos, disponibilidad,
+busqueda, uploads ni ETAPA 95.
 
 Alcance:
 
-- Arquitectura operativa definida en
-  `docs/17_OBSERVABILITY_AND_OPERATIONS.md`.
-- Logger central reutilizable basado en `logging` estandar.
-- Handlers globales para errores HTTP, validacion y excepciones no controladas.
-- Sanitizacion de errores para no exponer secretos, tokens, passwords,
-  payloads, `.env` ni stack traces al frontend.
-- Request Context con `request_id` y `correlation_id`.
-- Headers `X-Request-ID` y `X-Correlation-ID` en respuestas.
-- Endpoints `GET /health/live` y `GET /health/ready`.
-- Checks read-only de API, base de datos, schema, uploads/storage, embeddings,
-  evidencia de backup y evidencia de restore.
-- Metricas minimas de requests, latencia, `4xx`, `5xx`, errores no controlados,
-  autenticacion, autorizacion, readiness, backup, restore, uploads y busquedas
-  sin resultados.
-- Alertas internas por contratos para readiness `unhealthy`, errores `5xx`
-  repetidos, backup fallido o evidencia no saludable, restore fallido y
-  rechazos repetidos de uploads.
-- Runbooks iniciales para API no disponible, readiness `unhealthy`, errores
-  `5xx`, base de datos, backup/restore y uploads/storage.
+- Matriz funcional de contratos para likes, guardados, seguidores,
+  publicaciones, historias, feed, ranking, busqueda candidate source y
+  consumidores frontend directos.
+- Likes de publicaciones, guardados y seguidores endurecidos contra recursos
+  inexistentes, inactivos o no visibles.
+- Relaciones persistentes idempotentes: crear solo sobre recursos validos y
+  visibles; eliminar permite limpiar relaciones existentes aunque el recurso
+  haya quedado inactivo cuando el contrato lo requiere.
+- Publicaciones visibles definidas como publicacion activa con comercio
+  existente y activo.
+- Historias visibles definidas como historia activa con comercio existente y
+  activo.
+- Colecciones publicas excluyen recursos no visibles; detalles no visibles
+  responden `404` sin efectos secundarios como incremento de vistas.
+- Feed, ranking y `PublicacionCandidateSource` excluyen publicaciones de
+  comercios inactivos sin modificar algoritmos, scoring, limites ni orden.
+- Frontend ajustado para manejar `404`, rollback, cache e invalidaciones sin
+  decidir reglas de visibilidad ni reconstruir logica de dominio.
+- Separacion de `AuthContextCore.js` para conservar Fast Refresh sin cambiar la
+  API publica de autenticacion.
+- Limpieza final de errores de ESLint; persisten warnings no bloqueantes
+  documentados.
 
 Subetapas de trabajo:
 
-- 93.1 - Arquitectura Operativa: cerrada.
-- 93.2 - Logging Enterprise y Error Handling: cerrada.
-- 93.3 - Contexto Operativo y Correlacion: cerrada.
-- 93.4 - Health, Readiness y Estado del Sistema: cerrada.
-- 93.5 - Metricas y Senales Operativas: cerrada.
-- 93.6 - Alertas mediante Contratos: cerrada.
-- 93.7 - Runbooks, Validacion y Cierre: cerrada.
+- 94.0 - Matriz de Contratos Funcionales: cerrada.
+- 94.1 - Hardening de Relaciones e Interacciones Persistentes: cerrada.
+- 94.2 - Hardening de Visibilidad Publica: cerrada.
+- 94.3 - Integracion Frontend y Cache: cerrada.
+- 94.4 - QA Integral Basado en Riesgo: cerrada.
+- 94.5 - Estabilizacion y Limpieza Final: cerrada.
 
 Validaciones de cierre:
 
-- Suite backend completa: OK.
+- `python -m unittest tests.test_social_hardening`: OK, 24 tests.
+- `python -m unittest tests.test_public_visibility_hardening`: OK, 14 tests.
+- Suite backend completa: OK, 190 tests.
 - `compileall app`: OK.
-- ESLint de frontend modificado: OK.
+- `npm run lint`: OK, 0 errores y 5 warnings.
 - Build frontend: OK.
 - `git diff --check`: OK.
 
 Limites del cierre:
 
-- No se crearon tablas ni migraciones.
-- No se integraron Prometheus, Grafana, Sentry, OpenTelemetry, email, Slack,
-  Discord, Telegram ni servicios cloud.
-- No se crearon dashboards ni endpoints de metricas o alertas.
-- No se implemento persistencia historica de metricas o alertas.
-- No se implementaron politicas de guardia, escalamiento ni resolucion manual.
-- Ownership y ciclo de vida persistente de uploads quedan diferidos.
+- No se crearon tablas, migraciones ni endpoints nuevos.
+- No se redisenaron agenda, disponibilidad, productos, uploads, discovery,
+  knowledge, indexer ni ranking.
+- No se modificaron algoritmos de feed, ranking o busqueda.
+- No se agrego infraestructura de tests frontend.
+- No se implemento ETAPA 95 dentro de ETAPA 94.
 
 Pendientes derivados:
 
-- ETAPA 94: hardening funcional, relaciones sociales, validacion de recursos
-  inexistentes o inactivos y pruebas integrales.
 - ETAPA 95: experiencia de lanzamiento, design system critico, mapa y sistema
   de temas.
 - ETAPA 96: administracion operativa minima, incluyendo capacidades de
   operacion manual que no forman parte de observabilidad base.
-- Etapas operativas futuras: proveedores externos, dashboards, persistencia
-  historica, on-call, escalamiento y monitoreo productivo completo.
+- Etapas futuras: infraestructura frontend de tests, carrera extrema potencial
+  en likes de historias, actualizacion de Browserslist, optimizacion de chunks,
+  warnings historicos de SQLite y migracion de `datetime.utcnow()` a timestamps
+  timezone-aware.
 
 ## Estado ETAPA 92
 

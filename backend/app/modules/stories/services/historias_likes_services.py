@@ -16,8 +16,10 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from app.modules.stories.models.historias_models import Historia
 from app.modules.stories.models.historias_likes_models import HistoriaLike
+from app.modules.stories.services.historias_services import (
+    obtener_historia_visible_o_error,
+)
 
 
 def toggle_like_historia(
@@ -40,10 +42,7 @@ def toggle_like_historia(
     }
     """
 
-    historia = db.query(Historia).filter(Historia.id == historia_id).first()
-
-    if not historia:
-        raise ValueError("Historia no encontrada")
+    obtener_historia_visible_o_error(db, historia_id=historia_id)
 
     like_existente = (
         db.query(HistoriaLike)

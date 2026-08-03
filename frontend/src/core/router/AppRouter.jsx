@@ -37,14 +37,18 @@ function getStoredToken() {
       const v = window?.localStorage?.getItem(k);
       if (v && v !== "null" && v !== "undefined") return v;
     }
-  } catch (_) {}
+  } catch {
+    // Storage access can be blocked by browser privacy settings.
+  }
 
   try {
     for (const k of keys) {
       const v = window?.sessionStorage?.getItem(k);
       if (v && v !== "null" && v !== "undefined") return v;
     }
-  } catch (_) {}
+  } catch {
+    // Storage access can be blocked by browser privacy settings.
+  }
 
   return null;
 }

@@ -1,9 +1,8 @@
 // frontend/src/context/AuthContext.jsx
-import { createContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { queryClient } from "@core/query/queryClient";
 import { getMe, logoutUsuario } from "@features/auth/services/authService";
-
-export const AuthContext = createContext(null);
+import { AuthContext } from "@features/auth/context/AuthContextCore";
 
 /**
  * AuthProvider

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { httpGet } from "@core";
 import { queryKeys } from "@core/constants/queryKeys";
+import { retryExceptNotFound } from "@core/query/retryPolicies";
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +27,6 @@ export function usePublicacionDetalle(publicacionId) {
     queryFn: () => fetchPublicacionDetalle(publicacionId),
     enabled: Boolean(publicacionId),
     staleTime: 1000 * 30,
-    retry: 1,
+    retry: retryExceptNotFound,
   });
 }

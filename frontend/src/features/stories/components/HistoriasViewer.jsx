@@ -246,6 +246,8 @@ export default function HistoriasViewer({
     if (!historiaActual?.id) return;
     if (isLikingHistoria) return;
 
+    const snapshotLiked = likedByMe;
+
     try {
       setIsLikingHistoria(true);
 
@@ -265,7 +267,7 @@ export default function HistoriasViewer({
 
       setLikedByMe(Boolean(data?.liked));
     } catch {
-      setLikedByMe(false);
+      setLikedByMe(snapshotLiked);
     } finally {
       setIsLikingHistoria(false);
     }

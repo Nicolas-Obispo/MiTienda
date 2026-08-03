@@ -9,6 +9,71 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 94 — QA Integral y Hardening Funcional
+
+**Estado:** Cerrada
+
+### Objetivo
+
+Validar integralmente los flujos principales, endurecer relaciones sociales,
+unificar visibilidad publica y estabilizar la integracion frontend/cache antes
+de avanzar a experiencia de lanzamiento.
+
+### Agregado
+
+- Matriz funcional de contratos para likes, guardados, seguidores,
+  publicaciones, historias, feed, ranking, busqueda candidate source y
+  consumidores frontend directos.
+- Tests `test_social_hardening` para relaciones persistentes, idempotencia,
+  recursos inexistentes o inactivos y regresion minima de denuncias.
+- Tests `test_public_visibility_hardening` para visibilidad publica de
+  publicaciones, historias, feed, ranking, likes de historias y busqueda.
+- Utilidad frontend `retryExceptNotFound` para evitar retries innecesarios en
+  `404` sin convertirlo en regla de negocio.
+- `AuthContextCore.js` para separar el contexto de autenticacion del provider y
+  conservar Fast Refresh sin cambiar la API publica.
+
+### Cambiado
+
+- Likes de publicaciones operan solo sobre publicaciones activas de comercios
+  activos.
+- Guardados permiten crear solo sobre publicaciones visibles, evitan duplicados
+  e idempotentizan la eliminacion.
+- Seguidores validan comercio existente y activo para crear o consultar estado,
+  y permiten dejar de seguir de forma idempotente aunque el comercio haya
+  quedado inactivo.
+- Publicaciones publicas globales, por comercio, detalle, feed y ranking
+  excluyen recursos no visibles o devuelven `404` segun contrato.
+- Historias por comercio y likes de historias validan historia activa y
+  comercio activo.
+- `PublicacionCandidateSource` excluye publicaciones de comercios inactivos sin
+  modificar scoring, ranking, limites ni evidencia.
+- Frontend ajustado para manejar `404`, rollback, cache e invalidaciones sin
+  decidir visibilidad ni ownership.
+- Limpieza final de ESLint: se eliminaron errores de Fast Refresh,
+  `no-unused-vars`, `no-extra-boolean-cast`, `no-undef` y render impuro.
+
+### Validado
+
+- `python -m unittest tests.test_social_hardening`: OK, 24 tests.
+- `python -m unittest tests.test_public_visibility_hardening`: OK, 14 tests.
+- `python -m unittest discover tests`: OK, 190 tests.
+- `python -m compileall app`: OK.
+- `npm run lint`: OK, 0 errores y 5 warnings.
+- `npm run build`: OK.
+- `git diff --check`: OK.
+
+### Diferido no bloqueante
+
+- 5 warnings de ESLint.
+- Infraestructura frontend de tests.
+- Posible carrera extrema de likes de historias.
+- Browserslist desactualizado.
+- Advertencia de chunk grande.
+- Warnings historicos de SQLite y `datetime.utcnow()`.
+
+---
+
 ## ETAPA 71 — Cierre Definitivo de Migración Enterprise
 
 **Commit:** `0b5de97`  

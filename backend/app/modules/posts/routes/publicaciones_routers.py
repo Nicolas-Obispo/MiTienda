@@ -26,6 +26,7 @@ from app.modules.posts.services.publicaciones_services import (
     obtener_publicacion_por_id_y_sumar_view,
     desactivar_publicacion,
 )
+from app.modules.spaces.services.comercios_services import ComercioNoVisibleError
 
 router = APIRouter(
     prefix="/publicaciones",
@@ -182,10 +183,13 @@ def listar_publicaciones_por_comercio_endpoint(
     db: Session = Depends(get_db),
     usuario_actual: Optional[Usuario] = Depends(obtener_usuario_actual_opcional),
 ):
-    publicaciones = listar_publicaciones_por_comercio(
-        db,
-        comercio_id=comercio_id,
-    )
+    try:
+        publicaciones = listar_publicaciones_por_comercio(
+            db,
+            comercio_id=comercio_id,
+        )
+    except ComercioNoVisibleError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     return [
         construir_publicacion_read(

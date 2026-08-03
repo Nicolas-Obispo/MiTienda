@@ -16,6 +16,11 @@ Reglas:
 
 from sqlalchemy.orm import Session
 from app.modules.social.models.seguidores_models import Seguidores
+from app.modules.spaces.models.comercios_models import Comercio
+from app.modules.spaces.services.comercios_services import (
+    ComercioNoVisibleError,
+    obtener_comercio_activo_o_error,
+)
 
 
 
@@ -28,6 +33,8 @@ def seguir_espacio(db: Session, usuario_id: int, comercio_id: int):
 
     Si ya existe, no hace nada (idempotente)
     """
+
+    obtener_comercio_activo_o_error(db, comercio_id)
 
     existente = (
         db.query(Seguidores)
@@ -73,12 +80,18 @@ def dejar_de_seguir_espacio(db: Session, usuario_id: int, comercio_id: int):
     )
 
     if not existente:
-        return None
+        try:
+            return contar_seguidores(db, comercio_id)
+        except ComercioNoVisibleError:
+            return None
 
     db.delete(existente)
     db.commit()
 
-    return True
+    try:
+        return contar_seguidores(db, comercio_id)
+    except ComercioNoVisibleError:
+        return None
 
 
 # ==========================================================
@@ -88,6 +101,8 @@ def usuario_sigue_espacio(db: Session, usuario_id: int, comercio_id: int) -> boo
     """
     Devuelve True si el usuario sigue el espacio
     """
+
+    obtener_comercio_activo_o_error(db, comercio_id)
 
     existente = (
         db.query(Seguidores)
@@ -109,6 +124,8 @@ def contar_seguidores(db: Session, comercio_id: int) -> int:
     Devuelve cantidad de seguidores de un espacio
     """
 
+    obtener_comercio_activo_o_error(db, comercio_id)
+
     total = (
         db.query(Seguidores)
         .filter(Seguidores.comercio_id == comercio_id)
@@ -128,12 +145,13 @@ def listar_espacios_seguidos_por_usuario(db: Session, usuario_id: int):
     Seguidores.comercio_id -> Comercios.id
     """
 
-    from app.modules.spaces.models.comercios_models import Comercio
-
     espacios = (
         db.query(Comercio)
         .join(Seguidores, Seguidores.comercio_id == Comercio.id)
-        .filter(Seguidores.usuario_id == usuario_id)
+        .filter(
+            Seguidores.usuario_id == usuario_id,
+            Comercio.activo.is_(True),
+        )
         .order_by(Seguidores.created_at.desc())
         .all()
     )

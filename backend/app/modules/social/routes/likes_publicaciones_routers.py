@@ -8,12 +8,13 @@ Reglas:
 - Toggle (crear / eliminar)
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.auth import obtener_usuario_actual
 from app.modules.social.services.likes_publicaciones_services import toggle_like_publicacion
+from app.modules.posts.services.publicaciones_services import PublicacionNoVisibleError
 
 router = APIRouter(
     prefix="/likes/publicaciones",
@@ -35,11 +36,17 @@ def toggle_like_publicacion_endpoint(
     Da o quita like a una publicación (toggle).
     """
 
-    liked = toggle_like_publicacion(
-        db,
-        usuario_id=usuario.id,
-        publicacion_id=publicacion_id,
-    )
+    try:
+        liked = toggle_like_publicacion(
+            db,
+            usuario_id=usuario.id,
+            publicacion_id=publicacion_id,
+        )
+    except PublicacionNoVisibleError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
     return {
         "liked": liked

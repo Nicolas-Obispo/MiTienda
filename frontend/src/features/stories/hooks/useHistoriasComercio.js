@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@core/constants/queryKeys";
+import { retryExceptNotFound } from "@core/query/retryPolicies";
 import { fetchHistoriasPorComercio } from "@features/stories/services/historias_service";
 
 function esComercioIdValido(comercioId) {
@@ -19,6 +20,6 @@ export function useHistoriasComercio(comercioId) {
     },
     enabled: esComercioIdValido(comercioId),
     staleTime: 1000 * 60,
-    retry: 1,
+    retry: retryExceptNotFound,
   });
 }

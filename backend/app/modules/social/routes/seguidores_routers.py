@@ -13,7 +13,7 @@ Regla de oro:
 - La lógica de negocio vive en services.
 """
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -25,7 +25,10 @@ from app.modules.social.services.seguidores_services import (
     usuario_sigue_espacio,
     contar_seguidores,
 )
-from app.modules.spaces.services.comercios_services import _calcular_distancia_km
+from app.modules.spaces.services.comercios_services import (
+    ComercioNoVisibleError,
+    _calcular_distancia_km,
+)
 
 router = APIRouter(
     prefix="/seguidores",
@@ -44,17 +47,24 @@ def seguir_espacio_endpoint(
 
     Requiere sesión.
     """
-    seguimiento = seguir_espacio(
-        db=db,
-        usuario_id=usuario_actual.id,
-        comercio_id=comercio_id,
-    )
+    try:
+        seguimiento = seguir_espacio(
+            db=db,
+            usuario_id=usuario_actual.id,
+            comercio_id=comercio_id,
+        )
+        seguidores_count = contar_seguidores(db=db, comercio_id=comercio_id)
+    except ComercioNoVisibleError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
     return {
         "message": "Espacio seguido correctamente.",
         "comercio_id": comercio_id,
         "siguiendo": True,
-        "seguidores_count": contar_seguidores(db=db, comercio_id=comercio_id),
+        "seguidores_count": seguidores_count,
         "id": seguimiento.id if seguimiento else None,
     }
 
@@ -70,17 +80,23 @@ def dejar_de_seguir_espacio_endpoint(
 
     Requiere sesión.
     """
-    dejar_de_seguir_espacio(
-        db=db,
-        usuario_id=usuario_actual.id,
-        comercio_id=comercio_id,
-    )
+    try:
+        seguidores_count = dejar_de_seguir_espacio(
+            db=db,
+            usuario_id=usuario_actual.id,
+            comercio_id=comercio_id,
+        )
+    except ComercioNoVisibleError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
     return {
         "message": "Dejaste de seguir este espacio.",
         "comercio_id": comercio_id,
         "siguiendo": False,
-        "seguidores_count": contar_seguidores(db=db, comercio_id=comercio_id),
+        "seguidores_count": seguidores_count,
     }
 
 
@@ -95,16 +111,23 @@ def obtener_estado_seguimiento_endpoint(
 
     Requiere sesión.
     """
-    siguiendo = usuario_sigue_espacio(
-        db=db,
-        usuario_id=usuario_actual.id,
-        comercio_id=comercio_id,
-    )
+    try:
+        siguiendo = usuario_sigue_espacio(
+            db=db,
+            usuario_id=usuario_actual.id,
+            comercio_id=comercio_id,
+        )
+        seguidores_count = contar_seguidores(db=db, comercio_id=comercio_id)
+    except ComercioNoVisibleError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
     return {
         "comercio_id": comercio_id,
         "siguiendo": siguiendo,
-        "seguidores_count": contar_seguidores(db=db, comercio_id=comercio_id),
+        "seguidores_count": seguidores_count,
     }
 
 
@@ -118,9 +141,17 @@ def obtener_contador_seguidores_endpoint(
 
     Público.
     """
+    try:
+        seguidores_count = contar_seguidores(db=db, comercio_id=comercio_id)
+    except ComercioNoVisibleError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
     return {
         "comercio_id": comercio_id,
-        "seguidores_count": contar_seguidores(db=db, comercio_id=comercio_id),
+        "seguidores_count": seguidores_count,
     }
 
 # ==========================================================

@@ -157,7 +157,9 @@ async function completarPublicacionGuardada(publicacionNormalizada, token) {
         publicacionNormalizada.id,
       guardada_by_me: true,
     };
-  } catch {
+  } catch (error) {
+    if (error?.status === 404) return null;
+
     return publicacionNormalizada;
   }
 }

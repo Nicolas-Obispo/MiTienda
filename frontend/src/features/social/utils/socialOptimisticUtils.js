@@ -31,7 +31,7 @@ export function optimisticToggleLike(publicaciones, publicacionId) {
       return publicacion;
     }
 
-    const nextLiked = !Boolean(publicacion.liked_by_me);
+    const nextLiked = !publicacion.liked_by_me;
     const delta = nextLiked ? 1 : -1;
 
     return {
@@ -61,7 +61,7 @@ export function optimisticToggleGuardado(
       return publicacion;
     }
 
-    const nextSaved = !Boolean(publicacion.guardada_by_me);
+    const nextSaved = !publicacion.guardada_by_me;
     const delta = nextSaved ? 1 : -1;
 
     return {

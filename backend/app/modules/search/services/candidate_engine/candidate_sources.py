@@ -544,7 +544,11 @@ class PublicacionCandidateSource:
                 Publicacion.comercio_id,
                 Publicacion.titulo,
             )
-            .filter(Publicacion.is_activa.is_(True))
+            .join(Comercio, Publicacion.comercio_id == Comercio.id)
+            .filter(
+                Publicacion.is_activa.is_(True),
+                Comercio.activo.is_(True),
+            )
             .filter(
                 or_(
                     Publicacion.titulo.ilike(like),

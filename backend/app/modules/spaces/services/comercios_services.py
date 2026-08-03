@@ -64,6 +64,29 @@ class RubroInvalidoError(ValueError):
     pass
 
 
+class ComercioNoVisibleError(ValueError):
+    pass
+
+
+def obtener_comercio_activo_o_error(
+    db: Session,
+    comercio_id: int,
+) -> Comercio:
+    comercio = (
+        db.query(Comercio)
+        .filter(
+            Comercio.id == comercio_id,
+            Comercio.activo.is_(True),
+        )
+        .first()
+    )
+
+    if not comercio:
+        raise ComercioNoVisibleError("Comercio no encontrado")
+
+    return comercio
+
+
 def adjuntar_horario_atencion_comercios(
     db: Session,
     comercios: list[Comercio],

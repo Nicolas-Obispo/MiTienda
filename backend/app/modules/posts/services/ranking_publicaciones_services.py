@@ -18,6 +18,7 @@ from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from app.modules.posts.models.publicaciones_models import Publicacion
+from app.modules.spaces.models.comercios_models import Comercio
 from app.modules.social.models.likes_publicaciones_models import LikePublicacion
 
 # ✅ Import robusto del modelo de guardados (por si el nombre cambia)
@@ -55,6 +56,7 @@ def listar_publicaciones_ranked(db: Session) -> List[Publicacion]:
             guardados_count_expr.label("guardados_count"),
             score_expr.label("score"),
         )
+        .join(Comercio, Publicacion.comercio_id == Comercio.id)
         .outerjoin(
             LikePublicacion,
             LikePublicacion.publicacion_id == Publicacion.id,
@@ -63,7 +65,10 @@ def listar_publicaciones_ranked(db: Session) -> List[Publicacion]:
             PublicacionGuardada,
             PublicacionGuardada.publicacion_id == Publicacion.id,
         )
-        .filter(Publicacion.is_activa.is_(True))
+        .filter(
+            Publicacion.is_activa.is_(True),
+            Comercio.activo.is_(True),
+        )
         .group_by(Publicacion.id)
         .order_by(
             func.coalesce(score_expr, 0).desc(),

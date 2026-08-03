@@ -36,6 +36,32 @@ class PublicacionNoEncontradaError(ValueError):
     pass
 
 
+class PublicacionNoVisibleError(ValueError):
+    pass
+
+
+def obtener_publicacion_visible_o_error(
+    db: Session,
+    *,
+    publicacion_id: int,
+) -> Publicacion:
+    publicacion = (
+        db.query(Publicacion)
+        .join(Comercio, Publicacion.comercio_id == Comercio.id)
+        .filter(
+            Publicacion.id == publicacion_id,
+            Publicacion.is_activa.is_(True),
+            Comercio.activo.is_(True),
+        )
+        .first()
+    )
+
+    if not publicacion:
+        raise PublicacionNoVisibleError("Publicacion no encontrada")
+
+    return publicacion
+
+
 # --------------------------------------------------
 # Creación de publicaciones
 # --------------------------------------------------
@@ -98,14 +124,18 @@ def listar_publicaciones_activas(
 
     query = (
         db.query(Publicacion)
+        .join(Comercio, Publicacion.comercio_id == Comercio.id)
         .options(joinedload(Publicacion.comercio))
-        .filter(Publicacion.is_activa.is_(True))
+        .filter(
+            Publicacion.is_activa.is_(True),
+            Comercio.activo.is_(True),
+        )
     )
 
     q_normalizada = (q or "").strip()
     if q_normalizada:
         like = f"%{q_normalizada}%"
-        query = query.join(Publicacion.comercio).filter(
+        query = query.filter(
             or_(
                 Publicacion.titulo.ilike(like),
                 Publicacion.descripcion.ilike(like),
@@ -134,6 +164,12 @@ def listar_publicaciones_por_comercio(
       ya salga con la relación cargada y el frontend pueda usar
       el nombre real si el schema/router lo expone.
     """
+
+    from app.modules.spaces.services.comercios_services import (
+        obtener_comercio_activo_o_error,
+    )
+
+    obtener_comercio_activo_o_error(db, comercio_id)
 
     return (
         db.query(Publicacion)
@@ -166,10 +202,12 @@ def obtener_publicacion_por_id_y_sumar_view(
 
     publicacion = (
         db.query(Publicacion)
+        .join(Comercio, Publicacion.comercio_id == Comercio.id)
         .options(joinedload(Publicacion.comercio))
         .filter(
             Publicacion.id == publicacion_id,
             Publicacion.is_activa.is_(True),
+            Comercio.activo.is_(True),
         )
         .first()
     )
@@ -189,8 +227,13 @@ def obtener_publicacion_por_id_y_sumar_view(
     # --------------------------------------------------
     publicacion_actualizada = (
         db.query(Publicacion)
+        .join(Comercio, Publicacion.comercio_id == Comercio.id)
         .options(joinedload(Publicacion.comercio))
-        .filter(Publicacion.id == publicacion_id)
+        .filter(
+            Publicacion.id == publicacion_id,
+            Publicacion.is_activa.is_(True),
+            Comercio.activo.is_(True),
+        )
         .first()
     )
 

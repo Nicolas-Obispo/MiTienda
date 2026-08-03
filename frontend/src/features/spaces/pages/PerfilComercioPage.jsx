@@ -180,6 +180,8 @@ function esComercioMio(comercioData) {
 
     if (typeof siguienteEstado.seguidores_count === "number") {
       seguidoresCountPrevioRef.current = siguienteEstado.seguidores_count;
+    } else if (siguienteEstado.seguidores_count === null) {
+      seguidoresCountPrevioRef.current = null;
     }
   }
 
@@ -309,6 +311,8 @@ function esComercioMio(comercioData) {
 
     if (typeof seguimientoCacheado.seguidores_count === "number") {
       seguidoresCountPrevioRef.current = seguimientoCacheado.seguidores_count;
+    } else if (seguimientoCacheado.seguidores_count === null) {
+      seguidoresCountPrevioRef.current = null;
     }
   }, [comercioId]);
 
@@ -412,14 +416,42 @@ function esComercioMio(comercioData) {
       setSiguiendo(!siguiendoActual);
 
       // Refrescamos estado y contador real desde backend.
-      const estadoSeguimiento = await obtenerEstadoSeguimiento(comercioId);
+      let estadoSeguimiento = null;
+
+      try {
+        estadoSeguimiento = await obtenerEstadoSeguimiento(comercioId);
+      } catch (error) {
+        if (siguiendoActual && error?.status === 404) {
+          guardarSeguimientoVisible({
+            siguiendo: false,
+            seguidores_count: null,
+          });
+
+          setComercio((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  seguidores_count: null,
+                }
+              : prev
+          );
+
+          return;
+        }
+
+        throw error;
+      }
 
       guardarSeguimientoVisible(estadoSeguimiento);
 
-      setComercio((prev) => ({
-        ...prev,
-        seguidores_count: estadoSeguimiento.seguidores_count,
-      }));
+      setComercio((prev) =>
+        prev
+          ? {
+              ...prev,
+              seguidores_count: estadoSeguimiento.seguidores_count,
+            }
+          : prev
+      );
     } catch (error) {
       setErrorMessage(error.message || "Error al seguir/dejar de seguir.");
     } finally {
@@ -608,8 +640,12 @@ function esComercioMio(comercioData) {
     (typeof seguimientoCacheActual?.seguidores_count === "number"
       ? seguimientoCacheActual.seguidores_count
       : null) ??
-    seguidoresCountDesdeComercio ??
-    0;
+    seguidoresCountDesdeComercio;
+
+  const seguidoresCountLabel =
+    typeof seguidoresCountVisible === "number"
+      ? `${seguidoresCountVisible} seguidores`
+      : "Seguidores no disponibles";
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -798,7 +834,7 @@ function esComercioMio(comercioData) {
 
                     {/* SEGUIDORES */}
                     <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1 text-xs">
-                      {seguidoresCountVisible} seguidores
+                      {seguidoresCountLabel}
                     </span>
 
                   </div>

@@ -671,7 +671,7 @@ Limites del cierre:
 - sin persistencia historica de metricas o alertas;
 - ownership y ciclo de vida persistente de uploads quedan diferidos.
 
-### ◐ ETAPA 94
+### ☑ ETAPA 94
 
 QA Integral y Hardening Funcional.
 
@@ -682,15 +682,42 @@ flujos principales existentes antes del lanzamiento.
 
 Estado:
 
-Vigente.
+Cerrada.
 
 Pendientes programados desde ETAPA 90:
 
-- validar existencia y estado de publicaciones antes de operar likes;
-- validar existencia y estado de comercios antes de operar seguidores;
-- definir comportamiento `404` o idempotente en relaciones sociales.
+- validar existencia y estado de publicaciones antes de operar likes: cerrado;
+- validar existencia y estado de comercios antes de operar seguidores: cerrado;
+- definir comportamiento `404` o idempotente en relaciones sociales: cerrado.
 
-### ☐ ETAPA 95
+Subetapas cerradas:
+
+- 94.0 - Matriz de Contratos Funcionales.
+- 94.1 - Hardening de Relaciones e Interacciones Persistentes.
+- 94.2 - Hardening de Visibilidad Publica.
+- 94.3 - Integracion Frontend y Cache.
+- 94.4 - QA Integral Basado en Riesgo.
+- 94.5 - Estabilizacion y Limpieza Final.
+
+Resultado:
+
+- Relaciones persistentes endurecidas con validacion backend, `404`,
+  idempotencia y tests.
+- Publicaciones e historias publicas unificadas bajo contratos de visibilidad
+  del dominio.
+- Frontend alineado para manejar cache, rollback y `404` sin definir reglas de
+  negocio.
+- Lint frontend sin errores, build OK y suite backend completa OK.
+
+Residuos diferidos no bloqueantes:
+
+- 5 warnings de ESLint.
+- Ausencia de infraestructura frontend de tests.
+- Posible carrera extrema de likes de historias.
+- Browserslist desactualizado y advertencia de chunk grande.
+- Warnings historicos de SQLite y `datetime.utcnow()`.
+
+### ◐ ETAPA 95
 
 Experiencia de Lanzamiento y Design System Critico.
 
@@ -702,7 +729,7 @@ diseno.
 
 Estado:
 
-Pendiente.
+Vigente.
 
 Pendientes programados desde ETAPA 90:
 

@@ -26,12 +26,39 @@ from app.modules.spaces.services.comercios_ownership_services import (
     obtener_comercio_propio_o_error,
 )
 from app.modules.users.models.usuarios_models import Usuario
+from app.modules.spaces.services.comercios_services import obtener_comercio_activo_o_error
 
 
 LOCAL_UPLOAD_HOSTS = {
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 }
+
+
+class HistoriaNoVisibleError(ValueError):
+    pass
+
+
+def obtener_historia_visible_o_error(
+    db: Session,
+    *,
+    historia_id: int,
+) -> Historia:
+    historia = (
+        db.query(Historia)
+        .join(Comercio, Historia.comercio_id == Comercio.id)
+        .filter(
+            Historia.id == historia_id,
+            Historia.is_activa.is_(True),
+            Comercio.activo.is_(True),
+        )
+        .first()
+    )
+
+    if not historia:
+        raise HistoriaNoVisibleError("Historia no encontrada")
+
+    return historia
 
 
 def _normalizar_thumbnail_url(portada_url: Optional[str]) -> Optional[str]:
@@ -97,11 +124,15 @@ def listar_historias_activas_por_comercio(
         → vista_by_me queda False (no autenticado).
     """
 
+    obtener_comercio_activo_o_error(db, comercio_id)
+
     historias = (
         db.query(Historia)
+        .join(Comercio, Historia.comercio_id == Comercio.id)
         .filter(
             Historia.comercio_id == comercio_id,
             Historia.is_activa.is_(True),
+            Comercio.activo.is_(True),
         )
         .order_by(Historia.created_at.desc())
         .all()

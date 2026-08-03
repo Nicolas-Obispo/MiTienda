@@ -1,7 +1,8 @@
 // frontend/src/features/auth/index.js
 
 // Contexto principal de autenticación.
-export { AuthProvider, AuthContext } from "@features/auth/context/AuthContext";
+export { AuthProvider } from "@features/auth/context/AuthContext";
+export { AuthContext } from "@features/auth/context/AuthContextCore";
 
 // Hook oficial para consumir autenticación.
 export { useAuth } from "@features/auth/hooks/useAuth";

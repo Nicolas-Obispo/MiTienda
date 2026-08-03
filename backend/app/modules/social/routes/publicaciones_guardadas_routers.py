@@ -23,6 +23,7 @@ from app.modules.social.services.publicaciones_guardadas_services import (
     quitar_publicacion_guardada,
     listar_publicaciones_guardadas
 )
+from app.modules.posts.services.publicaciones_services import PublicacionNoVisibleError
 
 router = APIRouter(
     prefix="/publicaciones/guardadas",
@@ -51,11 +52,11 @@ def guardar_publicacion_endpoint(
             usuario_id=usuario.id,
             publicacion_id=data.publicacion_id
         )
-    except ValueError as e:
+    except PublicacionNoVisibleError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e)
-        )
+        ) from e
 
 
 @router.delete(
@@ -72,17 +73,11 @@ def quitar_publicacion_guardada_endpoint(
     Quita una publicación de los guardados del usuario autenticado.
     """
 
-    try:
-        quitar_publicacion_guardada(
-            db=db,
-            usuario_id=usuario.id,
-            publicacion_id=publicacion_id
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+    quitar_publicacion_guardada(
+        db=db,
+        usuario_id=usuario.id,
+        publicacion_id=publicacion_id
+    )
 
 
 @router.get(

@@ -15,6 +15,7 @@ from sqlalchemy import func, case, literal
 from sqlalchemy.orm import Session
 
 from app.modules.posts.models.publicaciones_models import Publicacion
+from app.modules.spaces.models.comercios_models import Comercio
 from app.modules.social.models.likes_publicaciones_models import LikePublicacion
 
 from app.modules.posts.services.publicaciones_services import (
@@ -92,11 +93,15 @@ def obtener_feed_publicaciones(
             bonus_recencia.label("bonus_recencia"),
             liked_by_me_expr,
         )
+        .join(Comercio, Publicacion.comercio_id == Comercio.id)
         .outerjoin(
             LikePublicacion,
             LikePublicacion.publicacion_id == Publicacion.id,
         )
-        .filter(Publicacion.is_activa.is_(True))
+        .filter(
+            Publicacion.is_activa.is_(True),
+            Comercio.activo.is_(True),
+        )
         .group_by(Publicacion.id)
     )
 
