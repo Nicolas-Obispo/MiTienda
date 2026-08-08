@@ -12,8 +12,9 @@ Documentos relacionados: `00_GOVERNANCE.md`, `04_CURRENT_STAGE.md`,
 `08_ENGINEERING_PRINCIPLES.md`, `15_LEGAL_AND_OPERATIONAL.md`,
 `16_DATA_INTEGRITY_AND_RECOVERY.md`,
 `17_OBSERVABILITY_AND_OPERATIONS.md`.
-Cuando debe consultarse: antes de generar prompts de continuidad o iniciar
-trabajo desde un nuevo chat.
+Cuando debe consultarse: antes de generar prompts de continuidad, iniciar
+trabajo desde un nuevo chat o decidir entre bootstrap completo, continuidad
+controlada y relectura selectiva.
 
 ## 1. Objetivo
 
@@ -23,27 +24,35 @@ El objetivo es que FeedGo nunca dependa del historial de un chat.
 
 Toda conversación debe poder reconstruir el estado del proyecto desde la documentación oficial del repositorio.
 
-## 2. Regla permanente
+## 2. Aplicación de la política de continuidad
 
-Antes de responder cualquier consulta sobre FeedGo, la IA debe seguir el Procedimiento Universal de Reconstrucción del Proyecto definido por el Sistema de Gobierno.
+`00_GOVERNANCE.md` es el único documento dueño de la política de continuidad
+documental. Este documento explica su aplicación operativa y no crea una
+definición paralela.
 
-Antes de cualquier auditoría, diseño o modificación, la IA debe leer todos los documentos existentes dentro de `/docs`, respetando el orden lógico definido por el Sistema de Gobierno, y luego leer `CHANGELOG.md` únicamente como historial cronológico.
+La documentación oficial es autoridad permanente. El contexto de una sesión
+es únicamente memoria de trabajo temporal y nunca sustituye, completa ni
+prevalece sobre `/docs`.
 
-Los prompts de continuidad no deben enumerar manualmente archivos específicos de `/docs` como sustituto de esa lectura completa.
+Al iniciar una nueva sesión, un nuevo chat o una nueva etapa debe ejecutarse el
+bootstrap documental completo definido por Gobierno.
 
-Antes de iniciar cualquier auditoria, diseno, propuesta o implementacion debe
-identificarse que documentos del Sistema de Gobierno gobiernan ese tema y
-revisarlos previamente. No puede iniciarse una modificacion sin esa lectura.
+Dentro de la misma sesión y etapa puede aplicarse continuidad controlada si el
+contexto oficial ya fue reconstruido, la documentación relevante no cambió,
+no existe contradicción y la tarea no incorpora un dominio documental todavía
+no verificado.
 
-El procedimiento oficial indica cómo:
+Si cambia documentación durante la etapa o la tarea ingresa en un nuevo
+dominio, corresponde releer selectivamente el documento propietario y sus
+dependencias directas. Si el alcance no puede determinarse con seguridad,
+corresponde volver al bootstrap completo.
 
-- descubrir la documentación oficial;
-- identificar categorías;
-- definir el orden de lectura;
-- reconstruir el estado del proyecto;
-- identificar la documentación técnica relevante para la tarea solicitada.
+Antes de una auditoría, diseño, propuesta o implementación siempre deben estar
+verificados los documentos propietarios del tema. La continuidad controlada no
+permite decidir desde memoria una regla documental concreta.
 
-Ningún chat nuevo debe depender de listas fijas de documentos ni de nombres concretos de archivos.
+Los prompts de continuidad no deben enumerar manualmente archivos específicos
+de `/docs` como sustituto del procedimiento oficial.
 
 ## 3. Fuente oficial de verdad
 
@@ -57,7 +66,8 @@ Si existe una contradicción entre una conversación y la documentación, preval
 
 Cuando el usuario solicite un Prompt Maestro para continuar el proyecto, la IA deberá construirlo exclusivamente utilizando la documentación oficial.
 
-Todo Prompt Maestro deberá construirse siguiendo el Procedimiento Universal de Reconstrucción del Proyecto.
+Todo Prompt Maestro deberá construirse siguiendo el Procedimiento Universal de
+Reconstrucción del Proyecto y provocar un bootstrap documental completo.
 
 Los Prompt Maestro, Prompt Universal, Prompt de Continuidad y prompts técnicos del proyecto deberán mantenerse bajo el único estándar documental definido por la gobernanza vigente.
 
@@ -69,7 +79,9 @@ El Prompt Maestro guía el inicio del trabajo, pero no define arquitectura, road
 
 El Prompt Maestro nunca reemplaza la lectura directa de la documentación oficial.
 
-Toda implementación debe volver a consultar la documentación vigente antes de modificar el sistema.
+Toda implementación debe verificar la documentación propietaria vigente antes
+de modificar el sistema, mediante bootstrap completo o relectura selectiva
+según la política de Gobierno.
 
 El Prompt Maestro deberá derivarse de:
 
@@ -135,7 +147,19 @@ Nunca reinterpretar arquitectura ya aprobada.
 
 Nunca volver a auditar decisiones oficialmente cerradas salvo solicitud explícita del usuario.
 
-## 6. Memoria del proyecto
+## 6. Continuaciones dentro de una sesión y etapa
+
+Los prompts sucesivos pueden indicar que continúa la misma sesión y etapa y
+solicitar la aplicación de la política vigente de continuidad documental.
+
+No necesitan repetir íntegramente la regla ni exigir automáticamente otra
+lectura completa si siguen cumpliéndose las condiciones oficiales.
+
+La instrucción del prompt no acredita por sí misma que el contexto sea válido.
+Si existe incertidumbre, contradicción, cambio documental no acotable o un
+nuevo dominio no verificado, debe consultarse la documentación según Gobierno.
+
+## 7. Memoria del proyecto
 
 La memoria del proyecto vive en el repositorio.
 
@@ -147,7 +171,7 @@ Los chats son herramientas temporales.
 
 La documentación oficial constituye la memoria permanente del proyecto.
 
-## 7. Evolución de la documentación
+## 8. Evolución de la documentación
 
 Cada vez que:
 
@@ -158,7 +182,7 @@ Cada vez que:
 
 deberá actualizarse la documentación correspondiente antes de continuar implementando.
 
-## 8. Responsabilidad de la IA
+## 9. Responsabilidad de la IA
 
 La IA debe:
 
@@ -168,7 +192,7 @@ La IA debe:
 - reutilizar componentes existentes;
 - mantener coherencia entre documentos, roadmap, changelog y código.
 
-## 9. Principio final
+## 10. Principio final
 
 > La documentación oficial no describe el proyecto.
 >

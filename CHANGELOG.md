@@ -9,6 +9,28 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## Sistema de Gobierno — Continuidad documental controlada
+
+### Gobierno
+
+- Se diferencia bootstrap documental completo, continuidad controlada dentro de
+  una misma sesión y etapa, y relectura selectiva ante cambios o nuevos
+  dominios.
+- `/docs` conserva autoridad permanente; el contexto de sesión queda definido
+  únicamente como memoria de trabajo temporal.
+- Toda nueva sesión, nuevo chat o nueva etapa exige reconstrucción documental
+  completa.
+- Los cambios documentales acotables permiten releer el documento modificado y
+  sus dependencias; la incertidumbre obliga a volver al bootstrap completo.
+- Los prompts universales y de arranque continúan exigiendo lectura integral,
+  mientras los prompts sucesivos pueden aplicar continuidad controlada sin
+  duplicar la política oficial.
+
+### Sin cambios funcionales
+
+- No se modificaron backend, frontend, roadmap, alcance de ETAPA 95, ETAPA 96
+  ni decisiones funcionales del sistema de ubicación.
+
 ## ETAPA 94 — QA Integral y Hardening Funcional
 
 **Estado:** Cerrada

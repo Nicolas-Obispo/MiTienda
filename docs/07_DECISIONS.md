@@ -334,11 +334,11 @@ No reemplaza la documentación oficial existente.
 ## DEC-037
 
 - ID: DEC-037
-- Titulo: Prompts del proyecto desde documentacion oficial completa
+- Titulo: Prompts y continuidad desde documentacion oficial
 - Estado: Aprobada
-- Decision: Todo Prompt Maestro, Prompt Universal, Prompt de Continuidad o prompt tecnico del proyecto debe mantenerse bajo el unico estandar documental definido por la gobernanza vigente, entregarse en Markdown puro e indicar la lectura completa de todos los documentos existentes dentro de `/docs`, respetando el orden logico definido por el Sistema de Gobierno, y luego `CHANGELOG.md` solo como historial cronologico. No debe enumerar manualmente archivos especificos de `/docs` como sustituto de esa lectura.
-- Motivo: La documentacion oficial crece continuamente; las listas fijas se desactualizan y pueden convertir el prompt en una segunda fuente de verdad. El estandar debe ser portable y no depender de una IA, proveedor o herramienta especifica.
-- Impacto: Futuros prompts deben mantenerse breves, copiables, trazables, reutilizables y compatibles con la evolucion documental y con futuras herramientas. `00_GOVERNANCE.md` gobierna el procedimiento y `06_CHAT_CONTINUATION.md` aplica la regla de continuidad.
+- Decision: Todo Prompt Maestro, Prompt Universal o Prompt de Continuidad destinado a iniciar, reiniciar o reconstruir una sesion debe provocar el bootstrap documental completo definido por `00_GOVERNANCE.md`, respetar el orden logico del Sistema de Gobierno y tratar `CHANGELOG.md` solo como historial cronologico. Los prompts sucesivos dentro de una misma sesion y etapa pueden aplicar continuidad controlada o relectura selectiva cuando se cumplan las condiciones oficiales. Ningun prompt debe enumerar manualmente archivos especificos de `/docs` como sustituto del procedimiento ni convertir el contexto temporal en fuente de verdad.
+- Motivo: La documentacion oficial crece continuamente y conserva autoridad permanente, pero la relectura integral antes de cada trabajo dentro de una misma sesion y etapa genera trabajo redundante sin mejorar la certeza cuando el contexto sigue vigente. La politica debe preservar reconstruccion completa ante inicio, cambio de etapa o incertidumbre y permitir continuidad verificable cuando no existen cambios.
+- Impacto: `00_GOVERNANCE.md` es el unico documento dueno de bootstrap completo, continuidad controlada, relectura selectiva e invalidacion. `06_CHAT_CONTINUATION.md` aplica operativamente esa politica. Los prompts de arranque siguen exigiendo reconstruccion completa; los prompts sucesivos pueden invocar la politica sin duplicarla.
 
 ## DEC-038
 

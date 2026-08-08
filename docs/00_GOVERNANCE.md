@@ -45,19 +45,23 @@ No es documentacion historica.
 Las decisiones permanentes se incorporan primero al Sistema de Gobierno y luego
 se implementan.
 
-Antes de cualquier auditoría, diseño o modificación, toda IA asistente del proyecto debe seguir obligatoriamente el Procedimiento Universal de Reconstrucción del Proyecto definido por este documento.
+Antes de cualquier auditoría, diseño o modificación, toda IA asistente del
+proyecto debe aplicar obligatoriamente la política de continuidad documental
+definida por este documento.
 
-La lectura obligatoria antes de actuar es la lectura completa de todos los documentos existentes dentro de `/docs`.
+La documentación oficial es autoridad permanente. El contexto de una sesión
+es únicamente memoria de trabajo temporal.
 
-La lectura debe respetar el orden lógico definido por el propio Sistema de Gobierno:
+El contexto de una sesión nunca puede:
 
-- primero documentos de gobierno;
-- luego decisiones y principios;
-- luego documentos técnicos, diseños y documentos `10+` aplicables.
+- reemplazar `/docs`;
+- prevalecer sobre `/docs`;
+- completar decisiones que deban verificarse documentalmente;
+- justificar una contradicción;
+- convertirse en una segunda fuente de verdad.
 
-Después de reconstruir `/docs`, debe leerse `CHANGELOG.md` únicamente como historial cronológico.
-
-La carpeta `/docs` siempre prevalece sobre la memoria del modelo, prompts anteriores y el historial conversacional.
+Ante contradicción o incertidumbre suficiente, debe consultarse nuevamente la
+documentación oficial.
 
 Ningún Prompt Maestro, Prompt Universal, Prompt de Continuidad o prompt técnico del proyecto debe enumerar manualmente archivos específicos de `/docs` como sustituto de este procedimiento, porque la documentación crece y una lista fija puede quedar desactualizada.
 
@@ -262,6 +266,82 @@ Los prompts nunca reemplazan este procedimiento.
 
 Cualquier evolución del procedimiento deberá realizarse modificando la documentación oficial.
 
+### Bootstrap documental completo
+
+La reconstrucción integral exige descubrir y leer completamente todos los
+documentos existentes dentro de `/docs`, respetando el orden lógico definido
+por el Sistema de Gobierno:
+
+- primero documentos de gobierno;
+- luego decisiones y principios;
+- luego documentos técnicos, diseños y documentos `10+` aplicables.
+
+Después debe leerse `CHANGELOG.md` únicamente como historial cronológico.
+
+El bootstrap documental completo es obligatorio cuando:
+
+- comienza una nueva sesión o un nuevo chat de trabajo;
+- comienza una nueva etapa, aunque continúe la misma sesión;
+- no existe certeza de que el contexto documental vigente fue reconstruido;
+- el contexto de la sesión se perdió o resulta incierto;
+- existe una contradicción objetiva;
+- hubo cambios documentales transversales cuya propagación no puede
+  determinarse con seguridad;
+- cambia una regla fundamental de Gobierno;
+- no puede garantizarse razonablemente la vigencia del contexto documental.
+
+En estos casos no debe optimizarse la lectura.
+
+### Continuidad controlada
+
+Después de un bootstrap correcto puede reutilizarse el contexto documental ya
+reconstruido sin releer íntegramente `/docs` antes de cada trabajo cuando:
+
+- continúa la misma sesión;
+- continúa la misma etapa;
+- la documentación relevante no cambió;
+- no apareció una contradicción;
+- no se ingresó en un dominio documental todavía no verificado.
+
+Esta continuidad puede aplicarse a auditorías, propuestas, revisiones,
+implementaciones aprobadas, correcciones, tests, validaciones y consultas
+sucesivas del mismo trabajo.
+
+La continuidad controlada no autoriza a resolver desde memoria una decisión
+documental concreta que la tarea requiera verificar.
+
+### Relectura selectiva
+
+Cuando `/docs` cambie durante una etapa debe:
+
+1. identificarse el documento modificado;
+2. releerse ese documento;
+3. identificarse sus dependencias documentales;
+4. releerse los documentos directamente afectados;
+5. verificarse la consistencia;
+6. conservarse el resto del contexto reconstruido únicamente si continúa
+   vigente.
+
+También debe realizarse relectura selectiva al ingresar en un dominio cuyo
+documento propietario no fue verificado previamente.
+
+Si no puede determinarse con seguridad el alcance del cambio, corresponde un
+bootstrap documental completo.
+
+El paso del tiempo no constituye por sí solo un criterio de invalidación. La
+decisión depende de la confiabilidad del contexto y de cambios verificables.
+
+### Invalidación y cambio de etapa
+
+El contexto documental temporal queda invalidado cuando deja de cumplirse
+cualquiera de las condiciones de continuidad controlada o cuando existe una
+causa de bootstrap completo.
+
+El inicio de una nueva etapa obliga siempre a una reconstrucción documental
+completa. La etapa nueva debe partir del estado documental oficial resultante
+del cierre anterior y nunca heredarse únicamente desde el contexto de la etapa
+cerrada.
+
 ## Evolución controlada del Roadmap
 
 El Sistema de Gobierno representa el estado oficial vigente del proyecto y debe respetarse en todo momento.
@@ -308,7 +388,14 @@ Todo Prompt Maestro, Prompt Universal, Prompt de Continuidad o prompt técnico d
 
 Todo prompt destinado a una IA asistente del proyecto deberá entregarse en Markdown puro, sin explicaciones externas al contenido copiable, para garantizar reutilización, trazabilidad, portabilidad y compatibilidad con futuras herramientas.
 
-Todo prompt destinado a una IA asistente del proyecto deberá indicar la lectura completa de todos los documentos existentes dentro de `/docs`, respetando el orden lógico definido por el Sistema de Gobierno, y la lectura posterior de `CHANGELOG.md` únicamente como historial cronológico.
+Todo Prompt Maestro, Prompt Universal o Prompt de Continuidad destinado a
+iniciar, reiniciar o reconstruir una sesión debe exigir el bootstrap documental
+completo.
+
+Los prompts sucesivos dentro de una misma sesión y etapa pueden invocar la
+política vigente de continuidad documental sin repetir la lectura integral,
+siempre que se cumplan sus condiciones. No deben reproducir la política como
+una regla paralela.
 
 Todo prompt destinado a una IA asistente del proyecto deberá mantenerse compatible con la evolución futura de `/docs` y no deberá enumerar manualmente archivos específicos como reemplazo de la lectura completa.
 
