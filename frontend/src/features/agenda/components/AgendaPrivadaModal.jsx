@@ -14,6 +14,15 @@ import {
 
 import { ActiveLayer } from "@core";
 import {
+  Alert,
+  Button,
+  Input,
+  Select,
+  Skeleton,
+  Surface,
+  Textarea,
+} from "@shared";
+import {
   useActualizarElementoAgendaMutation,
   useAgendaContexto,
   useAgendaElementos,
@@ -394,124 +403,125 @@ export default function AgendaPrivadaModal({
   return (
     <ActiveLayer
       onClose={handleRequestClose}
+      backdropClassName="bg-overlay-backdrop"
       labelledBy="agenda-privada-title"
       describedBy="agenda-privada-description"
-      contentClassName="mx-3 flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl"
+      contentClassName="mx-3 flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-surface-elevated text-primary shadow-elevation"
     >
-      <header className="flex items-start justify-between gap-3 border-b border-gray-800 px-4 py-4">
+      <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-4">
         <div className="min-w-0">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-orange-300">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand">
             <CalendarDays size={14} aria-hidden="true" />
             Agenda privada
           </p>
-          <h2 id="agenda-privada-title" className="mt-1 truncate text-lg font-bold text-white">
+          <h2 id="agenda-privada-title" className="mt-1 truncate text-lg font-bold text-primary">
             {comercio?.nombre || "Espacio"}
           </h2>
-          <p id="agenda-privada-description" className="mt-1 text-sm text-gray-400">
+          <p id="agenda-privada-description" className="mt-1 text-sm text-secondary">
             Organiza eventos, tareas, recordatorios y bloqueos internos.
           </p>
         </div>
 
         {backLabel ? (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={handleRequestClose}
-            className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-300 transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+            className="min-h-10 gap-2 px-3 py-2 text-sm"
           >
             <ArrowLeft size={16} aria-hidden="true" />
             {backLabel}
-          </button>
+          </Button>
         ) : (
-          <button
-            type="button"
+          <Button
+            iconOnly
+            variant="ghost"
             onClick={handleRequestClose}
-            className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-300 transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
             aria-label="Cerrar agenda"
           >
             <X size={18} aria-hidden="true" />
-          </button>
+          </Button>
         )}
       </header>
 
       <div className="overflow-y-auto px-4 py-4">
         {contextoQuery.isError ? (
-          <div className="rounded-xl border border-red-900 bg-red-950/40 p-4 text-sm text-red-100">
+          <Alert variant="danger" role="alert">
             {mensajeErrorAmigable(contextoQuery.error)}
-          </div>
+          </Alert>
         ) : null}
 
         {contextoArchivado ? (
-          <div className="mb-4 rounded-xl border border-yellow-900 bg-yellow-950/30 p-3 text-sm text-yellow-100">
+          <Alert variant="warning" className="mb-4 p-3">
             Este contexto de agenda esta archivado. Podes consultar elementos,
             pero no crear ni modificar.
-          </div>
+          </Alert>
         ) : null}
 
-        <section className="rounded-xl bg-gray-900/60 p-3">
+        <Surface as="section" variant="subtle" className="rounded-xl p-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold capitalize text-white">
+              <p className="text-sm font-semibold capitalize text-primary">
                 {formatearFecha(fecha)}
               </p>
-              <p className="text-xs text-gray-500">Vista diaria cronologica</p>
+              <p className="text-xs text-muted">Vista diaria cronologica</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
+              <Button
+                iconOnly
+                variant="ghost"
                 onClick={() => setFecha(moverFecha(fecha, -1))}
-                className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-300 transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                 aria-label="Dia anterior"
               >
                 <ChevronLeft size={18} aria-hidden="true" />
-              </button>
-              <input
+              </Button>
+              <Input
                 type="date"
                 value={fecha}
                 onChange={(event) => setFecha(event.target.value || fechaInputHoy())}
-                className="min-h-10 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-orange-500"
+                className="min-h-10 w-auto rounded-lg px-3 py-2 text-sm"
                 aria-label="Fecha de agenda"
               />
-              <button
-                type="button"
+              <Button
+                iconOnly
+                variant="ghost"
                 onClick={() => setFecha(moverFecha(fecha, 1))}
-                className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-300 transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                 aria-label="Dia siguiente"
               >
                 <ChevronRight size={18} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
                 onClick={() => setFecha(fechaInputHoy())}
-                className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-300 transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+                className="min-h-10 px-3 py-2 text-sm"
               >
                 Hoy
-              </button>
+              </Button>
             </div>
           </div>
 
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
             <label className="block">
-              <span className="text-xs text-gray-400">Estado</span>
-              <select
+              <span className="text-xs text-secondary">Estado</span>
+              <Select
                 value={estadoFiltro}
                 onChange={(event) => setEstadoFiltro(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white"
+                className="mt-1 rounded-lg px-3 py-2 text-sm"
               >
                 {ESTADOS_FILTRO.map((estado) => (
                   <option key={estado.value || "todos"} value={estado.value}>
                     {estado.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
             <label className="block">
-              <span className="text-xs text-gray-400">Tipo</span>
-              <select
+              <span className="text-xs text-secondary">Tipo</span>
+              <Select
                 value={tipoFiltro}
                 onChange={(event) => setTipoFiltro(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white"
+                className="mt-1 rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">Todos</option>
                 {TIPOS.map((tipo) => (
@@ -519,36 +529,36 @@ export default function AgendaPrivadaModal({
                     {tipo.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
             <div className="flex items-end">
-              <button
-                type="button"
+              <Button
+                variant="primary"
                 onClick={abrirCrear}
                 disabled={contextoArchivado || contextoQuery.isLoading}
-                className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-400 disabled:opacity-60"
+                className="min-h-10 w-full gap-2 px-3 py-2 text-sm"
               >
                 <Plus size={16} aria-hidden="true" />
                 Crear elemento
-              </button>
+              </Button>
             </div>
           </div>
-        </section>
+        </Surface>
 
         {mensajeError ? (
-          <div className="mt-4 rounded-xl border border-red-900 bg-red-950/40 p-4 text-sm text-red-100">
+          <Alert variant="danger" role="alert" className="mt-4">
             {mensajeError}
-          </div>
+          </Alert>
         ) : null}
 
         {solapamientos?.hay_solapamiento ? (
-          <div className="mt-4 rounded-xl border border-yellow-900 bg-yellow-950/30 p-4 text-sm text-yellow-100">
+          <Alert variant="warning" className="mt-4">
             <div className="flex gap-2">
               <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
               <div>
                 <p className="font-semibold">Coincide con otros elementos</p>
-                <p className="mt-1 text-yellow-100/80">
+                <p className="mt-1 opacity-80">
                   La operacion fue guardada. Revisa estos horarios relacionados:
                 </p>
                 <ul className="mt-2 space-y-1">
@@ -560,201 +570,200 @@ export default function AgendaPrivadaModal({
                 </ul>
               </div>
             </div>
-          </div>
+          </Alert>
         ) : null}
 
         {modoFormulario ? (
-          <form
+          <Surface
+            as="form"
             onSubmit={handleSubmit}
-            className="mt-4 rounded-xl border border-gray-800 bg-gray-900/70 p-4"
+            className="mt-4 rounded-xl p-4"
           >
             <div className="flex items-center justify-between gap-3">
-              <p className="font-semibold text-white">
+              <p className="font-semibold text-primary">
                 {modoFormulario === "editar" ? "Editar elemento" : "Nuevo elemento"}
               </p>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={cerrarFormulario}
-                className="rounded-lg px-3 py-2 text-sm font-semibold text-gray-300 transition hover:bg-gray-800"
+                className="px-3 py-2 text-sm"
               >
                 Cancelar
-              </button>
+              </Button>
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block sm:col-span-2">
-                <span className="text-xs text-gray-400">Titulo *</span>
-                <input
+                <span className="text-xs text-secondary">Titulo *</span>
+                <Input
                   name="titulo"
                   value={form.titulo}
                   onChange={handleFormChange}
-                  className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-orange-500"
+                  className="mt-1 rounded-lg px-3 py-2 text-sm"
                   placeholder="Ej: llamada con proveedor"
                 />
               </label>
 
               <label className="block">
-                <span className="text-xs text-gray-400">Tipo</span>
-                <select
+                <span className="text-xs text-secondary">Tipo</span>
+                <Select
                   name="tipo"
                   value={form.tipo}
                   onChange={handleFormChange}
-                  className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white"
+                  className="mt-1 rounded-lg px-3 py-2 text-sm"
                 >
                   {TIPOS.map((tipo) => (
                     <option key={tipo.value} value={tipo.value}>
                       {tipo.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
 
-              <label className="flex items-end gap-2 rounded-lg bg-gray-950 px-3 py-2">
-                <input
+              <label className="flex items-end gap-2 rounded-lg border border-border bg-surface px-3 py-2">
+                <Input
                   type="checkbox"
                   name="todo_el_dia"
                   checked={form.todo_el_dia}
                   onChange={handleFormChange}
-                  className="h-4 w-4"
+                  className="h-4 w-4 accent-brand"
                 />
-                <span className="text-sm text-gray-200">Todo el dia</span>
+                <span className="text-sm text-primary">Todo el dia</span>
               </label>
 
               <label className="block">
-                <span className="text-xs text-gray-400">Inicio</span>
-                <input
+                <span className="text-xs text-secondary">Inicio</span>
+                <Input
                   type="datetime-local"
                   name="inicio"
                   value={form.inicio}
                   onChange={handleFormChange}
-                  className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-orange-500"
+                  className="mt-1 rounded-lg px-3 py-2 text-sm"
                 />
               </label>
 
               <label className="block">
-                <span className="text-xs text-gray-400">Fin</span>
-                <input
+                <span className="text-xs text-secondary">Fin</span>
+                <Input
                   type="datetime-local"
                   name="fin"
                   value={form.fin}
                   onChange={handleFormChange}
-                  className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-orange-500"
+                  className="mt-1 rounded-lg px-3 py-2 text-sm"
                 />
               </label>
 
               <label className="block sm:col-span-2">
-                <span className="text-xs text-gray-400">Descripcion</span>
-                <textarea
+                <span className="text-xs text-secondary">Descripcion</span>
+                <Textarea
                   name="descripcion"
                   value={form.descripcion}
                   onChange={handleFormChange}
                   rows={3}
-                  className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-orange-500"
+                  className="mt-1 rounded-lg px-3 py-2 text-sm"
                   placeholder="Notas internas opcionales"
                 />
               </label>
             </div>
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
               disabled={isMutating || contextoArchivado}
-              className="mt-4 min-h-10 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-gray-100 disabled:opacity-60"
+              className="mt-4 min-h-10 px-4 py-2 text-sm"
             >
               {isMutating ? "Guardando..." : "Guardar"}
-            </button>
-          </form>
+            </Button>
+          </Surface>
         ) : null}
 
         <section className="mt-4 space-y-2">
           {contextoQuery.isLoading && !contextoQuery.data ? (
-            <p className="rounded-xl bg-gray-900/60 p-4 text-sm text-gray-400">
-              Preparando agenda...
-            </p>
+            <Skeleton className="h-12 rounded-xl" />
           ) : null}
 
           {elementosQuery.isLoading && elementos.length === 0 ? (
-            <p className="rounded-xl bg-gray-900/60 p-4 text-sm text-gray-400">
-              Cargando elementos...
-            </p>
+            <Skeleton className="h-12 rounded-xl" />
           ) : null}
 
           {!elementosQuery.isLoading && elementos.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-800 bg-gray-900/40 p-6 text-center">
-              <p className="font-semibold text-white">No hay elementos para este dia</p>
-              <p className="mt-1 text-sm text-gray-400">
+            <Surface className="rounded-xl border-dashed p-6 text-center">
+              <p className="font-semibold text-primary">No hay elementos para este dia</p>
+              <p className="mt-1 text-sm text-secondary">
                 Crea un evento, tarea, recordatorio o bloqueo interno.
               </p>
-            </div>
+            </Surface>
           ) : null}
 
           {elementos.map((elemento) => (
-            <article
+            <Surface
+              as="article"
               key={elemento.id}
-              className="rounded-xl border border-gray-800 bg-gray-900/70 p-4"
+              className="rounded-xl p-4"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-gray-800 px-2 py-0.5 text-[11px] font-semibold text-gray-200">
+                    <span className="rounded-full border border-border bg-surface-subtle px-2 py-0.5 text-[11px] font-semibold text-secondary">
                       {TIPOS.find((tipo) => tipo.value === elemento.tipo)?.label ||
                         elemento.tipo}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-muted">
                       {elemento.estado} - v{elemento.version}
                     </span>
                   </div>
-                  <h3 className="mt-2 break-words font-semibold text-white">
+                  <h3 className="mt-2 break-words font-semibold text-primary">
                     {elemento.titulo}
                   </h3>
-                  <p className="mt-1 text-sm text-gray-300">
+                  <p className="mt-1 text-sm text-secondary">
                     {formatearRango(elemento)}
                   </p>
                   {elemento.descripcion ? (
-                    <p className="mt-2 break-words text-sm text-gray-400">
+                    <p className="mt-2 break-words text-sm text-secondary">
                       {elemento.descripcion}
                     </p>
                   ) : null}
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
                     onClick={() => abrirEditar(elemento)}
                     disabled={contextoArchivado || isMutating}
-                    className="flex min-h-9 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-200 transition hover:bg-gray-800 disabled:opacity-50"
+                    className="min-h-9 gap-1 px-2 py-1.5 text-xs"
                   >
                     <Pencil size={14} aria-hidden="true" />
                     Editar
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="success"
                     onClick={() => cambiarEstado(elemento, "completado")}
                     disabled={
                       contextoArchivado ||
                       isMutating ||
                       elemento.estado === "completado"
                     }
-                    className="flex min-h-9 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-green-200 transition hover:bg-green-950/40 disabled:opacity-50"
+                    className="min-h-9 gap-1 px-2 py-1.5 text-xs"
                   >
                     <Check size={14} aria-hidden="true" />
                     Completar
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="danger"
                     onClick={() => cambiarEstado(elemento, "cancelado")}
                     disabled={
                       contextoArchivado ||
                       isMutating ||
                       elemento.estado === "cancelado"
                     }
-                    className="flex min-h-9 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-red-200 transition hover:bg-red-950/40 disabled:opacity-50"
+                    className="min-h-9 gap-1 px-2 py-1.5 text-xs"
                   >
                     <CircleSlash size={14} aria-hidden="true" />
                     Cancelar
-                  </button>
+                  </Button>
                 </div>
               </div>
-            </article>
+            </Surface>
           ))}
         </section>
       </div>

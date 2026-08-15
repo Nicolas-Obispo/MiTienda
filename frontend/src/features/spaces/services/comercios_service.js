@@ -126,6 +126,11 @@ export async function listarComerciosActivos({
   lat = null,
   lng = null,
   radio_km = null,
+  city_key = null,
+  province_code = null,
+  country_code = null,
+  scope = null,
+  expansion_km = null,
   limit = 20,
   offset = 0,
 } = {}) {
@@ -174,6 +179,14 @@ export async function listarComerciosActivos({
 
   if (radio_km !== null && radio_km !== undefined) {
     params.set("radio_km", String(radio_km));
+  }
+
+  if (city_key) params.set("city_key", String(city_key));
+  if (province_code) params.set("province_code", String(province_code));
+  if (country_code) params.set("country_code", String(country_code));
+  if (scope) params.set("scope", String(scope));
+  if (expansion_km !== null && expansion_km !== undefined) {
+    params.set("expansion_km", String(expansion_km));
   }
 
   const queryString = params.toString();

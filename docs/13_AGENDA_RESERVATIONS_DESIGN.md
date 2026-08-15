@@ -52,7 +52,7 @@ Resumen operativo:
 - Validacion tecnica y funcional integral: aprobada con observaciones no
   bloqueantes.
 - Reservas publicas: no iniciadas, fuera del cierre actual de ETAPA 88 y
-  planificadas para ETAPA 100 - Reservas Publicas y Carrito de Reserva.
+  planificadas para ETAPA 102 - Reservas Publicas y Carrito de Reserva.
 - Notificaciones: disenadas como trabajo futuro, no implementadas.
 - Cierre formal de ETAPA 88: completado.
 
@@ -627,7 +627,7 @@ Reservas:
   aprobadas;
 - no debe exponer la agenda privada completa.
 - no forma parte del cierre actual de ETAPA 88;
-- debera implementarse en ETAPA 100 - Reservas Publicas y Carrito de Reserva,
+- debera implementarse en ETAPA 102 - Reservas Publicas y Carrito de Reserva,
   segun el roadmap vigente.
 
 Formula conceptual futura:
@@ -646,7 +646,7 @@ Esta formula es conceptual y no esta implementada.
 
 ## Reservas y solicitudes publicas
 
-Roadmap vigente: ETAPA 100 - Reservas Publicas y Carrito de Reserva.
+Roadmap vigente: ETAPA 102 - Reservas Publicas y Carrito de Reserva.
 
 Durante el MVP futuro, turno y reserva seran variantes funcionales de una
 solicitud publica comun.

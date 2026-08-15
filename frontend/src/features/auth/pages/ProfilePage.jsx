@@ -23,10 +23,19 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { httpPut } from "@core";
 import { queryKeys } from "@core/constants/queryKeys";
 import {
+  Alert,
+  Button,
+  FormControl,
   getMediaUrlFromAny,
+  Input,
   uploadImagen,
   LocationPicker,
+  Select,
+  Skeleton,
+  Surface,
+  Textarea,
 } from "@shared";
+import { invalidateLocationAfterAddressEdit } from "@shared/components/locationPickerState";
 import { actualizarPerfilUsuario, getMe, useAuth } from "@features/auth";
 import { cambiarModoUsuario } from "@features/auth/services/usuarioService";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,6 +43,7 @@ import AgendaGeneralModal from "@features/agenda/components/AgendaGeneralModal";
 import AgendaPrivadaModal from "@features/agenda/components/AgendaPrivadaModal";
 import EstadoHorarioBadge from "@features/availability/components/EstadoHorarioBadge";
 import HorariosAtencionEditor from "@features/availability/components/HorariosAtencionEditor";
+import AppearanceSelector from "@features/auth/components/AppearanceSelector";
 
 import {
   crearComercio,
@@ -44,22 +54,6 @@ import {
   useRubroEspecialidades,
   useRubros,
 } from "@features/spaces";
-
-const COLOR_FONDO_PRESETS = [
-  { nombre: "Negro/default", valor: "#111827" },
-  { nombre: "Gris oscuro", valor: "#1F2937" },
-];
-
-const COLOR_FONDO_DEFAULT = "#111827";
-
-function normalizeColorFondo(colorFondo) {
-  const color = String(colorFondo || "").trim().toUpperCase();
-  const isAllowed = COLOR_FONDO_PRESETS.some(
-    (preset) => preset.valor.toUpperCase() === color
-  );
-
-  return isAllowed ? color : COLOR_FONDO_DEFAULT;
-}
 
 export default function ProfilePage() {
   // =====================================================
@@ -82,14 +76,13 @@ export default function ProfilePage() {
   const [avatarErrorMessage, setAvatarErrorMessage] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showPerfilForm, setShowPerfilForm] = useState(false);
-  const [showColorFondoOptions, setShowColorFondoOptions] = useState(false);
+  const [showAppearanceOptions, setShowAppearanceOptions] = useState(false);
   const [isSavingPerfil, setIsSavingPerfil] = useState(false);
   const [perfilErrorMessage, setPerfilErrorMessage] = useState("");
   const [perfilSuccessMessage, setPerfilSuccessMessage] = useState("");
   const [perfilForm, setPerfilForm] = useState({
     provincia: "",
     ciudad: "",
-    color_fondo: COLOR_FONDO_DEFAULT,
   });
 
   const fileInputRef = useRef(null);
@@ -121,7 +114,6 @@ export default function ProfilePage() {
       setPerfilForm({
         provincia: data?.provincia || "",
         ciudad: data?.ciudad || "",
-        color_fondo: normalizeColorFondo(data?.color_fondo),
       });
     } catch (error) {
       setUsuarioMe(null);
@@ -156,11 +148,10 @@ export default function ProfilePage() {
   function abrirEdicionPerfil() {
     setPerfilErrorMessage("");
     setPerfilSuccessMessage("");
-    setShowColorFondoOptions(false);
+    setShowAppearanceOptions(false);
     setPerfilForm({
       provincia: usuarioMe?.provincia || "",
       ciudad: usuarioMe?.ciudad || "",
-      color_fondo: normalizeColorFondo(usuarioMe?.color_fondo),
     });
     setShowPerfilForm(true);
   }
@@ -168,11 +159,10 @@ export default function ProfilePage() {
   function cancelarEdicionPerfil() {
     setPerfilErrorMessage("");
     setPerfilSuccessMessage("");
-    setShowColorFondoOptions(false);
+    setShowAppearanceOptions(false);
     setPerfilForm({
       provincia: usuarioMe?.provincia || "",
       ciudad: usuarioMe?.ciudad || "",
-      color_fondo: normalizeColorFondo(usuarioMe?.color_fondo),
     });
     setShowPerfilForm(false);
   }
@@ -203,7 +193,6 @@ export default function ProfilePage() {
       const payload = {
         provincia: perfilForm.provincia.trim(),
         ciudad: perfilForm.ciudad.trim(),
-        color_fondo: normalizeColorFondo(perfilForm.color_fondo),
       };
 
       const usuarioActualizado = await actualizarPerfilUsuario(token, payload);
@@ -213,9 +202,8 @@ export default function ProfilePage() {
       setPerfilForm({
         provincia: usuarioActualizado?.provincia || "",
         ciudad: usuarioActualizado?.ciudad || "",
-        color_fondo: normalizeColorFondo(usuarioActualizado?.color_fondo),
       });
-      setShowColorFondoOptions(false);
+      setShowAppearanceOptions(false);
       setShowPerfilForm(false);
       setPerfilSuccessMessage("Perfil actualizado");
     } catch (error) {
@@ -415,6 +403,7 @@ export default function ProfilePage() {
     maps_url: "",
     latitud: null,
     longitud: null,
+    mostrar_direccion_publicamente: true,
   });
   const {
     data: especialidadesRubro = [],
@@ -444,6 +433,7 @@ export default function ProfilePage() {
       maps_url: "",
       latitud: null,
       longitud: null,
+      mostrar_direccion_publicamente: true,
     });
   }
 
@@ -470,6 +460,8 @@ export default function ProfilePage() {
       maps_url: comercio.maps_url || "",
       latitud: comercio.latitud ?? null,
       longitud: comercio.longitud ?? null,
+      mostrar_direccion_publicamente:
+        comercio.mostrar_direccion_publicamente !== false,
     });
   }
 
@@ -534,6 +526,13 @@ export default function ProfilePage() {
       return;
     }
 
+    if (name === "direccion") {
+      setCreateForm((prev) =>
+        invalidateLocationAfterAddressEdit(prev, value)
+      );
+      return;
+    }
+
     setCreateForm((prev) => ({ ...prev, [name]: value }));
   }
 
@@ -587,6 +586,14 @@ export default function ProfilePage() {
         throw new Error("Provincia y ciudad son obligatorias.");
       }
 
+      if (
+        !createForm.direccion.trim() ||
+        createForm.latitud === null ||
+        createForm.longitud === null
+      ) {
+        throw new Error("Confirmá una ubicación completa antes de guardar.");
+      }
+
       if (!Number(createForm.rubro_id)) {
         throw new Error("El rubro es obligatorio.");
       }
@@ -635,6 +642,8 @@ export default function ProfilePage() {
         await queryClient.invalidateQueries({
           queryKey: queryKeys.spaces.detalle(editingComercioId),
         });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.explore.all });
+        await queryClient.invalidateQueries({ queryKey: ["spaces", "seguidos"] });
 
         setShowCreateForm(false);
         handleResetForm();
@@ -647,6 +656,8 @@ export default function ProfilePage() {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.spaces.mis(),
       });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.explore.all });
+      await queryClient.invalidateQueries({ queryKey: ["spaces", "seguidos"] });
 
       setShowCreateForm(false);
       handleResetForm();
@@ -718,38 +729,38 @@ export default function ProfilePage() {
   const avatarUrl = usuarioMe?.avatar_url || "";
   const esModoPublicador = usuarioMe?.modo_activo === "publicador";
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-canvas text-primary">
       <main className="mx-auto max-w-3xl px-4 py-8">
         {/* ===================================================== */}
         {/* Header: Perfil administrador */}
         {/* ===================================================== */}
         <section className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-white">
+          <h1 className="text-xl font-bold text-primary sm:text-2xl">
             Perfil administrador
           </h1>
 
           {!showPerfilForm && (
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="mt-1 text-sm text-secondary">
             Gestioná tu cuenta, tus espacios y tus publicaciones guardadas.
           </p>
           )}
 
           {perfilSuccessMessage && (
-            <div className="mt-4 flex items-center gap-2 rounded-xl border border-green-800 bg-green-950/50 px-4 py-3 text-sm font-semibold text-green-100">
+            <Alert variant="success" className="mt-4 flex items-center gap-2 font-semibold">
               <span aria-hidden="true">✓</span>
               <span>{perfilSuccessMessage}</span>
-            </div>
+            </Alert>
           )}
 
           {/* Mi cuenta */}
           {!showPerfilForm && (
-          <div className="mt-4 rounded-2xl border border-gray-800 bg-gray-950 p-4">
+          <Surface as="section" className="mt-4 p-4" aria-labelledby="mi-cuenta-title">
             <div className="flex items-center gap-4">
               <div
                 className={[
-                  "relative h-16 w-16 rounded-full border overflow-hidden",
+                  "relative h-16 w-16 shrink-0 rounded-full border overflow-hidden",
                   "flex items-center justify-center",
-                  "border-gray-700 bg-gray-900",
+                  "border-border-strong bg-surface-subtle",
                 ].join(" ")}
               >
                 {avatarUrl ? (
@@ -760,31 +771,32 @@ export default function ProfilePage() {
                     draggable={false}
                   />
                 ) : (
-                  <span className="text-xs text-gray-300">Sin foto</span>
+                  <span className="text-xs text-secondary">Sin foto</span>
                 )}
 
               </div>
 
-              <div className="flex-1">
-                <p className="font-semibold">Mi cuenta</p>
+              <div className="min-w-0 flex-1">
+                <h2 id="mi-cuenta-title" className="font-semibold text-primary">Mi cuenta</h2>
 
-                <p className="mt-1 text-sm text-gray-400">
+                <p className="mt-1 text-sm text-secondary">
                   Esta cuenta puede explorar, guardar publicaciones, seguir
                   espacios y administrar uno o varios espacios propios o de
                   clientes.
                 </p>
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <button
+                  <Button
                     type="button"
                     onClick={abrirEdicionPerfil}
                     disabled={isLoadingMe || !usuarioMe || showPerfilForm}
-                    className="interactive-bubble text-xs font-semibold leading-4"
+                    variant="secondary"
+                    className="px-3 py-2 text-xs leading-4"
                   >
                     <span>Editar perfil</span>
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
                     type="button"
                     onClick={() => {
                       setCreateErrorMessage("");
@@ -792,22 +804,24 @@ export default function ProfilePage() {
                       setShowActivarEspacioInfo(misComercios.length === 0);
                       setShowCreateForm(misComercios.length > 0);
                     }}
-                    className="interactive-bubble interactive-bubble--primary text-xs font-semibold leading-4"
+                    variant="primary"
+                    className="px-3 py-2 text-xs leading-4"
                   >
                     <span>Crear nuevo espacio</span>
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setIsAgendaGeneralOpen(true)}
                     disabled={misComercios.length === 0}
-                    className="interactive-bubble text-xs font-semibold leading-4"
+                    variant="secondary"
+                    className="px-3 py-2 text-xs leading-4"
                   >
                     <span>Agenda general</span>
-                  </button>
+                  </Button>
                 </div>
 
-                <p className="mt-2 text-xs text-gray-500">
+                <p className="mt-2 break-all text-xs text-muted">
                   {isLoadingMe
                     ? "Cargando usuario..."
                     : usuarioMe?.email
@@ -815,32 +829,33 @@ export default function ProfilePage() {
                     : "No se pudo cargar el usuario."}
                 </p>
 
-                <button
+                <Button
                   type="button"
                   onClick={manejarLogout}
-                  className="interactive-bubble interactive-bubble--danger mt-2 text-xs font-semibold leading-4"
+                  variant="danger"
+                  className="mt-2 px-3 py-2 text-xs leading-4"
                 >
                   <span>Cerrar sesión</span>
-                </button>
+                </Button>
 
                 {avatarErrorMessage && (
-                  <div className="mt-3 rounded-xl border border-red-900 bg-red-950/40 p-3">
-                    <p className="text-sm text-red-100 break-words">
+                  <Alert variant="danger" role="alert" className="mt-3 p-3">
+                    <p className="break-words">
                       {avatarErrorMessage}
                     </p>
-                  </div>
+                  </Alert>
                 )}
               </div>
             </div>
-          </div>
+          </Surface>
           )}
         </section>
 
         {showPerfilForm && (
-          <section className="mb-8 rounded-2xl border border-gray-800 bg-gray-950 p-4">
+          <Surface as="section" variant="elevated" className="mb-8 p-4">
             <form onSubmit={handlePerfilSubmit} className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full border border-gray-700 bg-gray-900">
+                <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full border border-border bg-surface-subtle">
                   {avatarUrl ? (
                     <img
                       src={avatarUrl}
@@ -849,26 +864,27 @@ export default function ProfilePage() {
                       draggable={false}
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center px-1 text-center text-xs text-gray-300">
+                    <div className="flex h-full w-full items-center justify-center px-1 text-center text-xs text-secondary">
                       Sin foto
                     </div>
                   )}
                 </div>
 
-                <p className="min-w-0 flex-1 truncate text-sm text-gray-200">
+                <p className="min-w-0 flex-1 truncate text-sm text-secondary">
                   {usuarioMe?.email || "Usuario sin correo"}
                 </p>
               </div>
 
               <div>
-                <button
+                <Button
                   type="button"
                   onClick={handleAvatarClick}
                   disabled={isUploadingAvatar || isSavingPerfil}
-                  className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black transition-all hover:bg-gray-100 hover:shadow-md disabled:opacity-60"
+                  variant="secondary"
+                  className="px-3 py-2 text-xs"
                 >
                   {isUploadingAvatar ? "Subiendo..." : "Cambiar foto"}
-                </button>
+                </Button>
 
                 <input
                   ref={fileInputRef}
@@ -880,130 +896,94 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <span className="text-xs font-medium text-gray-400">
+                <Button
+                  type="button"
+                  onClick={() =>
+                    setShowAppearanceOptions((isOpen) => !isOpen)
+                  }
+                  disabled={isSavingPerfil}
+                  variant="secondary"
+                  className="px-3 py-2 text-xs"
+                  aria-expanded={showAppearanceOptions}
+                  aria-controls="perfil-apariencia-options"
+                >
                   Color de fondo
-                </span>
+                </Button>
 
-                <div className="relative mt-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowColorFondoOptions((isOpen) => !isOpen)
-                    }
-                    disabled={isSavingPerfil}
-                    className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-gray-800 disabled:opacity-60"
-                    aria-expanded={showColorFondoOptions}
+                {showAppearanceOptions && (
+                  <Surface
+                    id="perfil-apariencia-options"
+                    variant="subtle"
+                    className="mt-2 p-3"
                   >
-                    Color de fondo
-                  </button>
-
-                  {showColorFondoOptions && (
-                    <div className="absolute left-0 z-20 mt-2 w-64 overflow-hidden rounded-xl border border-gray-800 bg-gray-950 shadow-xl">
-                      {COLOR_FONDO_PRESETS.map((color) => {
-                        const isSelected =
-                          normalizeColorFondo(perfilForm.color_fondo).toLowerCase() ===
-                          color.valor.toLowerCase();
-
-                        return (
-                          <button
-                            key={color.nombre}
-                            type="button"
-                            onClick={() => {
-                              setPerfilForm((prev) => ({
-                                ...prev,
-                                color_fondo: color.valor,
-                              }));
-                              setShowColorFondoOptions(false);
-                            }}
-                            disabled={isSavingPerfil}
-                            className={[
-                              "flex w-full items-center gap-3 px-3 py-2 text-left text-sm",
-                              isSelected
-                                ? "bg-orange-500/20 text-white"
-                                : "text-gray-200 hover:bg-gray-900",
-                              "disabled:opacity-60",
-                            ].join(" ")}
-                            aria-pressed={isSelected}
-                          >
-                            <span
-                              className="h-5 w-5 rounded-full border border-gray-600"
-                              style={{ backgroundColor: color.valor }}
-                              aria-hidden="true"
-                            />
-                            <span>{color.nombre}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                    <AppearanceSelector />
+                  </Surface>
+                )}
               </div>
 
-              <label className="block">
-                <span className="text-xs font-medium text-gray-400">
-                  Provincia
-                </span>
-                <input
+              <FormControl label="Provincia" labelFor="perfil-provincia">
+                <Input
+                  id="perfil-provincia"
                   type="text"
                   name="provincia"
                   value={perfilForm.provincia}
                   onChange={handlePerfilFormChange}
                   disabled={isSavingPerfil}
-                  className="mt-1 w-full rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-orange-500 disabled:opacity-60"
+                  className="text-sm"
                   placeholder="Provincia"
                 />
-              </label>
+              </FormControl>
 
-              <label className="block">
-                <span className="text-xs font-medium text-gray-400">
-                  Ciudad
-                </span>
-                <input
+              <FormControl label="Ciudad" labelFor="perfil-ciudad">
+                <Input
+                  id="perfil-ciudad"
                   type="text"
                   name="ciudad"
                   value={perfilForm.ciudad}
                   onChange={handlePerfilFormChange}
                   disabled={isSavingPerfil}
-                  className="mt-1 w-full rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-orange-500 disabled:opacity-60"
+                  className="text-sm"
                   placeholder="Ciudad"
                 />
-              </label>
+              </FormControl>
 
               <div className="flex flex-wrap gap-2">
-                <button
+                <Button
                   type="submit"
                   disabled={isSavingPerfil}
-                  className="rounded-xl bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-400 disabled:opacity-60"
+                  variant="secondary"
+                  className="px-3 py-2 text-xs"
                 >
                   {isSavingPerfil ? "Guardando..." : "Guardar"}
-                </button>
+                </Button>
 
-                <button
+                <Button
                   type="button"
                   onClick={cancelarEdicionPerfil}
                   disabled={isSavingPerfil}
-                  className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-gray-800 disabled:opacity-60"
+                  variant="secondary"
+                  className="px-3 py-2 text-xs"
                 >
                   Cancelar
-                </button>
+                </Button>
               </div>
             </form>
 
             {perfilErrorMessage && (
-              <p className="mt-3 text-xs text-red-300">
+              <Alert role="alert" variant="danger" className="mt-3 text-xs">
                 {perfilErrorMessage}
-              </p>
+              </Alert>
             )}
-          </section>
+          </Surface>
         )}
 
         {!showPerfilForm && showActivarEspacioInfo && (
-        <div className="mt-3 rounded-2xl border border-purple-900 bg-purple-950/30 p-6 text-center">
-          <p className="text-lg font-bold text-purple-100">
+        <Surface variant="subtle" className="mt-3 p-6 text-center">
+          <p className="text-lg font-bold text-primary">
             Creá o administrá espacios en FeedGo!
           </p>
 
-          <p className="mt-2 text-sm leading-6 text-purple-100/80">
+          <p className="mt-2 text-sm leading-6 text-secondary">
             Un espacio es un perfil público dentro de FeedGo!. Puede
             representar un negocio, emprendimiento, servicio, profesión,
             franquicia, cliente o proyecto. Desde esta cuenta vas a poder
@@ -1011,7 +991,7 @@ export default function ProfilePage() {
             contacto y construir presencia dentro de la comunidad.
           </p>
 
-          <button
+          <Button
             type="button"
               onClick={async () => {
                 if (!esModoPublicador) {
@@ -1025,11 +1005,12 @@ export default function ProfilePage() {
 
                 setShowCreateForm(true); // mostrar formulario
               }}
-            className="mt-4 rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-400"
+            variant="primary"
+            className="mt-4 px-4 py-2 text-sm"
           >
             Crear primer espacio
-          </button>
-        </div>
+          </Button>
+        </Surface>
         )}
 
 
@@ -1044,7 +1025,7 @@ export default function ProfilePage() {
               <div className="flex items-end justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold">Mis espacios</h2>
-                  <p className="mt-1 text-sm text-gray-400">
+                  <p className="mt-1 text-sm text-secondary">
                     Estos son los espacios públicos que administrás desde esta
                     cuenta.
                   </p>
@@ -1053,48 +1034,50 @@ export default function ProfilePage() {
             )}
 
             {showCreateForm && (
-              <div className="mt-4 rounded-2xl border border-gray-800 bg-gray-950 p-5">
+              <Surface as="section" variant="elevated" className="mt-4 p-5">
                 <p className="font-semibold">
                   {editingComercioId ? "Editar espacio" : "Crear espacio"}
                 </p>
 
-                <p className="mt-1 text-sm text-gray-400">
+                <p className="mt-1 text-sm text-secondary">
                   Creá un espacio para mostrar un negocio, servicio,
                   profesión, emprendimiento o cliente administrado.
                 </p>
 
                 {createErrorMessage && (
-                  <div className="mt-3 rounded-xl border border-red-900 bg-red-950/40 p-4">
-                    <p className="font-semibold text-red-200">Error</p>
-                    <p className="mt-2 text-red-100 break-words">
+                  <Alert variant="danger" role="alert" className="mt-3 p-4">
+                    <p className="font-semibold">Error</p>
+                    <p className="mt-2 break-words">
                       {createErrorMessage}
                     </p>
-                  </div>
+                  </Alert>
                 )}
 
                 <form onSubmit={handleCrearComercioSubmit} className="mt-4 space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-gray-400">
+                      <label htmlFor="espacio-nombre" className="text-xs text-secondary">
                         Nombre del espacio *
                       </label>
-                      <input
+                      <Input
+                        id="espacio-nombre"
                         name="nombre"
                         value={createForm.nombre}
                         onChange={handleCreateInputChange}
-                        className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
+                        className="mt-1 text-sm"
                         placeholder="Ej: Kiosco Centro, Estudio Jurídico, Ferretería..."
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs text-gray-400">Rubro *</label>
-                      <select
+                      <label htmlFor="espacio-rubro" className="text-xs text-secondary">Rubro *</label>
+                      <Select
+                        id="espacio-rubro"
                         name="rubro_id"
                         value={createForm.rubro_id}
                         onChange={handleCreateInputChange}
                         disabled={isLoadingRubros || rubros.length === 0}
-                        className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
+                        className="mt-1 text-sm"
                       >
                         {rubros.length === 0 ? (
                           <option value={createForm.rubro_id}>
@@ -1107,19 +1090,20 @@ export default function ProfilePage() {
                             </option>
                           ))
                         )}
-                      </select>
+                      </Select>
                     </div>
 
-                    <div className="sm:col-span-2 rounded-xl border border-gray-800 bg-gray-900/50 p-3">
-                      <p className="text-xs font-semibold text-gray-300">
+                    <Surface variant="subtle" className="sm:col-span-2 rounded-xl p-3">
+                      <label htmlFor="espacio-especialidad" className="text-xs font-semibold text-secondary">
                         Especialidades
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500">
+                      </label>
+                      <p className="mt-1 text-xs text-muted">
                         Opcional. Selecciona especialidades reales del rubro
                         principal.
                       </p>
 
-                      <select
+                      <Select
+                        id="espacio-especialidad"
                         value=""
                         onChange={handleEspecialidadesChange}
                         disabled={
@@ -1131,7 +1115,7 @@ export default function ProfilePage() {
                               .includes(Number(especialidad.id))
                           )
                         }
-                        className="mt-3 w-full rounded-xl bg-gray-950 border border-gray-800 px-3 py-2 text-sm"
+                        className="mt-3 text-sm"
                       >
                         <option value="">
                           {isLoadingEspecialidades
@@ -1156,7 +1140,7 @@ export default function ProfilePage() {
                             {especialidad.nombre}
                           </option>
                         ))}
-                      </select>
+                      </Select>
 
                       {createForm.especialidad_ids.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-2">
@@ -1172,68 +1156,74 @@ export default function ProfilePage() {
                               return (
                                 <span
                                   key={especialidadId}
-                                  className="inline-flex items-center gap-2 rounded-full border border-orange-400 bg-orange-500 px-3 py-1 text-xs font-semibold text-white"
+                                  className="inline-flex items-center gap-2 rounded-full border border-selected-border bg-selected-surface px-3 py-1 text-xs font-semibold text-selected-text"
                                 >
                                   {especialidad.nombre}
-                                  <button
+                                  <Button
                                     type="button"
                                     onClick={() =>
                                       handleQuitarEspecialidad(especialidadId)
                                     }
-                                    className="rounded-full px-1 text-white/80 hover:bg-white/20 hover:text-white"
+                                    variant="ghost"
+                                    iconOnly
+                                    className="!h-6 !min-h-6 !w-6 text-selected-text"
                                     aria-label={`Quitar ${especialidad.nombre}`}
                                   >
                                     x
-                                  </button>
+                                  </Button>
                                 </span>
                               );
                             })}
                         </div>
                       )}
-                    </div>
+                    </Surface>
 
                     <div>
-                      <label className="text-xs text-gray-400">Provincia *</label>
-                      <input
+                      <label htmlFor="espacio-provincia" className="text-xs text-secondary">Provincia *</label>
+                      <Input
+                        id="espacio-provincia"
                         name="provincia"
                         value={createForm.provincia}
                         onChange={handleCreateInputChange}
-                        className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
+                        className="mt-1 text-sm"
                         placeholder="Ej: Santa Fe"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs text-gray-400">Ciudad *</label>
-                      <input
+                      <label htmlFor="espacio-ciudad" className="text-xs text-secondary">Ciudad *</label>
+                      <Input
+                        id="espacio-ciudad"
                         name="ciudad"
                         value={createForm.ciudad}
                         onChange={handleCreateInputChange}
-                        className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
+                        className="mt-1 text-sm"
                         placeholder="Ej: Rafaela"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-xs text-gray-400">Descripción</label>
-                    <textarea
+                    <label htmlFor="espacio-descripcion" className="text-xs text-secondary">Descripción</label>
+                    <Textarea
+                      id="espacio-descripcion"
                       name="descripcion"
                       value={createForm.descripcion}
                       onChange={handleCreateInputChange}
-                      className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
+                      className="mt-1 text-sm"
                       rows={3}
                       placeholder="Contá brevemente qué ofrece este espacio..."
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs text-gray-400">Portada</label>
+                    <span className="text-xs text-secondary">Portada</span>
 
                     <div className="mt-2 flex items-center gap-3">
-                      <div
-                        role="button"
-                        tabIndex={0}
+                      <button
+                        type="button"
+                        aria-label="Seleccionar portada del espacio"
+                        disabled={isUploadingPortada}
                         onClick={handlePortadaClick}
                         onDragOver={handlePortadaDragOver}
                         onDragLeave={handlePortadaDragLeave}
@@ -1241,8 +1231,8 @@ export default function ProfilePage() {
                         className={[
                           "relative h-26 w-26 rounded-2xl border overflow-hidden",
                           "flex items-center justify-center",
-                          isDragOverPortada ? "border-green-400" : "border-gray-700",
-                          "bg-gray-900",
+                          isDragOverPortada ? "border-success-border" : "border-border-strong",
+                          "bg-surface-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
                           isUploadingPortada
                             ? "opacity-70 cursor-not-allowed"
                             : "cursor-pointer",
@@ -1257,7 +1247,7 @@ export default function ProfilePage() {
                             draggable={false}
                           />
                         ) : (
-                          <span className="text-[10px] text-gray-300 text-center px-1">
+                          <span className="text-[10px] text-secondary text-center px-1">
                             Sin portada
                           </span>
                         )}
@@ -1267,27 +1257,23 @@ export default function ProfilePage() {
                             <span className="text-[10px]">Subiendo...</span>
                           </div>
                         )}
-                      </div>
+                      </button>
 
                       <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={handlePortadaClick}
-                        className="flex-1 cursor-pointer select-none"
-                        title="Click para seleccionar imagen"
+                        className="flex-1"
                       >
-                        <p className="text-sm text-gray-300">
+                        <p className="text-sm text-secondary">
                           Elegí una imagen que represente claramente este espacio.
                         </p>
 
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-muted">
                           Recomendamos utilizar el logo del negocio, el nombre
                           del emprendimiento, una imagen de marca o una foto
                           que ayude a los usuarios a identificar la actividad
                           de forma rápida.
                         </p>
 
-                        <button
+                        <Button
                           type="button"
                           onClick={(e) => {
                             e.preventDefault();
@@ -1295,10 +1281,11 @@ export default function ProfilePage() {
                             handlePortadaClick();
                           }}
                           disabled={isUploadingPortada}
-                          className="mt-2 rounded-xl bg-white text-black px-3 py-2 text-xs font-semibold disabled:opacity-60"
+                          variant="secondary"
+                          className="mt-2 px-3 py-2 text-xs"
                         >
                           {isUploadingPortada ? "Subiendo..." : "Seleccionar imagen"}
-                        </button>
+                        </Button>
 
                         <input
                           ref={portadaFileInputRef}
@@ -1309,7 +1296,7 @@ export default function ProfilePage() {
                         />
 
                         {portadaErrorMessage && (
-                          <p className="mt-2 text-xs text-red-200 break-words">
+                          <p className="mt-2 text-xs text-danger-text break-words" role="alert">
                             {portadaErrorMessage}
                           </p>
                         )}
@@ -1319,23 +1306,25 @@ export default function ProfilePage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-gray-400">WhatsApp</label>
-                      <input
+                      <label htmlFor="espacio-whatsapp" className="text-xs text-secondary">WhatsApp</label>
+                      <Input
+                        id="espacio-whatsapp"
                         name="whatsapp"
                         value={createForm.whatsapp}
                         onChange={handleCreateInputChange}
-                        className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
+                        className="mt-1 text-sm"
                         placeholder="+54..."
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs text-gray-400">Instagram</label>
-                      <input
+                      <label htmlFor="espacio-instagram" className="text-xs text-secondary">Instagram</label>
+                      <Input
+                        id="espacio-instagram"
                         name="instagram"
                         value={createForm.instagram}
                         onChange={handleCreateInputChange}
-                        className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
+                        className="mt-1 text-sm"
                         placeholder="@tu_espacio"
                       />
                     </div>
@@ -1344,21 +1333,22 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
                     <div>
-                      <label className="text-xs text-gray-400">Dirección</label>
-                      <input
+                      <label htmlFor="espacio-direccion" className="text-xs text-secondary">Dirección</label>
+                      <Input
+                        id="espacio-direccion"
                         name="direccion"
                         value={createForm.direccion}
                         onChange={handleCreateInputChange}
-                        className="mt-1 w-full rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
+                        className="mt-1 text-sm"
                         placeholder="Calle 123"
                       />
                     </div>
                   </div>
 
                   <div className={horariosEditorComercio ? "hidden" : undefined}>
-                    <label className="text-xs text-gray-400">
+                    <p className="text-xs text-secondary">
                       Ubicación del espacio
-                    </label>
+                    </p>
 
                     <div className="mt-2">
                       <LocationPicker
@@ -1367,9 +1357,10 @@ export default function ProfilePage() {
                         provincia={createForm.provincia}
                         latitud={createForm.latitud}
                         longitud={createForm.longitud}
-                        onChange={({ latitud, longitud }) => {
+                        onConfirm={({ direccion, latitud, longitud }) => {
                           setCreateForm((prev) => ({
                             ...prev,
+                            direccion,
                             latitud,
                             longitud,
                           }));
@@ -1377,76 +1368,103 @@ export default function ProfilePage() {
                       />
                     </div>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-muted">
                       Buscá la dirección, mové el pin y guardá la ubicación exacta.
                     </p>
+
+                    <Surface variant="subtle" className="mt-4 rounded-xl p-3">
+                      <label className="flex cursor-pointer items-start gap-3 text-sm text-primary">
+                        <input
+                          type="checkbox"
+                          checked={createForm.mostrar_direccion_publicamente}
+                          onChange={(event) =>
+                            setCreateForm((previous) => ({
+                              ...previous,
+                              mostrar_direccion_publicamente: event.target.checked,
+                            }))
+                          }
+                          className="mt-1 h-4 w-4 rounded border-border-strong bg-surface text-interactive-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                        />
+                        <span>
+                          <span className="block font-semibold">Mostrar mi dirección públicamente</span>
+                          <span className="mt-1 block text-xs leading-5 text-secondary">
+                            FeedGo usa la ubicación del espacio para incluirlo en búsquedas locales.
+                            Si no atendés al público allí, podés mantener privada la dirección:
+                            las personas verán solamente tu ciudad.
+                          </span>
+                        </span>
+                      </label>
+                    </Surface>
                   </div>
 
                   {editingComercioId ? (
-                    <div className="rounded-xl bg-gray-900/50 p-3">
+                    <Surface variant="subtle" className="rounded-xl p-3">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold text-gray-300">
+                          <p className="text-xs font-semibold text-secondary">
                             Horarios de atención
                           </p>
-                          <p className="mt-1 text-xs text-gray-500">
+                          <p className="mt-1 text-xs text-muted">
                             Administrá las franjas semanales de este espacio.
                           </p>
                         </div>
 
-                        <button
+                        <Button
                           type="button"
                           onClick={abrirEditorHorariosDesdeFormulario}
-                          className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-200 transition hover:bg-gray-800 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600"
+                          variant="secondary"
+                          className="min-h-10 px-3 py-2 text-sm"
                         >
                           Horarios de atención
-                        </button>
+                        </Button>
                       </div>
-                    </div>
+                    </Surface>
                   ) : null}
 
                   <div className="flex items-center gap-3 pt-2">
-                    <button
+                    <Button
                       type="submit"
                       disabled={isCreatingComercio}
-                      className="rounded-xl bg-white text-black px-4 py-2 text-sm font-semibold disabled:opacity-60"
+                      variant="primary"
+                      className="px-4 py-2 text-sm"
                     >
                       {isCreatingComercio
                         ? "Procesando..."
                         : editingComercioId
                         ? "Guardar cambios"
                         : "Crear"}
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                       type="button"
                       onClick={() => {
                         setShowCreateForm(false);
                         handleResetForm();
                       }}
-                      className="rounded-xl border border-gray-800 bg-gray-950 px-4 py-2 text-sm hover:border-gray-700"
+                      variant="secondary"
+                      className="px-4 py-2 text-sm"
                     >
                       Cancelar
-                    </button>
+                    </Button>
                   </div>
                 </form>
-              </div>
+              </Surface>
             )}
 
             {isLoadingComercios && misComercios.length === 0 && (
               <div className="mt-3 space-y-2">
-                <div className="h-16 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-                <div className="h-16 rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
+                <Skeleton className="h-16 rounded-2xl border border-border" />
+                <Skeleton className="h-16 rounded-2xl border border-border" />
               </div>
             )}
 
             {comerciosErrorVisible && misComercios.length === 0 && (
-              <div className="mt-3 rounded-2xl border border-red-900 bg-red-950/40 p-5">
-                <p className="font-semibold text-red-200">Error</p>
-                <p className="mt-2 text-red-100 break-words">
+              <Alert variant="danger" role="alert" className="mt-3 p-5">
+                <p className="font-semibold">Error</p>
+                <p className="mt-2 break-words">
                   {comerciosErrorVisible}
                 </p>
-              </div>
+              </Alert>
             )}
 
 
@@ -1460,13 +1478,13 @@ export default function ProfilePage() {
                       const imagenUrl = getMediaUrlFromAny(c);
 
                       return (
-                        <div
+                        <Surface
                           key={c.id}
-                          className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-950"
+                          className="relative overflow-hidden rounded-2xl"
                         >
                           {/* PORTADA */}
                           <Link to={`/comercios/${c.id}`}>
-                            <div className="aspect-square bg-gray-800">
+                            <div className="aspect-square bg-surface-subtle">
                               {imagenUrl ? (
                                 <img
                                   src={imagenUrl}
@@ -1474,7 +1492,7 @@ export default function ProfilePage() {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                <div className="w-full h-full flex items-center justify-center text-xs text-muted">
                                   Sin portada
                                 </div>
                               )}
@@ -1483,7 +1501,7 @@ export default function ProfilePage() {
 
                           {/* NOMBRE */}
                           <div className="p-2">
-                            <p className="truncate text-xs font-semibold text-white">
+                            <p className="truncate text-xs font-semibold text-primary">
                               {c.nombre}
                             </p>
 
@@ -1501,42 +1519,46 @@ export default function ProfilePage() {
 
                           {/* ACCIONES */}
                           <div className="absolute top-2 right-2 flex flex-col gap-1">
-                            <button
+                            <Button
                               onClick={() => handleEditarComercio(c)}
                               disabled={isActing}
-                              className="interactive-bubble text-[10px]"
+                              variant="secondary"
+                              className="px-2 py-1 text-[10px]"
                             >
                               <span>Editar</span>
-                            </button>
+                            </Button>
 
-                            <button
+                            <Button
                               type="button"
                               onClick={() => setAgendaComercio(c)}
                               disabled={isActing}
-                              className="interactive-bubble text-[10px]"
+                              variant="secondary"
+                              className="px-2 py-1 text-[10px]"
                             >
                               <span>Agenda</span>
-                            </button>
+                            </Button>
 
                             {c.activo ? (
-                              <button
+                              <Button
                                 onClick={() => handleDesactivarComercio(c.id)}
                                 disabled={isActing}
-                                className="interactive-bubble interactive-bubble--warning text-[10px]"
+                                variant="warning"
+                                className="px-2 py-1 text-[10px]"
                               >
                                 <span>{isActing ? "..." : "Pausar"}</span>
-                              </button>
+                              </Button>
                             ) : (
-                              <button
+                              <Button
                                 onClick={() => handleReactivarComercio(c.id)}
                                 disabled={isActing}
-                                className="bg-black/70 text-[10px] px-2 py-1 rounded"
+                                variant="success"
+                                className="px-2 py-1 text-[10px]"
                               >
                                 {isActing ? "..." : "Activar"}
-                              </button>
+                              </Button>
                             )}
                           </div>
-                        </div>
+                        </Surface>
                       );
                     })}
                 </div>

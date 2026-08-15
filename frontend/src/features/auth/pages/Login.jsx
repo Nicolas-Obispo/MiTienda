@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { loginUsuario, useAuth } from "@features/auth";
+import { Alert, Button, FormControl, Input, Surface } from "@shared";
 
 
 
@@ -63,108 +64,109 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-px)] flex flex-col items-center justify-center px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-canvas px-4 text-primary">
 
       {/* LOGO ARRIBA */}
       <div className="mb-0 animate-logo">
-        <div className="h-80 w-80 overflow-hidden rounded-full bg-gray-950 flex items-center justify-center">
+        <div className="flex h-80 w-80 items-center justify-center overflow-hidden rounded-full bg-canvas">
           <img
             src="/logo_Feedgo.png"
-            alt="MiPlaza"
+            alt="FeedGo"
             className="h-full w-full object-contain p-4"
           />
         </div>
       </div>
 
      {/* FORMULARIO */}
-      <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-950 p-6 shadow-sm">
+      <Surface variant="elevated" className="w-full max-w-md p-6">
         <div className="mb-5">
           <h2 className="text-2xl font-semibold">Iniciar sesión</h2>
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="mt-1 text-sm text-secondary">
             Accedé para ver tu feed personalizado.
           </p>
           {mensajeContextual && (
-            <div className="mt-4 rounded-xl border border-purple-900 bg-purple-950/40 p-3">
-              <p className="text-sm text-purple-100">{mensajeContextual}</p>
-            </div>
+            <Surface variant="subtle" className="mt-4 p-3 text-sm">
+              {mensajeContextual}
+            </Surface>
           )}
         </div>
 
         <form onSubmit={manejarSubmitLogin} className="space-y-4">
           {/* Email */}
-          <div>
-            <label className="block text-sm text-gray-300 mb-1">Email</label>
-            <input
+          <FormControl label="Email" labelFor="login-email">
+            <Input
+              id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="tuemail@dominio.com"
-              className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600"
+              className="text-sm"
             />
-          </div>
+          </FormControl>
 
           {/* Password */}
-          <div>
-            <label className="block text-sm text-gray-300 mb-1">
-              Password
-            </label>
-
-            <div className="relative">
-              <input
-                type={mostrarPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 pr-10 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600"
-              />
-
-              <button
-                type="button"
-                onClick={() => setMostrarPassword(!mostrarPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-              >
-                {mostrarPassword ? "🙉" : "🙈"}
-              </button>
-            </div>
-          </div>
+          <FormControl label="Password" labelFor="login-password">
+            <Input
+              id="login-password"
+              type={mostrarPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="••••••••"
+              className="text-sm"
+              trailingAction={
+                <Button
+                  type="button"
+                  onClick={() => setMostrarPassword(!mostrarPassword)}
+                  variant="ghost"
+                  iconOnly
+                  aria-label={
+                    mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                  }
+                >
+                  <span aria-hidden="true">
+                    {mostrarPassword ? "🙉" : "🙈"}
+                  </span>
+                </Button>
+              }
+            />
+          </FormControl>
 
           {/* Error */}
           {errorMensaje && (
-            <div className="rounded-xl border border-red-900 bg-red-950/40 p-3">
-              <p className="text-sm text-red-200 break-words">
-                {errorMensaje}
-              </p>
-            </div>
+            <Alert role="alert" variant="danger" className="break-words">
+              {errorMensaje}
+            </Alert>
           )}
 
           {/* Botón */}
-          <button
+          <Button
             type="submit"
             disabled={cargando}
-            className="w-full rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold hover:bg-purple-500 disabled:opacity-60 disabled:cursor-not-allowed"
+            variant="primary"
+            className="w-full px-4 py-2 text-sm"
           >
             {cargando ? "Ingresando..." : "Ingresar"}
-          </button>
+          </Button>
         </form>
 
         <div className="mt-4 space-y-2">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted">
             Tip: si venías con un token viejo, al loguearte de nuevo se reemplaza.
           </p>
 
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-secondary">
             ¿No tenés cuenta?{" "}
             <Link
               to="/registro"
-              className="font-medium text-purple-400 hover:text-purple-300"
+              className="font-medium text-brand underline decoration-current underline-offset-2 hover:text-brand-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
             >
               Crear cuenta
             </Link>
           </p>
         </div>
-      </div>
+      </Surface>
     </div>
   );
 }

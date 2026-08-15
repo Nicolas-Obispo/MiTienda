@@ -109,11 +109,12 @@ ETAPA 89 se encuentra cerrada.
 
 Alcance cerrado:
 
-- El roadmap oficial queda reorganizado desde ETAPA 89 hasta ETAPA 110.
-- Productos e Inventario queda postergado hasta ETAPA 102.
-- El lanzamiento controlado queda proyectado alrededor de ETAPA 97.
-- ETAPAS 90-96 quedan ordenadas como preparacion de seguridad, legalidad,
-  datos, operacion, calidad, experiencia y administracion.
+- El roadmap oficial queda reorganizado desde ETAPA 89 hasta ETAPA 112.
+- Productos e Inventario queda postergado hasta ETAPA 104.
+- El lanzamiento controlado queda proyectado alrededor de ETAPA 99.
+- ETAPAS 90-98 quedan ordenadas como preparacion de seguridad, legalidad,
+  datos, operacion, calidad, experiencia, plataforma PWA, administracion y
+  pulido visual final.
 - `docs/15_LEGAL_AND_OPERATIONAL.md` queda creado y oficializado como
   documento transversal del Sistema de Gobierno.
 - Las decisiones permanentes asociadas al gobierno de lanzamiento quedan
@@ -174,7 +175,7 @@ Pendientes no bloqueantes programados:
   para sistema global de temas y tokens semanticos compatible con modo oscuro,
   modo claro y configuracion del dispositivo, diferenciada de la correccion del
   mapa y de la revision visual general.
-- ETAPA 102: revisar Productos legacy cuando el dominio oficial de Catalogo de
+- ETAPA 104: revisar Productos legacy cuando el dominio oficial de Catalogo de
   Productos y Disponibilidad Simple defina ownership.
 
 Estado final actual:
@@ -286,7 +287,7 @@ Fuera del cierre actual:
   disenadas, pero no implementadas en el cierre actual de ETAPA 88.
 - Correo electronico, WhatsApp, verificacion de destinos, proveedores,
   plantillas, workers, colas, schedulers productivos, webhooks e intentos de
-  entrega externa quedan diferidos a ETAPA 101 - Mensajeria y Cotizaciones.
+  entrega externa quedan diferidos a ETAPA 103 - Mensajeria y Cotizaciones.
 - Vista Semana, Vista Mes y persistencia de ultima vista, filtros o contexto
   quedan diferidas.
 
@@ -300,13 +301,13 @@ Estado final actual:
 - Agenda privada y Agenda general estan implementadas y validadas.
 - El cierre formal se limita al alcance Agenda definido en este documento.
 
-## ETAPA vigente
+## ETAPA 95 - cierre formal
 
 ETAPA 95 - Experiencia de Lanzamiento y Design System Critico.
 
 Estado:
 
-Vigente.
+Cerrada tecnica y documentalmente por 95.7-C.
 
 Objetivo:
 
@@ -314,7 +315,275 @@ Ajustar la experiencia central de lanzamiento, accesibilidad, responsive y
 consistencia visual critica sin convertirlo en una reescritura del sistema de
 diseno.
 
+Gate previo a implementar cambios de ubicacion precisa en Sprint 95.1:
+
+- expediente tecnico: `docs/19_LOCATION_LEGAL_GATE.md`;
+- estado vigente: `GO condicionado` para implementar Sprint 95.1 conforme al
+  contrato y a los controles registrados en el expediente;
+- la integracion de geocoding productiva permanece condicionada a un proveedor
+  compatible y los documentos publicos siguen siendo gate de activacion y
+  lanzamiento;
+- el expediente no adelanta ETAPA 96.
+
+Evidencia de Sprint 95.1:
+
+- 95.1-A - Contrato de datos y compatibilidad historica: implementado y
+  validado;
+- 95.1-B - Privacidad de respuestas: implementada y validada en contratos
+  publicos, de administracion, Explorar y espacios seguidos;
+- 95.1-C - Integridad del selector: implementada y validada con borrador local,
+  seleccion explicita, confirmacion/cancelacion y proteccion ante respuestas
+  asincronas obsoletas;
+- 95.1-D - Geocoding backend y correccion de ownership: contratos y owner
+  implementados; `LocationPicker` queda desacoplado de Nominatim;
+- 95.1-D2 - adapter Geoapify: implementado con configuracion backend, endpoint
+  EU, normalizacion, atribucion, timeout, rate limit y fallback seguro;
+- 95.1-D3 - validacion real argentina: Geoapify queda `APROBADO CON
+  LIMITACIONES` como proveedor actual reemplazable; 35 requests reales en
+  Rafaela/Sunchales y reverse, sin errores ni 429, con controles posteriores de
+  ciudad y confidence validados;
+- 95.1-D queda cerrado;
+- 95.1-E - Search territorial y privacidad geografica: implementado y validado
+  en backend con identidad `city_key + province_code + country_code`, alcances
+  explicitos local/50 km/100 km, frontera previa a paginacion, distancia publica
+  preservada y banda privada interna de 1 km sin exposicion;
+- 95.1-F - Ubicacion dinamica del usuario y Cache-First: implementada y validada
+  con owner frontend de sesion, permiso contextual, fallback manual/perfil
+  explicito, frescuras territorial/distancia independientes, `positionRevision`,
+  claves territoriales sin coordenadas crudas y ampliacion 50/100 km explicita;
+- 95.1-G - Documentos publicos, hardening y cierre tecnico: implementado y
+  validado con rutas separadas, version backend unica, switch de privacidad,
+  presentacion segura, attribution y matriz final de controles;
+- Sprint 95.1 queda tecnicamente cerrado. La activacion productiva y el
+  lanzamiento permanecen condicionados a los datos institucionales, derechos,
+  retencion y formalizaciones registrados en el gate;
+- 95.2 - UX del mapa, permisos y privacidad: su alcance funcional original
+  quedo absorbido y validado dentro de 95.1. No debe abrirse como sprint de
+  implementacion ni duplicar selector, geocoding, permisos, privacidad,
+  Search territorial, ubicacion dinamica o Cache-First geografico;
+- siguiente sprint oficial: 95.3 - Inventario visual e infraestructura global
+  del tema;
+- primer bloque autorizado de 95.3: inventario visual completo y trazable del
+  frontend vigente. Todavia no autoriza crear tokens, migrar pantallas ni
+  modificar componentes;
+- 95.3-A - Inventario visual completo: cerrado documentalmente en
+  `docs/20_FRONTEND_VISUAL_INVENTORY.md`, sin cambios de UI ni tema;
+- 95.3-B - Contrato global del tema: cerrado documentalmente en
+  `docs/21_THEME_CONTRACT.md` con owner `frontend/src/core/theme/`, preferencia
+  separada de tema resuelto, `data-theme`, bootstrap previo a React y contrato
+  PWA compatible;
+- 95.3-C - Infraestructura global de tema: implementada y validada con kernel
+  bloqueante local, bridge canonico, owner `frontend/src/core/theme/`, API
+  React minima, persistencia tolerante a fallas, listener unico, sincronizacion
+  del documento y 41 tests frontend correctos;
+- 95.3-D - Validacion y hardening: completado con correccion CSP del fondo
+  anti-flash hacia un asset CSS local, 18 tests contractuales, 46 tests
+  frontend globales, lint sin errores y build correcto;
+- Sprint 95.3 queda tecnicamente cerrado;
+- 95.4-A - Contrato de tokens semanticos: cerrado documentalmente en
+  `docs/22_SEMANTIC_TOKENS_CONTRACT.md`, sin crear tokens, primitives ni migrar
+  pantallas;
+- 95.4-B - Infraestructura real de tokens semanticos: implementada y validada
+  con fuente fisica unica dark/light, aliases Tailwind v4, canvas compartido por
+  anti-flash y `theme-color`, `interactive-bubble` semantico y 52 tests
+  frontend correctos;
+- 95.4-C - Base compartida de componentes visuales: implementada y validada con
+  Button, Surface, controles de formulario, Alert y Skeleton semanticos;
+  `InteraccionButton`, `interactive-bubble` y `ActiveLayer` conservan sus
+  responsabilidades y no se migraron pantallas;
+- 95.4-D - Validacion, hardening y cierre tecnico: completado con contrato
+  accesible obligatorio para Button iconografico, API publica minima,
+  bundle acotado sin dependencias nuevas, 63 tests frontend correctos, lint sin
+  errores y build productivo correcto;
+- Sprint 95.4 queda tecnicamente cerrado, sin migrar consumidores;
+- 95.5 - Migracion controlada de pantallas criticas: cerrado tecnicamente;
+- 95.5-A - Perfil / Editar perfil y selector visible de apariencia:
+  implementado y validado con consumo exclusivo de `preference` y
+  `setPreference(...)`, primitives semanticas, 70 tests frontend correctos,
+  lint sin errores y build productivo correcto;
+- 95.5-B - Registro y superficies de autenticacion relacionadas: implementado
+  y validado con contratos legales y funcionales preservados, primitives
+  semanticas, 77 tests frontend correctos, lint sin errores y build productivo
+  correcto;
+- 95.5-C - Explorar: implementado y validado visualmente mediante tokens y
+  primitives, incluyendo los owners compartidos MainLayout, contexto
+  geografico, estado horario y guardia de inactividad estrictamente necesarios;
+  83 tests frontend correctos, lint sin errores y build productivo correcto;
+- correccion visual post 95.5-C: `Input` incorpora un slot trailing compartido
+  y los toggles de password de Registro/Login vuelven a quedar integrados sin
+  alterar su logica;
+- 95.5-D - Feed: implementado y validado visualmente, incluyendo
+  `PublicacionCard`, `HistoriasBar`, estados, bienvenida e
+  `InteraccionButton`; Cache-First, optimistic updates, historias, media y
+  navegacion preservados; 93 tests frontend correctos, lint sin errores y
+  build productivo correcto;
+- 95.5-E - Ranking / Tendencias: implementado y validado visualmente; reutiliza
+  `PublicacionCard` sin variantes paralelas y preserva query key, orden,
+  Cache-First, merge, locks, optimistic updates y rollback; se corrigio en el
+  owner CSS la generacion real de aliases `text-primary/secondary/muted/inverse`;
+  101 tests frontend correctos, lint sin errores y build productivo correcto;
+- la matriz acumulada de cobertura vive en
+  `23_FRONTEND_VISUAL_COVERAGE.md`; mantiene pendientes que bloquean el cierre
+  de 95.5;
+- 95.5-F - Seguidos: implementado y validado visualmente; migra shell, tabs,
+  cards y estados, reutiliza el contexto geografico compartido y preserva
+  Cache-First, `positionRevision`, permisos y privacidad; evidencia: 107 tests
+  frontend correctos, lint sin errores y build productivo correcto;
+- 95.5-G - Perfil / identidad visible de usuario: implementado visualmente
+  sobre la superficie real protegida `/perfil`; no existe perfil público de
+  terceros y no se inventaron rutas, contratos, publicaciones ni acciones;
+  evidencia: 114 tests frontend correctos, lint sin errores y build productivo
+  correcto;
+- 95.5-H - Alta, edicion y administracion de espacios: implementado
+  visualmente en formulario compartido, listado, LocationPicker y editor de
+  horarios, preservando contratos, privacidad, geocoding y branding;
+  evidencia: 123 tests frontend correctos, lint sin errores y build productivo
+  correcto;
+- 95.5-I - Perfil publico de espacio: implementado visualmente en shell,
+  identidad, informacion publica, acciones, publicaciones, estados y overlays
+  propios; reutiliza `PublicacionCard`, `EstadoHorarioBadge` y los owners de
+  Historias/Agenda/Moderacion sin absorber sus superficies independientes;
+  preserva detalle, Cache-First, privacidad, seguimiento y contratos; evidencia:
+  129 tests frontend correctos, lint sin errores y build productivo correcto;
+- 95.5-J - Historias: `HistoriasViewer` integrado como superficie migrada de
+  apariencia fija, aislada del tema global sin rediseño; formulario de creacion
+  migrado a tokens/primitives con upload y payload preservados; evidencia: 140
+  tests frontend correctos, lint sin errores y build productivo correcto;
+- 95.5-K - Agenda y reservas: Agenda general y privada migradas a
+  tokens/primitives sobre `ActiveLayer`, preservando fechas, formularios,
+  estados, Cache-First, versionado, endpoints e invalidaciones; evidencia: 147
+  tests frontend correctos, lint sin errores y build productivo correcto;
+- 95.5-L - Superficies legales: Terminos y Politica de Privacidad migrados
+  mediante el shell compartido, tokens, `Surface` y `Alert`, preservando texto,
+  rutas, versionado backend-owned, enlaces y aceptaciones de Registro;
+  evidencia: 152 tests frontend correctos, lint sin errores y build productivo
+  correcto;
+- 95.5-M - Auditoria visual transversal: detecta y corrige en el owner comun
+  la precedencia de `interactive-bubble` que anulaba superficies/foreground de
+  Button, valida nuevamente las superficies migradas y concreta el residual en
+  tres superficies: Home, detalle de publicacion y DenunciaModal;
+- 95.5-N - Detalle de publicacion y DenunciaModal: migrados y validados en
+  light/dark con owners compartidos, media preservada y contratos funcionales,
+  cache e interacciones intactos; queda Home como unica superficie pendiente;
+- correccion acotada posterior a 95.5-N en Editar perfil: el selector de
+  apariencia queda oculto tras el disclosure `Color de fondo`, mantiene
+  aplicacion y persistencia inmediatas mediante `core/theme` y no participa del
+  submit; se retiro de esta UI el editor historico `color_fondo` y el PATCH de
+  perfil queda limitado a provincia y ciudad, sin eliminar su contrato backend;
+- se corrigio la asociacion accidental del decorador `PATCH /usuarios/me` con
+  el endpoint de documentos vigentes, causa del HTTP 500 al guardar un perfil
+  valido; handler, payload y persistencia quedaron cubiertos por test;
+- 95.5-O - Home: ruta publica `/`, hero, tres cards y tres CTAs-enlace migrados
+  y validados mediante tokens, `Surface`, `MainLayout` y bubble compartida, sin
+  alterar autenticacion, destinos ni responsive; la matriz queda con cero
+  superficies pendientes de migracion;
+- QA visual global final de 95.5: completado sobre las 22 filas, con evidencia
+  renderizada publica light/dark desktop/movil, confrontacion de superficies
+  protegidas/modales y correccion responsive compartida `min-w-0` en Surface y
+  controles; resultado 0 pendientes, 0 correcciones requeridas, 0 sin validar y
+  0 defectos visuales bloqueantes conocidos;
+- Sprint 95.5 queda tecnicamente cerrado;
+- sprint vigente: 95.6 - Consolidacion de accesibilidad, overlays, responsive
+  y consistencia;
+- 95.6-A - Accesibilidad transversal: implementado y validado. `ActiveLayer`
+  concentra semantica modal, foco inicial, trap, Escape, scroll lock y retorno
+  de foco tambien para bienvenida, inactividad, Crear Historia, estadisticas y
+  Crear publicacion; su backdrop queda fuera del orden de tabulacion. Se
+  corrigieron labels del formulario de espacios, selector de portada con
+  boton nativo, enlaces de detalle en `PublicacionCard`, activacion por teclado
+  en `HistoriasViewer`, nombres de producto y reduced motion compartido. La
+  logica funcional, tema y backend permanecen intactos;
+- 95.6-B - Overlays, modales y consistencia: implementado y validado.
+  `ActiveLayer` queda como owner canonico y unico de portal, backdrop, foco,
+  trap, Escape, restauracion, scroll lock y stacking base; se consolida el
+  backdrop del editor de horarios, cancelacion segura de timers de foco y
+  desplazamiento de capas altas en viewport reducido. `HistoriasViewer` sigue
+  como excepcion fullscreen fija y `LocationPicker` como superficie inline;
+- 95.6-C - hardening responsive transversal: implementado y validado. Se
+  consolidaron contraccion, wrapping, grupos de acciones y viewport de overlays
+  desde primitives/owners compartidos, sin cambiar breakpoints ni funcionalidad;
+- 95.6-D - consistencia y hardening final: implementado y validado. Owners,
+  API publica de primitives, bubble, ActiveLayer, responsive, accesibilidad y
+  tema permanecen coherentes; no se detectaron duplicaciones ni residuos
+  estructurales nuevos del sprint;
+- Sprint 95.6 queda tecnicamente cerrado;
+- siguiente sprint oficial: 95.7 - QA integral, hardening, Frontend Ownership
+  Audit, auditoria de residuos tecnicos y cierre documental;
+- gate de cierre de 95.5: matriz exhaustiva sin pendientes de todas las
+  pantallas, layouts, navegacion, formularios, cards, capas, estados, loaders,
+  skeletons, superficies compartidas y botones en light/dark; solo se admiten
+  excepciones documentadas de branding de contenido, mapa/proveedor externo,
+  media o necesidad de dominio;
+- los defectos compartidos de contraste deben corregirse en tokens/primitives
+  antes que mediante parches fisicos locales y requieren QA visual global en
+  light, dark y cambio runtime;
+- criterio obligatorio previo al cierre de ETAPA 95 satisfecho por 95.5-A: el
+  selector de apariencia vive en `Perfil -> Editar perfil`, cambia de forma
+  inmediata y persiste mediante el owner global, sin controles alternativos;
+- el trabajo visual residual del mapa se limita a consistencia, accesibilidad y
+  responsive y se tratara con las mismas reglas transversales de 95.6, sin
+  reabrir su contrato funcional;
+- cierre de ETAPA 95: queda registrada una `Frontend Ownership Audit`
+  transversal, sin ampliar el alcance de 95.1-D;
+- cierre de ETAPA 95: queda registrada una auditoria especifica de residuos
+  tecnicos generados durante la etapa. Debe relevar scripts, temporales, tests
+  auxiliares, mocks, logs/debug, TODO/FIXME introducidos, codigo muerto,
+  helpers/componentes sin consumidores, CSS/clases reemplazadas, duplicados,
+  adapters abandonados, residuos Nominatim, validacion Geoapify y migraciones
+  one-shot. Cada hallazgo se clasifica con evidencia como `conservar`,
+  `mover/reubicar`, `documentar` o `eliminar por residuo`; no se elimina
+  automaticamente ni se descartan tests con valor permanente. Este gate no se
+  ejecuta durante 95.5 y bloquea el cierre final hasta quedar resuelto.
+
+Plan restante oficial de ETAPA 95:
+
+- 95.3 - Inventario visual e infraestructura global del tema: cerrado
+  tecnicamente;
+- 95.4 - Tokens semanticos y componentes compartidos: cerrado tecnicamente;
+- 95.5 - Migracion controlada y cobertura visual global: cerrado tecnicamente;
+- 95.6 - Consolidacion de accesibilidad, overlays, responsive y consistencia:
+  cerrado tecnicamente;
+- 95.7 - QA integral, hardening, `Frontend Ownership Audit`, auditoria de
+  residuos tecnicos y cierre documental. 95.7-A Frontend Ownership Audit
+  completado: owners principales aprobados, bypass directo de Auth corregido y
+  deuda historica de token, query keys, transporte y doble estado documentada
+  en `docs/24_FRONTEND_OWNERSHIP_AUDIT.md`; 95.7-B auditoria integral de
+  residuos completada con evidencia en `docs/25_TECHNICAL_RESIDUE_AUDIT.md`,
+  siete entradas categoria D retiradas y cero residuos reales demostrados
+  pendientes. 95.7-C - QA tecnico final y cierre documental queda completado:
+  241 tests backend y 190 tests frontend correctos, `compileall`, lint sin
+  errores, build productivo y `git diff --check` correctos; gates tecnicos y
+  documentales satisfechos. ETAPA 95 queda cerrada sin adelantar ETAPA 96;
+
+Siguiente etapa obligatoria aprobada:
+
+- ETAPA 96 - Plataforma Instalable y PWA Enterprise.
+- Estado: pendiente y no iniciada; es la siguiente etapa oficial despues del
+  cierre de ETAPA 95.
+- Documento tecnico propietario: `docs/18_PWA_ENTERPRISE.md`.
+- Gate: no pueden comenzar pruebas masivas, beta publica ni lanzamiento
+  mientras ETAPA 96 permanezca abierta o conserve bloqueantes criticos o altos.
+- ETAPA 98 - Correccion y Pulido Visual del Frontend: etapa futura completa,
+  posterior a PWA y Administracion Operativa Minima y previa a Infraestructura
+  y Lanzamiento Controlado. No forma parte del cierre de ETAPA 95.
+
 ## Ultima etapa cerrada
+
+ETAPA 95 - Experiencia de Lanzamiento y Design System Critico.
+
+Estado:
+
+Cerrada tecnica y documentalmente por 95.7-C.
+
+Resultado:
+
+Sistema de ubicacion y privacidad, Search territorial, contratos legales,
+tema, tokens, primitives, cobertura visual, accesibilidad, overlays,
+responsive, ownership y residuos quedaron confrontados con suites completas y
+gates satisfechos. Los requisitos institucionales y operativos previos a
+produccion permanecen trazados sin declararse aprobados.
+
+## Etapa cerrada anterior
 
 ETAPA 94 - QA Integral y Hardening Funcional.
 
@@ -387,8 +656,14 @@ Pendientes derivados:
 
 - ETAPA 95: experiencia de lanzamiento, design system critico, mapa y sistema
   de temas.
-- ETAPA 96: administracion operativa minima, incluyendo capacidades de
+- ETAPA 96: plataforma instalable y PWA Enterprise, obligatoria antes de
+  administracion operativa, infraestructura, pruebas masivas, beta y
+  lanzamiento.
+- ETAPA 97: administracion operativa minima, incluyendo capacidades de
   operacion manual que no forman parte de observabilidad base.
+- ETAPA 98: correccion y pulido visual completo del frontend, posterior a PWA
+  y operacion minima y previo al lanzamiento controlado.
+- ETAPA 99: infraestructura y lanzamiento controlado.
 - Etapas futuras: infraestructura frontend de tests, carrera extrema potencial
   en likes de historias, actualizacion de Browserslist, optimizacion de chunks,
   warnings historicos de SQLite y migracion de `datetime.utcnow()` a timestamps

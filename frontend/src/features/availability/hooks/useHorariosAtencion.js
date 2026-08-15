@@ -6,7 +6,7 @@ import {
   reemplazarHorariosAtencion,
 } from "@features/availability/services/horarios_atencion_service";
 
-export const horariosAtencionQueryKeys = {
+const horariosAtencionQueryKeys = {
   detalle: (comercioId) => ["availability", "horarios", Number(comercioId)],
 };
 

@@ -12,6 +12,8 @@ Documentos relacionados: `01_ENGINEERING.md`, `02_PRODUCT.md`,
 `08_ENGINEERING_PRINCIPLES.md`, `15_LEGAL_AND_OPERATIONAL.md`,
 `16_DATA_INTEGRITY_AND_RECOVERY.md`,
 `17_OBSERVABILITY_AND_OPERATIONS.md`.
+Documento tecnico relacionado para plataforma instalable y PWA:
+`18_PWA_ENTERPRISE.md`.
 Cuando debe consultarse: antes de cualquier auditoria, diseno, propuesta,
 prompt, implementacion, validacion, cierre de etapa o cambio documental.
 
@@ -81,6 +83,32 @@ El Sistema de Gobierno de FeedGo está compuesto por:
 - `15_LEGAL_AND_OPERATIONAL`
 - `16_DATA_INTEGRITY_AND_RECOVERY`
 - `17_OBSERVABILITY_AND_OPERATIONS`
+
+`18_PWA_ENTERPRISE` es el documento tecnico especializado propietario de la
+arquitectura y experiencia PWA. No integra el Sistema de Gobierno, pero debe
+consultarse cuando el trabajo afecte la aplicacion instalada o su compatibilidad.
+
+`19_LOCATION_LEGAL_GATE` es el expediente tecnico subordinado a
+`15_LEGAL_AND_OPERATIONAL` para el gate de ubicacion de ETAPA 95. No reemplaza
+el documento legal-operativo, los documentos publicos ni la revision
+profesional aplicable.
+
+`20_FRONTEND_VISUAL_INVENTORY` es el documento tecnico de auditoria
+subordinado a `05_SEARCH_ROADMAP` para el inventario visual y el diseno
+posterior del tema en ETAPA 95. No define por si mismo roadmap, tokens ni
+decisiones permanentes.
+
+`21_THEME_CONTRACT` es el documento tecnico de arquitectura frontend
+subordinado a `05_SEARCH_ROADMAP` y propietario del contrato runtime de tema
+global de ETAPA 95. No reemplaza el inventario, el roadmap ni el documento PWA.
+
+`22_SEMANTIC_TOKENS_CONTRACT` es el documento tecnico de arquitectura visual
+subordinado a `05_SEARCH_ROADMAP` y propietario del contrato de tokens
+semanticos de ETAPA 95. No reemplaza el inventario ni autoriza migraciones.
+
+`25_TECHNICAL_RESIDUE_AUDIT` es la evidencia tecnica subordinada a
+`05_SEARCH_ROADMAP` del gate de residuos de ETAPA 95. Clasifica evidencia y
+acciones; no reemplaza Gobierno ni autoriza refactors generales.
 
 Los documentos `10+` pueden ser documentos tecnicos especializados o
 documentos transversales incorporados explicitamente al Sistema de Gobierno.

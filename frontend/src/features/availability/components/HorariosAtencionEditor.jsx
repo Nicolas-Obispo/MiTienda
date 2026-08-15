@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { ActiveLayer } from "@core";
+import { Alert, Button, Skeleton, Surface } from "@shared";
 import {
   useHorariosAtencion,
   useReemplazarHorariosAtencionMutation,
@@ -404,10 +405,10 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
       initialFocusRef={cerrarButtonRef}
       closeOnBackdrop={false}
       className="px-3 py-6"
-      backdropClassName="bg-black/75"
-      contentClassName="flex max-h-full w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 text-white shadow-2xl"
+      backdropClassName="bg-overlay-backdrop"
+      contentClassName="flex max-h-full w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface-elevated text-primary shadow-elevation"
     >
-        <div className="flex items-start justify-between gap-4 border-b border-gray-800 p-4">
+        <div className="flex items-start justify-between gap-4 border-b border-border p-4">
           <div className="min-w-0">
             <h3 id="horarios-editor-title" className="text-lg font-semibold">
               {estaAplicandoHorarios
@@ -416,42 +417,41 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
                   ? diaActivo.nombre
                   : "Editar horarios"}
             </h3>
-            <p className="mt-1 truncate text-sm text-gray-400">
+            <p className="mt-1 truncate text-sm text-secondary">
               {comercio?.nombre || "Espacio"}
             </p>
           </div>
 
-          <button
+          <Button
             ref={cerrarButtonRef}
             type="button"
             onClick={cancelarEdicion}
-            className="rounded-lg px-3 py-2 text-sm text-gray-300 transition hover:bg-gray-900 focus:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-white/10"
+            variant="secondary"
+            className="px-3 py-2 text-sm"
           >
             Cerrar
-          </button>
+          </Button>
         </div>
 
         <div className="overflow-y-auto p-4">
           {isLoadingSinCache ? (
-            <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-              <p className="text-sm text-gray-300">Cargando horarios...</p>
-            </div>
+            <Skeleton className="h-14 rounded-xl border border-border" />
           ) : estaAplicandoHorarios ? (
             <div className="space-y-4">
-              <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">
+              <Surface variant="subtle" className="rounded-xl p-3">
+                <p className="text-xs uppercase tracking-wide text-muted">
                   Origen
                 </p>
-                <p className="mt-1 text-sm font-semibold text-white">
+                <p className="mt-1 text-sm font-semibold text-primary">
                   {obtenerDia(diaOrigenAplicar)?.nombre}
                 </p>
-                <p className="mt-1 text-sm text-gray-300">
+                <p className="mt-1 text-sm text-secondary">
                   {obtenerResumenDia(franjasOrigen)}
                 </p>
-              </div>
+              </Surface>
 
               <fieldset className="space-y-2">
-                <legend className="text-sm font-semibold text-white">
+                <legend className="text-sm font-semibold text-primary">
                   Elegi los dias de destino
                 </legend>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -468,14 +468,14 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
                         key={dia.id}
                         className={`flex min-h-12 items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm transition ${
                           esOrigen
-                            ? "bg-gray-900 text-gray-600"
-                            : "bg-gray-900/70 text-gray-200 hover:bg-gray-900"
+                            ? "bg-disabled-surface text-disabled-text"
+                            : "bg-surface-subtle text-primary hover:bg-surface"
                         }`}
                       >
                         <span>
                           <span className="font-medium">{dia.nombre}</span>
                           {tieneHorarios ? (
-                            <span className="block text-xs text-amber-300">
+                            <span className="block text-xs text-warning-text">
                               Tiene horarios, se reemplazaran
                             </span>
                           ) : null}
@@ -485,7 +485,7 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
                           checked={estaSeleccionado}
                           disabled={esOrigen}
                           onChange={() => toggleDiaDestino(dia.id)}
-                          className="h-4 w-4 rounded border-gray-600 bg-gray-950 text-white"
+                          className="h-4 w-4 rounded border-border-strong bg-surface text-interactive-primary"
                         />
                       </label>
                     );
@@ -494,7 +494,7 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
               </fieldset>
 
               {destinosConHorarios.length > 0 ? (
-                <label className="flex items-start gap-3 rounded-xl bg-amber-950/30 p-3 text-sm text-amber-100">
+                <label className="flex items-start gap-3 rounded-xl bg-warning-surface p-3 text-sm text-warning-text">
                   <input
                     type="checkbox"
                     checked={reemplazoConfirmado}
@@ -502,7 +502,7 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
                       setReemplazoConfirmado(event.target.checked);
                       setAplicarErrorMessage("");
                     }}
-                    className="mt-0.5 h-4 w-4 rounded border-amber-700 bg-gray-950"
+                    className="mt-0.5 h-4 w-4 rounded border-warning-border bg-surface"
                   />
                   <span>
                     Confirmo reemplazar los horarios existentes de los dias
@@ -512,62 +512,66 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
               ) : null}
 
               {aplicarErrorMessage ? (
-                <p className="rounded-xl bg-red-950/40 p-3 text-sm text-red-100">
+                <p className="rounded-xl bg-danger-surface p-3 text-sm text-danger-text" role="alert">
                   {aplicarErrorMessage}
                 </p>
               ) : null}
 
               <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                <button
+                <Button
                   type="button"
                   onClick={limpiarFlujoAplicar}
-                  className="min-h-11 rounded-xl px-4 py-2 text-sm font-semibold text-gray-200 transition hover:bg-gray-900 focus:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-white/10"
+                  variant="secondary"
+                  className="min-h-11 px-4 py-2 text-sm"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={aplicarHorariosADias}
-                  className="min-h-11 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-950 transition hover:opacity-90"
+                  variant="primary"
+                  className="min-h-11 px-4 py-2 text-sm"
                 >
                   Aplicar horarios
-                </button>
+                </Button>
               </div>
             </div>
           ) : diaActivo ? (
             <div className="space-y-4">
-              <button
+              <Button
                 type="button"
                 onClick={volverAlResumen}
-                className="rounded-lg px-3 py-2 text-sm text-gray-300 transition hover:bg-gray-900 focus:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-white/10"
+                variant="secondary"
+                className="px-3 py-2 text-sm"
               >
                 Volver al resumen semanal
-              </button>
+              </Button>
 
-              <section className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
+              <Surface as="section" variant="subtle" className="rounded-xl p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <h4 className="text-sm font-semibold text-white">
+                    <h4 className="text-sm font-semibold text-primary">
                       {diaActivo.nombre}
                     </h4>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-muted">
                       {obtenerResumenDia(franjasDiaActivo)}
                     </p>
                   </div>
 
                   {franjasDiaActivo.length > 0 ? (
-                    <button
+                    <Button
                       type="button"
                       onClick={() => dejarDiaSinAtencion(diaActivo.id)}
-                      className="min-h-10 rounded-lg px-3 py-2 text-xs font-semibold text-gray-300 transition hover:bg-gray-800 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-white/10"
+                      variant="secondary"
+                      className="min-h-10 px-3 py-2 text-xs"
                     >
                       Marcar cerrado
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
 
                 {franjasDiaActivo.length === 0 ? (
-                  <p className="mt-4 rounded-lg bg-gray-950/60 p-3 text-sm text-gray-400">
+                  <p className="mt-4 rounded-lg bg-surface p-3 text-sm text-muted">
                     Este dia esta cerrado.
                   </p>
                 ) : (
@@ -620,41 +624,44 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
                           }
                         />
 
-                        <button
+                        <Button
                           type="button"
                           onClick={() => eliminarFranja(franja.client_id)}
-                          className="min-h-10 rounded-lg px-3 py-2 text-xs font-semibold text-red-200 transition hover:bg-red-950/60 focus:bg-red-950/60 focus:outline-none focus:ring-2 focus:ring-red-200/20"
+                          variant="danger"
+                          className="min-h-10 px-3 py-2 text-xs"
                           aria-label={`Eliminar franja ${indexDia + 1} de ${diaActivo.nombre}`}
                         >
                           Eliminar
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>
                 )}
 
                 <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => agregarFranja(diaActivo.id)}
-                    className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-100 transition hover:bg-gray-800 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-white/10"
+                    variant="secondary"
+                    className="min-h-10 px-3 py-2 text-sm"
                   >
                     {franjasDiaActivo.length > 0
                       ? "+ Agregar otra franja"
                       : "+ Agregar franja"}
-                  </button>
+                  </Button>
 
                   {franjasDiaActivo.length > 0 ? (
-                    <button
+                    <Button
                       type="button"
                       onClick={() => abrirAplicarHorarios(diaActivo.id)}
-                      className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-100 transition hover:bg-gray-800 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-white/10"
+                      variant="secondary"
+                      className="min-h-10 px-3 py-2 text-sm"
                     >
                       Aplicar estos horarios a otros dias
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
-              </section>
+              </Surface>
             </div>
           ) : (
             <div className="space-y-2">
@@ -662,61 +669,64 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
                 const franjasDia = obtenerFranjasDia(franjas, dia.id);
 
                 return (
-                  <button
+                  <Button
                     key={dia.id}
                     type="button"
                     onClick={() => setDiaSeleccionado(dia.id)}
-                    className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-gray-900/70 px-3 py-2 text-left transition hover:bg-gray-900 focus:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-white/10"
+                    variant="secondary"
+                    className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left"
                   >
                     <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-white">
+                      <span className="block text-sm font-semibold text-primary">
                         {dia.nombre}
                       </span>
                       <span
                         className={`mt-0.5 block truncate text-sm ${
                           franjasDia.length > 0
-                            ? "text-gray-300"
-                            : "text-gray-500"
+                            ? "text-secondary"
+                            : "text-muted"
                         }`}
                       >
                         {obtenerResumenDia(franjasDia)}
                       </span>
                     </span>
-                    <span className="shrink-0 text-xs font-semibold text-gray-300">
+                    <span className="shrink-0 text-xs font-semibold text-secondary">
                       Editar
                     </span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
           )}
 
           {errorMessage ? (
-            <div className="mt-4 rounded-xl border border-red-900 bg-red-950/40 p-3">
-              <p className="text-sm font-semibold text-red-200">Error</p>
-              <p className="mt-1 text-sm text-red-100">{errorMessage}</p>
-            </div>
+            <Alert variant="danger" role="alert" className="mt-4 p-3">
+              <p className="text-sm font-semibold">Error</p>
+              <p className="mt-1 text-sm">{errorMessage}</p>
+            </Alert>
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-gray-800 p-4 sm:flex-row sm:justify-between">
-          <button
+        <div className="flex flex-col gap-2 border-t border-border p-4 sm:flex-row sm:justify-between">
+          <Button
             type="button"
             onClick={cancelarEdicion}
             disabled={isSaving}
-            className="min-h-11 rounded-xl px-4 py-2 text-sm font-semibold text-gray-200 transition hover:bg-gray-900 focus:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-white/10 disabled:opacity-60"
+            variant="secondary"
+            className="min-h-11 px-4 py-2 text-sm"
           >
             Cancelar
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
             onClick={guardarHorarios}
             disabled={isSaving || isLoadingSinCache}
-            className="min-h-11 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-950 transition hover:opacity-90 disabled:opacity-60"
+            variant="primary"
+            className="min-h-11 px-4 py-2 text-sm"
           >
             {isSaving ? "Guardando..." : "Guardar horarios"}
-          </button>
+          </Button>
         </div>
     </ActiveLayer>
   );

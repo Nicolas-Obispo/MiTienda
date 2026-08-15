@@ -8,7 +8,8 @@ producto.
 Documento dueno: `docs/02_PRODUCT.md`.
 Responsable funcional: Producto.
 Documentos relacionados: `00_GOVERNANCE.md`, `05_SEARCH_ROADMAP.md`,
-`07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`.
+`07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`,
+`18_PWA_ENTERPRISE.md`.
 Cuando debe consultarse: antes de definir alcance funcional, experiencia de
 usuario, jerarquia visual, datos solicitados al usuario o cambios de producto.
 
@@ -23,6 +24,10 @@ usuario, jerarquia visual, datos solicitados al usuario o cambios de producto.
   espacios.
 - La administracion de espacios debe poder contemplar, en etapas futuras,
   personas que gestionan multiples espacios propios o de terceros.
+- FeedGo es una aplicacion multiplataforma.
+- Su primer canal oficial de distribucion sera una Progressive Web App (PWA).
+- La aplicacion web no constituye un producto diferente ni una version
+  temporal previa a aplicaciones moviles futuras.
 
 ## Casos de uso de administracion multi-espacio
 
@@ -76,6 +81,9 @@ permisos, ownership, seguridad y operacion.
 - El usuario no debe completar datos que el sistema pueda inferir con alta confianza.
 - Guiar al usuario mediante ayudas contextuales.
 - Cada dato solicitado debe aportar valor al buscador.
+- La experiencia instalada debe comportarse como una aplicacion, con
+  navegacion, carga, teclado, safe areas, overlays, actualizacion y recuperacion
+  coherentes con una aplicacion movil.
 
 ## Design System
 

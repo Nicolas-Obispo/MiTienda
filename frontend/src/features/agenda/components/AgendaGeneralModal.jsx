@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import { ActiveLayer } from "@core";
+import { Alert, Button, Input, Select, Skeleton, Surface } from "@shared";
 import { useAgendaGeneralElementos } from "@features/agenda/hooks/useFeedGoAgenda";
 import { obtenerHttpStatus } from "@features/agenda/services/feedgo_agenda_service";
 import AgendaPrivadaModal from "@features/agenda/components/AgendaPrivadaModal";
@@ -154,85 +155,86 @@ export default function AgendaGeneralModal({ comercios = [], onClose }) {
     <>
       <ActiveLayer
         onClose={onClose}
+        backdropClassName="bg-overlay-backdrop"
         labelledBy="agenda-general-title"
         describedBy="agenda-general-description"
-        contentClassName="mx-3 flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl"
+        contentClassName="mx-3 flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-surface-elevated text-primary shadow-elevation"
       >
-        <header className="flex items-start justify-between gap-3 border-b border-gray-800 px-4 py-4">
+        <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-4">
           <div className="min-w-0">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-orange-300">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand">
               <CalendarDays size={14} aria-hidden="true" />
               Agenda general
             </p>
-            <h2 id="agenda-general-title" className="mt-1 text-lg font-bold text-white">
+            <h2 id="agenda-general-title" className="mt-1 text-lg font-bold text-primary">
               Todos tus espacios
             </h2>
-            <p id="agenda-general-description" className="mt-1 text-sm text-gray-400">
+            <p id="agenda-general-description" className="mt-1 text-sm text-secondary">
               Consulta una vista cronologica integrada de tus agendas privadas.
             </p>
           </div>
 
-          <button
-            type="button"
+          <Button
+            iconOnly
+            variant="ghost"
             onClick={onClose}
-            className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-300 transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
             aria-label="Cerrar agenda general"
           >
             <X size={18} aria-hidden="true" />
-          </button>
+          </Button>
         </header>
 
         <div className="overflow-y-auto px-4 py-4">
-          <section className="rounded-xl bg-gray-900/60 p-3">
+          <Surface as="section" variant="subtle" className="rounded-xl p-3">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-sm font-semibold capitalize text-white">
+                <p className="text-sm font-semibold capitalize text-primary">
                   {formatearFecha(fecha)}
                 </p>
-                <p className="text-xs text-gray-500">Vista diaria cronologica</p>
+                <p className="text-xs text-muted">Vista diaria cronologica</p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
+                <Button
+                  iconOnly
+                  variant="ghost"
                   onClick={() => setFecha(moverFecha(fecha, -1))}
-                  className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-300 transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                   aria-label="Dia anterior"
                 >
                   <ChevronLeft size={18} aria-hidden="true" />
-                </button>
-                <input
+                </Button>
+                <Input
                   type="date"
                   value={fecha}
                   onChange={(event) => setFecha(event.target.value || fechaInputHoy())}
-                  className="min-h-10 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-orange-500"
+                  className="min-h-10 w-auto rounded-lg px-3 py-2 text-sm"
                   aria-label="Fecha de agenda general"
                 />
-                <button
-                  type="button"
+                <Button
+                  iconOnly
+                  variant="ghost"
                   onClick={() => setFecha(moverFecha(fecha, 1))}
-                  className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-300 transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                   aria-label="Dia siguiente"
                 >
                   <ChevronRight size={18} aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="ghost"
                   onClick={() => setFecha(fechaInputHoy())}
-                  className="min-h-10 rounded-lg px-3 py-2 text-sm font-semibold text-gray-300 transition hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+                  className="min-h-10 px-3 py-2 text-sm"
                 >
                   Hoy
-                </button>
+                </Button>
               </div>
             </div>
 
             <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
               <label className="block md:col-span-2">
-                <span className="text-xs text-gray-400">Espacio</span>
-                <select
+                <span className="text-xs text-secondary">Espacio</span>
+                <Select
                   value={comercioFiltro}
                   onChange={(event) => setComercioFiltro(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white"
+                  className="mt-1 rounded-lg px-3 py-2 text-sm"
                 >
                   <option value="">Todos los espacios</option>
                   {comercios.map((comercio) => (
@@ -240,30 +242,30 @@ export default function AgendaGeneralModal({ comercios = [], onClose }) {
                       {comercio.nombre || "Espacio"}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
 
               <label className="block">
-                <span className="text-xs text-gray-400">Estado</span>
-                <select
+                <span className="text-xs text-secondary">Estado</span>
+                <Select
                   value={estadoFiltro}
                   onChange={(event) => setEstadoFiltro(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white"
+                  className="mt-1 rounded-lg px-3 py-2 text-sm"
                 >
                   {ESTADOS_FILTRO.map((estado) => (
                     <option key={estado.value || "todos"} value={estado.value}>
                       {estado.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
 
               <label className="block">
-                <span className="text-xs text-gray-400">Tipo</span>
-                <select
+                <span className="text-xs text-secondary">Tipo</span>
+                <Select
                   value={tipoFiltro}
                   onChange={(event) => setTipoFiltro(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white"
+                  className="mt-1 rounded-lg px-3 py-2 text-sm"
                 >
                   <option value="">Todos</option>
                   {TIPOS.map((tipo) => (
@@ -271,92 +273,91 @@ export default function AgendaGeneralModal({ comercios = [], onClose }) {
                       {tipo.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
             </div>
 
             {comercioSeleccionado ? (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() => abrirAgendaIndividual(comercioSeleccionado)}
-                className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-orange-300 transition hover:bg-orange-950/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+                className="mt-3 min-h-10 gap-2 px-3 py-2 text-sm text-brand"
               >
                 <ExternalLink size={16} aria-hidden="true" />
                 Abrir agenda individual
-              </button>
+              </Button>
             ) : null}
-          </section>
+          </Surface>
 
           {elementosQuery.isError ? (
-            <div className="mt-4 rounded-xl border border-red-900 bg-red-950/40 p-4 text-sm text-red-100">
+            <Alert variant="danger" role="alert" className="mt-4">
               {mensajeErrorAmigable(elementosQuery.error)}
-            </div>
+            </Alert>
           ) : null}
 
           <section className="mt-4 space-y-2">
             {elementosQuery.isLoading && items.length === 0 ? (
-              <p className="rounded-xl bg-gray-900/60 p-4 text-sm text-gray-400">
-                Cargando agenda general...
-              </p>
+              <Skeleton className="h-12 rounded-xl" />
             ) : null}
 
             {!elementosQuery.isLoading && items.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-gray-800 bg-gray-900/40 p-6 text-center">
-                <p className="font-semibold text-white">
+              <Surface className="rounded-xl border-dashed p-6 text-center">
+                <p className="font-semibold text-primary">
                   No hay elementos para esta seleccion
                 </p>
-                <p className="mt-1 text-sm text-gray-400">
+                <p className="mt-1 text-sm text-secondary">
                   Cambia la fecha, el espacio o los filtros para revisar otros elementos.
                 </p>
-              </div>
+              </Surface>
             ) : null}
 
             {items.map(({ comercio, contexto, elemento }) => (
-              <article
+              <Surface
+                as="article"
                 key={`${comercio.id}-${elemento.id}`}
-                className="rounded-xl border border-gray-800 bg-gray-900/70 p-4"
+                className="rounded-xl p-4"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-orange-950/40 px-2 py-0.5 text-[11px] font-semibold text-orange-200">
+                      <span className="rounded-full border border-selected-border bg-selected-surface px-2 py-0.5 text-[11px] font-semibold text-selected-text">
                         {comercio.nombre || "Espacio"}
                       </span>
-                      <span className="rounded-full bg-gray-800 px-2 py-0.5 text-[11px] font-semibold text-gray-200">
+                      <span className="rounded-full border border-border bg-surface-subtle px-2 py-0.5 text-[11px] font-semibold text-secondary">
                         {TIPOS.find((tipo) => tipo.value === elemento.tipo)?.label ||
                           elemento.tipo}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted">
                         {elemento.estado} - v{elemento.version}
                       </span>
                       {contexto.estado === "archivado" ? (
-                        <span className="text-xs text-yellow-300">Archivado</span>
+                        <span className="text-xs text-warning-text">Archivado</span>
                       ) : null}
                     </div>
 
-                    <h3 className="mt-2 break-words font-semibold text-white">
+                    <h3 className="mt-2 break-words font-semibold text-primary">
                       {elemento.titulo}
                     </h3>
-                    <p className="mt-1 text-sm text-gray-300">
+                    <p className="mt-1 text-sm text-secondary">
                       {formatearRango(elemento)}
                     </p>
                     {elemento.descripcion ? (
-                      <p className="mt-2 break-words text-sm text-gray-400">
+                      <p className="mt-2 break-words text-sm text-secondary">
                         {elemento.descripcion}
                       </p>
                     ) : null}
                   </div>
 
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
                     onClick={() => abrirAgendaIndividual(comercio)}
-                    className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-orange-200 transition hover:bg-orange-950/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+                    className="min-h-9 gap-1 px-2 py-1.5 text-xs text-brand"
                   >
                     <ExternalLink size={14} aria-hidden="true" />
                     Abrir agenda
-                  </button>
+                  </Button>
                 </div>
-              </article>
+              </Surface>
             ))}
           </section>
         </div>

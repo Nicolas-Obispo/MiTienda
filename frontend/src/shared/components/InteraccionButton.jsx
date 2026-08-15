@@ -24,24 +24,18 @@ export default function InteraccionButton({
   const config = {
     like: {
       icon: "♥",
-      activeColor: "text-red-500",
-      inactiveColor: "text-gray-300",
-      activeBubbleVars: {
-        "--bubble-border": "rgba(239, 68, 68, 0.28)",
-        "--bubble-border-hover": "rgba(239, 68, 68, 0.42)",
-      },
-      borderActive: "border-red-500",
+      activeColor: "text-danger-text",
+      inactiveColor: "text-secondary",
+      activeBubbleClass: "interactive-bubble--danger",
+      borderActive: "border-danger-border",
       animation: "animate-like",
     },
     guardar: {
       icon: "★",
-      activeColor: "text-yellow-400",
-      inactiveColor: "text-gray-300",
-      activeBubbleVars: {
-        "--bubble-border": "rgba(234, 179, 8, 0.3)",
-        "--bubble-border-hover": "rgba(234, 179, 8, 0.46)",
-      },
-      borderActive: "border-yellow-500",
+      activeColor: "text-warning-text",
+      inactiveColor: "text-secondary",
+      activeBubbleClass: "interactive-bubble--warning",
+      borderActive: "border-warning-border",
       animation: "animate-save",
     },
   };
@@ -76,26 +70,37 @@ export default function InteraccionButton({
   */
   const baseClass = iconOnly
     ? `
-      inline-flex h-11 w-11 shrink-0 items-center justify-center
+      interactive-bubble inline-flex h-11 w-11 shrink-0 items-center justify-center
       rounded-full border transition
     `
     : `
       interactive-bubble gap-1
     `;
 
-  const bubbleStyle =
-    !iconOnly && active ? cfg.activeBubbleVars : undefined;
+  const bubbleVariantClass =
+    active ? cfg.activeBubbleClass : "interactive-bubble--secondary";
+
+  const accessibleLabel =
+    label ||
+    (type === "guardar"
+      ? active
+        ? "Quitar de guardados"
+        : "Guardar"
+      : active
+        ? "Quitar Me gusta"
+        : "Me gusta");
 
   return (
     <button
       type="button"
       onClick={handleClick}
       disabled={disabled}
-      style={bubbleStyle}
+      aria-label={iconOnly ? accessibleLabel : undefined}
       className={`
         ${baseClass}
-        ${iconOnly ? (active ? cfg.borderActive : "border-gray-700") : ""}
-        ${disabled ? "cursor-not-allowed opacity-60" : iconOnly ? "hover:bg-gray-800" : ""}
+        ${bubbleVariantClass}
+        ${iconOnly ? (active ? cfg.borderActive : "border-border") : ""}
+        ${disabled ? "cursor-not-allowed opacity-60" : iconOnly ? "hover:bg-surface-subtle" : ""}
       `}
     >
       {/* ICONO */}
@@ -111,7 +116,7 @@ export default function InteraccionButton({
       </span>
 
       {/* TEXTO SOLO SI NO ES iconOnly */}
-      {!iconOnly && <span className="text-white">{label}</span>}
+      {!iconOnly && <span>{label}</span>}
     </button>
   );
 }

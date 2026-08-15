@@ -8,7 +8,8 @@ Documento dueno: `docs/07_DECISIONS.md`.
 Responsable funcional: Arquitectura y gobierno de decisiones.
 Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
 `02_PRODUCT.md`, `05_SEARCH_ROADMAP.md`, `08_ENGINEERING_PRINCIPLES.md`,
-`15_LEGAL_AND_OPERATIONAL.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`.
+`15_LEGAL_AND_OPERATIONAL.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`,
+`18_PWA_ENTERPRISE.md`.
 Cuando debe consultarse: antes de contradecir, ampliar, reemplazar o registrar
 una decision permanente.
 
@@ -354,7 +355,7 @@ No reemplaza la documentación oficial existente.
 - ID: DEC-039
 - Titulo: Roadmap orientado a lanzamiento y gobierno legal-operativo
 - Estado: Aprobada
-- Decision: ETAPA 89 deja de ser Productos e Inventario y pasa a ser Reorganizacion del Roadmap y Gobierno de Lanzamiento. Productos e Inventario se posterga a ETAPA 102. El lanzamiento controlado se proyecta alrededor de ETAPA 97. Las ETAPAS 90-96 deben preparar seguridad, ownership, permisos, legalidad, privacidad, moderacion, integridad de datos, backups, recuperacion, observabilidad, operacion, QA, experiencia critica y administracion operativa minima. `docs/15_LEGAL_AND_OPERATIONAL.md` queda incorporado como documento transversal del Sistema de Gobierno.
+- Decision: ETAPA 89 deja de ser Productos e Inventario y pasa a ser Reorganizacion del Roadmap y Gobierno de Lanzamiento. Productos e Inventario se posterga a ETAPA 104. El lanzamiento controlado se proyecta alrededor de ETAPA 99. Las ETAPAS 90-98 deben preparar seguridad, ownership, permisos, legalidad, privacidad, moderacion, integridad de datos, backups, recuperacion, observabilidad, operacion, QA, experiencia critica, plataforma PWA, administracion operativa minima y pulido visual final. `docs/15_LEGAL_AND_OPERATIONAL.md` queda incorporado como documento transversal del Sistema de Gobierno.
 - Motivo: FeedGo es una vidriera digital y motor de descubrimiento, no un marketplace tradicional. Antes de ampliar complejidad comercial, pagos, proveedores, mensajeria, inventario o inteligencia avanzada, el producto debe poder lanzarse de forma segura, estable, legalmente preparada y operable.
 - Impacto: El roadmap prioriza lanzamiento funcional y controlado. FeedGo no implementara funcionalidades unicamente porque sean tecnicamente posibles. Toda funcionalidad que aumente significativamente la complejidad debera estar respaldada por una necesidad del producto, evidencia de uso real o una decision estrategica documentada.
 
@@ -365,7 +366,7 @@ No reemplaza la documentación oficial existente.
 - Estado: Aprobada
 - Decision: Las mutaciones privadas sobre recursos derivados de un comercio deben validar ownership en backend mediante el contrato `Usuario -> Comercio -> Recurso`. El frontend no es una barrera de seguridad. Un recurso derivado debe resolver su propietario natural antes de mutar datos. Si un recurso no tiene dueno modelado, sus mutaciones globales no pueden quedar habilitadas para cualquier usuario autenticado.
 - Motivo: FeedGo administra recursos creados por propietarios de espacios. Validar solo JWT no demuestra autorizacion sobre el recurso y permite modificar informacion ajena o global.
-- Impacto: Publicaciones, historias, secciones, analytics, metricas, snapshots, comparacion, score y futuros recursos derivados de comercio deben validar propietario en backend. No se crean roles, permisos, tablas ni relaciones nuevas sin necesidad comprobada. Productos legacy permanece bloqueado hasta que ETAPA 102 defina ownership oficial del dominio.
+- Impacto: Publicaciones, historias, secciones, analytics, metricas, snapshots, comparacion, score y futuros recursos derivados de comercio deben validar propietario en backend. No se crean roles, permisos, tablas ni relaciones nuevas sin necesidad comprobada. Productos legacy permanece bloqueado hasta que ETAPA 104 defina ownership oficial del dominio.
 
 ## DEC-041
 
@@ -426,3 +427,24 @@ No reemplaza la documentación oficial existente.
 - Regla: El principio se aplica solo cuando la capacidad sea transversal, evolutiva o tenga mas de una implementacion razonablemente posible. No autoriza interfaces vacias, providers especulativos, capas duplicadas, tablas de eventos operativos, OpenTelemetry, Prometheus, Sentry, Grafana, cloud storage ni proveedores externos sin etapa o decision futura aprobada.
 - Relacion con DEC-043: DEC-043 gobierna arquitectura extensible de infraestructura para backup, restore, storage y providers. DEC-045 extiende el mismo criterio de contratos a la operacion observable del sistema, manteniendo limites contra sobreingenieria.
 - Impacto: ETAPA 93.1 aprueba la arquitectura operativa documental. Los sprints posteriores deben implementar logging, error handling, request context, health, metricas, alertas y runbooks respetando esos contratos y la politica de minimizacion de datos.
+
+## DEC-046
+
+- ID: DEC-046
+- Titulo: FeedGo multiplataforma con PWA como primer canal oficial
+- Estado: Aprobada
+- Decision: FeedGo es una aplicacion multiplataforma cuyo primer canal oficial de distribucion sera una Progressive Web App. La aplicacion web no constituye un producto diferente ni una version temporal previa a aplicaciones moviles futuras. Toda nueva funcionalidad debe preservar la compatibilidad con la arquitectura PWA y, cuando corresponda, validarse en navegador de escritorio, navegador movil y aplicacion instalada.
+- Regla: Ningun cambio puede degradar la experiencia instalada, su navegacion, actualizacion, recuperacion, seguridad de cache o aislamiento de sesiones sin una decision arquitectonica explicita y documentada.
+- Gate: No podran comenzar la beta publica ni el lanzamiento oficial mientras ETAPA 96 permanezca abierta o exista cualquiera de sus bloqueantes criticos o altos sin resolver.
+- Impacto: ETAPA 96 - Plataforma Instalable y PWA Enterprise queda incorporada despues de ETAPA 95 y antes de Administracion Operativa Minima e Infraestructura y Lanzamiento Controlado. `docs/18_PWA_ENTERPRISE.md` es el documento tecnico propietario del alcance, los tres sprints, las validaciones y el gate PWA.
+
+## DEC-047
+
+- ID: DEC-047
+- Titulo: Correccion y pulido visual final como gate de producto
+- Estado: Aprobada
+- Problema: La migracion tematica, los contratos automaticos, accesibilidad y responsive tecnico no demuestran por si solos que todas las superficies visibles se perciban terminadas, coherentes y correctas para quien usa FeedGo.
+- Decision: La correccion y pulido visual constituye ETAPA 98 completa, posterior a ETAPA 96 - Plataforma Instalable y PWA Enterprise y ETAPA 97 - Administracion Operativa Minima, y anterior a Infraestructura y Lanzamiento Controlado. ETAPA 95 no contiene esta pasada de producto: 95.7-C recupera su alcance de QA tecnico final y cierre documental.
+- Gate: ETAPA 98 no puede cerrar mientras exista una superficie sin recorrer, un defecto visual bloqueante conocido, un control ilegible o un hallazgo sin corregir o justificar. Tests, lint y build son obligatorios, pero no sustituyen evidencia visual humana/renderizada.
+- Limites: El bloque no agrega funcionalidades, no cambia negocio, Search, ranking, privacidad o geolocalizacion y no habilita redisenos arquitectonicos ni refactors masivos. Los bugs funcionales se clasifican separadamente y se resuelven desde su owner.
+- Impacto: ETAPA 96 conserva numero, nombre, alcance y posicion inmediata despues de ETAPA 95; ETAPA 97 tambien se preserva. Se inserta ETAPA 98 y las antiguas ETAPAS 98-111 se desplazan correlativamente a 99-112, conservando nombre, alcance y orden relativo.

@@ -111,6 +111,32 @@ class UsuariosContractsTests(unittest.TestCase):
         self.assertIn("provincia", data)
         self.assertIn("ciudad", data)
 
+    def test_actualizar_mi_perfil_usa_el_handler_correcto_y_persiste(self):
+        self._crear_usuario()
+        payload = {
+            "provincia": "Santa Fe",
+            "ciudad": "Rafaela",
+        }
+
+        response = client.patch(
+            "/usuarios/me",
+            json=payload,
+            headers=self._auth_headers(),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["provincia"], payload["provincia"])
+        self.assertEqual(data["ciudad"], payload["ciudad"])
+        self.assertEqual(data["color_fondo"], "#112233")
+
+        db = TestingSessionLocal()
+        usuario = db.get(Usuario, 1)
+        self.assertEqual(usuario.provincia, payload["provincia"])
+        self.assertEqual(usuario.ciudad, payload["ciudad"])
+        self.assertEqual(usuario.color_fondo, "#112233")
+        db.close()
+
     def test_obtener_usuario_publico_existente_devuelve_solo_id(self):
         self._crear_usuario()
 

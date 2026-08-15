@@ -99,11 +99,12 @@ export async function httpGet(path, token = null) {
  * @param {string|null} token - JWT opcional
  * @returns {Promise<any>} JSON parseado
  */
-export async function httpPost(path, body = null, token = null) {
+export async function httpPost(path, body = null, token = null, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
     headers: buildHeaders(token),
     body: body ? JSON.stringify(body) : null,
+    signal: options.signal,
   });
 
   if (!response.ok) {

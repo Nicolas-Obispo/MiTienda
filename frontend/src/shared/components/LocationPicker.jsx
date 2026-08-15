@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MapContainer,
   Marker,
@@ -7,6 +7,23 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
+import {
+  buscarDirecciones,
+  proponerDireccion,
+} from "@shared/services/geocoding_service";
+import { Alert, Button, Input, Surface } from "./primitives";
+
+import {
+  acceptDraftAddress,
+  applyAddressProposal,
+  canConfirmLocation,
+  confirmLocation,
+  createLocationDraft,
+  isCurrentOperation,
+  selectCoordinates,
+  selectSearchResult,
+  updateDraftAddress,
+} from "./locationPickerState";
 
 delete L.Icon.Default.prototype._getIconUrl;
 
@@ -19,22 +36,23 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
-function DraggableMarker({ position, onChange }) {
+function MapInteraction({ draft, onSelectCoordinates }) {
   useMapEvents({
-    click(e) {
-      onChange(e.latlng.lat, e.latlng.lng);
+    click(event) {
+      onSelectCoordinates(event.latlng.lat, event.latlng.lng, "map");
     },
   });
+
+  if (draft.latitude === null || draft.longitude === null) return null;
 
   return (
     <Marker
       draggable
-      position={position}
+      position={draft.position}
       eventHandlers={{
-        dragend(e) {
-          const marker = e.target;
-          const nextPosition = marker.getLatLng();
-          onChange(nextPosition.lat, nextPosition.lng);
+        dragend(event) {
+          const nextPosition = event.target.getLatLng();
+          onSelectCoordinates(nextPosition.lat, nextPosition.lng, "drag");
         },
       }}
     />
@@ -57,143 +75,305 @@ export default function LocationPicker({
   provincia = "",
   latitud = null,
   longitud = null,
-  onChange,
+  onConfirm,
 }) {
-  const defaultPosition = [-31.2503, -61.4867]; // Rafaela
-  const initialPosition =
-    latitud !== null && longitud !== null
-      ? [Number(latitud), Number(longitud)]
-      : defaultPosition;
-
-  const [query, setQuery] = useState("");
-  const [position, setPosition] = useState(initialPosition);
+  const [isOpen, setIsOpen] = useState(true);
+  const [draft, setDraft] = useState(() =>
+    createLocationDraft({ direccion, latitud, longitud })
+  );
+  const [query, setQuery] = useState(direccion || "");
   const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [asyncState, setAsyncState] = useState("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [attribution, setAttribution] = useState(null);
+  const operationRevisionRef = useRef(0);
+  const searchControllerRef = useRef(null);
 
   useEffect(() => {
-    const initialQuery = [direccion, ciudad, provincia, "Argentina"]
-      .filter(Boolean)
-      .join(", ");
+    setDraft(createLocationDraft({ direccion, latitud, longitud }));
+    setQuery(direccion || "");
+  }, [direccion, latitud, longitud]);
 
-    setQuery(initialQuery);
-  }, [direccion, ciudad, provincia]);
-
-  function updatePosition(lat, lng) {
-    const nextLat = Number(lat);
-    const nextLng = Number(lng);
-
-    setPosition([nextLat, nextLng]);
-    onChange?.({
-      latitud: nextLat,
-      longitud: nextLng,
-    });
+  function invalidatePendingOperations() {
+    operationRevisionRef.current += 1;
+    searchControllerRef.current?.abort();
+    searchControllerRef.current = null;
   }
 
-  async function handleBuscar() {
-    if (!query.trim()) return;
+  function resetFromCanonical() {
+    setDraft(createLocationDraft({ direccion, latitud, longitud }));
+    setQuery(direccion || "");
+    setSearchResults([]);
+    setAsyncState("idle");
+    setErrorMessage("");
+    setAttribution(null);
+  }
+
+  function handleOpen() {
+    invalidatePendingOperations();
+    resetFromCanonical();
+    setIsOpen(true);
+  }
+
+  function handleCancel() {
+    invalidatePendingOperations();
+    resetFromCanonical();
+    setIsOpen(false);
+  }
+
+  function handleQueryChange(event) {
+    const nextQuery = event.target.value;
+    invalidatePendingOperations();
+    setQuery(nextQuery);
+    setDraft((current) => updateDraftAddress(current, nextQuery));
+    setSearchResults([]);
+    setAsyncState("idle");
+    setErrorMessage("");
+  }
+
+  async function handleSearch() {
+    const addressQuery = query.trim();
+    if (!addressQuery) return;
+
+    invalidatePendingOperations();
+    const operationRevision = operationRevisionRef.current;
+    const controller = new AbortController();
+    searchControllerRef.current = controller;
 
     try {
-      setIsSearching(true);
+      setAsyncState("searching");
       setErrorMessage("");
       setSearchResults([]);
+      setAttribution(null);
 
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=ar&q=${encodeURIComponent(
-          query
-        )}`
+      const data = await buscarDirecciones(
+        {
+          query: addressQuery,
+          ciudad,
+          provincia,
+          limit: 5,
+        },
+        { signal: controller.signal }
       );
 
-      const data = await response.json();
-
-      if (!Array.isArray(data) || data.length === 0) {
+      if (!isCurrentOperation(operationRevisionRef.current, operationRevision)) {
+        return;
+      }
+      const alternatives = data?.alternativas;
+      if (!Array.isArray(alternatives) || alternatives.length === 0) {
+        setAsyncState("error");
         setErrorMessage("No se encontró la dirección.");
         return;
       }
 
-      setSearchResults(data);
-      updatePosition(data[0].lat, data[0].lon);
+      setSearchResults(alternatives);
+      setAttribution(data?.attribution || null);
+      setAsyncState("success");
     } catch (error) {
-      console.error(error);
+      if (error?.name === "AbortError") return;
+      if (!isCurrentOperation(operationRevisionRef.current, operationRevision)) {
+        return;
+      }
+      setAsyncState("error");
       setErrorMessage("No se pudo buscar la dirección.");
     } finally {
-      setIsSearching(false);
+      if (isCurrentOperation(operationRevisionRef.current, operationRevision)) {
+        searchControllerRef.current = null;
+      }
     }
   }
 
   function handleSelectResult(result) {
-    setQuery(result.display_name || query);
-    updatePosition(result.lat, result.lon);
+    invalidatePendingOperations();
+    const nextDraft = selectSearchResult(draft, result);
+    setDraft(nextDraft);
+    setQuery(nextDraft.address);
+    setSearchResults([]);
+    setAsyncState("success");
+    setErrorMessage("");
   }
 
-  function handleUsarUbicacionActual() {
+  async function handleSelectCoordinates(latitude, longitude, source) {
+    invalidatePendingOperations();
+    const operationRevision = operationRevisionRef.current;
+    const controller = new AbortController();
+    searchControllerRef.current = controller;
+    setDraft((current) => selectCoordinates(current, latitude, longitude, source));
+    setSearchResults([]);
+    setAsyncState("searching");
+    setErrorMessage("");
+    setAttribution(null);
+
+    try {
+      const data = await proponerDireccion(
+        { latitud: Number(latitude), longitud: Number(longitude) },
+        { signal: controller.signal }
+      );
+      if (!isCurrentOperation(operationRevisionRef.current, operationRevision)) {
+        return;
+      }
+
+      const proposal = data?.propuesta;
+      if (!proposal) {
+        setAsyncState("error");
+        setErrorMessage(
+          "No encontramos una dirección para este punto. Elegí una alternativa o revisá la dirección escrita."
+        );
+        return;
+      }
+
+      setDraft((current) => applyAddressProposal(current, {
+        direccion: proposal.label,
+        latitud: proposal.latitud,
+        longitud: proposal.longitud,
+        precision: proposal.precision,
+        confidence: proposal.confidence,
+      }));
+      setQuery(proposal.label);
+      setAttribution(data?.attribution || null);
+      setAsyncState("success");
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      if (!isCurrentOperation(operationRevisionRef.current, operationRevision)) {
+        return;
+      }
+      setAsyncState("error");
+      setErrorMessage(
+        "No pudimos proponer una dirección para este punto. Revisá la dirección antes de confirmar."
+      );
+    } finally {
+      if (isCurrentOperation(operationRevisionRef.current, operationRevision)) {
+        searchControllerRef.current = null;
+      }
+    }
+  }
+
+  function handleUseCurrentLocation() {
     if (!navigator.geolocation) {
+      setAsyncState("error");
       setErrorMessage("Tu navegador no permite usar ubicación actual.");
       return;
     }
 
+    invalidatePendingOperations();
+    const operationRevision = operationRevisionRef.current;
+    setAsyncState("searching");
     setErrorMessage("");
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        updatePosition(pos.coords.latitude, pos.coords.longitude);
+      (position) => {
+        if (!isCurrentOperation(operationRevisionRef.current, operationRevision)) {
+          return;
+        }
+        handleSelectCoordinates(
+          position.coords.latitude,
+          position.coords.longitude,
+          "device"
+        );
       },
       () => {
+        if (!isCurrentOperation(operationRevisionRef.current, operationRevision)) {
+          return;
+        }
+        setAsyncState("error");
         setErrorMessage("No se pudo obtener tu ubicación actual.");
       }
     );
   }
 
+  function handleAcceptWrittenAddress() {
+    setDraft((current) => acceptDraftAddress(current));
+  }
+
+  function handleConfirm() {
+    const confirmedLocation = confirmLocation(draft);
+    if (!confirmedLocation) return;
+
+    invalidatePendingOperations();
+    onConfirm?.(confirmedLocation);
+    setIsOpen(false);
+  }
+
+  if (!isOpen) {
+    const hasCanonicalLocation =
+      direccion && latitud !== null && longitud !== null;
+
+    return (
+      <Surface className="rounded-xl p-4">
+        <p className="text-sm text-secondary">
+          {hasCanonicalLocation
+            ? `Ubicación confirmada: ${direccion}`
+            : "Sin ubicación confirmada."}
+        </p>
+        <Button
+          type="button"
+          onClick={handleOpen}
+          variant="secondary"
+          className="mt-3 px-3 py-2 text-sm"
+        >
+          {hasCanonicalLocation ? "Editar ubicación" : "Seleccionar ubicación"}
+        </Button>
+      </Surface>
+    );
+  }
+
   return (
-    <div className="rounded-xl border border-gray-800 p-4">
+    <Surface className="rounded-xl p-4">
       <div className="flex flex-col gap-2 sm:flex-row">
-        <input
+        <Input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleQueryChange}
           placeholder="Buscar dirección..."
-          className="flex-1 rounded-xl bg-gray-900 border border-gray-800 px-3 py-2 text-sm"
+          aria-label="Dirección para buscar o confirmar"
+          className="flex-1 text-sm"
         />
 
-        <button
+        <Button
           type="button"
-          onClick={handleBuscar}
-          disabled={isSearching}
-          className="rounded-xl bg-orange-500 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+          onClick={handleSearch}
+          disabled={asyncState === "searching"}
+          variant="primary"
+          className="px-3 py-2 text-sm"
         >
-          {isSearching ? "Buscando..." : "Buscar"}
-        </button>
+          {asyncState === "searching" ? "Buscando..." : "Buscar"}
+        </Button>
 
-        <button
+        <Button
           type="button"
-          onClick={handleUsarUbicacionActual}
-          className="rounded-xl border border-gray-700 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+          onClick={handleUseCurrentLocation}
+          disabled={asyncState === "searching"}
+          variant="secondary"
+          className="px-3 py-2 text-sm"
         >
           Usar mi ubicación
-        </button>
+        </Button>
       </div>
 
       {errorMessage && (
-        <p className="mt-2 text-xs text-red-400">{errorMessage}</p>
+        <Alert variant="danger" role="alert" className="mt-2 p-3 text-xs">
+          {errorMessage}
+        </Alert>
       )}
 
       {searchResults.length > 0 && (
-        <div className="mt-2 overflow-hidden rounded-xl border border-gray-800">
+        <div className="mt-2 overflow-hidden rounded-xl border border-border">
           {searchResults.map((result) => (
-            <button
-              key={result.place_id}
+            <Button
+              key={`${result.latitud}:${result.longitud}:${result.label}`}
               type="button"
               onClick={() => handleSelectResult(result)}
-              className="block w-full border-b border-gray-800 px-3 py-2 text-left text-xs text-gray-300 last:border-b-0 hover:bg-gray-900"
+              variant="ghost"
+              className="block w-full rounded-none border-b border-border px-3 py-2 text-left text-xs text-secondary last:border-b-0 hover:bg-surface-subtle"
             >
-              {result.display_name}
-            </button>
+              {result.label}
+            </Button>
           ))}
         </div>
       )}
 
-      <div className="mt-3 h-72 overflow-hidden rounded-xl border border-gray-800">
+      <div className="mt-3 h-72 overflow-hidden rounded-xl border border-border">
         <MapContainer
-          center={position}
+          center={draft.position}
           zoom={16}
           scrollWheelZoom={false}
           className="h-full w-full"
@@ -203,14 +383,77 @@ export default function LocationPicker({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <MapPositionUpdater position={position} />
-          <DraggableMarker position={position} onChange={updatePosition} />
+          <MapPositionUpdater position={draft.position} />
+          <MapInteraction
+            draft={draft}
+            onSelectCoordinates={handleSelectCoordinates}
+          />
         </MapContainer>
       </div>
 
-      <p className="mt-2 text-xs text-gray-500">
-        Lat: {position[0].toFixed(6)} / Lng: {position[1].toFixed(6)}
-      </p>
-    </div>
+      {draft.latitude !== null && draft.longitude !== null ? (
+        <p className="mt-2 text-xs text-muted">
+          Lat: {draft.latitude.toFixed(6)} / Lng: {draft.longitude.toFixed(6)}
+        </p>
+      ) : (
+        <p className="mt-2 text-xs text-muted">
+          El centro inicial del mapa es solo una referencia.
+        </p>
+      )}
+
+      {draft.coherent && draft.precision !== "address" && (
+        <p className="mt-2 text-xs text-warning-text">
+          La dirección propuesta puede ser aproximada. Revisala antes de confirmar.
+        </p>
+      )}
+
+      {attribution?.url && attribution?.label && (
+        <a
+          href={attribution.url}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 inline-block text-xs text-secondary underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+        >
+          {attribution.label}
+        </a>
+      )}
+
+      {!draft.coherent && draft.latitude !== null && draft.longitude !== null && (
+        <Alert variant="warning" className="mt-3 p-3">
+          <p className="text-xs">
+            El punto cambió. Revisá la dirección antes de confirmar.
+          </p>
+          <Button
+            type="button"
+            onClick={handleAcceptWrittenAddress}
+            disabled={!draft.address.trim()}
+            variant="warning"
+            className="mt-2 px-3 py-1.5 text-xs"
+          >
+            Usar esta dirección para el punto seleccionado
+          </Button>
+        </Alert>
+      )}
+
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
+        <Button
+          type="button"
+          onClick={handleCancel}
+          variant="secondary"
+          className="px-3 py-2 text-sm"
+        >
+          Cancelar
+        </Button>
+        <Button
+          type="button"
+          onClick={handleConfirm}
+          disabled={!canConfirmLocation(draft)}
+          variant="primary"
+          className="px-3 py-2 text-sm"
+        >
+          Confirmar ubicación
+        </Button>
+      </div>
+    </Surface>
   );
 }

@@ -28,10 +28,10 @@ notificaciones.
 
 Roadmap vigente:
 
-- ETAPA 101 - Mensajeria y Cotizaciones: comunicaciones externas, correo,
+- ETAPA 103 - Mensajeria y Cotizaciones: comunicaciones externas, correo,
   WhatsApp, proveedores, verificacion de destinos, plantillas, reintentos y
   webhooks.
-- ETAPA 105 - Notificaciones Inteligentes: notificaciones locales, campana
+- ETAPA 107 - Notificaciones Inteligentes: notificaciones locales, campana
   global, preferencias, integraciones locales e inteligencia futura de
   notificaciones.
 
@@ -93,7 +93,7 @@ del sistema de notificaciones.
 
 Correo, WhatsApp, verificacion de destinos, proveedores, plantillas,
 infraestructura asincronica, reintentos, webhooks e intentos de entrega quedan
-diferidos a ETAPA 101 - Mensajeria y Cotizaciones.
+diferidos a ETAPA 103 - Mensajeria y Cotizaciones.
 
 ## Separacion conceptual obligatoria
 
@@ -298,7 +298,7 @@ no al futuro MVP local de notificaciones.
 ## Diferido fuera del cierre actual de ETAPA 88
 
 Quedan disenados, pero no implementados en el cierre actual de ETAPA 88 y
-planificados para ETAPA 105 - Notificaciones Inteligentes:
+planificados para ETAPA 107 - Notificaciones Inteligentes:
 
 - modulo transversal de notificaciones locales;
 - campana global para usuarios autenticados;
@@ -321,9 +321,9 @@ No es:
 - permiso del sistema operativo;
 - Service Worker.
 
-## Disenado para ETAPA 101
+## Disenado para ETAPA 103
 
-Quedan fuera de la implementacion de ETAPA 88 y asignados a ETAPA 101:
+Quedan fuera de la implementacion de ETAPA 88 y asignados a ETAPA 103:
 
 - envio real por correo;
 - envio real por WhatsApp;
@@ -362,7 +362,7 @@ modelo de datos vigente.
 La verificacion de correo o telefono no pertenece al futuro MVP local de
 notificaciones.
 
-Cuando se disene en ETAPA 101 debera contemplar:
+Cuando se disene en ETAPA 103 debera contemplar:
 
 - generacion segura de codigos;
 - almacenamiento no reversible;
@@ -554,7 +554,7 @@ UX:
 
 ## Mapa de trabajo
 
-ETAPA 105 - Notificaciones Inteligentes:
+ETAPA 107 - Notificaciones Inteligentes:
 
 1. Diseno detallado del MVP de notificaciones locales.
 2. Implementacion del sistema transversal de notificaciones locales.
@@ -563,7 +563,7 @@ ETAPA 105 - Notificaciones Inteligentes:
 5. Integracion local minima con sucesos de Agenda.
 6. Validacion final del alcance ejecutado.
 
-ETAPA 101 - Mensajeria y Cotizaciones:
+ETAPA 103 - Mensajeria y Cotizaciones:
 
 - servicio transversal de correo;
 - servicio transversal de WhatsApp;
@@ -582,6 +582,6 @@ ETAPA 101 - Mensajeria y Cotizaciones:
 
 Justificacion:
 
-ETAPA 101 existe como etapa futura de Mensajeria y es el dueno natural mas
+ETAPA 103 existe como etapa futura de Mensajeria y es el dueno natural mas
 cercano para comunicaciones externas. Crear una etapa nueva antes de activar
-ETAPA 101 aumentaria la fragmentacion del roadmap sin evidencia suficiente.
+ETAPA 103 aumentaria la fragmentacion del roadmap sin evidencia suficiente.

@@ -51,6 +51,10 @@ from app.modules.search.services.search_event_services import (
     build_search_event_from_comercios_activos,
     registrar_search_event_best_effort,
 )
+from app.modules.search.services.territorial_search_services import (
+    TerritorialContext,
+    filter_territorial_candidates,
+)
 from app.core.operation_metrics import (
     METRIC_SEARCH_NO_RESULTS_COUNT,
     increment_counter,
@@ -559,6 +563,25 @@ def _calcular_distancia_km(
 
     return round(radio_tierra_km * c, 2)
 
+
+def calcular_distancia_publica_km(
+    *,
+    comercio: Comercio,
+    lat_origen: float,
+    lng_origen: float,
+) -> float | None:
+    """Calcula distancia solo cuando el comercio publica su ubicacion."""
+
+    if not comercio.mostrar_direccion_publicamente:
+        return None
+
+    return _calcular_distancia_km(
+        lat_origen=lat_origen,
+        lng_origen=lng_origen,
+        lat_destino=getattr(comercio, "latitud", None),
+        lng_destino=getattr(comercio, "longitud", None),
+    )
+
 def _aplicar_distancia_y_radio(
     comercios: list[Comercio],
     lat: float | None,
@@ -578,7 +601,15 @@ def _aplicar_distancia_y_radio(
             lng_destino=getattr(comercio, "longitud", None),
         )
 
-        comercio.distancia_km = distancia
+        comercio._distancia_interna_km = distancia
+        if getattr(comercio, "mostrar_direccion_publicamente", True):
+            comercio.distancia_km = distancia
+            comercio._distancia_orden_km = distancia
+        else:
+            comercio.distancia_km = None
+            comercio._distancia_orden_km = (
+                math.floor(distancia) if distancia is not None else None
+            )
 
         if distancia is None:
             resultado.append(comercio)
@@ -593,7 +624,9 @@ def _aplicar_distancia_y_radio(
 
 
 def _distancia_sort_value(comercio: Comercio) -> float:
-    distancia = getattr(comercio, "distancia_km", None)
+    distancia = getattr(comercio, "_distancia_orden_km", None)
+    if distancia is None:
+        distancia = getattr(comercio, "distancia_km", None)
 
     if distancia is None:
         return 999999.0
@@ -604,6 +637,36 @@ def _distancia_sort_value(comercio: Comercio) -> float:
 def _validar_rubro_activo(db: Session, rubro_id: int) -> None:
     if not obtener_rubro_por_id(db, rubro_id):
         raise RubroInvalidoError("Rubro no encontrado o inactivo")
+
+
+_CAMPOS_UBICACION = {
+    "provincia",
+    "ciudad",
+    "direccion",
+    "latitud",
+    "longitud",
+}
+
+
+def _validar_ubicacion_completa(
+    *,
+    provincia: str | None,
+    ciudad: str | None,
+    direccion: str | None,
+    latitud: float | None,
+    longitud: float | None,
+) -> None:
+    textos = {
+        "provincia": provincia,
+        "ciudad": ciudad,
+        "direccion": direccion,
+    }
+    for campo, valor in textos.items():
+        if not isinstance(valor, str) or not valor.strip():
+            raise ValueError(f"{campo} es requerido para una ubicacion completa")
+
+    if latitud is None or longitud is None:
+        raise ValueError("latitud y longitud deben estar presentes juntas")
 
 
 # ============================================================
@@ -626,6 +689,13 @@ def crear_comercio(
         raise ValueError("El usuario no está en modo publicador")
 
     _validar_rubro_activo(db, data.rubro_id)
+    _validar_ubicacion_completa(
+        provincia=data.provincia,
+        ciudad=data.ciudad,
+        direccion=data.direccion,
+        latitud=data.latitud,
+        longitud=data.longitud,
+    )
 
     comercio = Comercio(
         usuario_id=usuario.id,
@@ -636,9 +706,12 @@ def crear_comercio(
         provincia=data.provincia,
         ciudad=data.ciudad,
         direccion=data.direccion,
+        latitud=data.latitud,
+        longitud=data.longitud,
         whatsapp=data.whatsapp,
         instagram=data.instagram,
         maps_url=str(data.maps_url) if data.maps_url else None,
+        mostrar_direccion_publicamente=data.mostrar_direccion_publicamente,
     )
 
     db.add(comercio)
@@ -725,6 +798,11 @@ def listar_comercios_activos(
     lat: float | None = None,
     lng: float | None = None,
     radio_km: float | None = None,
+    city_key: str | None = None,
+    province_code: str | None = None,
+    country_code: str | None = None,
+    scope: str | None = None,
+    expansion_km: int | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> list[Comercio]:
@@ -760,6 +838,27 @@ def listar_comercios_activos(
     - "Con publicaciones" = existe al menos 1 publicación del comercio.
     """
 
+    territorial_context = None
+    if scope in {"local", "expanded"}:
+        if not city_key or not province_code or not country_code:
+            raise ValueError("scope territorial requiere ciudad, provincia y pais")
+        territorial_context = TerritorialContext.build(
+            city_key=city_key,
+            province_code=province_code,
+            country_code=country_code,
+        )
+    if scope not in {None, "local", "expanded"}:
+        raise ValueError("scope invalido")
+    if scope == "expanded":
+        if expansion_km not in {50, 100}:
+            raise ValueError("expanded requiere expansion_km 50 o 100")
+        if lat is None or lng is None:
+            raise ValueError("expanded requiere posicion actual")
+    elif expansion_km is not None:
+        raise ValueError("expansion_km solo corresponde a scope expanded")
+
+    effective_radio_km = expansion_km if scope == "expanded" else radio_km
+
     query = (
         db.query(Comercio)
         .options(selectinload(Comercio.rubro))
@@ -772,6 +871,28 @@ def listar_comercios_activos(
         q_normalizada = q.strip()
     if not q_normalizada:
         q_normalizada = ""
+
+    def _aplicar_frontera(comercios: list[Comercio]) -> list[Comercio]:
+        if scope == "local":
+            comercios = filter_territorial_candidates(comercios, territorial_context)
+        return _aplicar_distancia_y_radio(
+            comercios=comercios,
+            lat=lat,
+            lng=lng,
+            radio_km=effective_radio_km if scope == "expanded" else radio_km,
+        )
+
+    territorial_metadata = {
+        "scope": scope or "legacy",
+        "city_key": territorial_context.city_key if territorial_context else None,
+        "province_code": (
+            territorial_context.province_code if territorial_context else None
+        ),
+        "country_code": (
+            territorial_context.country_code if territorial_context else None
+        ),
+        "expansion_km": expansion_km,
+    }
 
     def _registrar_search_event(
         resultados: list[Comercio],
@@ -786,13 +907,13 @@ def listar_comercios_activos(
             smart_semantic=smart_semantic,
             limit=limit,
             offset=offset,
-            radio_km=radio_km,
+            radio_km=effective_radio_km,
             has_location=lat is not None and lng is not None,
             result_count=len(resultados),
             taxonomy_node_ids=taxonomy_node_ids,
             rubro_ids=rubro_ids,
             comercio_result_ids=[comercio.id for comercio in resultados],
-            metadata=metadata,
+            metadata={**territorial_metadata, **(metadata or {})},
         )
         registrar_search_event_best_effort(db, payload)
         if not resultados:
@@ -991,12 +1112,10 @@ def listar_comercios_activos(
             Comercio.id.in_(candidate_engine_comercio_ids)
         )
 
-        candidatos: list[Comercio] = (
-            query_candidatos
-            .order_by(Comercio.id.desc())
-            .limit(fetch_size)
-            .all()
-        )
+        query_candidatos = query_candidatos.order_by(Comercio.id.desc())
+        if scope is None:
+            query_candidatos = query_candidatos.limit(fetch_size)
+        candidatos = _aplicar_frontera(query_candidatos.all())
 
         if not candidatos:
             resultados = []
@@ -1130,13 +1249,6 @@ def listar_comercios_activos(
 
         comercios_rankeados = [item[2] for item in scored]
 
-        comercios_rankeados = _aplicar_distancia_y_radio(
-            comercios=comercios_rankeados,
-            lat=lat,
-            lng=lng,
-            radio_km=radio_km,
-        )
-
         # Orden: score_total DESC, distancia ASC, id DESC
         score_por_id = {item[2].id: item[0] for item in scored}
         comercios_rankeados.sort(
@@ -1210,12 +1322,10 @@ def listar_comercios_activos(
         if fetch_size > 500:
             fetch_size = 500
 
-        candidatos: list[Comercio] = (
-            query
-            .order_by(Comercio.id.desc())  # base estable antes de rankear
-            .limit(fetch_size)
-            .all()
-        )
+        query_candidatos = query.order_by(Comercio.id.desc())
+        if scope is None:
+            query_candidatos = query_candidatos.limit(fetch_size)
+        candidatos = _aplicar_frontera(query_candidatos.all())
 
         if not candidatos:
             resultados = []
@@ -1263,13 +1373,6 @@ def listar_comercios_activos(
             scored.append((score, c.id, c))
 
         comercios_rankeados = [item[2] for item in scored]
-
-        comercios_rankeados = _aplicar_distancia_y_radio(
-            comercios=comercios_rankeados,
-            lat=lat,
-            lng=lng,
-            radio_km=radio_km,
-        )
 
         # Orden: score DESC, distancia ASC, id DESC
         score_por_id = {item[2].id: item[0] for item in scored}
@@ -1327,17 +1430,8 @@ def listar_comercios_activos(
         Comercio.id.desc(),
     )
 
-    # Paginado
-    query = query.offset(offset).limit(limit)
-
-    comercios = query.all()
-
-    comercios = _aplicar_distancia_y_radio(
-        comercios=comercios,
-        lat=lat,
-        lng=lng,
-        radio_km=radio_km,
-    )
+    comercios = _aplicar_frontera(query.all())
+    candidate_count = len(comercios)
 
     if lat is not None and lng is not None:
         comercios.sort(
@@ -1347,10 +1441,12 @@ def listar_comercios_activos(
             )
         )
 
+    comercios = comercios[offset: offset + limit]
+
     _registrar_search_event(
         comercios,
         metadata={
-            "candidate_count": len(comercios),
+            "candidate_count": candidate_count,
         },
     )
     return adjuntar_horario_atencion_comercios(db, comercios)
@@ -1394,7 +1490,13 @@ def actualizar_comercio(
     if comercio.usuario_id != usuario.id:
         raise PermissionError("No tenés permiso para modificar este comercio")
 
-    payload = data.dict(exclude_unset=True)
+    payload = data.model_dump(exclude_unset=True)
+    if _CAMPOS_UBICACION.intersection(payload):
+        ubicacion_resultante = {
+            campo: payload.get(campo, getattr(comercio, campo))
+            for campo in _CAMPOS_UBICACION
+        }
+        _validar_ubicacion_completa(**ubicacion_resultante)
     sincronizar_assignments = (
         "rubro_id" in payload or "rubro_secundario_ids" in payload
     )

@@ -20,6 +20,10 @@ from app.modules.users.schemas.usuarios_schemas import (
     UsuarioPerfilUpdate,
     UsuarioCambioModo,
     UsuarioAvatarUpdate,  # ETAPA 49
+    DocumentoPublicoVigenteResponse,
+)
+from app.modules.users.services.documentos_aceptacion_services import (
+    listar_documentos_publicos_vigentes,
 )
 
 # Autenticación y seguridad
@@ -152,6 +156,15 @@ def actualizar_mi_perfil(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get(
+    "/documentos-vigentes",
+    response_model=list[DocumentoPublicoVigenteResponse],
+    summary="Documentos publicos vigentes para registro",
+)
+def documentos_publicos_vigentes_endpoint():
+    return listar_documentos_publicos_vigentes()
 
 
 # =============================================================

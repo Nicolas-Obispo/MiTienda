@@ -11,6 +11,8 @@ Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
 `02_PRODUCT.md`, `05_SEARCH_ROADMAP.md`, `07_DECISIONS.md`,
 `08_ENGINEERING_PRINCIPLES.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`,
 `17_OBSERVABILITY_AND_OPERATIONS.md`.
+Documentos tecnicos relacionados: `18_PWA_ENTERPRISE.md`,
+`19_LOCATION_LEGAL_GATE.md`.
 Cuando debe consultarse: antes de modificar funcionalidades sensibles,
 proveedores, datos personales, permisos, contenido publico, geolocalizacion,
 comunicaciones, notificaciones, reservas, productos, pagos, IA, logs, backups
@@ -313,6 +315,8 @@ El lanzamiento requiere:
 - responsable operativo;
 - version registrada;
 - aprobacion final.
+- ETAPA 96 - Plataforma Instalable y PWA Enterprise cerrada, sin bloqueantes
+  criticos o altos.
 
 ## 5. Clasificacion de funcionalidades sensibles
 
@@ -535,6 +539,11 @@ personal. Deben contemplarse comercios desde el hogar y servicios por zona.
 
 `[BLOQUEANTE]` Ubicacion precisa persistente, segundo plano o perfilado por
 recorridos requieren revision legal, de seguridad y de direccion.
+
+El expediente aplicable a la ubicacion de ETAPA 95 se registra en
+`docs/19_LOCATION_LEGAL_GATE.md`. Ese documento aplica este marco al alcance
+concreto, conserva evidencia y condiciones del gate y no sustituye esta norma,
+los documentos publicos ni la revision profesional requerida.
 
 ## 11. Permisos del dispositivo, medios y archivos
 
@@ -1063,6 +1072,8 @@ ficticios.
 
 | Documento | Estado | Dueno | Revision legal | Version | Fecha | Funciones cubiertas |
 | --- | --- | --- | --- | --- | --- | --- |
+| Terminos y Condiciones | Superficie publica implementada; no habilitada para lanzamiento hasta completar datos institucionales y formalizacion | Legal/Compliance; version tecnica en backend Usuarios | Aprobacion del sistema confirmada; evidencia formal pendiente | `v1` | `[PENDIENTE DE FORMALIZACION]` | cuenta, uso, espacios, contenido, ubicacion y proveedores |
+| Politica de Privacidad | Superficie publica implementada; no habilitada para lanzamiento hasta completar responsable, contacto, derechos y retencion | Legal/Compliance; version tecnica en backend Usuarios | Aprobacion del sistema confirmada; evidencia formal pendiente | `v1` | `[PENDIENTE DE FORMALIZACION]` | tratamientos reales, ubicacion, geocoding, Search, logs, seguridad y derechos |
 
 ### 27.11 Matriz de incidentes
 
@@ -1131,6 +1142,7 @@ ficticios.
 - [ ] Soporte.
 - [ ] Observabilidad.
 - [ ] Rollback.
+- [ ] ETAPA 96 cerrada y gate PWA aprobado.
 - [ ] Piloto controlado aprobado.
 
 ### 28.3 Checklist previo a proveedores externos

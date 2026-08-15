@@ -16,6 +16,7 @@ from sqlalchemy import (
     ForeignKey,
     DateTime,
     Float,
+    true,
 )
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -77,6 +78,12 @@ class Comercio(Base):
     maps_url = Column(String(500))
     latitud = Column(Float)
     longitud = Column(Float)
+    mostrar_direccion_publicamente = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=true(),
+    )
 
     # -----------------------------
     # Estado

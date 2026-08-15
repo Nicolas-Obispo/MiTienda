@@ -15,6 +15,7 @@ ETAPA 50 (IA v1 - MVP):
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import Literal
 from sqlalchemy.orm import Session
 
 # DB
@@ -95,7 +96,11 @@ def crear_comercio_endpoint(
 # Listar comercios
 # ============================================================
 
-@router.get("", response_model=list[ComercioPublicResponse])
+@router.get(
+    "",
+    response_model=list[ComercioPublicResponse],
+    response_model_exclude_none=True,
+)
 def listar_comercios_endpoint(
     ciudad: str | None = None,
     rubro_id: int | None = None,
@@ -108,7 +113,11 @@ def listar_comercios_endpoint(
 # Explorar comercios (público) - ETAPA 48 + ETAPA 50 (smart)
 # ============================================================
 
-@router.get("/activos", response_model=list[ComercioPublicResponse])
+@router.get(
+    "/activos",
+    response_model=list[ComercioPublicResponse],
+    response_model_exclude_none=True,
+)
 def listar_comercios_activos_endpoint(
     q: str | None = Query(
         default=None,
@@ -137,6 +146,32 @@ def listar_comercios_activos_endpoint(
         le=100,
         description="Radio máximo de búsqueda en kilómetros."
     ),
+    city_key: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=100,
+        description="Clave normalizada de la ciudad del contexto territorial.",
+    ),
+    province_code: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=50,
+        description="Codigo ISO 3166-2 o nombre normalizable de provincia argentina.",
+    ),
+    country_code: str | None = Query(
+        default=None,
+        min_length=2,
+        max_length=20,
+        description="Codigo de pais del contexto territorial.",
+    ),
+    scope: Literal["local", "expanded"] | None = Query(
+        default=None,
+        description="Alcance territorial explicito. La ausencia preserva Explorar hasta 95.1-F.",
+    ),
+    expansion_km: Literal[50, 100] | None = Query(
+        default=None,
+        description="Radio explicito para scope=expanded.",
+    ),
 
 
     limit: int = Query(default=20, ge=1, le=100, description="Tamaño de página (1..100)"),
@@ -158,17 +193,25 @@ def listar_comercios_activos_endpoint(
     - smart_semantic=true: ranking IA v2 (embeddings)
     """
 
-    return listar_comercios_activos(
-        db,
-        q=q,
-        smart=smart,
-        smart_semantic=smart_semantic,
-        lat=lat,
-        lng=lng,
-        radio_km=radio_km,
-        limit=limit,
-        offset=offset
-    )
+    try:
+        return listar_comercios_activos(
+            db,
+            q=q,
+            smart=smart,
+            smart_semantic=smart_semantic,
+            lat=lat,
+            lng=lng,
+            radio_km=radio_km,
+            city_key=city_key,
+            province_code=province_code,
+            country_code=country_code,
+            scope=scope,
+            expansion_km=expansion_km,
+            limit=limit,
+            offset=offset,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
 
 # ============================================================
@@ -201,7 +244,11 @@ def listar_mis_comercios_endpoint(
 # Obtener comercio por ID
 # ============================================================
 
-@router.get("/{comercio_id}", response_model=ComercioPublicResponse)
+@router.get(
+    "/{comercio_id}",
+    response_model=ComercioPublicResponse,
+    response_model_exclude_none=True,
+)
 def obtener_comercio_endpoint(
     comercio_id: int,
     db: Session = Depends(get_db),

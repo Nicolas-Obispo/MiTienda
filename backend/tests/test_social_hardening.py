@@ -108,6 +108,7 @@ class SocialHardeningTests(unittest.TestCase):
         comercio_id: int = 10,
         usuario_id: int = 1,
         activo: bool = True,
+        mostrar_direccion_publicamente: bool = True,
     ) -> Comercio:
         comercio = Comercio(
             id=comercio_id,
@@ -118,6 +119,11 @@ class SocialHardeningTests(unittest.TestCase):
             rubro_id=1,
             provincia="Buenos Aires",
             ciudad="La Plata",
+            direccion="Calle 12 345",
+            latitud=-34.9214,
+            longitud=-57.9544,
+            maps_url="https://maps.example/espacio",
+            mostrar_direccion_publicamente=mostrar_direccion_publicamente,
             activo=activo,
         )
         db.add(comercio)
@@ -471,6 +477,43 @@ class SocialHardeningTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual([item["id"] for item in response.json()], [10])
+
+    def test_mis_espacios_seguidos_no_expone_distancia_privada(self):
+        db = TestingSessionLocal()
+        self._crear_usuario(db)
+        comercio = self._crear_comercio(
+            db,
+            mostrar_direccion_publicamente=False,
+        )
+        db.add(Seguidores(usuario_id=1, comercio_id=comercio.id))
+        db.commit()
+        db.close()
+
+        response = client.get(
+            "/seguidores/mis-espacios",
+            params={"lat": -34.91, "lng": -57.95},
+            headers=self._auth_headers(),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("distancia_km", response.json()[0])
+
+    def test_mis_espacios_seguidos_preserva_distancia_publica(self):
+        db = TestingSessionLocal()
+        self._crear_usuario(db)
+        comercio = self._crear_comercio(db)
+        db.add(Seguidores(usuario_id=1, comercio_id=comercio.id))
+        db.commit()
+        db.close()
+
+        response = client.get(
+            "/seguidores/mis-espacios",
+            params={"lat": -34.91, "lng": -57.95},
+            headers=self._auth_headers(),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json()[0]["distancia_km"], float)
 
     def test_regresion_denuncias_publicacion_valida_sigue_funcionando(self):
         db = TestingSessionLocal()

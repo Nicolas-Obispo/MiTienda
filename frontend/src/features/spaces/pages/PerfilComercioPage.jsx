@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { ActiveLayer } from "@core";
 
 import { PublicacionCard } from "@features/posts";
 import { CrearHistoriaModal } from "@features/stories";
@@ -20,7 +21,16 @@ import {
   MessageCircle,
   PlusCircle,
 } from "lucide-react";
-import { getMediaUrlFromAny, uploadImagen } from "@shared";
+import {
+  Alert,
+  Button,
+  Input,
+  Skeleton,
+  Surface,
+  Textarea,
+  getMediaUrlFromAny,
+  uploadImagen,
+} from "@shared";
 
 import {
   optimisticToggleGuardado,
@@ -648,98 +658,101 @@ function esComercioMio(comercioData) {
       : "Seguidores no disponibles";
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <main className="mx-auto max-w-5x1 px-0 py-4 sm:px-4 sm:py-6">
+    <div className="min-h-screen bg-canvas text-primary">
+      <main className="mx-auto max-w-5xl px-0 py-4 sm:px-4 sm:py-6">
 
         <div className="mb-4">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={() => navigate(-1)}
-            className="interactive-bubble cursor-pointer text-sm font-medium"
+            className="cursor-pointer text-sm"
           >
             <span>
             ← Volver
             </span>
-          </button>
+          </Button>
         </div>
         
         {isInitialLoading && (
           <div className="space-y-4">
-            <div className="h-40 rounded-3xl border border-gray-800 bg-gray-900 animate-pulse" />
+            <Skeleton className="h-40 rounded-3xl border border-border" />
             <div className="grid grid-cols-3 gap-2">
-              <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-900 animate-pulse" />
-              <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-900 animate-pulse" />
-              <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-900 animate-pulse" />
+              <Skeleton className="aspect-square rounded-2xl border border-border" />
+              <Skeleton className="aspect-square rounded-2xl border border-border" />
+              <Skeleton className="aspect-square rounded-2xl border border-border" />
             </div>
           </div>
         )}
 
         {!isInitialLoading && errorMessage && (
-          <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
-            <p className="font-semibold text-red-200">Error</p>
-            <p className="mt-2 text-red-100 break-words">{errorMessage}</p>
-          </div>
+          <Alert className="p-5" variant="danger">
+            <p className="font-semibold">Error</p>
+            <p className="mt-2 break-words">{errorMessage}</p>
+          </Alert>
         )}
 
         {!isInitialLoading && !errorMessage && (
           <>
-            <section className="relative rounded-[1rem] border border-gray-800 bg-gray-900 p-4 sm:p-6">
+            <Surface as="section" className="relative p-4 sm:p-6">
               
         {esComercioMio(comercio) && (
           <div className="absolute right-3 top-1 flex flex-col items-end gap-1">
 
             <div className="group relative">
               <span
-                className="interactive-bubble aspect-square !h-10 !min-h-10 !w-10 !p-0 ![border-radius:50%] text-base leading-none"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface-subtle text-base leading-none"
+                aria-label={comercio?.is_activo === false ? "Espacio inactivo" : "Espacio activo"}
               >
                 {comercio?.is_activo === false ? "🔴" : "🟢"}
               </span>
 
-              <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg bg-black px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface-elevated px-2 py-1 text-[11px] text-primary opacity-0 shadow-elevation transition-opacity group-hover:opacity-100">
                 {comercio?.is_activo === false ? "Inactivo" : "Activo"}
               </div>
             </div>
 
             <div className="group relative">
-      <button
-        type="button"
+      <Button
+        iconOnly
+        aria-label="Editar espacio"
+        variant="ghost"
         onClick={() => navigate(`/perfil?editarEspacioId=${comercio.id}`)}
-        className="interactive-bubble aspect-square !h-10 !min-h-10 !w-10 !p-0 ![border-radius:50%] text-lg font-semibold text-orange-400"
+        className="text-lg text-brand"
       >
-        <span className="text-orange-400">
+        <span className="text-brand">
         ✏️
         </span>
-      </button>
+      </Button>
 
-              <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg bg-black px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface-elevated px-2 py-1 text-[11px] text-primary opacity-0 shadow-elevation transition-opacity group-hover:opacity-100">
                 Editar
               </div>
             </div>
 
             <div className="group relative">
-              <button
-                type="button"
+              <Button
+                iconOnly
+                variant="ghost"
                 onClick={() => setAgendaComercio(comercio)}
-                className="interactive-bubble aspect-square !h-10 !min-h-10 !w-10 !p-0 ![border-radius:50%] text-xs font-semibold text-orange-400"
                 aria-label="Abrir agenda"
               >
-                <span className="relative inline-flex h-6 w-5 flex-col overflow-hidden rounded-[px] bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.22)]">
+                <span className="relative inline-flex h-6 w-5 flex-col overflow-hidden rounded-sm border border-border-strong bg-surface-elevated">
                   <span className="absolute -top-0.5 left-1 right-1 flex justify-between">
-                    <span className="h-1 w-0.5 rounded-full bg-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.18)]" />
-                    <span className="h-1 w-0.5 rounded-full bg-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.18)]" />
-                    <span className="h-1 w-0.5 rounded-full bg-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.18)]" />
-                    <span className="h-1 w-0.5 rounded-full bg-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.18)]" />
+                    <span className="h-1 w-0.5 rounded-full bg-border-strong" />
+                    <span className="h-1 w-0.5 rounded-full bg-border-strong" />
+                    <span className="h-1 w-0.5 rounded-full bg-border-strong" />
+                    <span className="h-1 w-0.5 rounded-full bg-border-strong" />
                   </span>
-                  <span className="flex h-2 items-center justify-center bg-red-600 pt-.5 text-[3px] font-black leading-none tracking-[0.08em] text-white">
+                  <span className="flex h-2 items-center justify-center bg-danger-surface pt-0.5 text-[3px] font-black leading-none tracking-[0.08em] text-danger-text">
                     MARZO
                   </span>
-                  <span className="flex flex-1 items-center justify-center text-[10px] font-black leading-none text-gray-950">
+                  <span className="flex flex-1 items-center justify-center text-[10px] font-black leading-none text-primary">
                     11
                   </span>
                 </span>
-              </button>
+              </Button>
 
-              <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg bg-black px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface-elevated px-2 py-1 text-[11px] text-primary opacity-0 shadow-elevation transition-opacity group-hover:opacity-100">
                 Agenda
               </div>
             </div>
@@ -756,45 +769,45 @@ function esComercioMio(comercioData) {
 
             {/* DERECHA (botón) */}
             {!esComercioMio(comercio) && (
-              <button
-                type="button"
+              <Button
+                variant={siguiendoVisible ? "secondary" : "primary"}
                 onClick={handleToggleFollow}
-                className={`rounded-xl px-1.5 py- text-xs font-semibold transition ${
-                  siguiendoVisible
-                    ? "border border-gray-700 bg-gray-800 text-white"
-                    : "bg-white text-black"
-                }`}
+                className="rounded-xl px-2 py-1 text-xs"
               >
                 {siguiendoVisible ? "Siguiendo" : "+Seguir"}
-              </button>
+              </Button>
             )}
 
           </div>
 
           <div className="flex items-start gap-4">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={handleOpenHistorias}
+              aria-label={`Abrir historias de ${comercio?.nombre || "comercio"}`}
               className={`
                 h-20
+                min-h-20
                 w-20
+                p-0
                 shrink-0
                 overflow-hidden
                 rounded-full
-                bg-gray-950
+                bg-canvas
                 sm:h-24
+                sm:min-h-24
                 sm:w-24
                 transition
                 ${
                   historias.length > 0
                     ? tieneHistoriasPendientes
-                      ? "bg-gradient-to-tr from-orange-500 via-orange-400 to-amber-400 p-[2px]"
-                      : "border-4 border-white/30"
-                    : "border border-gray-700"
+                      ? "bg-gradient-to-tr from-brand via-interactive-primary to-warning-text p-[2px]"
+                      : "border-4 border-border-strong"
+                    : "border border-border"
                 }
               `}
             >
-            <div className="h-full w-full overflow-hidden rounded-full bg-gray-950">
+            <div className="h-full w-full overflow-hidden rounded-full bg-canvas">
               {comercioImagenUrl ? (
                 <img
                   src={comercioImagenUrl}
@@ -803,37 +816,49 @@ function esComercioMio(comercioData) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-white">
+                <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-primary">
                   {(comercio?.nombre || "C").slice(0, 1).toUpperCase()}
                 </div>
               )}
             </div>
-            </button>
+            </Button>
                   
                 <div className="min-w-0 flex-1 text-left">
-                  <h1 className="text-2xl font-bold leading-tight text-white sm:truncate">
+                  <h1 className="text-2xl font-bold leading-tight text-primary sm:truncate">
                     {comercio?.nombre ?? "Comercio"}
                   </h1>
                   
                   {comercio?.descripcion ? (
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-300">
+                    <p className="mt-2 max-w-2xl break-words text-sm leading-6 text-secondary">
                       {comercio.descripcion}
                     </p>
                   ) : (
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-muted">
                       Este comercio todavía no agregó descripción.
                     </p>
                   )}
 
-                  <div className="mt-3 flex items-center gap-1 flex-nowrap">
+                  {comercio?.ciudad && (
+                    <p className="mt-2 flex max-w-full items-start gap-2 break-words text-sm text-secondary">
+                      <MapPin size={14} className="shrink-0" aria-hidden="true" />
+                      {comercio?.direccion
+                        ? `${comercio.direccion}, ${comercio.ciudad}`
+                        : comercio.ciudad}
+                      {comercio?.provincia && comercio?.direccion
+                        ? `, ${comercio.provincia}`
+                        : ""}
+                    </p>
+                  )}
+
+                  <div className="mt-3 flex flex-wrap items-center gap-1">
                     
                     {/* PUBLICACIONES */}
-                    <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1 text-xs">
+                    <span className="max-w-full break-words rounded-full border border-border bg-surface-subtle px-3 py-1 text-xs">
                       {publicacionesCountVisible} publicaciones
                     </span>
 
                     {/* SEGUIDORES */}
-                    <span className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1 text-xs">
+                    <span className="max-w-full break-words rounded-full border border-border bg-surface-subtle px-3 py-1 text-xs">
                       {seguidoresCountLabel}
                     </span>
 
@@ -887,7 +912,7 @@ function esComercioMio(comercioData) {
                     rel="noreferrer"
                     className="interactive-bubble group cursor-pointer text-xs font-semibold"
                   >
-                    <span className="inline-flex items-center gap-2 text-blue-400 group-hover:text-blue-300">
+                    <span className="inline-flex items-center gap-2 text-brand group-hover:text-brand-strong">
                     <MapPin size={14} aria-hidden="true" />
                     Cómo llegar
                     </span>
@@ -901,75 +926,75 @@ function esComercioMio(comercioData) {
                 />
 
                 {comercio?.id ? (
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
                     onClick={() => setIsDenunciaComercioOpen(true)}
-                    className="interactive-bubble group cursor-pointer text-xs font-semibold"
+                    className="group cursor-pointer text-xs"
                   >
-                    <span className="inline-flex items-center gap-2 text-gray-300 group-hover:text-white">
+                    <span className="inline-flex items-center gap-2 text-secondary group-hover:text-primary">
                       Denunciar
                     </span>
-                  </button>
+                  </Button>
                 ) : null}
 
               </div>
 
               {puedoCrearHistoria && (
                 <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-                  <button
-                    type="button"
-                    className="interactive-bubble group cursor-pointer text-sm font-semibold"
+                  <Button
+                    variant="ghost"
+                    className="group cursor-pointer text-sm"
                     onClick={() => setIsCrearHistoriaOpen(true)}
                   >
-                    <span className="inline-flex items-center gap-2 text-gray-200 group-hover:text-white">
+                    <span className="inline-flex items-center gap-2 text-secondary group-hover:text-primary">
                       <PlusCircle size={16} aria-hidden="true" />
                       Historia
                     </span>
-                  </button>
+                  </Button>
 
-                  <button
-                    type="button"
-                    className="interactive-bubble group cursor-pointer text-sm font-semibold"
+                  <Button
+                    variant="ghost"
+                    className="group cursor-pointer text-sm"
                     onClick={() => setIsCrearPublicacionOpen(true)}
                   >
-                    <span className="inline-flex items-center gap-2 text-gray-200 group-hover:text-white">
+                    <span className="inline-flex items-center gap-2 text-secondary group-hover:text-primary">
                       <PlusCircle size={16} aria-hidden="true" />
                     Publicación
                     </span>
-                  </button>
+                  </Button>
 
-                  <button
-                    type="button"
-                    className="interactive-bubble group cursor-pointer text-sm font-semibold"
+                  <Button
+                    variant="ghost"
+                    className="group cursor-pointer text-sm"
                     onClick={() => setIsEstadisticasOpen(true)}
                   >
-                    <span className="inline-flex items-center gap-2 text-gray-200 group-hover:text-white">
+                    <span className="inline-flex items-center gap-2 text-secondary group-hover:text-primary">
                       <BarChart3 size={16} aria-hidden="true" />
                     Estadísticas
                     </span>
-                  </button>
+                  </Button>
 
                 </div>
               )}
-            </section>
+            </Surface>
 
             <section className="mt-6">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-base font-semibold text-white">
+                <h2 className="text-base font-semibold text-primary">
                   Publicaciones
                 </h2>
 
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted">
                   Vista en cuadrícula
                 </span>
               </div>
 
               {publicaciones.length === 0 ? (
-                <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-                  <p className="text-gray-300">
+                <Surface className="p-5">
+                  <p className="text-secondary">
                     Este comercio no tiene publicaciones todavía.
                   </p>
-                </div>
+                </Surface>
               ) : (
                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 md:gap-3">
                   {publicaciones.map((p) => (
@@ -989,130 +1014,140 @@ function esComercioMio(comercioData) {
             </section>
 
             {isEstadisticasOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-                <div className="w-full max-w-lg rounded-3xl border border-gray-800 bg-gray-950 p-6 shadow-2xl">
+              <ActiveLayer
+                onClose={() => setIsEstadisticasOpen(false)}
+                labelledBy="estadisticas-espacio-title"
+                describedBy="estadisticas-espacio-description"
+                closeOnBackdrop={false}
+                className="px-4"
+                contentClassName="w-full max-w-lg"
+              >
+                <Surface variant="elevated" className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-6">
                   <div className="mb-5 flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-orange-400">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-brand">
                         MiPlaza Analytics
                       </p>
 
-                      <h3 className="mt-1 text-xl font-bold text-white">
+                      <h3 id="estadisticas-espacio-title" className="mt-1 text-xl font-bold text-primary">
                         Estadísticas del espacio
                       </h3>
 
-                      <p className="mt-2 text-sm leading-6 text-gray-400">
+                      <p id="estadisticas-espacio-description" className="mt-2 text-sm leading-6 text-secondary">
                         Métricas reales calculadas desde la actividad del espacio.
                       </p>
                     </div>
 
-                    <button
-                      type="button"
+                    <Button
+                      iconOnly
+                      aria-label="Cerrar estadísticas"
+                      variant="ghost"
                       onClick={() => setIsEstadisticasOpen(false)}
-                      className="rounded-full border border-gray-700 px-3 py-1 text-sm text-gray-300 hover:bg-gray-800"
+                      className="text-sm"
                     >
                       ✕
-                    </button>
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-                      <p className="text-xs text-gray-400">Seguidores</p>
+                    <Surface variant="subtle" className="p-4">
+                      <p className="text-xs text-secondary">Seguidores</p>
 
-                      <p className="mt-2 text-2xl font-bold text-white">
+                      <p className="mt-2 text-2xl font-bold text-primary">
                         {metricasSociales?.total_seguidores ?? comercio?.seguidores_count ?? 0}
                       </p>
 
-                      <p className="mt-1 text-xs text-gray-400">
+                      <p className="mt-1 text-xs text-secondary">
                         {comparacionMetricas?.fecha_anterior
                           ? `${comparacionMetricas?.seguidores?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.seguidores?.delta ?? 0} vs período anterior`
                           : "Sin período anterior"}
                       </p>
-                    </div>
+                    </Surface>
 
-                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-                      <p className="text-xs text-gray-400">Publicaciones</p>
+                    <Surface variant="subtle" className="p-4">
+                      <p className="text-xs text-secondary">Publicaciones</p>
 
-                      <p className="mt-2 text-2xl font-bold text-white">
+                      <p className="mt-2 text-2xl font-bold text-primary">
                         {metricasSociales?.total_publicaciones ?? publicaciones.length}
                       </p>
 
-                      <p className="mt-1 text-xs text-gray-400">
+                      <p className="mt-1 text-xs text-secondary">
                         {comparacionMetricas?.fecha_anterior
                           ? `${comparacionMetricas?.publicaciones?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.publicaciones?.delta ?? 0} vs período anterior`
                           : "Sin período anterior"}
                       </p>
-                    </div>
+                    </Surface>
 
-                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-                      <p className="text-xs text-gray-400">Likes publicaciones</p>
+                    <Surface variant="subtle" className="p-4">
+                      <p className="text-xs text-secondary">Likes publicaciones</p>
 
-                      <p className="mt-2 text-2xl font-bold text-white">
+                      <p className="mt-2 text-2xl font-bold text-primary">
                         {metricasSociales?.total_likes_publicaciones ?? 0}
                       </p>
 
-                      <p className="mt-1 text-xs text-gray-400">
+                      <p className="mt-1 text-xs text-secondary">
                         {comparacionMetricas?.fecha_anterior
                           ? `${comparacionMetricas?.likes_publicaciones?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.likes_publicaciones?.delta ?? 0} vs período anterior`
                           : "Sin período anterior"}
                       </p>
-                    </div>
+                    </Surface>
 
-                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-                      <p className="text-xs text-gray-400">Guardados</p>
+                    <Surface variant="subtle" className="p-4">
+                      <p className="text-xs text-secondary">Guardados</p>
 
-                      <p className="mt-2 text-2xl font-bold text-white">
+                      <p className="mt-2 text-2xl font-bold text-primary">
                         {metricasSociales?.total_guardados_publicaciones ?? 0}
                       </p>
 
-                      <p className="mt-1 text-xs text-gray-400">
+                      <p className="mt-1 text-xs text-secondary">
                         {comparacionMetricas?.fecha_anterior
                           ? `${comparacionMetricas?.guardados_publicaciones?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.guardados_publicaciones?.delta ?? 0} vs período anterior`
                           : "Sin período anterior"}
                       </p>
-                    </div>
+                    </Surface>
 
-                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-                      <p className="text-xs text-gray-400">Vistas historias</p>
+                    <Surface variant="subtle" className="p-4">
+                      <p className="text-xs text-secondary">Vistas historias</p>
 
-                      <p className="mt-2 text-2xl font-bold text-white">
+                      <p className="mt-2 text-2xl font-bold text-primary">
                         {metricasSociales?.total_vistas_historias ?? 0}
                       </p>
 
-                      <p className="mt-1 text-xs text-gray-400">
+                      <p className="mt-1 text-xs text-secondary">
                         {comparacionMetricas?.fecha_anterior
                           ? `${comparacionMetricas?.vistas_historias?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.vistas_historias?.delta ?? 0} vs período anterior`
                           : "Sin período anterior"}
                       </p>
-                    </div>
+                    </Surface>
 
-                    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-                      <p className="text-xs text-gray-400">Likes historias</p>
+                    <Surface variant="subtle" className="p-4">
+                      <p className="text-xs text-secondary">Likes historias</p>
 
-                      <p className="mt-2 text-2xl font-bold text-white">
+                      <p className="mt-2 text-2xl font-bold text-primary">
                         {metricasSociales?.total_likes_historias ?? 0}
                       </p>
 
-                      <p className="mt-1 text-xs text-gray-400">
+                      <p className="mt-1 text-xs text-secondary">
                         {comparacionMetricas?.fecha_anterior
                           ? `${comparacionMetricas?.likes_historias?.delta >= 0 ? "↑" : "↓"} ${comparacionMetricas?.likes_historias?.delta ?? 0} vs período anterior`
                           : "Sin período anterior"}
                       </p>
-                    </div>
+                    </Surface>
                   </div>
 
                   {analyticsEspacio?.insights?.length > 0 && (
                     <div className="mt-5 space-y-3">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-orange-400">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-brand">
                           Insights automáticos
                         </p>
                       </div>
 
                       {analyticsEspacio.insights.map((insight, index) => (
-                        <div
+                        <Surface
                           key={index}
-                          className="rounded-2xl border border-gray-800 bg-gray-900 p-4"
+                          variant="subtle"
+                          className="p-4"
                         >
                           <div className="flex items-center gap-2">
                             <span className="text-sm">
@@ -1123,34 +1158,34 @@ function esComercioMio(comercioData) {
                                 : "🔵"}
                             </span>
 
-                            <p className="text-sm font-semibold text-white">
+                            <p className="text-sm font-semibold text-primary">
                               {insight.titulo}
                             </p>
                           </div>
 
-                          <p className="mt-2 text-sm leading-6 text-gray-400">
+                          <p className="mt-2 text-sm leading-6 text-secondary">
                             {insight.descripcion}
                           </p>
 
-                          <div className="mt-3 rounded-xl border border-gray-800 bg-black/40 p-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                          <div className="mt-3 rounded-xl border border-border-subtle bg-canvas-subtle p-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted">
                               Acción recomendada
                             </p>
 
-                            <p className="mt-1 text-sm text-gray-300">
+                            <p className="mt-1 text-sm text-secondary">
                               {insight.accion_recomendada}
                             </p>
                           </div>
-                        </div>
+                        </Surface>
                       ))}
                     </div>
                   )}
 
-                  <p className="mt-5 text-xs leading-5 text-gray-500">
+                  <p className="mt-5 text-xs leading-5 text-muted">
                     Estos datos vienen del backend y se recalculan desde la base real.
                   </p>
-                </div>
-              </div>
+                </Surface>
+              </ActiveLayer>
             )}
 
             <CrearHistoriaModal
@@ -1161,52 +1196,62 @@ function esComercioMio(comercioData) {
             />
 
             {isCrearPublicacionOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-                <div className="w-full max-w-lg rounded-2xl border border-gray-700 bg-gray-900 p-6">
+              <ActiveLayer
+                onClose={handleCloseCrearPublicacion}
+                labelledBy="crear-publicacion-title"
+                describedBy="crear-publicacion-description"
+                closeOnBackdrop={false}
+                className="px-4"
+                contentClassName="w-full max-w-lg"
+              >
+                <Surface variant="elevated" className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-6">
                   <div className="mb-5">
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 id="crear-publicacion-title" className="text-lg font-semibold text-primary">
                       Crear publicación
                     </h3>
-                    <p className="mt-1 text-sm text-gray-400">
+                    <p id="crear-publicacion-description" className="mt-1 text-sm text-secondary">
                       Completá los datos para publicar en este contenido.
                     </p>
                   </div>
 
                   <div className="space-y-4">
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-200">
+                      <label htmlFor="publicacion-titulo" className="mb-1 block text-sm font-medium text-secondary">
                         Título
                       </label>
-                      <input
+                      <Input
+                        id="publicacion-titulo"
                         type="text"
                         name="titulo"
                         value={publicacionForm.titulo}
                         onChange={handleChangePublicacionForm}
                         placeholder="Ej: Promo de la semana"
-                        className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white outline-none placeholder:text-gray-500 focus:border-white"
+                        className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-primary outline-none placeholder:text-muted focus-visible:border-border-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                       />
                     </div>
 
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-200">
+                      <label htmlFor="publicacion-descripcion" className="mb-1 block text-sm font-medium text-secondary">
                         Descripción
                       </label>
-                      <textarea
+                      <Textarea
+                        id="publicacion-descripcion"
                         name="descripcion"
                         value={publicacionForm.descripcion}
                         onChange={handleChangePublicacionForm}
                         placeholder="Contá de qué trata esta publicación"
                         rows={4}
-                        className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white outline-none placeholder:text-gray-500 focus:border-white"
+                        className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-primary outline-none placeholder:text-muted focus-visible:border-border-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                       />
                     </div>
 
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-200">
+                      <label htmlFor="publicacion-media" className="mb-1 block text-sm font-medium text-secondary">
                         Imagen o video
                       </label>
 
-                      <input
+                      <Input
+                        id="publicacion-media"
                         type="file"
                         accept="
                           image/jpeg,
@@ -1219,11 +1264,11 @@ function esComercioMio(comercioData) {
                         "
                         capture="environment"
                         onChange={handleSelectImagenPublicacion}
-                        className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-1 file:text-sm file:font-semibold file:text-black"
+                        className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-primary file:mr-3 file:rounded-lg file:border-0 file:bg-interactive-primary file:px-3 file:py-1 file:text-sm file:font-semibold file:text-interactive-on-primary"
                       />
 
                       {imagenFile ? (
-                        <p className="mt-1 text-xs text-gray-400">
+                        <p className="mt-1 text-xs text-secondary">
                           Archivo seleccionado: {imagenFile.name}
                         </p>
                       ) : null}
@@ -1231,25 +1276,25 @@ function esComercioMio(comercioData) {
                   </div>
 
                   <div className="mt-6 grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      className="rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm font-semibold text-white hover:bg-gray-800"
+                    <Button
+                      variant="secondary"
+                      className="rounded-xl px-4 py-3 text-sm"
                       onClick={handleCloseCrearPublicacion}
                     >
                       Cancelar
-                    </button>
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant="primary"
                       disabled={isCreatingPublicacion}
-                      className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-gray-900 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-xl px-4 py-3 text-sm"
                       onClick={handleSubmitCrearPublicacion}
                     >
                       {isCreatingPublicacion ? "Creando..." : "Crear publicación"}
-                    </button>
+                    </Button>
                   </div>
-                </div>
-              </div>
+                </Surface>
+              </ActiveLayer>
             )}
           </>
         )}

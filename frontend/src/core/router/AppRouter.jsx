@@ -14,6 +14,7 @@ import { PerfilComercioPage } from "@features/spaces";
 import { ExplorarPage } from "@features/explore";
 import { PublicacionDetallePage } from "@features/posts";
 import { VerSeguidosPage } from "@features/spaces";
+import { PrivacyPolicyPage, TermsPage } from "@features/legal";
 
 // Layout
 import { MainLayout } from "@shared";
@@ -121,6 +122,8 @@ export default function AppRouter() {
       <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/terminos-y-condiciones" element={<TermsPage />} />
+          <Route path="/politica-de-privacidad" element={<PrivacyPolicyPage />} />
 
           <Route
             path="/login"

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { Button } from "@shared";
 
 const HORAS_OPCIONES = Array.from({ length: 48 }, (_, index) => {
   const horas = String(Math.floor(index / 2)).padStart(2, "0");
@@ -114,7 +115,7 @@ export default function HoraInput({
 
   return (
     <div ref={rootRef} className="relative">
-      <label htmlFor={inputId} className="text-xs text-gray-400">
+      <label htmlFor={inputId} className="text-xs text-secondary">
         {label}
       </label>
       <input
@@ -135,17 +136,17 @@ export default function HoraInput({
         onChange={(event) => onChange(normalizarEntradaHora(event.target.value))}
         onKeyDown={handleKeyDown}
         placeholder="HH:mm"
-        className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-white/10 disabled:opacity-60"
+        className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-primary outline-none transition focus-visible:border-border-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:border-disabled-border disabled:bg-disabled-surface disabled:text-disabled-text"
       />
 
       {isOpen ? (
         <div
           id={listboxId}
           role="listbox"
-          className="absolute left-0 right-0 z-[60] mt-1 max-h-56 overflow-y-auto rounded-lg border border-gray-700 bg-gray-950 py-1 shadow-xl"
+          className="absolute left-0 right-0 z-[60] mt-1 max-h-56 overflow-y-auto rounded-lg border border-border bg-surface-elevated py-1 shadow-elevation"
         >
           {HORAS_OPCIONES.map((hora, index) => (
-            <button
+            <Button
               key={hora}
               id={`${listboxId}-${index}`}
               type="button"
@@ -153,14 +154,15 @@ export default function HoraInput({
               aria-selected={value === hora}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => seleccionarHora(hora)}
+              variant="ghost"
               className={`block w-full px-3 py-2 text-left text-sm transition ${
                 index === activeIndex
-                  ? "bg-gray-800 text-white"
-                  : "text-gray-200 hover:bg-gray-900"
+                  ? "bg-selected-surface text-selected-text"
+                  : "text-primary hover:bg-surface-subtle"
               }`}
             >
               {hora}
-            </button>
+            </Button>
           ))}
         </div>
       ) : null}

@@ -28,7 +28,16 @@ import {
 
 import { useNavigate } from "react-router-dom";
 import { useSearchSuggestions } from "@features/search/hooks/useSearchSuggestions";
-import { getMediaUrlFromAny } from "@shared";
+import {
+  Alert,
+  Button,
+  GeographicContextControls,
+  getMediaUrlFromAny,
+  Input,
+  Skeleton,
+  Surface,
+  useGeographicContext,
+} from "@shared";
 import EstadoHorarioBadge from "@features/availability/components/EstadoHorarioBadge";
 
 const HISTORIAL_BUSQUEDA_KEY = "miplaza_explorar_historial_busqueda";
@@ -79,43 +88,27 @@ export default function ExplorarPage() {
 
   const [limit] = useState(20);
 
-  const [ubicacion, setUbicacion] = useState({
-    lat: null,
-    lng: null,
-    lista: false,
-    error: null,
+  const {
+    context: geographicContext,
+    distanceFresh,
+    hasTerritory,
+    queryContext,
+    requestDeviceLocation,
+    territoryFresh,
+  } = useGeographicContext();
+  const [searchScope, setSearchScope] = useState({
+    scope: "local",
+    expansion_km: null,
+    territoryId: null,
   });
-
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      queueMicrotask(() => {
-        setUbicacion((prev) => ({
-          ...prev,
-          lista: true,
-          error: "Ubicación no disponible",
-        }));
-      });
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUbicacion({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          lista: true,
-          error: null,
-        });
-      },
-      () => {
-        setUbicacion((prev) => ({
-          ...prev,
-          lista: true,
-          error: "Ubicación no disponible",
-        }));
-      }
-    );
-  }, []);
+  const activeTerritoryId = queryContext
+    ? `${queryContext.country_code}:${queryContext.province_code}:${queryContext.city_key}`
+    : null;
+  const effectiveSearchScope =
+    searchScope.territoryId === activeTerritoryId &&
+    (searchScope.scope !== "expanded" || queryContext?.lat !== null)
+      ? searchScope
+      : { scope: "local", expansion_km: null };
 
   const busquedaNormalizada = normalizarBusqueda(busqueda);
   const usarSmartSemantic = usarModoIA(busquedaNormalizada, modoExplorar);
@@ -140,9 +133,16 @@ export default function ExplorarPage() {
     q: busquedaNormalizada,
     smart: usarSmartSemantic ? false : usarModoIA(busquedaNormalizada, modoExplorar),
     smart_semantic: usarSmartSemantic,
-    lat: ubicacion.lista ? ubicacion.lat : null,
-    lng: ubicacion.lista ? ubicacion.lng : null,
+    lat: queryContext?.lat ?? null,
+    lng: queryContext?.lng ?? null,
+    city_key: queryContext?.city_key ?? null,
+    province_code: queryContext?.province_code ?? null,
+    country_code: queryContext?.country_code ?? null,
+    positionRevision: queryContext?.positionRevision ?? 0,
+    scope: effectiveSearchScope.scope,
+    expansion_km: effectiveSearchScope.expansion_km,
     limit,
+    enabled: hasTerritory && modoExplorar === "espacios",
   });
 
   const publicacionesQuery = useExplorarPublicaciones({
@@ -198,14 +198,20 @@ export default function ExplorarPage() {
 
   function prefetchBusquedaEspacios(valor) {
     const q = normalizarBusqueda(valor);
-    if (!q) return;
+    if (!q || !hasTerritory) return;
 
     const paramsBusqueda = {
       q,
       smart: false,
       smart_semantic: true,
-      lat: ubicacion.lista ? ubicacion.lat : null,
-      lng: ubicacion.lista ? ubicacion.lng : null,
+      lat: queryContext?.lat ?? null,
+      lng: queryContext?.lng ?? null,
+      city_key: queryContext?.city_key ?? null,
+      province_code: queryContext?.province_code ?? null,
+      country_code: queryContext?.country_code ?? null,
+      positionRevision: queryContext?.positionRevision ?? 0,
+      scope: effectiveSearchScope.scope,
+      expansion_km: effectiveSearchScope.expansion_km,
       radio_km: null,
       limit,
     };
@@ -215,13 +221,19 @@ export default function ExplorarPage() {
     );
   }
 
-  function confirmarBusqueda(valor) {
+  async function confirmarBusqueda(valor) {
     const q = normalizarBusqueda(valor);
     if (!q) return;
 
+    const needsRefresh =
+      geographicContext.source === "device" && (!territoryFresh || !distanceFresh);
+    if (needsRefresh) {
+      await requestDeviceLocation({ needDistance: true });
+    }
+
     setBusqueda(q);
     guardarEnHistorialBusqueda(q);
-    prefetchBusquedaEspacios(q);
+    if (!needsRefresh) prefetchBusquedaEspacios(q);
     setBuscadorActivo(false);
   }
 
@@ -314,38 +326,42 @@ export default function ExplorarPage() {
   }
 
   return (
-    <div className="px-1 py-3 space-y-3 sm:p-4 sm:space-y-4">
+    <div className="space-y-3 bg-canvas px-1 py-3 text-primary sm:space-y-4 sm:p-4">
       {/* HEADER */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold">Explorar</h1>
 
-        <div className="flex items-center gap-2">
-          <button
+        <div className="flex max-w-full flex-wrap items-center gap-2">
+          <Button
             type="button"
             onClick={() => cambiarModoExplorar("espacios")}
-            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+            variant="secondary"
+            aria-pressed={modoExplorar === "espacios"}
+            className={`rounded-full px-3 py-1 text-xs ${
               modoExplorar === "espacios"
-                ? "border-white bg-white text-gray-950 shadow"
-                : "border-gray-300 bg-transparent text-gray-700"
+                ? "border-selected-border bg-selected-surface text-selected-text"
+                : ""
             }`}
           >
             Espacios
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
             onClick={() => cambiarModoExplorar("publicaciones")}
-            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+            variant="secondary"
+            aria-pressed={modoExplorar === "publicaciones"}
+            className={`rounded-full px-3 py-1 text-xs ${
               modoExplorar === "publicaciones"
-                ? "border-white bg-white text-gray-950 shadow"
-                : "border-gray-300 bg-transparent text-gray-700"
+                ? "border-selected-border bg-selected-surface text-selected-text"
+                : ""
             }`}
           >
             Publicaciones
-          </button>
+          </Button>
 
           {modoIAActivo && (
-            <span className="text-xs rounded-full border px-3 py-1">
+            <span className="rounded-full border border-selected-border bg-selected-surface px-3 py-1 text-xs text-selected-text">
               ✨ IA
             </span>
           )}
@@ -354,7 +370,7 @@ export default function ExplorarPage() {
 
       {/* BUSCADOR */}
       <div className="relative">
-        <input
+        <Input
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           onFocus={() => setBuscadorActivo(true)}
@@ -362,54 +378,55 @@ export default function ExplorarPage() {
             setTimeout(() => setBuscadorActivo(false), 120);
           }}
           onKeyDown={manejarTeclaBuscador}
+          aria-label="Buscar en Explorar"
           placeholder={
             modoExplorar === "publicaciones"
               ? "Buscar publicaciones..."
               : "Buscar comercios..."
           }
-          className="w-full rounded-xl border px-3 py-2"
+          className="text-sm"
         />
 
         {mostrarPanelBuscador && (
-          <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border bg-white text-gray-950 shadow-lg">
+          <Surface
+            variant="elevated"
+            className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden"
+          >
             {opcionesBuscador.map((opcion) => (
-              <button
+              <Button
                 key={opcion.key}
                 type="button"
                 onMouseDown={(event) => {
                   event.preventDefault();
                   confirmarBusqueda(opcion.value);
                 }}
-                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-gray-100"
+                variant="ghost"
+                className="flex w-full items-center justify-between gap-3 rounded-none px-3 py-2 text-left text-sm hover:bg-surface-subtle"
               >
                 <span className="truncate font-medium">{opcion.label}</span>
-                <span className="shrink-0 text-xs text-gray-500">
+                <span className="shrink-0 text-xs text-muted">
                   {opcion.meta}
                 </span>
-              </button>
+              </Button>
             ))}
-          </div>
+          </Surface>
         )}
       </div>
 
+      {modoExplorar === "espacios" && <GeographicContextControls />}
+
       {/* ERROR */}
       {error && (
-        <div className="rounded-xl border p-3">
-          <p className="text-sm">{error}</p>
-        </div>
+        <Alert role="alert" variant="danger">
+          {error}
+        </Alert>
       )}
 
-      {/* LOADING INICIAL */}
-      {modoExplorar === "espacios" && !ubicacion.lista && (
-        <div className="rounded-xl border p-3">
-          <p className="text-sm">Buscando ubicación...</p>
-        </div>
-      )}
-
-      {estaCargandoQuery && itemsActuales.length === 0 && ubicacion.lista && (
-        <div className="rounded-xl border p-3">
-          <p className="text-sm">Cargando...</p>
-        </div>
+      {estaCargandoQuery && itemsActuales.length === 0 && hasTerritory && (
+        <Surface variant="subtle" className="flex items-center gap-3 p-3">
+          <Skeleton className="h-4 w-20 rounded-full" />
+          <p className="text-sm text-secondary">Cargando...</p>
+        </Surface>
       )}
 
       {/* GRID DE COMERCIOS */}
@@ -428,13 +445,13 @@ export default function ExplorarPage() {
             const comercioImagenUrl = getMediaUrlFromAny(c);
 
             return (
-              <div
+              <Surface
                 key={c.id}
                 onClick={() => irAPerfilComercio(c.id)}
-                className="cursor-pointer group"
+                className="group cursor-pointer overflow-hidden"
               >
                 {/* IMAGEN */}
-                <div className="w-full aspect-square rounded-xl overflow-hidden border bg-gray-100">
+                <div className="aspect-square w-full overflow-hidden bg-surface-subtle">
                   {comercioImagenUrl ? (
                     <img
                       src={comercioImagenUrl}
@@ -444,42 +461,36 @@ export default function ExplorarPage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs">
+                    <div className="flex h-full w-full items-center justify-center text-xs text-muted">
                       Sin imagen
                     </div>
                   )}
                 </div>
 
                 {/* INFO */}
-                <div className="mt-1 px-1">
+                <div className="p-2">
                   <p className="text-sm font-medium truncate">
                     {c.nombre || "Comercio"}
                   </p>
 
-                  <p className="text-xs opacity-70 truncate">
+                  <p className="truncate text-xs text-secondary">
                     {c.ciudad || "Ciudad"}
                   </p>
 
                   {typeof c.distancia_km === "number" && (
-                    <p className="text-xs text-orange-500">
+                    <p className="text-xs text-brand">
                       📍 {c.distancia_km < 1
                         ? `${Math.round(c.distancia_km * 1000)} m`
                         : `${c.distancia_km.toFixed(1)} km`}
                     </p>
                   )}
-                  {ubicacion.error && typeof c.distancia_km !== "number" && (
-                    <p className="text-xs text-orange-500">
-                      {ubicacion.error}
-                    </p>
-                  )}
-
                   <EstadoHorarioBadge
                     horarioAtencion={c.horario_atencion}
                     compact
                     className="mt-1"
                   />
                 </div>
-              </div>
+              </Surface>
             );
           })}
         </div>
@@ -501,13 +512,13 @@ export default function ExplorarPage() {
             const publicacionImagenUrl = getMediaUrlFromAny(p);
 
             return (
-              <div
+              <Surface
                 key={p.id}
                 onClick={() => irADetallePublicacion(p.id)}
-                className="cursor-pointer group"
+                className="group cursor-pointer overflow-hidden"
               >
                 {/* IMAGEN */}
-                <div className="w-full aspect-square rounded-xl overflow-hidden border bg-gray-100">
+                <div className="aspect-square w-full overflow-hidden bg-surface-subtle">
                   {publicacionImagenUrl ? (
                     esVideo(publicacionImagenUrl) ? (
                       <video
@@ -529,23 +540,23 @@ export default function ExplorarPage() {
                       />
                     )
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs">
+                    <div className="flex h-full w-full items-center justify-center text-xs text-muted">
                       Sin imagen
                     </div>
                   )}
                 </div>
 
                 {/* INFO */}
-                <div className="mt-1 px-1">
+                <div className="p-2">
                   <p className="text-sm font-medium truncate">
                     {getNombrePublicacion(p)}
                   </p>
 
-                  <p className="text-xs opacity-70 truncate">
+                  <p className="truncate text-xs text-secondary">
                     {getSubtituloPublicacion(p)}
                   </p>
                 </div>
-              </div>
+              </Surface>
             );
           })}
         </div>
@@ -553,29 +564,52 @@ export default function ExplorarPage() {
 
       {/* SIN RESULTADOS */}
       {!estaCargandoQuery && itemsActuales.length === 0 && !error && (
-        <div className="rounded-xl border p-3">
+        <Surface variant="subtle" className="p-3">
           <p className="text-sm">
             {modoExplorar === "publicaciones"
               ? "No hay publicaciones para mostrar."
-              : "No hay comercios para mostrar."}
+              : hasTerritory
+                ? `No encontramos resultados en ${geographicContext.city}.`
+                : "Elegí una ciudad o usá tu ubicación para buscar espacios."}
           </p>
-        </div>
+          {modoExplorar === "espacios" && hasTerritory && queryContext?.lat !== null && effectiveSearchScope.scope === "local" && (
+            <Button
+              type="button"
+              onClick={() => setSearchScope({ scope: "expanded", expansion_km: 50, territoryId: activeTerritoryId })}
+              variant="secondary"
+              className="mt-2 px-3 py-2 text-xs"
+            >
+              Ver opciones cercanas fuera de {geographicContext.city}
+            </Button>
+          )}
+          {modoExplorar === "espacios" && hasTerritory && effectiveSearchScope.expansion_km === 50 && (
+            <Button
+              type="button"
+              onClick={() => setSearchScope({ scope: "expanded", expansion_km: 100, territoryId: activeTerritoryId })}
+              variant="secondary"
+              className="mt-2 px-3 py-2 text-xs"
+            >
+              Ampliar búsqueda hasta 100 km
+            </Button>
+          )}
+        </Surface>
       )}
 
         {/* PAGINACIÓN TANSTACK */}
     {modoExplorar === "espacios" && espaciosQueryData.length > 0 && (
       <div className="pt-2">
         {espaciosQuery.hasNextPage ? (
-          <button
+          <Button
             type="button"
             onClick={() => espaciosQuery.fetchNextPage()}
             disabled={espaciosQuery.isFetchingNextPage}
-            className="w-full rounded-xl border px-4 py-2"
+            variant="secondary"
+            className="w-full px-4 py-2"
           >
             {espaciosQuery.isFetchingNextPage ? "Cargando..." : "Cargar más"}
-          </button>
+          </Button>
         ) : (
-          <p className="text-sm opacity-70 text-center">
+          <p className="text-center text-sm text-secondary">
             No hay más resultados.
           </p>
         )}

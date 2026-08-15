@@ -15,10 +15,11 @@
  *   seteamos default: ahora + 24hs.
  */
 
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { ActiveLayer } from "@core";
+import { useAuth } from "@features/auth";
 import { crearHistoria } from "@features/stories";
-import { uploadImagen } from "@shared";
-import { AuthContext } from "@features/auth";
+import { Alert, Button, Input, Surface, uploadImagen } from "@shared";
 
 export default function CrearHistoriaModal({
   isOpen,
@@ -27,7 +28,7 @@ export default function CrearHistoriaModal({
   onCreated,
 }) {
   // ✅ Token real desde AuthContext (backend manda)
-  const { accessToken } = useContext(AuthContext);
+  const { accessToken } = useAuth();
 
   // UI state
   const [mediaUrl, setMediaUrl] = useState(""); // fallback opcional (URL manual)
@@ -133,20 +134,16 @@ export default function CrearHistoriaModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/70"
-        onClick={onClose}
-        aria-label="Cerrar modal"
-      />
-
-      {/* Caja modal (tema oscuro para evitar texto invisible) */}
-      <div className="relative z-10 w-[92%] max-w-md rounded-2xl border border-white/10 bg-gray-950 p-4 shadow-xl">
+    <ActiveLayer
+      onClose={onClose}
+      labelledBy="crear-historia-title"
+      describedBy="crear-historia-description"
+      contentClassName="w-[92%] max-w-md"
+    >
+      <Surface variant="elevated" className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-4">
         <div className="mb-3">
-          <h2 className="text-lg font-semibold text-white">Nueva historia</h2>
-          <p className="text-sm text-white/70">
+          <h2 id="crear-historia-title" className="text-lg font-semibold text-primary">Nueva historia</h2>
+          <p id="crear-historia-description" className="text-sm text-secondary">
             Subí una imagen o video para compartir en tu historia.
           </p>
         </div>
@@ -154,11 +151,12 @@ export default function CrearHistoriaModal({
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Upload archivo */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-white">
+            <label htmlFor="historia-media" className="text-sm font-medium text-secondary">
               Imagen o video
             </label>
 
-            <input
+            <Input
+              id="historia-media"
               type="file"
               accept="
                 image/jpeg,
@@ -169,7 +167,7 @@ export default function CrearHistoriaModal({
                 video/ogg,
                 video/quicktime
               "
-              className="w-full rounded-xl border border-white/10 bg-gray-900 px-3 py-2 text-sm text-white file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-sm file:text-black"
+              className="text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-interactive-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-interactive-on-primary"
               disabled={isSubmitting}
               onChange={(e) => {
                 const file = e.target.files?.[0] || null;
@@ -181,11 +179,11 @@ export default function CrearHistoriaModal({
             />
 
             {selectedFile ? (
-              <p className="text-xs text-white/60 break-words">
-                Seleccionado: <span className="text-white">{selectedFile.name}</span>
+              <p className="break-words text-xs text-secondary">
+                Seleccionado: <span className="text-primary">{selectedFile.name}</span>
               </p>
             ) : (
-              <p className="text-xs text-white/50">
+              <p className="text-xs text-muted">
                 Recomendado. El backend lo guarda y devuelve una URL.
               </p>
             )}
@@ -193,11 +191,12 @@ export default function CrearHistoriaModal({
 
           {/* media_url (fallback oculto MVP) */}
           <div className="hidden">
-            <label className="text-sm font-medium text-white">
+            <label htmlFor="historia-media-url" className="text-sm font-medium text-secondary">
               media_url (fallback)
             </label>
-            <input
-              className="w-full rounded-xl border border-white/10 bg-gray-900 px-3 py-2 text-sm text-white caret-white placeholder:text-white/40 outline-none focus:border-white/30 disabled:opacity-60"
+            <Input
+              id="historia-media-url"
+              className="text-sm"
               placeholder="https://..."
               value={mediaUrl}
               onChange={(e) => {
@@ -208,7 +207,7 @@ export default function CrearHistoriaModal({
               }}
               disabled={isSubmitting}
             />
-            <p className="text-xs text-white/50">
+            <p className="text-xs text-muted">
               Solo si querés pegar una URL externa. Si elegís archivo arriba,
               esto se limpia.
             </p>
@@ -216,64 +215,66 @@ export default function CrearHistoriaModal({
 
           {/* expira_en */}
           <div className="hidden">
-            <label className="text-sm font-medium text-white">
+            <label htmlFor="historia-expira-en" className="text-sm font-medium text-secondary">
               expira_en (opcional, default 24h)
             </label>
-            <input
+            <Input
+              id="historia-expira-en"
               type="datetime-local"
-              className="w-full rounded-xl border border-white/10 bg-gray-900 px-3 py-2 text-sm text-white caret-white outline-none focus:border-white/30"
+              className="text-sm"
               value={expiraEn}
               onChange={(e) => setExpiraEn(e.target.value)}
               disabled={isSubmitting}
             />
-            <p className="text-xs text-white/50">
+            <p className="text-xs text-muted">
               Si lo dejás vacío, se publica con vencimiento automático en 24hs.
             </p>
           </div>
 
           {/* is_activa */}
           <div className="hidden items-center gap-2">
-            <input
+            <Input
               id="is_activa"
               type="checkbox"
-              className="h-4 w-4 accent-white"
+              className="h-4 w-4 accent-brand"
               checked={isActiva}
               onChange={(e) => setIsActiva(e.target.checked)}
               disabled={isSubmitting}
             />
-            <label htmlFor="is_activa" className="text-sm text-white">
+            <label htmlFor="is_activa" className="text-sm text-primary">
               is_activa
             </label>
           </div>
 
           {/* Error */}
           {errorMsg ? (
-            <div className="rounded-xl border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-200 break-words">
+            <Alert variant="danger" role="alert" className="break-words px-3 py-2">
               {errorMsg}
-            </div>
+            </Alert>
           ) : null}
 
           {/* Acciones */}
           <div className="flex items-center justify-end gap-2 pt-2">
-            <button
-              type="button"
-              className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
+            <Button
+              variant="secondary"
+              className="px-4 py-2 text-sm"
               onClick={onClose}
               disabled={isSubmitting}
             >
               Cancelar
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="submit"
-              className="rounded-xl bg-white px-4 py-2 text-sm text-black disabled:opacity-60"
+              variant="primary"
+              className="px-4 py-2 text-sm"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Publicando..." : "Publicar"}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </Surface>
+    </ActiveLayer>
   );
 }

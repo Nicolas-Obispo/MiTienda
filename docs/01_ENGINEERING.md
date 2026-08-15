@@ -8,7 +8,8 @@ Documento dueno: `docs/01_ENGINEERING.md`.
 Responsable funcional: Ingenieria.
 Documentos relacionados: `00_GOVERNANCE.md`,
 `08_ENGINEERING_PRINCIPLES.md`, `07_DECISIONS.md`,
-`15_LEGAL_AND_OPERATIONAL.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`.
+`15_LEGAL_AND_OPERATIONAL.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`,
+`18_PWA_ENTERPRISE.md`.
 Cuando debe consultarse: antes de disenar, implementar, validar, refactorizar
 o cerrar cambios tecnicos.
 
@@ -40,6 +41,7 @@ Frontend:
 - UX
 - interacción
 - renderizado
+- cache y experiencia PWA dentro de contratos aprobados
 
 Nunca mover lógica de negocio al frontend.
 
@@ -48,6 +50,25 @@ Nunca mover lógica de negocio al frontend.
 - reutilizar servicios existentes
 - no duplicar lógica
 - no crear implementaciones paralelas
+
+## Compatibilidad PWA
+
+FeedGo es una aplicacion multiplataforma y su primer canal oficial de
+distribucion sera una PWA.
+
+Toda nueva funcionalidad debe preservar, cuando corresponda:
+
+- navegador de escritorio;
+- navegador movil;
+- aplicacion instalada PWA;
+- navegacion standalone;
+- actualizacion y recuperacion controladas;
+- privacidad de cache, sesiones y datos locales.
+
+Ningun cambio puede degradar la experiencia instalada sin una decision
+arquitectonica explicita y documentada.
+
+`18_PWA_ENTERPRISE.md` gobierna la arquitectura y validacion PWA.
 
 ## Gobierno del Modelo de Datos
 

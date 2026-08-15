@@ -9,11 +9,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { ActiveLayer } from "@core";
 
 import { PublicacionCard } from "@features/posts";
 import { HistoriasBar } from "@features/stories";
 import { HistoriasViewer } from "@features/stories";
-import { getMediaUrlFromAny } from "@shared";
+import { Alert, Button, getMediaUrlFromAny, Skeleton, Surface } from "@shared";
 import { useFeedPublicaciones } from "@features/feed/hooks/useFeedPublicaciones";
 
 import {
@@ -72,6 +73,7 @@ export default function FeedPage() {
   const historiasOrdenRef = useRef([]);
   const historiasPorComercioRef = useRef({});
   const huboVistasNuevasRef = useRef(false);
+  const welcomeActionRef = useRef(null);
 
   const {
   likeLocks,
@@ -227,7 +229,6 @@ export default function FeedPage() {
 
     setIsLoading(!feedHydratado && publicaciones.length === 0);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedHydratado, isFeedLoading, feedQueryError, publicaciones.length]);
 
   useEffect(() => {
@@ -400,61 +401,58 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-canvas text-primary">
       <main className="mx-auto max-w-2xl px-3 py-4 sm:px-4 sm:py-6">
         {!isLoading &&
           !errorMessage &&
           !(isHistoriasBarLoading && historiasItems.length === 0) && (
-          <div className="-mx-3 mb-4 border-b border-gray-800 bg-gray-950 px-3 py-3 sm:-mx-4 sm:px-4">
+          <div className="-mx-3 mb-4 border-b border-border bg-surface px-3 py-3 sm:-mx-4 sm:px-4">
             <HistoriasBar
               items={historiasItems}
               onClickComercio={handleClickHistoriaComercio}
             />
 
             {historiasErrorMessage ? (
-              <div className="mt-2 rounded-xl border border-yellow-900 bg-yellow-950/30 p-3 text-sm text-yellow-200">
+              <Alert variant="warning" role="status" className="mt-2 text-sm">
                 {historiasErrorMessage}
-              </div>
+              </Alert>
             ) : null}
           </div>
         )}
 
         {isLoading && publicaciones.length === 0 && (
           <div className="space-y-4">
-            <div className="h-[70vh] rounded-3xl border border-gray-800 bg-gray-900 animate-pulse" />
-            <div className="h-[70vh] rounded-3xl border border-gray-800 bg-gray-900 animate-pulse" />
+            <Skeleton className="h-[70vh] rounded-3xl border border-border" />
+            <Skeleton className="h-[70vh] rounded-3xl border border-border" />
           </div>
         )}
 
         {!isLoading && errorMessage && (
-          <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
-            <p className="font-semibold text-red-200">Error</p>
-            <p className="mt-2 text-red-100 break-words">{errorMessage}</p>
-          </div>
+          <Alert variant="danger" role="alert" className="p-5">
+            <p className="font-semibold">Error</p>
+            <p className="mt-2 break-words">{errorMessage}</p>
+          </Alert>
         )}
 
         {feedHydratado && !isLoading && !isFeedLoading && !errorMessage && publicaciones.length === 0 && (
-          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6 text-center">
-            <p className="font-semibold text-gray-200">No hay publicaciones</p>
-            <p className="mt-2 text-sm text-gray-400">
+          <Surface variant="subtle" className="p-6 text-center">
+            <p className="font-semibold">No hay publicaciones</p>
+            <p className="mt-2 text-sm text-secondary">
               Cuando existan publicaciones activas, aparecerán acá.
             </p>
-          </div>
+          </Surface>
         )}
 
         {!isLoading && !errorMessage && publicaciones.length > 0 && (
           <section className="space-y-6">
             {publicaciones.map((p) => (
-              <article
+              <Surface
                 key={p.id}
+                variant="elevated"
                 className="
                   min-h-[72vh]
                   scroll-mt-24
                   rounded-3xl
-                  border
-                  border-gray-800
-                  bg-gray-900
-                  shadow-xl
                   overflow-hidden
                 "
               >
@@ -466,30 +464,38 @@ export default function FeedPage() {
                   onToggleSave={() => handleToggleSave(p.id)}
                   compactActions={true}
                 />
-              </article>
+              </Surface>
             ))}
           </section>
         )}
       </main>
 
         {showWelcomeModal && (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-orange-500/30 bg-gray-950 shadow-2xl">
+    <ActiveLayer
+      onClose={() => setShowWelcomeModal(false)}
+      labelledBy="feed-welcome-title"
+      describedBy="feed-welcome-description"
+      initialFocusRef={welcomeActionRef}
+      closeOnBackdrop={false}
+      closeOnEscape={false}
+      className="px-4"
+      backdropClassName="bg-overlay-backdrop backdrop-blur-sm"
+      contentClassName="w-full max-w-md"
+      zIndex={200}
+    >
+      <Surface variant="elevated" className="max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl">
         
     {/* Header visual */}
-    <div className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300 px-6 py-8 text-center">
-        <div className="absolute inset-0 opacity-10">
-          <div className="h-full w-full bg-[radial-gradient(circle_at_top_right,white,transparent_45%)]" />
-        </div>
+    <div className="relative overflow-hidden bg-interactive-primary px-6 py-8 text-center text-interactive-on-primary">
 
       <h2
+        id="feed-welcome-title"
         className="
           relative
           -mt-3
           text-5xl
           font-black
           tracking-tight
-          text-white
           drop-shadow-lg
         "
       style={{
@@ -500,10 +506,10 @@ export default function FeedPage() {
         ¡Bienvenido!
       </h2>
 
-      <div className="mt-4 relative mx-auto flex h58 w-58 items-center justify-center overflow-hidden rounded-full bg-gray-950 ring-4 ring-white/40 shadow-4xl">
+      <div className="relative mx-auto mt-4 flex h-58 w-58 items-center justify-center overflow-hidden rounded-full bg-canvas ring-4 ring-interactive-on-primary shadow-2xl">
         <img
           src="/logo_Feedgo.png"
-          alt="MiPlaza"
+          alt="FeedGo"
           className="h-full w-full object-contain p-5"
         />
       </div>
@@ -519,7 +525,6 @@ export default function FeedPage() {
             text-2xl
             font-black
             tracking-tight
-            text-white
             drop-shadow-lg
           "
           style={{
@@ -530,31 +535,33 @@ export default function FeedPage() {
           Tu vidriera digital
         </p>
 
-          <p className="mt-2 text-sm leading-7 text-gray-300">
+          <p id="feed-welcome-description" className="mt-2 text-sm leading-7 text-secondary">
             Descubrí comercios, servicios profesionales y espacios cerca tuyo.
           </p>
 
-          <p className="mt-3 text-sm leading-7 text-gray-400">
+          <p className="mt-3 text-sm leading-7 text-muted">
             Explorá publicaciones, mirá historias, guardá lo que te interesa,
             seguí espacios y encontrá nuevas oportunidades en tu ciudad.
           </p>
 
-          <div className="mt-6 rounded-2xl border border-amber-300/20 bg-amber-200/10 p-4 backdrop-blur-sm">
-            <p className="text-sm text-orange-200">
+          <Surface variant="subtle" className="mt-6 p-4">
+            <p className="text-sm text-brand">
               MiPlaza no solo conecta personas, negocios y oportunidades en un solo lugar.
             </p>
-          </div>
+          </Surface>
 
-          <button
+          <Button
+            ref={welcomeActionRef}
             type="button"
             onClick={() => setShowWelcomeModal(false)}
-            className="interactive-bubble interactive-bubble--primary mt-7 text-sm font-black leading-5"
+            variant="primary"
+            className="mt-7 text-sm font-black leading-5"
           >
-            <span>Empezar a explorar</span>
-          </button>
+            Empezar a explorar
+          </Button>
         </div>
-      </div>
-    </div>
+      </Surface>
+    </ActiveLayer>
   )}
 
       <HistoriasViewer
@@ -569,11 +576,6 @@ export default function FeedPage() {
     </div>
   );
 }
-
-
-
-
-
 
 
 

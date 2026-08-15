@@ -54,6 +54,23 @@ DOCUMENTOS_OBLIGATORIOS_REGISTRO = (
     ),
 )
 
+DOCUMENTOS_PUBLICOS_URLS = {
+    DOCUMENTO_TERMINOS_CONDICIONES: "/terminos-y-condiciones",
+    DOCUMENTO_POLITICA_PRIVACIDAD: "/politica-de-privacidad",
+}
+
+
+def listar_documentos_publicos_vigentes() -> list[dict[str, str]]:
+    return [
+        {
+            "tipo": documento.tipo,
+            "version": documento.version,
+            "referencia": documento.referencia,
+            "url": DOCUMENTOS_PUBLICOS_URLS[documento.tipo],
+        }
+        for documento in DOCUMENTOS_OBLIGATORIOS_REGISTRO
+    ]
+
 
 def validar_aceptaciones_obligatorias_registro(usuario: UsuarioCreate) -> None:
     if usuario.acepta_terminos is not True:

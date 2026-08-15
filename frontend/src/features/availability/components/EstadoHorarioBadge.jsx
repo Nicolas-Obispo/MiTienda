@@ -1,20 +1,20 @@
 const ESTADO_CONFIG = {
   abierto: {
-    dotClassName: "bg-green-400",
-    className: "border-green-500/40 bg-green-950/60 text-green-200",
-    inlineClassName: "text-green-300",
+    dotClassName: "bg-success-text",
+    className: "border-success-border bg-success-surface text-success-text",
+    inlineClassName: "text-success-text",
     fallbackText: "Abierto",
   },
   cerrado: {
-    dotClassName: "bg-red-400",
-    className: "border-red-500/40 bg-red-950/60 text-red-200",
-    inlineClassName: "text-red-300",
+    dotClassName: "bg-danger-text",
+    className: "border-danger-border bg-danger-surface text-danger-text",
+    inlineClassName: "text-danger-text",
     fallbackText: "Cerrado",
   },
   sin_horarios: {
-    dotClassName: "bg-gray-400",
-    className: "border-gray-600 bg-gray-950/70 text-gray-300",
-    inlineClassName: "text-gray-400",
+    dotClassName: "bg-disabled-text",
+    className: "border-disabled-border bg-disabled-surface text-disabled-text",
+    inlineClassName: "text-muted",
     fallbackText: "No hay horarios declarados",
   },
 };

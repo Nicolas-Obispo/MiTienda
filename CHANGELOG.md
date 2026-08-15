@@ -9,6 +9,59 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 95 - Experiencia de Lanzamiento y Design System Critico
+
+**Estado:** Cerrada tecnica y documentalmente
+
+### Resultado
+
+- Se completo el sistema de ubicacion: privacidad publica/privada, geocoding
+  desacoplado con Geoapify backend-only, Search territorial, contexto
+  geografico efimero y Cache-First por territorio/`positionRevision`.
+- Se consolidaron documentos y aceptaciones legales versionados, selector de
+  ubicacion seguro y compatibilidad historica de datos.
+- Se implementaron tema `dark/light/system`, bootstrap anti-flash, tokens
+  semanticos, primitives compartidas y cobertura visual completa del frontend.
+- Se cerraron accesibilidad transversal, ActiveLayer como owner de overlays,
+  responsive y consistencia de owners sin alterar negocio ni navegacion.
+- 95.7-A completo Frontend Ownership Audit y 95.7-B retiro siete residuos
+  categoria D, dejando cero residuos reales pendientes.
+
+### Gate final 95.7-C
+
+- 241 tests backend y 190 tests frontend correctos.
+- `compileall`, lint sin errores, build productivo y `git diff --check`
+  correctos; permanecen cuatro warnings historicos de hooks ya documentados.
+- Los requisitos institucionales, operativos y de revision profesional del
+  expediente legal siguen pendientes antes de produccion; no bloquean el
+  cierre tecnico de la etapa ni se declaran aprobados.
+- La siguiente etapa oficial es ETAPA 96 - Plataforma Instalable y PWA
+  Enterprise, pendiente y no iniciada. ETAPA 98 - Correccion y Pulido Visual
+  del Frontend permanece reservada como etapa futura independiente.
+
+## ETAPA 95.1 - Sistema de Ubicacion
+
+**Estado:** Cierre tecnico completado; ETAPA 95 continua abierta
+
+### Implementado
+
+- Contrato de ubicacion completa y visibilidad publica/privada compatible con
+  historicos.
+- Proyeccion backend segura, selector con borrador/confirmacion, geocoding
+  backend reemplazable y Geoapify aprobado con limitaciones.
+- Search territorial local/expandido, banda privada interna, ubicacion dinamica
+  de sesion y Cache-First por territorio/`positionRevision`.
+- Terminos y Politica publicos separados, versionados desde el owner backend,
+  control de privacidad en espacios y hardening final de presentacion/cache.
+
+### Gate
+
+- 95.1 queda tecnicamente cerrado con validaciones automatizadas A-G.
+- Produccion y lanzamiento continuan condicionados a completar datos
+  institucionales, derechos, retencion, reaceptacion, controles operativos y
+  formalizaciones documentadas en `docs/19_LOCATION_LEGAL_GATE.md`.
+- No se cierra ETAPA 95 ni se ejecuta aun la Frontend Ownership Audit.
+
 ## Sistema de Gobierno — Continuidad documental controlada
 
 ### Gobierno
@@ -30,6 +83,38 @@ Para detalle histórico extenso previo, ver:
 
 - No se modificaron backend, frontend, roadmap, alcance de ETAPA 95, ETAPA 96
   ni decisiones funcionales del sistema de ubicación.
+
+## ETAPA 96 — Plataforma Instalable y PWA Enterprise
+
+**Estado:** Incorporada al roadmap; pendiente hasta el cierre de ETAPA 95
+
+### Gobierno y producto
+
+- FeedGo queda definido como aplicacion multiplataforma cuyo primer canal
+  oficial de distribucion sera una Progressive Web App.
+- La aplicacion web no constituye un producto diferente ni una version temporal
+  previa a aplicaciones moviles futuras.
+- Toda funcionalidad debera preservar compatibilidad con navegador de
+  escritorio, navegador movil y aplicacion instalada cuando corresponda.
+- ETAPA 96 queda establecida como gate obligatorio previo a pruebas masivas,
+  beta publica y lanzamiento.
+
+### Roadmap
+
+- Se incorpora ETAPA 96 despues de ETAPA 95 y antes de Administracion Operativa
+  Minima e Infraestructura y Lanzamiento Controlado.
+- Las etapas posteriores se renumeran correlativamente hasta ETAPA 111.
+- La etapa se divide en tres sprints: identidad e instalacion segura; runtime
+  PWA, offline, seguridad y actualizacion; experiencia instalada,
+  compatibilidad y gate final.
+- Se incorpora `docs/18_PWA_ENTERPRISE.md` como documento tecnico propietario.
+
+### Sin implementacion
+
+- No se modifico backend ni frontend.
+- No se implemento manifiesto, service worker, cache, offline ni instalacion.
+- No se incorporaron Capacitor, tiendas, Web Push, Background Sync, mutaciones
+  offline, mapas offline ni funcionamiento offline completo.
 
 ## ETAPA 94 — QA Integral y Hardening Funcional
 
@@ -1933,7 +2018,7 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 
 ### Deuda controlada
 
-- Queda diferida a ETAPA 101 la unificación visual completa del Design System: botones secundarios restantes, espaciados, alineaciones, iconografía, jerarquía visual, formularios y responsive.
+- Queda diferida a ETAPA 95 la unificación visual completa del Design System: botones secundarios restantes, espaciados, alineaciones, iconografía, jerarquía visual, formularios y responsive.
 
 ---
 
@@ -2014,12 +2099,13 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 
 - ETAPA 89 deja de ser Productos e Inventario y pasa a ser Reorganizacion del
   Roadmap y Gobierno de Lanzamiento.
-- Productos e Inventario queda postergado a ETAPA 102 - Catalogo de Productos
+- Productos e Inventario queda postergado a ETAPA 103 - Catalogo de Productos
   y Disponibilidad Simple.
-- El lanzamiento controlado queda proyectado alrededor de ETAPA 97.
-- ETAPAS 90-96 quedan orientadas a seguridad, legalidad, datos, operacion,
-  calidad, experiencia de lanzamiento y administracion operativa minima.
-- ETAPAS 98-110 quedan orientadas a evolucion posterior basada en uso real.
+- El lanzamiento controlado queda proyectado alrededor de ETAPA 98.
+- ETAPAS 90-97 quedan orientadas a seguridad, legalidad, datos, operacion,
+  calidad, experiencia de lanzamiento, plataforma PWA y administracion
+  operativa minima.
+- ETAPAS 99-111 quedan orientadas a evolucion posterior basada en uso real.
 
 ### Agregado
 
@@ -2080,7 +2166,7 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
   HTTP, roles ni dominios consumidores.
 - Se endurecio logout para exigir token valido y evitar revocar tokens ausentes
   o invalidos.
-- Se bloquearon mutaciones legacy de Productos hasta que ETAPA 102 defina el
+- Se bloquearon mutaciones legacy de Productos hasta que ETAPA 103 defina el
   ownership oficial del dominio.
 - Se agregaron tests automatizados de autorizacion para publicaciones,
   historias, secciones, analytics, helper de ownership, logout y productos
@@ -2091,7 +2177,7 @@ El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes o
 - Se registro la decision permanente de ownership derivado desde Comercio.
 - Se incorporo el principio de ownership backend de recursos derivados.
 - Se asignaron pendientes residuales a ETAPA 91, ETAPA 93, ETAPA 94, ETAPA 95
-  y ETAPA 102.
+  y ETAPA 103.
 
 ### Cierre formal
 

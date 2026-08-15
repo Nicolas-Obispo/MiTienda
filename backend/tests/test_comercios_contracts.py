@@ -88,7 +88,13 @@ class ComerciosContractsTests(unittest.TestCase):
         token = crear_token_jwt({"sub": str(usuario_id)})
         return {"Authorization": f"Bearer {token}"}
 
-    def _crear_comercio(self, *, comercio_id: int = 10, usuario_id: int = 1):
+    def _crear_comercio(
+        self,
+        *,
+        comercio_id: int = 10,
+        usuario_id: int = 1,
+        mostrar_direccion_publicamente: bool = True,
+    ):
         db = TestingSessionLocal()
         comercio = Comercio(
             id=comercio_id,
@@ -99,6 +105,11 @@ class ComerciosContractsTests(unittest.TestCase):
             rubro_id=1,
             provincia="Buenos Aires",
             ciudad="La Plata",
+            direccion="Calle 12 345",
+            latitud=-34.9214,
+            longitud=-57.9544,
+            maps_url="https://maps.example/espacio",
+            mostrar_direccion_publicamente=mostrar_direccion_publicamente,
             activo=True,
         )
         db.add(comercio)
@@ -106,6 +117,17 @@ class ComerciosContractsTests(unittest.TestCase):
         db.refresh(comercio)
         db.close()
         return comercio
+
+    def _assert_no_expone_ubicacion_privada(self, data: dict):
+        for campo in (
+            "direccion",
+            "latitud",
+            "longitud",
+            "maps_url",
+            "distancia_km",
+        ):
+            self.assertNotIn(campo, data)
+        self.assertEqual(data["ciudad"], "La Plata")
 
     def test_obtener_comercio_publico_no_expone_usuario_id(self):
         self._crear_comercio(comercio_id=10, usuario_id=1)
@@ -151,6 +173,76 @@ class ComerciosContractsTests(unittest.TestCase):
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["usuario_id"], 1)
         self.assertEqual(data[0]["id"], 10)
+
+    def test_detalle_publico_oculta_ubicacion_privada(self):
+        self._crear_comercio(
+            comercio_id=10,
+            mostrar_direccion_publicamente=False,
+        )
+
+        response = client.get("/comercios/10")
+
+        self.assertEqual(response.status_code, 200)
+        self._assert_no_expone_ubicacion_privada(response.json())
+
+    def test_lista_publica_oculta_ubicacion_privada(self):
+        self._crear_comercio(
+            comercio_id=10,
+            mostrar_direccion_publicamente=False,
+        )
+
+        response = client.get("/comercios")
+
+        self.assertEqual(response.status_code, 200)
+        self._assert_no_expone_ubicacion_privada(response.json()[0])
+
+    def test_explorar_oculta_ubicacion_y_distancia_privadas(self):
+        self._crear_comercio(
+            comercio_id=10,
+            mostrar_direccion_publicamente=False,
+        )
+
+        response = client.get(
+            "/comercios/activos",
+            params={"lat": -34.91, "lng": -57.95},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self._assert_no_expone_ubicacion_privada(response.json()[0])
+
+    def test_owner_recibe_ubicacion_privada_completa_en_mis_comercios(self):
+        self._crear_usuario(usuario_id=1)
+        self._crear_comercio(
+            comercio_id=10,
+            usuario_id=1,
+            mostrar_direccion_publicamente=False,
+        )
+
+        response = client.get("/comercios/mis", headers=self._auth_headers(1))
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()[0]
+        self.assertEqual(data["direccion"], "Calle 12 345")
+        self.assertEqual(data["latitud"], -34.9214)
+        self.assertEqual(data["longitud"], -57.9544)
+        self.assertEqual(data["maps_url"], "https://maps.example/espacio")
+        self.assertFalse(data["mostrar_direccion_publicamente"])
+
+    def test_espacio_publico_preserva_contrato_geografico(self):
+        self._crear_comercio(comercio_id=10)
+
+        response = client.get(
+            "/comercios/activos",
+            params={"lat": -34.91, "lng": -57.95},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()[0]
+        self.assertEqual(data["direccion"], "Calle 12 345")
+        self.assertEqual(data["latitud"], -34.9214)
+        self.assertEqual(data["longitud"], -57.9544)
+        self.assertEqual(data["maps_url"], "https://maps.example/espacio")
+        self.assertIsInstance(data["distancia_km"], float)
 
 
 if __name__ == "__main__":

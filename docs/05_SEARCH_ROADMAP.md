@@ -717,7 +717,7 @@ Residuos diferidos no bloqueantes:
 - Browserslist desactualizado y advertencia de chunk grande.
 - Warnings historicos de SQLite y `datetime.utcnow()`.
 
-### ◐ ETAPA 95
+### ☑ ETAPA 95
 
 Experiencia de Lanzamiento y Design System Critico.
 
@@ -729,7 +729,7 @@ diseno.
 
 Estado:
 
-Vigente.
+Cerrada tecnica y documentalmente.
 
 Pendientes programados desde ETAPA 90:
 
@@ -745,6 +745,162 @@ Pendientes programados desde ETAPA 90:
 Subetapa tecnica prevista:
 
 - Sistema global de temas y tokens semanticos, previo al lanzamiento.
+
+Sprints oficiales y estado:
+
+- 95.1 - Integridad funcional del mapa y ubicacion: cerrado tecnicamente. Su
+  implementacion consolidada tambien resolvio privacidad geografica,
+  geocoding backend, Search territorial, ubicacion dinamica, Cache-First
+  geografico, documentos publicos y hardening relacionado;
+- 95.2 - UX del mapa, permisos y privacidad: alcance absorbido y validado en
+  95.1. No se abre como sprint de implementacion independiente;
+- 95.3 - Inventario visual e infraestructura global del tema: cerrado
+  tecnicamente;
+- 95.4 - Tokens semanticos y componentes compartidos: cerrado tecnicamente;
+- 95.5 - Migracion controlada de pantallas criticas: cerrado tecnicamente;
+- 95.6 - Consolidacion de accesibilidad, overlays, responsive y consistencia:
+  cerrado tecnicamente; accesibilidad, overlays/modales, responsive y
+  consistencia final quedaron validados sin modificar comportamiento;
+- 95.7 - QA integral, hardening, `Frontend Ownership Audit`, auditoria de
+  residuos tecnicos y cierre documental: cerrado. 95.7-A queda respaldado por
+  `docs/24_FRONTEND_OWNERSHIP_AUDIT.md`; 95.7-B por
+  `docs/25_TECHNICAL_RESIDUE_AUDIT.md`, con siete entradas categoria D
+  retiradas y cero residuos reales pendientes; 95.7-C confronto gates,
+  riesgos, working tree, suites y documentacion final. Resultado: GO tecnico y
+  documental para cerrar ETAPA 95;
+
+Alcance neto de 95.3:
+
+- construir primero un inventario visual completo y trazable de backgrounds,
+  textos, bordes, estados, superficies, overlays, navegacion, formularios,
+  cards, modales y skeletons existentes;
+- identificar el owner natural de la infraestructura global de tema y auditar
+  inicializacion, persistencia y aplicacion al documento;
+- definir, en un bloque posterior del mismo sprint, el controlador global de
+  tema compatible con modo oscuro, claro y configuracion del dispositivo;
+- no crear todavia tokens semanticos ni migrar componentes o pantallas: esas
+  tareas pertenecen a 95.4 y 95.5;
+- no modificar LocationPicker, geocoding, permisos, privacidad, Search
+  territorial, ubicacion dinamica ni Cache-First geografico salvo regresion
+  objetiva demostrada.
+
+Documento tecnico propietario del inventario y evidencia de 95.3-A:
+
+- `docs/20_FRONTEND_VISUAL_INVENTORY.md`.
+
+Estado interno:
+
+- 95.3-A - Inventario visual completo: cerrado documentalmente;
+- 95.3-B - Contrato global del tema, persistencia, inicializacion y estrategia
+  anti-flash: cerrado documentalmente en `docs/21_THEME_CONTRACT.md`;
+- 95.3-C - Implementacion de infraestructura global y tests del contrato:
+  implementada y validada;
+- 95.3-D - Auditoria de cierre y hardening de infraestructura: completada;
+- Sprint 95.3 - Inventario visual e infraestructura global del tema: cerrado
+  tecnicamente;
+- 95.4 - Tokens semanticos y componentes compartidos: cerrado tecnicamente;
+- 95.4-A - Contrato de tokens semanticos: cerrado documentalmente en
+  `docs/22_SEMANTIC_TOKENS_CONTRACT.md`;
+- 95.4-B - Fuente CSS, aliases Tailwind, validacion de contraste y adaptacion
+  cromatica del efecto burbuja: implementado y validado, sin migracion de
+  pantallas;
+- 95.4-C - contrato y base compartida de botones/primitives: implementado y
+  validado con Button, Surface, controles, Alert y Skeleton,
+  sin adopcion de consumidores;
+- 95.4-D - validacion final, hardening de API compartida y cierre tecnico de
+  95.4: completado con 63 tests frontend, lint sin errores y build productivo
+  correcto, sin adopcion de consumidores;
+- 95.5 - Migracion controlada de pantallas criticas: cerrado tecnicamente;
+- 95.5-A - primera migracion controlada: debe implementar obligatoriamente el
+  selector visible de apariencia en `Perfil -> Editar perfil`, consumiendo solo
+  `preference` y `setPreference(...)`; su ausencia bloquea el cierre de ETAPA
+  95. Estado: implementado y validado junto con la migracion semantica de la
+  superficie Editar perfil, sin migrar otras pantallas;
+- 95.5-B - Registro y autenticacion relacionada: implementado y validado con
+  checkboxes y enlaces legales, submit, login y navegacion preservados; no se
+  migraron superficies ajenas a Auth;
+- 95.5-C - Explorar: implementado y validado visualmente; preserva Search,
+  contexto territorial, privacidad, Cache-First, query keys y navegacion, y
+  migra solo los owners visuales compartidos necesarios; evidencia: 83 tests
+  frontend correctos, lint sin errores y build productivo correcto;
+- 95.5-D - Feed: implementado y validado mediante tokens/primitives en Feed,
+  cards, barra de historias, estados e interacciones; preserva Cache-First,
+  optimistic updates, requests, historias, media y navegacion; evidencia: 93
+  tests frontend correctos, lint sin errores y build productivo correcto;
+- 95.5-E - Ranking / Tendencias: implementado y validado en su shell y estados,
+  reutilizando `PublicacionCard` y preservando query key, orden, Cache-First,
+  optimistic updates y rollback; incluye correccion central del alias Tailwind
+  de roles de texto; evidencia: 101 tests frontend correctos, lint sin errores
+  y build productivo correcto;
+- 95.5-F - Seguidos: implementado y validado en shell, tabs, cards y estados;
+  reutiliza `GeographicContextControls` y preserva query key,
+  `positionRevision`, `staleTime`, Cache-First, permisos, distancia y privacidad;
+  evidencia: 107 tests frontend correctos, lint sin errores y build productivo
+  correcto;
+- 95.5-G - Perfil / identidad visible de usuario: implementado sobre `/perfil`
+  mediante tokens y primitives, preservando carga, avatar, edicion, logout,
+  navegacion y acciones; el sistema no posee perfil publico de terceros y el
+  bloque no inventa esa funcionalidad; evidencia: 114 tests frontend correctos,
+  lint sin errores y build productivo correcto;
+- 95.5-H - Alta, edicion y administracion de espacios: implementado en el
+  formulario compartido, listado, `LocationPicker` y editor de horarios;
+  preserva payloads, endpoints, privacidad, Geoapify, branding, ownership y
+  Cache-First existente; evidencia: 123 tests frontend correctos, lint sin
+  errores y build productivo correcto;
+- 95.5-I - Perfil publico de espacio: implementado mediante tokens/primitives
+  en shell, identidad, informacion publica, acciones, publicaciones, estados y
+  overlays propios; preserva detalle, privacidad backend-owned, seguimiento,
+  Cache-First y los owners independientes de Historias, Agenda y Moderacion;
+  evidencia: 129 tests frontend correctos, lint sin errores y build productivo
+  correcto;
+- 95.5-J - Historias: implementado con `HistoriasViewer` bajo contrato local de
+  apariencia fija validada y formulario de creacion tematizado; preserva RAF,
+  navegacion, media, likes, upload, payload y callbacks; evidencia: 140 tests
+  frontend correctos, lint sin errores y build productivo correcto;
+- 95.5-K - Agenda y reservas: implementado en Agenda general y privada sobre
+  `ActiveLayer`, con vista diaria, filtros, formulario, listados y estados
+  semanticos; preserva Cache-First, fechas, versionado, mutaciones e
+  invalidaciones; evidencia: 147 tests frontend correctos, lint sin errores y
+  build productivo correcto;
+- 95.5-L - Superficies legales: implementado en Terminos y Politica de
+  Privacidad mediante un shell compartido, tokens, `Surface` y `Alert`;
+  preserva contenido juridico, rutas, versionado backend-owned, enlaces y
+  aceptaciones de Registro; evidencia: 152 tests frontend correctos, lint sin
+  errores y build productivo correcto;
+- 95.5-M - Auditoria visual transversal: revalida light/dark por superficie,
+  corrige centralmente la precedencia CSS de `interactive-bubble` sobre las
+  variantes de Button y registra exactamente tres superficies residuales:
+  Home, detalle de publicacion y DenunciaModal;
+- 95.5-N - Detalle de publicacion y DenunciaModal: migrados con tokens,
+  primitives y ActiveLayer, preservando query cache, interacciones, media,
+  payload de denuncia y bloqueo durante mutaciones; queda Home como unica
+  superficie visual pendiente;
+- la cobertura acumulada, excepciones y pendientes se controlan en
+  `23_FRONTEND_VISUAL_COVERAGE.md`;
+- gate acumulado de 95.5: antes de cerrar debe existir una matriz exhaustiva
+  `migrado / excepcion justificada / pendiente` para todas las superficies
+  reales; cualquier pendiente bloquea el cierre y la mezcla visual solo es
+  transitoriamente valida mientras el sprint permanece abierto;
+- el QA final de 95.5 debe validar light, dark, cambio runtime, contraste,
+  navegacion, layouts, formularios, cards, capas, estados, loaders, skeletons,
+  responsive y botones; defectos compartidos se corrigen por owner desde
+  tokens y primitives, no con colores fisicos locales;
+- migracion de pantallas y creacion de primitives permanecen fuera de 95.4-B.
+
+El refinamiento visual residual del mapa no reabre 95.1: se evalua junto con
+accesibilidad, responsive y consistencia transversal en 95.6. La
+`Frontend Ownership Audit` permanece obligatoria en 95.7 antes del cierre de
+ETAPA 95 y no se ejecuta durante este checkpoint. En el mismo gate debe
+ejecutarse una auditoria separada de residuos creados durante la etapa:
+scripts y archivos temporales, tests/mocks auxiliares, debugging e
+instrumentacion, TODO/FIXME introducidos, imports/codigo/helpers/componentes
+sin uso, CSS/clases antiguas, duplicados, adapters/providers abandonados,
+artefactos Nominatim, validacion Geoapify y migraciones one-shot. Cada elemento
+debe clasificarse con evidencia como `conservar permanentemente`,
+`mover/reubicar`, `documentar` o `eliminar por residuo`. No se autoriza una
+eliminacion automatica ni remover tests que mantengan valor de regresion. La
+auditoria y la limpieza/documentacion resultante bloquean el cierre final de
+ETAPA 95, pero no se ejecutan durante 95.5.
 
 Alcance:
 
@@ -811,6 +967,20 @@ Diferenciacion:
 
 ### ☐ ETAPA 96
 
+Plataforma Instalable y PWA Enterprise.
+
+Objetivo:
+
+Convertir FeedGo en una PWA completa, segura, actualizable, resiliente y
+verificable, apta como primer canal oficial de distribucion multiplataforma y
+preparada para pruebas masivas, beta publica y lanzamiento controlado.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 97
+
 Administracion Operativa Minima.
 
 Objetivo:
@@ -826,7 +996,47 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 97
+### ☐ ETAPA 98
+
+Correccion y Pulido Visual del Frontend.
+
+Objetivo:
+
+Revisar y emprolijar como producto terminado todo lo que realmente ve el
+usuario, sin agregar funcionalidades ni cambiar logica de negocio.
+
+Alcance:
+
+- recorrer mediante render real todas las superficies vigentes, incluyendo
+  Home, autenticacion, perfiles, Explorar, Feed, Ranking, Seguidos, espacios,
+  publicaciones, creacion/edicion, Agenda, Historias, legales, navegacion,
+  formularios, modales, overlays y estados loading/error/empty;
+- revisar botones, textos, tipografia, spacing, alineacion, cards, iconos,
+  formularios, navegacion, modales, estados, light/dark, responsive visible y
+  consistencia general en movil y desktop;
+- corregir desde `tokens -> primitives -> shared -> dominio -> pantalla`, sin
+  parches repetidos ni refactors masivos;
+- exigir evidencia humana/renderizada y capturas/comparaciones cuando sea
+  tecnicamente posible; tests estaticos complementan pero no reemplazan esa
+  evidencia;
+- clasificar por separado cualquier bug funcional y resolverlo desde su owner,
+  sin usar esta etapa para cambiar Search, ranking, privacidad,
+  geolocalizacion o arquitectura.
+
+Gate:
+
+- todas las superficies reales revisadas;
+- cero defectos visuales bloqueantes conocidos;
+- botones, textos y controles legibles;
+- movil/desktop y light/dark consistentes;
+- todos los hallazgos corregidos o justificados;
+- tests, lint y build correctos.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 99
 
 Infraestructura y Lanzamiento Controlado.
 
@@ -839,7 +1049,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 98
+### ☐ ETAPA 100
 
 Analytics y Aprendizaje de Uso Real.
 
@@ -852,7 +1062,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 99
+### ☐ ETAPA 101
 
 Calidad de Datos y Conocimiento Administrable.
 
@@ -865,7 +1075,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 100
+### ☐ ETAPA 102
 
 Reservas Publicas y Carrito de Reserva.
 
@@ -878,7 +1088,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 101
+### ☐ ETAPA 103
 
 Mensajeria y Cotizaciones.
 
@@ -893,7 +1103,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 102
+### ☐ ETAPA 104
 
 Catalogo de Productos y Disponibilidad Simple.
 
@@ -912,7 +1122,7 @@ Pendiente programado desde ETAPA 90:
 - revisar Productos legacy y definir ownership oficial antes de habilitar
   mutaciones de catalogo o inventario.
 
-### ☐ ETAPA 103
+### ☐ ETAPA 105
 
 Promociones y Fidelizacion.
 
@@ -925,7 +1135,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 104
+### ☐ ETAPA 106
 
 Opiniones y Motor de Reputacion.
 
@@ -938,7 +1148,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 105
+### ☐ ETAPA 107
 
 Notificaciones Inteligentes.
 
@@ -951,7 +1161,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 106
+### ☐ ETAPA 108
 
 Preferencias, Recomendaciones y Contexto.
 
@@ -964,7 +1174,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 107
+### ☐ ETAPA 109
 
 IA Conversacional.
 
@@ -977,7 +1187,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 108
+### ☐ ETAPA 110
 
 Tendencias, Oferta, Demanda y Motor Predictivo.
 
@@ -990,7 +1200,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 109
+### ☐ ETAPA 111
 
 Ranking Dinamico y Descubrimiento Proactivo.
 
@@ -1003,7 +1213,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 110
+### ☐ ETAPA 112
 
 Plataforma Comercial y Backend Universal.
 
@@ -1016,7 +1226,7 @@ Estado:
 
 Pendiente.
 
-## Vision futura 100+
+## Vision futura complementaria
 
 Esta seccion registra una vision futura de evolucion enterprise posterior o
 complementaria al roadmap vigente.
@@ -1029,11 +1239,11 @@ No autoriza implementacion.
 
 Propuesta conceptual:
 
-- ETAPA 100 - Optimizacion Enterprise.
-- ETAPA 101 - Administracion Multi-Espacio.
-- ETAPA 102 - Growth, Marketing y Adopcion.
-- ETAPA 103 - Frontend Enterprise.
-- ETAPA 104 - Frontend Comercial.
+- Optimizacion Enterprise.
+- Administracion Multi-Espacio.
+- Growth, Marketing y Adopcion.
+- Frontend Enterprise.
+- Frontend Comercial.
 
 La administracion multi-espacio basica ya es posible con el ownership actual:
 un usuario puede administrar varios espacios vinculados a su cuenta. La futura
@@ -1042,5 +1252,5 @@ colaboradores, permisos compartidos y administracion multiusuario sin asumir
 que esas capacidades existen hoy.
 
 Esta vision debera revisarse formalmente antes de cualquier reorganizacion del
-roadmap. Mientras no exista decision posterior, prevalecen las etapas 100 a 110
+roadmap. Mientras no exista decision posterior, prevalecen las etapas 101 a 112
 ya definidas en este documento.

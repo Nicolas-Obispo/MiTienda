@@ -125,7 +125,7 @@ verificables y restaurables.
 | Taxonomia | `rubros` | alta | Taxonomia comercial | categorias comerciales | logico por `activo` | comercios, productos | alta | Puede reseedearse parcialmente, pero cambios reales pueden perderse. |
 | Taxonomia | `taxonomy_nodes` | alta | Knowledge/Discovery | grafo/taxonomia | logico por `activo` | taxonomy_assignments | alta | Derivado parcialmente, pero curacion puede perderse. |
 | Taxonomia | `taxonomy_assignments` | alta | Discovery | asignaciones a entidades | fisico | taxonomy_nodes, recursos | alta | Recalculable parcialmente; perdida degrada discovery. |
-| Productos legacy | `productos` | media | Productos legacy | producto heredado | fisico/desconocido | rubros | media | Dominio diferido a ETAPA 102; conservar hasta decision. |
+| Productos legacy | `productos` | media | Productos legacy | producto heredado | fisico/desconocido | rubros | media | Dominio diferido a ETAPA 104; conservar hasta decision. |
 | Secciones | `secciones` | media | Comercio | organizacion de comercio | cascada al borrar comercio | publicaciones | media | Puede afectar orden/organizacion del perfil. |
 | Busqueda | `search_events` | media | Search/Knowledge | eventos de busqueda | acumulativo | analytics, aprendizaje | media | Historico de aprendizaje; perdida afecta metricas futuras. |
 | Knowledge | `knowledge_proposals` | alta | Knowledge | propuestas de conocimiento | operativo | graph/workspace | alta | Curacion no necesariamente regenerable. |

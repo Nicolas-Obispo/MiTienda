@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./core/theme/tokens.css";
 @import "leaflet/dist/leaflet.css";
 
 @keyframes logoFadeZoom {
@@ -39,12 +40,16 @@
   animation: saveBounce 0.3s ease;
 }
 
+@layer components {
 .interactive-bubble {
-  --bubble-text: rgb(229 231 235);
-  --bubble-text-hover: rgb(255 255 255);
-  --bubble-border: rgba(186, 230, 253, 0.08);
-  --bubble-border-hover: rgba(186, 230, 253, 0.18);
-  --bubble-focus: rgb(251 146 60);
+  --bubble-text: var(--fg-color-text-secondary);
+  --bubble-text-hover: var(--fg-color-text-primary);
+  --bubble-border: color-mix(in srgb, var(--fg-color-border) 24%, transparent);
+  --bubble-border-hover: color-mix(in srgb, var(--fg-color-border-strong) 52%, transparent);
+  --bubble-focus: var(--fg-color-focus-ring);
+  --bubble-highlight: color-mix(in srgb, var(--fg-color-text-primary) 42%, transparent);
+  --bubble-highlight-soft: color-mix(in srgb, var(--fg-color-text-primary) 16%, transparent);
+  --bubble-highlight-faint: color-mix(in srgb, var(--fg-color-text-primary) 10%, transparent);
   position: relative;
   isolation: isolate;
   display: inline-flex;
@@ -54,7 +59,6 @@
   overflow: visible;
   border: 1px solid var(--bubble-border);
   border-radius: 9999px;
-  background: transparent;
   padding: 0.375rem 0.625rem;
   color: var(--bubble-text);
   transition:
@@ -65,23 +69,42 @@
 }
 
 .interactive-bubble--primary {
-  --bubble-text: rgb(255 237 213);
-  --bubble-border: rgba(251, 146, 60, 0.12);
-  --bubble-border-hover: rgba(251, 146, 60, 0.34);
+  --bubble-text: var(--fg-color-brand);
+  --bubble-border: color-mix(in srgb, var(--fg-color-brand) 24%, transparent);
+  --bubble-border-hover: color-mix(in srgb, var(--fg-color-brand) 58%, transparent);
+}
+
+.interactive-bubble--primary-action {
+  --bubble-text: var(--fg-color-interactive-on-primary);
+  --bubble-text-hover: var(--fg-color-interactive-on-primary);
+  --bubble-border: color-mix(in srgb, var(--fg-color-brand-strong) 34%, transparent);
+  --bubble-border-hover: color-mix(in srgb, var(--fg-color-interactive-on-primary) 52%, transparent);
+}
+
+.interactive-bubble--secondary {
+  --bubble-text: var(--fg-color-text-primary);
+  --bubble-text-hover: var(--fg-color-text-primary);
 }
 
 .interactive-bubble--danger {
-  --bubble-text: rgb(254 202 202);
-  --bubble-border: rgba(248, 113, 113, 0.14);
-  --bubble-border-hover: rgba(248, 113, 113, 0.36);
-  --bubble-focus: rgb(248 113 113);
+  --bubble-text: var(--fg-color-danger-text);
+  --bubble-border: color-mix(in srgb, var(--fg-color-danger-border) 28%, transparent);
+  --bubble-border-hover: color-mix(in srgb, var(--fg-color-danger-border) 62%, transparent);
+  --bubble-focus: var(--fg-color-danger-text);
 }
 
 .interactive-bubble--warning {
-  --bubble-text: rgb(253 230 138);
-  --bubble-border: rgba(245, 158, 11, 0.14);
-  --bubble-border-hover: rgba(245, 158, 11, 0.34);
-  --bubble-focus: rgb(251 191 36);
+  --bubble-text: var(--fg-color-warning-text);
+  --bubble-border: color-mix(in srgb, var(--fg-color-warning-border) 28%, transparent);
+  --bubble-border-hover: color-mix(in srgb, var(--fg-color-warning-border) 62%, transparent);
+  --bubble-focus: var(--fg-color-warning-text);
+}
+
+.interactive-bubble--success {
+  --bubble-text: var(--fg-color-success-text);
+  --bubble-border: color-mix(in srgb, var(--fg-color-success-border) 28%, transparent);
+  --bubble-border-hover: color-mix(in srgb, var(--fg-color-success-border) 62%, transparent);
+  --bubble-focus: var(--fg-color-success-text);
 }
 
 .interactive-bubble--flush {
@@ -158,8 +181,8 @@
   background:
     radial-gradient(
       ellipse at 23% 18%,
-      rgba(255, 255, 255, 0.42) 0%,
-      rgba(255, 255, 255, 0.16) 16%,
+      var(--bubble-highlight) 0%,
+      var(--bubble-highlight-soft) 16%,
       transparent 34%
     ),
     radial-gradient(
@@ -170,11 +193,11 @@
     linear-gradient(
       108deg,
       transparent 18%,
-      rgba(255, 255, 255, 0.1) 36%,
+      var(--bubble-highlight-faint) 36%,
       transparent 52%
     );
   opacity: 0.04;
-  box-shadow: inset 0 0 14px rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 14px color-mix(in srgb, var(--fg-color-text-primary) 4%, transparent);
   transition:
     opacity 180ms ease-out,
     box-shadow 180ms ease-out;
@@ -203,7 +226,7 @@
   box-shadow:
     0 0 18px rgba(103, 232, 249, 0.16),
     0 0 22px rgba(244, 114, 182, 0.1),
-    inset 0 0 11px rgba(255, 255, 255, 0.12);
+    inset 0 0 11px color-mix(in srgb, var(--fg-color-text-primary) 12%, transparent);
 }
 
 .interactive-bubble:hover::after,
@@ -211,7 +234,7 @@
 .interactive-bubble:active::after {
   opacity: 1;
   box-shadow:
-    inset 0 1px 5px rgba(255, 255, 255, 0.18),
+    inset 0 1px 5px color-mix(in srgb, var(--fg-color-text-primary) 18%, transparent),
     inset 0 -6px 14px rgba(125, 211, 252, 0.06);
 }
 
@@ -226,7 +249,12 @@
 }
 
 .interactive-bubble:disabled {
+  --bubble-text: var(--fg-color-disabled-text);
+  --bubble-text-hover: var(--fg-color-disabled-text);
+  --bubble-border: var(--fg-color-disabled-border);
+  --bubble-border-hover: var(--fg-color-disabled-border);
   pointer-events: none;
+  background: var(--fg-color-disabled-surface);
   opacity: 0.6;
 }
 
@@ -254,6 +282,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .animate-logo,
+  .animate-like,
+  .animate-save {
+    animation: none;
+  }
+
   .interactive-bubble,
   .interactive-bubble::before,
   .interactive-bubble::after {
@@ -263,4 +297,5 @@
   .interactive-bubble:active {
     transform: none;
   }
+}
 }

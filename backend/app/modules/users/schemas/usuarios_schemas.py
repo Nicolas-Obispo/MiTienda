@@ -111,3 +111,10 @@ class UsuarioAvatarUpdate(BaseModel):
     - avatar_url: URL pública devuelta por /media/upload
     """
     avatar_url: str
+
+
+class DocumentoPublicoVigenteResponse(BaseModel):
+    tipo: str
+    version: str
+    referencia: str
+    url: str

@@ -27,7 +27,7 @@ from app.modules.social.services.seguidores_services import (
 )
 from app.modules.spaces.services.comercios_services import (
     ComercioNoVisibleError,
-    _calcular_distancia_km,
+    calcular_distancia_publica_km,
 )
 
 router = APIRouter(
@@ -182,19 +182,20 @@ def obtener_espacios_seguidos(
         distancia_km = None
 
         if lat is not None and lng is not None:
-            distancia_km = _calcular_distancia_km(
+            distancia_km = calcular_distancia_publica_km(
+                comercio=c,
                 lat_origen=lat,
                 lng_origen=lng,
-                lat_destino=getattr(c, "latitud", None),
-                lng_destino=getattr(c, "longitud", None),
             )
 
-        resultado.append({
+        espacio_publico = {
             "id": c.id,
             "nombre": c.nombre,
             "descripcion": c.descripcion,
             "imagen_url": c.portada_url,
-            "distancia_km": distancia_km,
-        })
+        }
+        if c.mostrar_direccion_publicamente:
+            espacio_publico["distancia_km"] = distancia_km
+        resultado.append(espacio_publico)
 
     return resultado

@@ -6,6 +6,15 @@ import {
 } from "@features/moderation/constants/denuncias";
 import { useAuth } from "@features/auth";
 import { crearDenunciaContenido } from "@features/moderation/services/denuncias_service";
+import { ActiveLayer } from "@core";
+import {
+  Alert,
+  Button,
+  FormControl,
+  Select,
+  Surface,
+  Textarea,
+} from "@shared";
 
 export default function DenunciaModal({
   isOpen,
@@ -24,37 +33,12 @@ export default function DenunciaModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
     setMotivo("");
     setDetalle("");
     setIsSubmitting(false);
     setErrorMessage("");
     setSuccessMessage("");
   }, [isOpen, recursoTipo, recursoId]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const onKeyDown = (event) => {
-      if (event.key === "Escape" && !isSubmitting) {
-        event.stopPropagation();
-        onClose?.();
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOpen, isSubmitting, onClose]);
 
   if (!isOpen) return null;
 
@@ -90,60 +74,62 @@ export default function DenunciaModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/75 px-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="denuncia-modal-title"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !isSubmitting) {
-          onClose?.();
-        }
-      }}
+    <ActiveLayer
+      onClose={onClose}
+      closeOnBackdrop={!isSubmitting}
+      closeOnEscape={!isSubmitting}
+      labelledBy="denuncia-modal-title"
+      describedBy="denuncia-modal-description"
+      zIndex={1200}
+      contentClassName="mx-4 w-full max-w-md"
     >
-      <form
+      <Surface
+        as="form"
+        variant="elevated"
         onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-950 p-5 text-left shadow-2xl"
+        className="max-h-[92vh] overflow-y-auto p-5 text-left"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2
               id="denuncia-modal-title"
-              className="text-lg font-semibold text-white"
+              className="text-lg font-semibold text-primary"
             >
               {titulo}
             </h2>
-            <p className="mt-1 text-sm text-gray-400">
+            <p
+              id="denuncia-modal-description"
+              className="mt-1 text-sm text-secondary"
+            >
               La denuncia registra una solicitud de revision. No elimina ni
               oculta automaticamente el contenido.
             </p>
           </div>
 
-          <button
+          <Button
+            iconOnly
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-full border border-gray-700 px-3 py-1 text-sm text-gray-300 hover:bg-gray-800 disabled:opacity-60"
+            variant="ghost"
             aria-label="Cerrar denuncia"
           >
             x
-          </button>
+          </Button>
         </div>
 
         {!accessToken ? (
-          <div className="mt-5 rounded-xl border border-amber-800 bg-amber-950/30 p-4 text-sm text-amber-100">
+          <Alert variant="warning" className="mt-5">
             Inicia sesion para enviar una denuncia.
-          </div>
+          </Alert>
         ) : (
           <div className="mt-5 space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-200">
-                Motivo
-              </label>
-              <select
+            <FormControl label="Motivo" labelFor="denuncia-motivo">
+              <Select
+                id="denuncia-motivo"
                 value={motivo}
                 onChange={(event) => setMotivo(event.target.value)}
-                className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-3 text-sm text-white outline-none focus:border-white"
+                className="px-3 py-3 text-sm"
                 required
               >
                 <option value="">Selecciona un motivo</option>
@@ -152,14 +138,18 @@ export default function DenunciaModal({
                     {item.label}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </FormControl>
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-200">
-                Detalle opcional
-              </label>
-              <textarea
+            <FormControl
+              label="Detalle opcional"
+              labelFor="denuncia-detalle"
+              help={`${detalle.length}/${DENUNCIA_DETALLE_MAX_LENGTH}`}
+              helpId="denuncia-detalle-help"
+            >
+              <Textarea
+                id="denuncia-detalle"
+                aria-describedby="denuncia-detalle-help"
                 value={detalle}
                 onChange={(event) =>
                   setDetalle(
@@ -168,47 +158,46 @@ export default function DenunciaModal({
                 }
                 maxLength={DENUNCIA_DETALLE_MAX_LENGTH}
                 rows={4}
-                className="w-full resize-none rounded-xl border border-gray-700 bg-gray-900 px-3 py-3 text-sm text-white outline-none placeholder:text-gray-500 focus:border-white"
+                className="resize-none px-3 py-3 text-sm"
                 placeholder="Agrega contexto si es necesario."
               />
-              <p className="mt-1 text-xs text-gray-500">
-                {detalle.length}/{DENUNCIA_DETALLE_MAX_LENGTH}
-              </p>
-            </div>
+            </FormControl>
           </div>
         )}
 
         {errorMessage ? (
-          <p className="mt-4 rounded-xl border border-red-800 bg-red-950/30 p-3 text-sm text-red-100">
+          <Alert variant="danger" role="alert" className="mt-4">
             {errorMessage}
-          </p>
+          </Alert>
         ) : null}
 
         {successMessage ? (
-          <p className="mt-4 rounded-xl border border-emerald-800 bg-emerald-950/30 p-3 text-sm text-emerald-100">
+          <Alert variant="success" role="status" className="mt-4">
             {successMessage}
-          </p>
+          </Alert>
         ) : null}
 
         <div className="mt-5 flex justify-end gap-3">
-          <button
+          <Button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-full border border-gray-700 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
+            variant="secondary"
+            className="px-4 py-2 text-sm"
           >
             Cerrar
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="submit"
             disabled={!puedeEnviar || isSubmitting || Boolean(successMessage)}
-            className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-950 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            variant="primary"
+            className="px-4 py-2 text-sm"
           >
             {isSubmitting ? "Enviando..." : "Enviar denuncia"}
-          </button>
+          </Button>
         </div>
-      </form>
-    </div>
+      </Surface>
+    </ActiveLayer>
   );
 }

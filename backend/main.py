@@ -38,6 +38,7 @@ from app.modules.moderation.routes.contenido_denuncias_routers import (
     router as moderation_router,
 )
 from app.modules.operations.routes.health_routers import router as health_router
+from app.modules.geocoding.routes.geocoding_routers import router as geocoding_router
 
 # 🔥 ETAPA 60 — Seguidores
 from app.modules.social.routes.seguidores_routers import router as seguidores_router
@@ -135,6 +136,7 @@ app.include_router(feed_publicaciones_router)
 app.include_router(media_router)
 app.include_router(moderation_router)
 app.include_router(health_router)
+app.include_router(geocoding_router)
 
 # 🔥 ETAPA 60 — Seguidores
 app.include_router(seguidores_router)

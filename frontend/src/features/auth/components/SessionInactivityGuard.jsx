@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { ActiveLayer } from "@core";
 import { useAuth } from "@features/auth";
+import { Button, Surface } from "@shared";
 
 const INACTIVITY_LIMIT_MS = 15 * 60 * 1000;
 const ACTIVITY_EVENTS = ["click", "keydown", "scroll", "touchstart", "pointerdown"];
@@ -9,6 +11,7 @@ export default function SessionInactivityGuard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const lastActivityAtRef = useRef(null);
   const timerRef = useRef(null);
+  const continueButtonRef = useRef(null);
 
   useEffect(() => {
     function clearCurrentTimer() {
@@ -103,30 +106,41 @@ export default function SessionInactivityGuard() {
   if (!estaAutenticado || !isModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/75 px-4 py-6 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-gray-800 bg-gray-950 p-5 shadow-2xl">
-        <p className="text-center text-lg font-semibold text-white">
+    <ActiveLayer
+      onClose={handleContinue}
+      labelledBy="session-inactivity-title"
+      initialFocusRef={continueButtonRef}
+      className="px-4 py-6"
+      backdropClassName="bg-overlay-backdrop backdrop-blur-sm"
+      contentClassName="w-full max-w-sm"
+      zIndex={300}
+    >
+      <Surface variant="elevated" className="p-5">
+        <h2 id="session-inactivity-title" className="text-center text-lg font-semibold text-primary">
           ¿Deseás cerrar sesión?
-        </p>
+        </h2>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <button
+          <Button
+            ref={continueButtonRef}
             type="button"
             onClick={handleLogout}
-            className="rounded-xl border border-red-800 bg-red-950 px-3 py-2 text-sm font-semibold text-red-100 hover:bg-red-900"
+            variant="danger"
+            className="px-3 py-2 text-sm"
           >
             Cerrar sesión
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
             onClick={handleContinue}
-            className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-950 hover:bg-gray-100"
+            variant="secondary"
+            className="px-3 py-2 text-sm"
           >
             Continuar
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </Surface>
+    </ActiveLayer>
   );
 }

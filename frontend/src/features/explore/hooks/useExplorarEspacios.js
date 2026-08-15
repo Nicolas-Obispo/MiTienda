@@ -23,7 +23,14 @@ export function getExplorarEspaciosInfiniteQueryOptions({
   lat = null,
   lng = null,
   radio_km = null,
+  city_key = null,
+  province_code = null,
+  country_code = null,
+  scope = "local",
+  expansion_km = null,
+  positionRevision = 0,
   limit = 20,
+  enabled = true,
 }) {
   const params = {
     q,
@@ -32,6 +39,12 @@ export function getExplorarEspaciosInfiniteQueryOptions({
     lat,
     lng,
     radio_km,
+    city_key,
+    province_code,
+    country_code,
+    scope,
+    expansion_km,
+    positionRevision,
     limit,
   };
 
@@ -43,6 +56,7 @@ export function getExplorarEspaciosInfiniteQueryOptions({
     queryFn: ({ pageParam = 0 }) =>
       listarComerciosActivos({
         ...params,
+        positionRevision: undefined,
         offset: pageParam,
       }),
 
@@ -57,6 +71,7 @@ export function getExplorarEspaciosInfiniteQueryOptions({
     },
 
     staleTime: 1000 * 30,
+    enabled,
   };
 }
 
@@ -67,7 +82,14 @@ export function useExplorarEspacios({
   lat = null,
   lng = null,
   radio_km = null,
+  city_key = null,
+  province_code = null,
+  country_code = null,
+  scope = "local",
+  expansion_km = null,
+  positionRevision = 0,
   limit = 20,
+  enabled = true,
 }) {
   return useInfiniteQuery({
     ...getExplorarEspaciosInfiniteQueryOptions({
@@ -77,9 +99,15 @@ export function useExplorarEspacios({
       lat,
       lng,
       radio_km,
+      city_key,
+      province_code,
+      country_code,
+      scope,
+      expansion_km,
+      positionRevision,
       limit,
+      enabled,
     }),
-    placeholderData: (previousData) => previousData,
     retry: 1,
   });
 }

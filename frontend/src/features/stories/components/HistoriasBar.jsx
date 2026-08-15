@@ -15,7 +15,7 @@
  */
 
 import React from "react";
-import { getMediaUrlFromAny } from "@shared";
+import { Button, getMediaUrlFromAny } from "@shared";
 
 /**
  * @typedef {Object} HistoriaComercioItem
@@ -52,7 +52,7 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
     <section className="w-full" aria-label="Historias">
       <div className="flex gap-3 overflow-x-auto px-3 py-3">
         {itemsOrdenados.length === 0 ? (
-          <div className="text-sm opacity-70">No hay historias para mostrar.</div>
+          <div className="text-sm text-muted">No hay historias para mostrar.</div>
         ) : (
           itemsOrdenados.map((item) => {
             // pendientes: si no viene, fallback a "cantidad" para no romper UI
@@ -72,14 +72,15 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
             // - historias vistas → aro gris/translúcido
 
             const aroClass = tienePendientes
-              ? "bg-gradient-to-tr from-orange-500 via-orange-400 to-amber-400"
-              : "ring-2 ring-white/30";
+              ? "bg-interactive-primary"
+              : "border-2 border-border-strong";
 
             return (
-              <button
+              <Button
                 key={item.comercioId}
                 type="button"
-                className="interactive-bubble interactive-bubble--avatar-circle flex w-[70px] shrink-0 flex-col items-center gap-2"
+                variant="ghost"
+                className="interactive-bubble--avatar-circle flex w-[70px] shrink-0 flex-col items-center gap-2"
                 onClick={() => {
                   if (typeof onClickComercio === "function") {
                     onClickComercio(item.comercioId);
@@ -90,7 +91,7 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
               >
                 <div className="relative">
                   <div className={`relative rounded-full p-[2px] ${aroClass}`}>
-                    <div className="h-14 w-14 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-14 w-14 overflow-hidden rounded-full bg-surface-subtle">
                       {thumbnailUrl ? (
                         <img
                           src={thumbnailUrl}
@@ -100,7 +101,7 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
                           decoding="async"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs opacity-70">
+                        <div className="flex h-full w-full items-center justify-center text-xs text-muted">
                           {item.nombre?.slice(0, 2)?.toUpperCase() || "HP"}
                         </div>
                       )}
@@ -109,16 +110,16 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
 
                   {/* Contador: SOLO si hay pendientes */}
                   {tienePendientes ? (
-                    <div className="absolute right-0 top-0 rounded-full bg-white px-1.5 py-0.5 text-[10px] text-black">
+                    <div className="absolute right-0 top-0 rounded-full bg-selected-surface px-1.5 py-0.5 text-[10px] text-selected-text">
                       {pendientes}
                     </div>
                   ) : null}
                 </div>
 
-                <div className="w-full truncate text-center text-[12px] opacity-90">
+                <div className="w-full truncate text-center text-[12px] text-secondary">
                   {item.nombre}
                 </div>
-              </button>
+              </Button>
             );
           })
         )}

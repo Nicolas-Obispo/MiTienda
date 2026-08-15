@@ -8,7 +8,7 @@ Documento dueno: `docs/08_ENGINEERING_PRINCIPLES.md`.
 Responsable funcional: Ingenieria y arquitectura.
 Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
 `07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`,
-`16_DATA_INTEGRITY_AND_RECOVERY.md`.
+`16_DATA_INTEGRITY_AND_RECOVERY.md`, `18_PWA_ENTERPRISE.md`.
 Cuando debe consultarse: antes de tomar decisiones tecnicas, disenar
 arquitectura, implementar, validar o cerrar etapas.
 
@@ -725,3 +725,28 @@ Reglas:
   responsabilidad real y diferenciada.
 
 `docs/17_OBSERVABILITY_AND_OPERATIONS.md` gobierna la arquitectura operativa.
+
+## 52. Compatibilidad PWA permanente
+
+FeedGo es una aplicacion multiplataforma y su primer canal oficial de
+distribucion sera una PWA.
+
+Toda nueva funcionalidad debe preservar la arquitectura y la experiencia PWA.
+Cuando corresponda, debe validarse en:
+
+- navegador de escritorio;
+- navegador movil;
+- aplicacion instalada PWA.
+
+La compatibilidad incluye navegacion standalone, carga, teclado, safe areas,
+overlays, actualizacion, recuperacion, cache segura y aislamiento de sesiones.
+
+No puede aceptarse una degradacion de la experiencia instalada sin una decision
+arquitectonica explicita y documentada.
+
+ETAPA 96 constituye un gate obligatorio: la beta publica y el lanzamiento no
+pueden comenzar mientras la etapa permanezca abierta o conserve bloqueantes
+criticos o altos.
+
+`docs/18_PWA_ENTERPRISE.md` gobierna el alcance tecnico y los controles de
+validacion.

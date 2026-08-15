@@ -3,6 +3,7 @@ import { getMediaUrlFromAny } from "@shared";
 import { toggleLikeHistoria } from "@features/stories";
 import DenunciaModal from "@features/moderation/components/DenunciaModal";
 import { RECURSO_DENUNCIA_HISTORIA } from "@features/moderation/constants/denuncias";
+import "./HistoriasViewer.css";
 
 const DURACION_MS_DEFAULT = 4500;
 
@@ -296,7 +297,10 @@ export default function HistoriasViewer({
     `;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
+    <div
+      className="historias-viewer-fixed fixed inset-0 z-50 bg-black"
+      data-visual-contract="fixed-media"
+    >
       <style>{heartFlyAnimation}</style>
       <div className="absolute inset-x-0 top-0 z-[100] p-3">
         <div className="flex gap-1">
@@ -325,24 +329,25 @@ export default function HistoriasViewer({
 
           <button
             type="button"
-            onMouseDown={(e) => {
+            onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               setIsDenunciaOpen(true);
             }}
-            className="relative z-[999] ml-3 rounded-full bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20"
+            className="relative z-[999] ml-3 rounded-full bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             Denunciar
           </button>
 
           <button
             type="button"
-            onMouseDown={(e) => {
+            aria-label="Cerrar historias"
+            onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               cerrarViewer();
             }}
-            className="relative z-[999] ml-2 rounded-full bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20"
+            className="relative z-[999] ml-2 rounded-full bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             ✕
           </button>
@@ -406,6 +411,7 @@ export default function HistoriasViewer({
               leading-none
               drop-shadow-2xl
               animate-[heartFly_900ms_ease-in-out_forwards]
+              motion-reduce:animate-none
             "
           >
             ❤️
@@ -413,7 +419,12 @@ export default function HistoriasViewer({
         </div>
       ) : !likedByMe ? (
         <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
-          <div className="group pointer-events-auto flex h-[20rem] w-[20rem] items-center justify-center">
+          <button
+            type="button"
+            aria-label="Me gusta"
+            onClick={handleToggleLikeHistoria}
+            className="group pointer-events-auto flex h-[20rem] w-[20rem] items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -430,11 +441,11 @@ export default function HistoriasViewer({
                 group-hover:opacity-100
                 drop-shadow-2xl
               "
-              onClick={handleToggleLikeHistoria}
+              aria-hidden="true"
             >
               <path d="M12 20.5 C12 20.5, 3 14.5, 3 8.8 C3 5.8, 5.2 4, 8 4 C10 4, 11.2 5.1, 12 6.2 C12.8 5.1, 14 4, 16 4 C18.8 4, 21 5.8, 21 8.8 C21 14.5, 12 20.5, 12 20.5Z" />
             </svg>
-          </div>
+          </button>
         </div>
       ) : null}
 
@@ -443,6 +454,7 @@ export default function HistoriasViewer({
         <div className="absolute bottom-6 left-6 z-40">
           <button
             type="button"
+            aria-label="Quitar me gusta"
             className="
               text-2xl
               drop-shadow-lg
@@ -450,6 +462,10 @@ export default function HistoriasViewer({
               duration-200
               hover:scale-110
               active:scale-95
+              focus-visible:outline
+              focus-visible:outline-2
+              focus-visible:outline-offset-2
+              focus-visible:outline-white
             "
             onClick={handleToggleLikeHistoria}
           >
@@ -463,7 +479,7 @@ export default function HistoriasViewer({
       <div className="absolute inset-x-0 bottom-0 top-20 z-30 flex">
         <button
           type="button"
-          className="group flex h-full w-1/2 items-center justify-start bg-transparent px-6 focus:outline-none"
+          className="group flex h-full w-1/2 items-center justify-start bg-transparent px-6 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white"
           onClick={irAnterior}
           aria-label="Historia anterior"
         >
@@ -474,7 +490,7 @@ export default function HistoriasViewer({
 
         <button
           type="button"
-          className="group flex h-full w-1/2 items-center justify-end bg-transparent px-6 focus:outline-none"
+          className="group flex h-full w-1/2 items-center justify-end bg-transparent px-6 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white"
           onClick={irSiguiente}
           aria-label="Siguiente historia"
         >

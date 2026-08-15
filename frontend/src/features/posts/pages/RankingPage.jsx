@@ -27,6 +27,7 @@ import {
 import { PublicacionCard } from "@features/posts";
 import { usePublicacionesGuardadas } from "@features/posts";
 import { useRankingPublicaciones } from "@features/posts/hooks/useRankingPublicaciones";
+import { Alert, Skeleton, Surface } from "@shared";
 
 import {
   optimisticToggleGuardado,
@@ -206,12 +207,12 @@ export default function RankingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-canvas text-primary">
       <main className="mx-auto max-w-5xl px-4 py-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-white">Tendencias</h1>
-          <p className="mt-1 text-sm text-gray-400">
+          <h1 className="text-xl font-bold sm:text-2xl">Tendencias</h1>
+          <p className="mt-1 text-sm text-secondary">
             Publicaciones ordenadas por score (likes + recencia).
           </p>
         </div>
@@ -219,28 +220,28 @@ export default function RankingPage() {
         {/* Estado: Loading */}
         {isLoading && publicaciones.length === 0 && (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-3">
-            <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-            <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
-            <div className="aspect-square rounded-2xl border border-gray-800 bg-gray-950 animate-pulse" />
+            <Skeleton className="aspect-square rounded-2xl border border-border" />
+            <Skeleton className="aspect-square rounded-2xl border border-border" />
+            <Skeleton className="aspect-square rounded-2xl border border-border" />
           </div>
         )}
 
         {/* Estado: Error */}
         {!isLoading && errorMessage && (
-          <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
-            <p className="font-semibold text-red-200">Error</p>
-            <p className="mt-2 text-red-100 break-words">{errorMessage}</p>
-          </div>
+          <Alert variant="danger" role="alert" className="p-5">
+            <p className="font-semibold">Error</p>
+            <p className="mt-2 break-words">{errorMessage}</p>
+          </Alert>
         )}
 
         {/* Estado: Vacío */}
         {rankingHydratado && !isLoading && !isRankingLoading && !errorMessage && publicaciones.length === 0 && (
-          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center">
-            <p className="text-gray-200 font-semibold">No hay publicaciones</p>
-            <p className="mt-2 text-gray-400 text-sm">
+          <Surface variant="subtle" className="p-6 text-center">
+            <p className="font-semibold">No hay publicaciones</p>
+            <p className="mt-2 text-sm text-secondary">
               Cuando existan publicaciones con actividad, aparecerán acá.
             </p>
-          </div>
+          </Surface>
         )}
 
         {/* Estado: OK */}

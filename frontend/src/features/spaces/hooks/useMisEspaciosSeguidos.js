@@ -6,10 +6,11 @@ import { obtenerMisEspaciosSeguidos } from "@features/spaces/services/seguidores
 export function useMisEspaciosSeguidos({
   lat = null,
   lng = null,
+  positionRevision = 0,
   enabled = true,
 } = {}) {
   return useQuery({
-    queryKey: queryKeys.spaces.seguidos({ lat, lng }),
+    queryKey: queryKeys.spaces.seguidos({ positionRevision }),
     queryFn: async () => {
       const data = await obtenerMisEspaciosSeguidos({ lat, lng });
 

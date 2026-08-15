@@ -1,49 +1,20 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { usePublicacionesGuardadas } from "@features/posts";
 import { useMisEspaciosSeguidos } from "@features/spaces";
-import { getMediaUrlFromAny } from "@shared";
+import {
+  Alert,
+  Button,
+  GeographicContextControls,
+  Surface,
+  getMediaUrlFromAny,
+  useGeographicContext,
+} from "@shared";
 
 export default function VerSeguidosPage() {
   const [vistaActiva, setVistaActiva] = useState("espacios");
 
-  const [ubicacion, setUbicacion] = useState({
-    lat: null,
-    lng: null,
-    lista: false,
-    error: null,
-  });
-
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      queueMicrotask(() => {
-        setUbicacion((prev) => ({
-          ...prev,
-          lista: true,
-          error: "Ubicacion no disponible",
-        }));
-      });
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUbicacion({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          lista: true,
-          error: null,
-        });
-      },
-      () => {
-        setUbicacion((prev) => ({
-          ...prev,
-          lista: true,
-          error: "Ubicacion no disponible",
-        }));
-      }
-    );
-  }, []);
+  const { queryContext } = useGeographicContext();
 
   const {
     data: espaciosData = [],
@@ -51,8 +22,9 @@ export default function VerSeguidosPage() {
     isFetching: fetchingEspacios,
     error: espaciosError,
   } = useMisEspaciosSeguidos({
-    lat: ubicacion.lat,
-    lng: ubicacion.lng,
+    lat: queryContext?.lat ?? null,
+    lng: queryContext?.lng ?? null,
+    positionRevision: queryContext?.positionRevision ?? 0,
     enabled: vistaActiva === "espacios",
   });
 
@@ -78,50 +50,54 @@ export default function VerSeguidosPage() {
     : "";
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Seguidos</h1>
+    <div className="space-y-4 bg-canvas text-primary">
+      <h1 className="text-xl font-semibold text-primary">Seguidos</h1>
 
-      <div className="flex gap-2">
-        <button
-          type="button"
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="secondary"
+          aria-pressed={vistaActiva === "espacios"}
           onClick={() => setVistaActiva("espacios")}
           className={[
             "rounded-xl border px-3 py-2 text-xs font-semibold",
             vistaActiva === "espacios"
-              ? "border-white bg-white text-gray-950"
-              : "border-gray-800 bg-gray-950 text-gray-300 hover:bg-gray-900",
+              ? "border-selected-border bg-selected-surface text-selected-text"
+              : "border-border bg-surface-subtle text-secondary hover:bg-surface",
           ].join(" ")}
         >
           Espacios seguidos
-        </button>
+        </Button>
 
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          aria-pressed={vistaActiva === "guardadas"}
           onClick={() => setVistaActiva("guardadas")}
           className={[
             "rounded-xl border px-3 py-2 text-xs font-semibold",
             vistaActiva === "guardadas"
-              ? "border-white bg-white text-gray-950"
-              : "border-gray-800 bg-gray-950 text-gray-300 hover:bg-gray-900",
+              ? "border-selected-border bg-selected-surface text-selected-text"
+              : "border-border bg-surface-subtle text-secondary hover:bg-surface",
           ].join(" ")}
         >
           Publicaciones guardadas
-        </button>
+        </Button>
       </div>
 
+      {vistaActiva === "espacios" && <GeographicContextControls />}
+
       {vistaActiva === "espacios" && cargando && espacios.length === 0 && (
-        <p className="text-center text-gray-400">Cargando...</p>
+        <p className="text-center text-muted">Cargando...</p>
       )}
 
       {vistaActiva === "espacios" &&
         espaciosErrorMessage &&
         espacios.length === 0 && (
-          <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
-            <p className="font-semibold text-red-200">Error</p>
-            <p className="mt-2 text-red-100 break-words">
+          <Alert variant="danger" role="alert" className="p-5">
+            <p className="font-semibold">Error</p>
+            <p className="mt-2 break-words">
               {espaciosErrorMessage}
             </p>
-          </div>
+          </Alert>
         )}
 
       {vistaActiva === "espacios" &&
@@ -129,7 +105,7 @@ export default function VerSeguidosPage() {
         !fetchingEspacios &&
         !espaciosErrorMessage &&
         espacios.length === 0 && (
-        <p className="text-gray-400">Todavia no seguis ningun espacio.</p>
+        <p className="text-muted">Todavia no seguis ningun espacio.</p>
       )}
 
       {vistaActiva === "espacios" &&
@@ -137,12 +113,13 @@ export default function VerSeguidosPage() {
           const imagenUrl = getMediaUrlFromAny(c);
 
           return (
-            <Link
+            <Surface
+              as={Link}
               to={`/comercios/${c.id}`}
               key={c.id}
-              className="flex items-center gap-4 rounded-xl border border-gray-800 bg-gray-950 p-3 hover:bg-gray-900"
+              className="flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-surface-subtle"
             >
-              <div className="h-16 w-16 overflow-hidden rounded-lg bg-gray-800">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-surface-subtle">
                 {imagenUrl ? (
                   <img
                     src={imagenUrl}
@@ -150,62 +127,53 @@ export default function VerSeguidosPage() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                  <div className="flex h-full w-full items-center justify-center text-xs text-muted">
                     Sin imagen
                   </div>
                 )}
               </div>
 
-              <div className="flex-1">
-                <h2 className="text-sm font-semibold text-white">
+              <div className="min-w-0 flex-1">
+                <h2 className="break-words text-sm font-semibold text-primary">
                   {c.nombre}
                 </h2>
-                <p className="text-xs text-gray-400 line-clamp-2">
+                <p className="text-xs text-secondary line-clamp-2">
                   {c.descripcion || "Sin descripcion"}
                 </p>
+                {c.ciudad && <p className="break-words text-xs text-muted">{c.ciudad}</p>}
                 {typeof c.distancia_km === "number" && (
-                  <p className="mt-1 text-xs text-orange-500">
+                  <p className="mt-1 text-xs text-interactive-primary">
                     Estas a{" "}
                     {c.distancia_km < 1
                       ? `${Math.round(c.distancia_km * 1000)} m`
                       : `${c.distancia_km.toFixed(1)} km`}
                   </p>
                 )}
-                {!ubicacion.lista && typeof c.distancia_km !== "number" && (
-                  <p className="mt-1 text-xs text-orange-500">
-                    Buscando ubicacion...
-                  </p>
-                )}
-                {ubicacion.error && typeof c.distancia_km !== "number" && (
-                  <p className="mt-1 text-xs text-orange-500">
-                    {ubicacion.error}
-                  </p>
-                )}
               </div>
-            </Link>
+            </Surface>
           );
         })}
 
       {vistaActiva === "guardadas" && cargandoGuardadas && (
-        <p className="text-center text-gray-400">Cargando...</p>
+        <p className="text-center text-muted">Cargando...</p>
       )}
 
       {vistaActiva === "guardadas" &&
         !cargandoGuardadas &&
         guardadasErrorMessage && (
-          <div className="rounded-2xl border border-red-900 bg-red-950/40 p-5">
-            <p className="font-semibold text-red-200">Error</p>
-            <p className="mt-2 text-red-100 break-words">
+          <Alert variant="danger" role="alert" className="p-5">
+            <p className="font-semibold">Error</p>
+            <p className="mt-2 break-words">
               {guardadasErrorMessage}
             </p>
-          </div>
+          </Alert>
         )}
 
       {vistaActiva === "guardadas" &&
         !cargandoGuardadas &&
         !guardadasErrorMessage &&
         publicacionesGuardadas.length === 0 && (
-          <p className="text-gray-400">No tenes publicaciones guardadas.</p>
+          <p className="text-muted">No tenes publicaciones guardadas.</p>
         )}
 
       {vistaActiva === "guardadas" &&
@@ -220,7 +188,7 @@ export default function VerSeguidosPage() {
                 <Link
                   key={p.id}
                   to={`/publicaciones/${p.id}`}
-                  className="relative aspect-square overflow-hidden bg-gray-800"
+                  className="relative aspect-square overflow-hidden bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                 >
                   {publicacionImagenUrl ? (
                     <img
@@ -229,7 +197,7 @@ export default function VerSeguidosPage() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                    <div className="flex h-full w-full items-center justify-center text-xs text-muted">
                       Sin imagen
                     </div>
                   )}

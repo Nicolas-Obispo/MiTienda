@@ -91,6 +91,25 @@ class UsuariosAceptacionesTests(unittest.TestCase):
         token = crear_token_jwt({"sub": str(usuario_id)})
         return {"Authorization": f"Bearer {token}"}
 
+    def test_documentos_publicos_comparten_version_con_evidencia_backend(self):
+        response = client.get("/usuarios/documentos-vigentes")
+
+        self.assertEqual(response.status_code, 200)
+        by_type = {item["tipo"]: item for item in response.json()}
+        self.assertEqual(
+            by_type[DOCUMENTO_TERMINOS_CONDICIONES],
+            {
+                "tipo": DOCUMENTO_TERMINOS_CONDICIONES,
+                "version": DOCUMENTO_VERSION_INICIAL,
+                "referencia": f"{DOCUMENTO_TERMINOS_CONDICIONES}:{DOCUMENTO_VERSION_INICIAL}",
+                "url": "/terminos-y-condiciones",
+            },
+        )
+        self.assertEqual(
+            by_type[DOCUMENTO_POLITICA_PRIVACIDAD]["version"],
+            DOCUMENTO_VERSION_INICIAL,
+        )
+
     def test_registro_sin_aceptacion_terminos_devuelve_422(self):
         payload = self._payload_valido()
         payload.pop("acepta_terminos")

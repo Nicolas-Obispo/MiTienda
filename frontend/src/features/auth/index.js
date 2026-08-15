@@ -2,7 +2,6 @@
 
 // Contexto principal de autenticación.
 export { AuthProvider } from "@features/auth/context/AuthContext";
-export { AuthContext } from "@features/auth/context/AuthContextCore";
 
 // Hook oficial para consumir autenticación.
 export { useAuth } from "@features/auth/hooks/useAuth";

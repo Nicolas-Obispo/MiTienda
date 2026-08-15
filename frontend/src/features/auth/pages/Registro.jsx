@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registrarUsuario, loginUsuario, useAuth } from "@features/auth";
+import { Alert, Button, FormControl, Input, Surface } from "@shared";
 
 
 /**
@@ -77,24 +78,24 @@ export default function Registro() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-px)] flex flex-col items-center justify-center px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-canvas px-4 text-primary">
       {/* LOGO ARRIBA */}
       <div className="mb-0 animate-logo">
-        <div className="flex h-80 w-80 items-center justify-center overflow-hidden rounded-full bg-gray-950">
+        <div className="flex h-80 w-80 items-center justify-center overflow-hidden rounded-full bg-canvas">
           <img
             src="/logo_Feedgo.png"
-            alt="MiPlaza"
+            alt="FeedGo"
             className="h-full w-full object-contain p-4"
           />
         </div>
       </div>
 
       {/* FORMULARIO */}
-      <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-950 p-6 shadow-sm">
+      <Surface variant="elevated" className="w-full max-w-md p-6">
         <div className="mb-5">
           <h2 className="text-2xl font-semibold">Crear cuenta</h2>
 
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="mt-1 text-sm text-secondary">
             Registrate para guardar publicaciones, dar like y administrar uno o
             varios espacios.
           </p>
@@ -106,153 +107,103 @@ export default function Registro() {
           className="space-y-4"
         >
           {/* Email */}
-          <div>
-            <label className="mb-1 block text-sm text-gray-300">
-              Email
-            </label>
-
-            <input
+          <FormControl label="Email" labelFor="registro-email">
+            <Input
+              id="registro-email"
               type="email"
               autoComplete="new-email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="tuemail@dominio.com"
-              className="
-                w-full
-                rounded-xl
-                border
-                border-gray-700
-                bg-gray-900
-                px-3
-                py-2
-                text-sm
-                text-white
-                placeholder:text-gray-500
-                focus:outline-none
-                focus:ring-2
-                focus:ring-orange-500
-              "
+              className="text-sm"
             />
-          </div>
+          </FormControl>
 
           {/* Password */}
-          <div>
-            <label className="mb-1 block text-sm text-gray-300">
-              Contraseña
-            </label>
-
-            <div className="relative">
-              <input
-                type={mostrarPassword ? "text" : "password"}
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                placeholder="Mínimo 6 caracteres"
-                className="
-                  w-full
-                  rounded-xl
-                  border
-                  border-gray-700
-                  bg-gray-900
-                  px-3
-                  py-2
-                  pr-10
-                  text-sm
-                  text-white
-                  placeholder:text-gray-500
-                  focus:outline-none
-                  focus:ring-2
-                  focus:ring-orange-500
-                "
-              />
-
-              <button
-                type="button"
-                onClick={() => setMostrarPassword(!mostrarPassword)}
-                className="
-                  absolute
-                  right-2
-                  top-1/2
-                  -translate-y-1/2
-                  text-gray-400
-                  hover:text-white
-                "
-              >
-                {mostrarPassword ? "🙉" : "🙈"}
-              </button>
-            </div>
-          </div>
+          <FormControl labelFor="registro-password" label="Contraseña">
+            <Input
+              id="registro-password"
+              type={mostrarPassword ? "text" : "password"}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              placeholder="Mínimo 6 caracteres"
+              className="text-sm"
+              trailingAction={
+                <Button
+                  type="button"
+                  onClick={() => setMostrarPassword(!mostrarPassword)}
+                  variant="ghost"
+                  iconOnly
+                  aria-label={
+                    mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                  }
+                >
+                  <span aria-hidden="true">
+                    {mostrarPassword ? "🙉" : "🙈"}
+                  </span>
+                </Button>
+              }
+            />
+          </FormControl>
 
           {/* Confirmar Password */}
-          <div>
-            <label className="mb-1 block text-sm text-gray-300">
-              Confirmar contraseña
-            </label>
-
-            <div className="relative">
-              <input
-                type={mostrarConfirmarPassword ? "text" : "password"}
-                autoComplete="new-password"
-                value={confirmarPassword}
-                onChange={(e) => setConfirmarPassword(e.target.value)}
-                required
-                minLength={6}
-                placeholder="Repetí tu contraseña"
-                className="
-                  w-full
-                  rounded-xl
-                  border
-                  border-gray-700
-                  bg-gray-900
-                  px-3
-                  py-2
-                  pr-10
-                  text-sm
-                  text-white
-                  placeholder:text-gray-500
-                  focus:outline-none
-                  focus:ring-2
-                  focus:ring-orange-500
-                "
-              />
-
-              <button
-                type="button"
-                onClick={() =>
-                  setMostrarConfirmarPassword(!mostrarConfirmarPassword)
-                }
-                className="
-                  absolute
-                  right-2
-                  top-1/2
-                  -translate-y-1/2
-                  text-gray-400
-                  hover:text-white
-                "
-              >
-                {mostrarConfirmarPassword ? "🙉" : "🙈"}
-              </button>
-            </div>
-          </div>
+          <FormControl
+            labelFor="registro-confirmar-password"
+            label="Confirmar contraseña"
+          >
+            <Input
+              id="registro-confirmar-password"
+              type={mostrarConfirmarPassword ? "text" : "password"}
+              autoComplete="new-password"
+              value={confirmarPassword}
+              onChange={(e) => setConfirmarPassword(e.target.value)}
+              required
+              minLength={6}
+              placeholder="Repetí tu contraseña"
+              className="text-sm"
+              trailingAction={
+                <Button
+                  type="button"
+                  onClick={() =>
+                    setMostrarConfirmarPassword(!mostrarConfirmarPassword)
+                  }
+                  variant="ghost"
+                  iconOnly
+                  aria-label={
+                    mostrarConfirmarPassword
+                      ? "Ocultar confirmación de contraseña"
+                      : "Mostrar confirmación de contraseña"
+                  }
+                >
+                  <span aria-hidden="true">
+                    {mostrarConfirmarPassword ? "🙉" : "🙈"}
+                  </span>
+                </Button>
+              }
+            />
+          </FormControl>
 
           {/* Aceptaciones obligatorias */}
-          <div className="space-y-3 rounded-xl border border-gray-800 bg-gray-900/50 p-3">
-            <label className="flex items-start gap-3 text-sm text-gray-300">
+          <div className="space-y-3 rounded-xl border border-border bg-surface-subtle p-3">
+            <label className="flex items-start gap-3 text-sm text-secondary">
               <input
                 type="checkbox"
                 checked={aceptaTerminos}
                 onChange={(e) => setAceptaTerminos(e.target.checked)}
                 required
-                className="mt-1 h-4 w-4 rounded border-gray-600 bg-gray-950 text-orange-500 focus:ring-orange-500"
+                className="mt-1 h-4 w-4 rounded border-border-strong bg-surface accent-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
               />
               <span>
                 Acepto los{" "}
                 <Link
                   to="/terminos-y-condiciones"
-                  className="text-orange-400 hover:text-amber-300"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-brand underline decoration-current underline-offset-2 hover:text-brand-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                 >
                   Terminos y Condiciones
                 </Link>
@@ -260,19 +211,21 @@ export default function Registro() {
               </span>
             </label>
 
-            <label className="flex items-start gap-3 text-sm text-gray-300">
+            <label className="flex items-start gap-3 text-sm text-secondary">
               <input
                 type="checkbox"
                 checked={aceptaPrivacidad}
                 onChange={(e) => setAceptaPrivacidad(e.target.checked)}
                 required
-                className="mt-1 h-4 w-4 rounded border-gray-600 bg-gray-950 text-orange-500 focus:ring-orange-500"
+                className="mt-1 h-4 w-4 rounded border-border-strong bg-surface accent-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
               />
               <span>
                 Acepto la{" "}
                 <Link
                   to="/politica-de-privacidad"
-                  className="text-orange-400 hover:text-amber-300"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-brand underline decoration-current underline-offset-2 hover:text-brand-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                 >
                   Politica de Privacidad
                 </Link>
@@ -283,50 +236,33 @@ export default function Registro() {
 
           {/* Error */}
           {errorMensaje && (
-            <div className="rounded-xl border border-red-900 bg-red-950/40 p-3">
-              <p className="break-words text-sm text-red-200">
-                {errorMensaje}
-              </p>
-            </div>
+            <Alert role="alert" variant="danger" className="break-words">
+              {errorMensaje}
+            </Alert>
           )}
 
           {/* Botón */}
-          <button
+          <Button
             type="submit"
             disabled={cargando}
-            className="
-              w-full
-              rounded-xl
-              bg-gradient-to-r
-              from-orange-500
-              via-orange-400
-              to-amber-400
-              px-4
-              py-2
-              text-sm
-              font-bold
-              text-white
-              transition
-              hover:opacity-90
-              disabled:cursor-not-allowed
-              disabled:opacity-60
-            "
+            variant="primary"
+            className="w-full px-4 py-2 text-sm font-bold"
           >
             {cargando ? "Creando cuenta..." : "Crear cuenta"}
-          </button>
+          </Button>
         </form>
 
-        <p className="mt-4 text-sm text-gray-400">
+        <p className="mt-4 text-sm text-secondary">
           ¿Ya tenés cuenta?{" "}
 
           <Link
             to="/login"
-            className="font-medium text-orange-400 hover:text-amber-300"
+            className="font-medium text-brand underline decoration-current underline-offset-2 hover:text-brand-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
             Iniciá sesión
           </Link>
         </p>
-      </div>
+      </Surface>
     </div>
   );
 }

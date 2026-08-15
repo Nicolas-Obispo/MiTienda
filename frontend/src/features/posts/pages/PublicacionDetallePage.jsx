@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { InteraccionButton } from "@shared";
-import { getMediaUrlFromAny } from "@shared";
+import {
+  Alert,
+  Button,
+  InteraccionButton,
+  Skeleton,
+  Surface,
+  getMediaUrlFromAny,
+} from "@shared";
 import { usePublicacionDetalle } from "@features/posts";
 import {
   useToggleGuardadoPublicacionMutation,
   useToggleLikePublicacionMutation,
 } from "@features/social";
 import { httpDelete } from "@core/services/http_service";
+import { ActiveLayer } from "@core";
 import DenunciaModal from "@features/moderation/components/DenunciaModal";
 import { RECURSO_DENUNCIA_PUBLICACION } from "@features/moderation/constants/denuncias";
 
@@ -193,39 +200,39 @@ export default function PublicacionDetallePage() {
       : null;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-canvas text-primary">
       <main className="mx-auto max-w-3xl px-4 py-6">
         {isLoading && !publicacionVisible && (
           <div className="space-y-3">
-            <div className="h-10 animate-pulse rounded-xl border border-gray-800 bg-gray-950" />
-            <div className="aspect-square animate-pulse rounded-2xl border border-gray-800 bg-gray-950" />
-            <div className="h-20 animate-pulse rounded-2xl border border-gray-800 bg-gray-950" />
+            <Skeleton className="h-10 rounded-xl" />
+            <Skeleton className="aspect-square rounded-2xl" />
+            <Skeleton className="h-20 rounded-2xl" />
           </div>
         )}
 
         {errorMessage && !publicacionVisible && (
-          <div className="rounded-2xl border border-gray-800 bg-gray-950 p-8 text-center">
+          <Alert variant="danger" role="alert" className="p-8 text-center">
             <div className="flex flex-col items-center justify-center gap-3">
               <span className="text-4xl">😅</span>
 
-              <p className="text-sm text-gray-300 break-words">
+              <p className="break-words text-sm">
                 {errorMessage}
               </p>
             </div>
-          </div>
+          </Alert>
         )}
 
         {publicacionVisible && (
-          <article className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-950">
+          <Surface as="article" className="overflow-hidden">
             <header className="flex items-center justify-between gap-3 p-4">
-              <p className="truncate text-lg font-semibold text-white">
+              <p className="truncate text-lg font-semibold text-primary">
                 {nombreComercio}
               </p>
 
               {comercioId && (
                 <Link
                   to={`/comercios/${comercioId}`}
-                  className="shrink-0 rounded-full border border-gray-700 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-800"
+                  className="interactive-bubble interactive-bubble--secondary shrink-0 text-xs font-semibold"
                 >
                   Ver perfil
                 </Link>
@@ -253,7 +260,7 @@ export default function PublicacionDetallePage() {
                   />
                 )
               ) : (
-                <div className="flex aspect-square items-center justify-center text-gray-500">
+                <div className="flex aspect-square items-center justify-center bg-surface-subtle text-muted">
                   Sin imagen
                 </div>
               )}
@@ -261,13 +268,13 @@ export default function PublicacionDetallePage() {
 
             <div className="space-y-4 p-4">
               {publicacionVisible?.titulo && (
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-primary">
                   {publicacionVisible.titulo}
                 </h2>
               )}
 
               {publicacionVisible?.descripcion && (
-                <p className="text-gray-300">
+                <p className="text-secondary">
                   {publicacionVisible.descripcion}
                 </p>
               )}
@@ -289,18 +296,17 @@ export default function PublicacionDetallePage() {
                   label={guardada ? "Guardada" : "Guardar"}
                 />
 
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsDenunciaOpen(true)}
-                  className="interactive-bubble group cursor-pointer text-sm font-semibold"
+                  variant="secondary"
+                  className="text-sm"
                 >
-                  <span className="inline-flex items-center gap-2 text-gray-300 group-hover:text-white">
-                    Denunciar
-                  </span>
-                </button>
+                  Denunciar
+                </Button>
               </div>
 
-              <div className="flex items-center justify-between text-sm text-gray-400">
+              <div className="flex items-center justify-between text-sm text-muted">
                 <div className="flex flex-wrap gap-4">
                   <span>❤️ {publicacionVisible?.likes_count ?? 0}</span>
                   <span>⭐ {publicacionVisible?.guardados_count ?? 0}</span>
@@ -310,53 +316,66 @@ export default function PublicacionDetallePage() {
                 </div>
 
                 {esDuenoComercio && (
-                  <button
+                  <Button
                     type="button"
                     onClick={handleEliminarPublicacion}
-                    className="rounded-full border border-white-800 bg-950/40 px-3 py-1 text-xs font-semibold text-r-300 hover:bg-red-900/40"
+                    variant="danger"
+                    className="px-3 py-1 text-xs"
+                    aria-label="Eliminar publicacion"
                     title="Eliminar publicación"
                   >
                     🗑️
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
-          </article>
+          </Surface>
         )}
       </main>
 
       {mostrarConfirmacionEliminar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-sm rounded-2xl border border-gray-800 bg-gray-950 p-5 shadow-xl">
-            <p className="text-lg font-semibold text-white">
+        <ActiveLayer
+          onClose={handleCancelarEliminarPublicacion}
+          closeOnBackdrop={!isDeletingPublicacion}
+          closeOnEscape={!isDeletingPublicacion}
+          labelledBy="eliminar-publicacion-title"
+          contentClassName="mx-4 w-full max-w-sm"
+        >
+          <Surface variant="elevated" className="p-5">
+            <p
+              id="eliminar-publicacion-title"
+              className="text-lg font-semibold text-primary"
+            >
               Eliminar publicación
             </p>
 
-            <p className="mt-2 text-sm text-gray-300">
+            <p className="mt-2 text-sm text-secondary">
               ¿Seguro que querés eliminar esta publicación?
             </p>
 
             <div className="mt-5 flex justify-end gap-3">
-              <button
+              <Button
                 type="button"
                 onClick={handleCancelarEliminarPublicacion}
                 disabled={isDeletingPublicacion}
-                className="rounded-full border border-gray-700 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
+                variant="secondary"
+                className="px-4 py-2 text-sm"
               >
                 Cancelar
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
                 onClick={handleConfirmarEliminarPublicacion}
                 disabled={isDeletingPublicacion}
-                className="rounded-full border border-red-800 bg-red-950/40 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-900/40 disabled:opacity-60"
+                variant="danger"
+                className="px-4 py-2 text-sm"
               >
                 {isDeletingPublicacion ? "Eliminando..." : "Eliminar"}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+          </Surface>
+        </ActiveLayer>
       )}
 
       <DenunciaModal

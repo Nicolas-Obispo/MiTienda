@@ -6,10 +6,10 @@ import { getMediaUrlFromAny } from "@shared";
 
 function MetricBadge({ label, value, icon }) {
   return (
-    <div className="inline-flex items-center rounded-full border border-gray-800 bg-gray-900 px-3 py-1 text-xs text-gray-200">
+    <div className="inline-flex items-center rounded-full border border-border bg-surface-subtle px-3 py-1 text-xs text-primary">
       <span className="mr-1" aria-hidden="true">{icon}</span>
-      <span className="mr-1 text-gray-400">{label}</span>
-      <span className="font-semibold text-white">{value ?? 0}</span>
+      <span className="mr-1 text-secondary">{label}</span>
+      <span className="font-semibold">{value ?? 0}</span>
     </div>
   );
 }
@@ -79,7 +79,7 @@ export default function PublicacionCard({
     return (
       <article
         onClick={irADetallePublicacion}
-        className="cursor-pointer overflow-hidden rounded-2xl border border-gray-800 bg-gray-950"
+        className="cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface"
         title="Ver publicación"
       >
         <div className="relative aspect-square bg-black">
@@ -104,7 +104,7 @@ export default function PublicacionCard({
               />
             )
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gray-900 text-sm text-gray-500">
+            <div className="flex h-full w-full items-center justify-center bg-surface-subtle text-sm text-muted">
               Sin imagen
             </div>
           )}
@@ -162,46 +162,57 @@ export default function PublicacionCard({
         </div>
 
         <div className="flex items-center justify-between gap-2 px-3 py-2">
-          <div className="flex items-center gap-2 text-[11px] text-gray-400">
+          <div className="flex items-center gap-2 text-[11px] text-secondary">
             <span>❤️ {pub?.likes_count ?? 0}</span>
             <span>⭐ {pub?.guardados_count ?? 0}</span>
           </div>
 
-          <span className="text-[11px] text-gray-500">Ver</span>
+          <Link
+            to={`/publicaciones/${pub.id}`}
+            onClick={(event) => event.stopPropagation()}
+            className="rounded-sm text-[11px] text-interactive-primary underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          >
+            Ver publicación
+          </Link>
         </div>
       </article>
     );
   }
 
   return (
-    <article className="overflow-hidden rounded-3xl border border-gray-800 bg-gray-950">
+    <article className="overflow-hidden rounded-3xl border border-border bg-surface">
       <header className="flex items-start justify-between gap-3 p-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             {showRank ? (
-              <span className="inline-flex items-center justify-center rounded-xl border border-gray-800 bg-gray-900 px-2 py-1 text-xs font-semibold text-gray-200">
+              <span className="inline-flex items-center justify-center rounded-xl border border-border bg-surface-subtle px-2 py-1 text-xs font-semibold text-primary">
                 #{rankIndex + 1}
               </span>
             ) : null}
 
-            <h2 className="truncate text-base font-semibold text-white sm:text-lg">
-              {pub?.titulo || nombreComercio}
+            <h2 className="truncate text-base font-semibold sm:text-lg">
+              <Link
+                to={`/publicaciones/${pub.id}`}
+                className="rounded-sm text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+              >
+                {pub?.titulo || nombreComercio}
+              </Link>
             </h2>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex min-w-0 shrink-0 items-center gap-2">
           {comercioId ? (
             <Link
               to={`/comercios/${comercioId}`}
-              className="interactive-bubble text-xs"
+              className="interactive-bubble interactive-bubble--secondary text-xs"
             >
               <span>Ver espacio</span>
             </Link>
           ) : null}
 
           {headerRightBadgeText ? (
-            <div className="rounded-full border border-gray-800 bg-gray-900 px-3 py-1 text-xs font-semibold text-gray-300">
+            <div className="max-w-32 truncate rounded-full border border-border bg-surface-subtle px-3 py-1 text-xs font-semibold text-secondary sm:max-w-48">
               {headerRightBadgeText}
             </div>
           ) : null}
@@ -209,7 +220,7 @@ export default function PublicacionCard({
       </header>
 
       <div
-        className="cursor-pointer border-y border-gray-800 bg-black"
+        className="cursor-pointer border-y border-border bg-black"
         onClick={irADetallePublicacion}
       >
         {mediaUrl ? (
@@ -234,7 +245,7 @@ export default function PublicacionCard({
             />
           )
         ) : (
-          <div className="flex aspect-square w-full items-center justify-center bg-gray-900 text-sm text-gray-500">
+          <div className="flex aspect-square w-full items-center justify-center bg-surface-subtle text-sm text-muted">
             Sin imagen
           </div>
         )}
@@ -242,11 +253,11 @@ export default function PublicacionCard({
 
       <div className="p-4">
         {pub?.descripcion ? (
-          <p className="text-base leading-relaxed text-gray-100">
+          <p className="text-base leading-relaxed text-primary">
             {pub.descripcion}
           </p>
         ) : (
-          <p className="text-sm italic text-gray-500">Sin descripción.</p>
+          <p className="text-sm italic text-muted">Sin descripción.</p>
         )}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">

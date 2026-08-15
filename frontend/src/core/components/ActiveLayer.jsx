@@ -78,12 +78,14 @@ export default function ActiveLayer({
   closeOnBackdrop = true,
   closeOnEscape = true,
   className = "",
-  backdropClassName = "bg-black/75",
+  backdropClassName = "bg-overlay-backdrop",
   contentClassName = "",
   zIndex = 50,
 }) {
   const contentRef = useRef(null);
   const previousFocusRef = useRef(null);
+  const initialFocusTimerRef = useRef(null);
+  const restoreFocusTimerRef = useRef(null);
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement;
@@ -94,14 +96,28 @@ export default function ActiveLayer({
       getFocusableElements(contentRef.current)[0] ||
       contentRef.current;
 
-    window.setTimeout(() => focusTarget?.focus?.(), 0);
+    initialFocusTimerRef.current = window.setTimeout(() => {
+      focusTarget?.focus?.();
+      initialFocusTimerRef.current = null;
+    }, 0);
 
     return () => {
+      if (initialFocusTimerRef.current !== null) {
+        window.clearTimeout(initialFocusTimerRef.current);
+        initialFocusTimerRef.current = null;
+      }
+
       unlockBodyScroll();
 
       const previousFocus = previousFocusRef.current;
-      if (previousFocus && typeof previousFocus.focus === "function") {
-        window.setTimeout(() => previousFocus.focus(), 0);
+      if (
+        previousFocus?.isConnected &&
+        typeof previousFocus.focus === "function"
+      ) {
+        restoreFocusTimerRef.current = window.setTimeout(() => {
+          if (previousFocus.isConnected) previousFocus.focus();
+          restoreFocusTimerRef.current = null;
+        }, 0);
       }
     };
   }, [initialFocusRef]);
@@ -136,7 +152,7 @@ export default function ActiveLayer({
 
   const layer = (
     <div
-      className={`fixed inset-0 flex items-center justify-center ${className}`}
+      className={`fixed inset-0 flex items-start justify-center overflow-y-auto overscroll-contain ${className}`}
       style={{ zIndex }}
       onKeyDown={handleKeyDown}
     >
@@ -144,6 +160,7 @@ export default function ActiveLayer({
         <button
           type="button"
           aria-label="Cerrar capa activa"
+          tabIndex={-1}
           className={`absolute inset-0 h-full w-full cursor-default ${backdropClassName}`}
           onClick={() => onClose?.()}
         />
@@ -161,7 +178,7 @@ export default function ActiveLayer({
         aria-labelledby={labelledBy}
         aria-describedby={describedBy}
         tabIndex={-1}
-        className={`relative z-10 outline-none ${contentClassName}`}
+        className={`relative z-10 my-auto outline-none ${contentClassName}`}
       >
         {children}
       </div>
