@@ -2,9 +2,9 @@ import {
   PWA_MESSAGE,
   PWA_RELOAD_GUARD_KEY,
   PWA_RUNTIME_STATE,
+  PWA_SERVICE_WORKER_URL,
 } from "./lifecycleContract.js";
-
-const SERVICE_WORKER_URL = "/service-worker.js";
+import { repairPwaInfrastructure } from "./repairPwaRuntime.js";
 
 function createActivationId() {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
@@ -17,6 +17,7 @@ export function createServiceWorkerRuntime({
   documentObject,
   sessionStorageObject,
   MessageChannelConstructor,
+  cacheStorageObject,
   activationIdFactory = createActivationId,
   logger = console,
 }) {
@@ -72,7 +73,7 @@ export function createServiceWorkerRuntime({
     publish(PWA_RUNTIME_STATE.REGISTERING);
     try {
       observeRegistration(
-        await navigatorObject.serviceWorker.register(SERVICE_WORKER_URL),
+        await navigatorObject.serviceWorker.register(PWA_SERVICE_WORKER_URL),
       );
     } catch (error) {
       publish(PWA_RUNTIME_STATE.ERROR);
@@ -168,6 +169,24 @@ export function createServiceWorkerRuntime({
         );
       });
     },
+
+    async repair() {
+      publish(PWA_RUNTIME_STATE.REGISTERING);
+      try {
+        const result = await repairPwaInfrastructure({
+          serviceWorkerContainer: navigatorObject.serviceWorker,
+          cacheStorage: cacheStorageObject,
+          appOrigin: windowObject.location.origin,
+        });
+        registration = null;
+        await register();
+        return result;
+      } catch (error) {
+        publish(PWA_RUNTIME_STATE.ERROR);
+        logger.error("Error reparando PWA:", error);
+        throw error;
+      }
+    },
   };
 }
 
@@ -177,9 +196,14 @@ export const serviceWorkerRuntime = createServiceWorkerRuntime({
   documentObject: globalThis.document,
   sessionStorageObject: globalThis.sessionStorage,
   MessageChannelConstructor: globalThis.MessageChannel,
+  cacheStorageObject: globalThis.caches,
 });
 
 export function registerServiceWorker() {
   serviceWorkerRuntime.start();
   return serviceWorkerRuntime;
+}
+
+export function repairServiceWorker() {
+  return serviceWorkerRuntime.repair();
 }

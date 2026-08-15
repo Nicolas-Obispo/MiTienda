@@ -3,6 +3,8 @@ import { matchPrecache, precache } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
 
 import { createRequestClassifier, REQUEST_HANDLING } from "./requestClassifier.js";
+import { isConfiguredApiRequest } from "./requestClassifier.js";
+import { createApiNetworkHandler } from "./apiNetworkHandler.js";
 import { cleanupOldFeedGoPrecaches } from "./cacheCleanup.js";
 import { isActivationMessage } from "./lifecycleContract.js";
 import { handleActivationRequest } from "./workerLifecycle.js";
@@ -21,6 +23,29 @@ const classifyRequest = createRequestClassifier({
   apiBaseUrl: API_BASE_URL,
   precacheEntries: PRECACHE_ENTRIES,
 });
+
+const notifyWindowClients = async (message) => {
+  const windows = await self.clients.matchAll({
+    type: "window",
+    includeUncontrolled: true,
+  });
+  for (const client of windows) client.postMessage(message);
+};
+
+const handleApiRequest = createApiNetworkHandler({
+  fetchFunction: (request) => fetch(request),
+  notifyClients: notifyWindowClients,
+});
+
+const apiRouteMatcher = ({ request }) => isConfiguredApiRequest({
+  requestUrl: request.url,
+  appOrigin: self.location.origin,
+  apiBaseUrl: API_BASE_URL,
+});
+
+for (const method of ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"]) {
+  registerRoute(apiRouteMatcher, handleApiRequest, method);
+}
 
 registerRoute(
   ({ request }) => classifyRequest(request) === REQUEST_HANDLING.NAVIGATION,

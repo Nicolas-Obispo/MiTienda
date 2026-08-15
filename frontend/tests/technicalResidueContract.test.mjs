@@ -27,7 +27,7 @@ test("service worker conserva solo logging operativo de error", async () => {
 
   assert.match(main, /registerServiceWorker\(\)/);
   assert.doesNotMatch(main, /serviceWorker\.register/);
-  assert.match(registrationOwner, /\.register\(SERVICE_WORKER_URL\)/);
+  assert.match(registrationOwner, /\.register\(PWA_SERVICE_WORKER_URL\)/);
   assert.match(registrationOwner, /logger\.error\("Error SW:"/);
   assert.doesNotMatch(main, /Service Worker registrado/);
   assert.doesNotMatch(serviceWorker, /console\.(?:log|debug)/);

@@ -58,6 +58,15 @@ function isApiRequest(url, appOrigin, apiUrl) {
   );
 }
 
+export function isConfiguredApiRequest({ requestUrl, appOrigin, apiBaseUrl }) {
+  const normalizedAppOrigin = new URL(appOrigin).origin;
+  return isApiRequest(
+    new URL(requestUrl, normalizedAppOrigin),
+    normalizedAppOrigin,
+    new URL(apiBaseUrl, normalizedAppOrigin),
+  );
+}
+
 function hasAuthorization(request) {
   return Boolean(request.headers?.has?.("Authorization"));
 }

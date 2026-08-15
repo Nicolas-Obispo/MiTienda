@@ -5,6 +5,7 @@ import {
 } from "react-router-dom";
 import { useAuth } from "@features/auth";
 import SessionInactivityGuard from "@features/auth/components/SessionInactivityGuard";
+import ConnectivityNotice from "@shared/components/ConnectivityNotice";
 
 export default function MainLayout() {
   const { estaAutenticado } = useAuth();
@@ -147,6 +148,8 @@ export default function MainLayout() {
           </div>
         </div>
       </header>
+
+      <ConnectivityNotice />
 
       {/* CONTENIDO */}
       <main

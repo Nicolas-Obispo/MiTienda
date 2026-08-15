@@ -49,7 +49,12 @@ function createStorage() {
   };
 }
 
-function createHarness({ registration, registerError, supported = true } = {}) {
+function createHarness({
+  registration,
+  registerError,
+  supported = true,
+  cacheStorageObject,
+} = {}) {
   const serviceWorker = new FakeEventTarget();
   const registerCalls = [];
   serviceWorker.controller = registration?.controller ?? {};
@@ -61,7 +66,10 @@ function createHarness({ registration, registerError, supported = true } = {}) {
 
   const windowObject = new FakeEventTarget();
   let reloads = 0;
-  windowObject.location = { reload: () => reloads += 1 };
+  windowObject.location = {
+    origin: "https://feedgo.example",
+    reload: () => reloads += 1,
+  };
   const loggerErrors = [];
 
   const runtime = createServiceWorkerRuntime({
@@ -70,6 +78,7 @@ function createHarness({ registration, registerError, supported = true } = {}) {
     documentObject: { readyState: "complete" },
     sessionStorageObject: createStorage(),
     MessageChannelConstructor: FakeMessageChannel,
+    cacheStorageObject,
     activationIdFactory: () => "build-test-1",
     logger: { error: (...args) => loggerErrors.push(args) },
   });
@@ -114,7 +123,8 @@ test("registro tiene owner y URL unicos y browser sin soporte queda controlado",
   ]);
   assert.match(main, /registerServiceWorker\(\)/);
   assert.doesNotMatch(main, /serviceWorker\.register/);
-  assert.equal((owner.match(/\.register\(SERVICE_WORKER_URL\)/g) || []).length, 1);
+  assert.equal((owner.match(/\.register\(PWA_SERVICE_WORKER_URL\)/g) || []).length, 1);
+  assert.match(owner, /export function repairServiceWorker\(\)/);
 });
 
 test("fallo de registro publica error tecnico sin propagar datos", async () => {
@@ -302,6 +312,36 @@ test("guard de reload y cleanup solo almacenan o borran infraestructura tecnica"
 
   assert.deepEqual(obsolete, ["feedgo-precache-v0"]);
   assert.deepEqual(deleted, ["feedgo-precache-v0"]);
+});
+
+test("reparacion explicita reutiliza el owner unico sin recarga automatica", async () => {
+  let unregisterCalls = 0;
+  const deleted = [];
+  const registration = createRegistration({
+    active: { scriptURL: "https://feedgo.example/service-worker.js" },
+    unregister: async () => { unregisterCalls += 1; return true; },
+  });
+  const harness = createHarness({
+    registration,
+    cacheStorageObject: {
+      keys: async () => ["feedgo-precache-v1", "other-cache"],
+      delete: async (name) => { deleted.push(name); return true; },
+    },
+  });
+  harness.serviceWorker.getRegistrations = async () => [registration];
+  harness.runtime.start();
+  await flush();
+
+  const result = await harness.runtime.repair();
+
+  assert.equal(unregisterCalls, 1);
+  assert.deepEqual(deleted, ["feedgo-precache-v1"]);
+  assert.deepEqual(harness.registerCalls, ["/service-worker.js", "/service-worker.js"]);
+  assert.deepEqual(result, {
+    unregistered: ["/service-worker.js"],
+    deletedCaches: ["feedgo-precache-v1"],
+  });
+  assert.equal(harness.getReloads(), 0);
 });
 
 test("worker no contiene lifecycle automatico ni mensajes privados", async () => {

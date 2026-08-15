@@ -9,6 +9,31 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 96 - Sprint 96.2 - Runtime PWA, offline, seguridad y actualizacion
+
+**Estado:** Cerrado tecnicamente a nivel de repositorio
+
+### Resultado
+
+- Se integro un runtime PWA reproducible con Workbox `injectManifest`, source
+  unico de Service Worker, app shell y precache restrictivo de plataforma.
+- Se implemento un firewall network-only para API, requests autenticados,
+  mutaciones, uploads, media privada, mapas, geocoding y recursos externos,
+  manteniendo respuestas API, JWT y datos privados fuera de Cache Storage.
+- Se cerro el lifecycle con registro unico, deteccion de updates, waiting,
+  activacion natural preferida, activacion explicita controlada, proteccion
+  multitab, recarga unica y cleanup limitado a caches PWA FeedGo.
+- Se implemento offline controlado, conectividad tecnica diferenciada de la
+  salud del backend, reconexion sin reload ni refetch paralelo y recuperacion
+  explicita limitada al worker y a `feedgo-precache-*`.
+- Se preservo la arquitectura por capas: PWA representa infraestructura
+  tecnica, TanStack Query conserva los datos remotos de sesion y backend
+  conserva negocio, autenticacion, permisos, validaciones y persistencia.
+- Se aprobaron tests contractuales y build del runtime. Quedan diferidas a
+  Sprint 96.3 las validaciones reales de instalacion, offline, navegacion,
+  update, multitab, recuperacion, standalone, iconos, orientacion y
+  geolocalizacion en Android, iOS/iPadOS y desktop.
+
 ## ETAPA 96 - Sprint 96.2-C - Lifecycle y actualizacion controlada
 
 **Estado:** Bloque completado y aprobado; Sprint 96.2 permanece abierto

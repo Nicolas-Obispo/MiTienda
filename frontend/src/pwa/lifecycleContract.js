@@ -14,9 +14,12 @@ export const PWA_MESSAGE = Object.freeze({
   ACTIVATION_ACCEPTED: "ACTIVATION_ACCEPTED",
   ACTIVATION_BLOCKED_MULTITAB: "ACTIVATION_BLOCKED_MULTITAB",
   ACTIVATION_FAILED: "ACTIVATION_FAILED",
+  BACKEND_REACHABLE: "BACKEND_REACHABLE",
+  BACKEND_UNREACHABLE: "BACKEND_UNREACHABLE",
 });
 
 export const PWA_RELOAD_GUARD_KEY = "feedgo:pwa:last-activated-version";
+export const PWA_SERVICE_WORKER_URL = "/service-worker.js";
 
 export function isActivationMessage(data) {
   return (

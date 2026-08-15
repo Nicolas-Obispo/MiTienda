@@ -558,7 +558,7 @@ Plan restante oficial de ETAPA 95:
 Siguiente etapa obligatoria aprobada:
 
 - ETAPA 96 - Plataforma Instalable y PWA Enterprise.
-- Estado: en curso. Sprint 96.1 queda cerrado tecnicamente a nivel de
+- Estado: en curso. Sprints 96.1 y 96.2 quedan cerrados tecnicamente a nivel de
   repositorio; sus gates fisicos y productivos permanecen diferidos de forma
   obligatoria a Sprint 96.3 y ETAPA 99.
 - Alcance comprobado: identidad FeedGo, manifest, metadata, iconos, routing y
@@ -569,8 +569,14 @@ Siguiente etapa obligatoria aprobada:
 - 96.2-C queda completado y aprobado tecnicamente: owner unico de registro,
   estados de runtime, deteccion de updates, activacion natural o explicita,
   bloqueo multitab, recarga unica y cleanup limitado a precaches FeedGo.
-- Siguiente bloque: 96.2-D - offline controlado, reconexion, recuperacion y
-  validacion integral. No iniciado; Sprint 96.2 permanece abierto.
+- 96.2-D queda implementado y validado tecnicamente: shell offline controlado,
+  estado tecnico de conectividad, distincion entre transporte y respuesta HTTP,
+  reconexion sin reload ni refetch duplicado y reparacion PWA acotada.
+- Sprint 96.2 queda cerrado: 96.2-A/B/C/D completados y aprobados, con runtime
+  PWA reproducible, seguro, actualizable, offline controlado y recuperacion
+  acotada. Sprint 96.3 es el siguiente sprint y todavia no fue iniciado; sus
+  gates de validacion en browsers y dispositivos reales permanecen
+  obligatorios.
 - Documento tecnico propietario: `docs/18_PWA_ENTERPRISE.md`.
 - Gate: no pueden comenzar pruebas masivas, beta publica ni lanzamiento
   mientras ETAPA 96 permanezca abierta o conserve bloqueantes criticos o altos.

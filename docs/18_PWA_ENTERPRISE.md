@@ -17,9 +17,9 @@ lanzamiento.
 
 ## Estado
 
-Alcance funcional aprobado. Sprint 96.1 cerrado tecnicamente a nivel de
-repositorio por 96.1-B; sus gates diferidos permanecen obligatorios. Sprint
-96.2 es el siguiente sprint y no esta iniciado.
+Alcance funcional aprobado. Sprints 96.1 y 96.2 cerrados tecnicamente a nivel
+de repositorio; sus gates diferidos permanecen obligatorios. Sprint 96.3 es el
+siguiente sprint y todavia no fue iniciado.
 
 ETAPA 96 esta en curso. ETAPA 95 ya fue cerrada por 95.7-C; este documento
 gobierna la etapa oficial vigente.
@@ -297,8 +297,7 @@ Criterios de cierre:
 
 #### Implementacion 96.2-B - build, precache y firewall
 
-Estado: completado y aprobado tecnicamente. Sprint 96.2 permanece abierto y
-96.2-C es el siguiente bloque; no se inicia mediante este cierre.
+Estado: completado y aprobado tecnicamente como parte del Sprint 96.2 cerrado.
 
 Frontera arquitectonica permanente: **el Service Worker y la infraestructura
 PWA son infraestructura tecnica de cliente y nunca una capa de negocio**. Solo
@@ -343,15 +342,14 @@ Cache Storage contiene plataforma y nunca respuestas API, JWT, uploads, media
 privada, mapas o geocoding. TanStack Query conserva sin cambios el ownership
 de datos remotos durante la sesion.
 
-96.2-B no implementa `skipWaiting`, `clients.claim`, worker waiting,
+96.2-B no implemento `skipWaiting`, `clients.claim`, worker waiting,
 actualizacion controlada, cleanup entre versiones, UX offline ni recuperacion
-avanzada. Esos contratos permanecen para 96.2-C y 96.2-D; Sprint 96.2 sigue
-abierto.
+avanzada. Esos contratos fueron implementados posteriormente por 96.2-C y
+96.2-D.
 
 #### Implementacion 96.2-C - registro, lifecycle y actualizacion controlada
 
-Estado: completado y aprobado tecnicamente. Sprint 96.2 permanece abierto y
-96.2-D no fue iniciado.
+Estado: completado y aprobado tecnicamente como parte del Sprint 96.2 cerrado.
 
 `frontend/src/pwa/registerServiceWorker.js` es el owner tecnico unico del
 registro `/service-worker.js`; `main.jsx` solo lo invoca. El runtime publica
@@ -388,6 +386,98 @@ tecnico puede observarse y solicitar activacion desde una integracion futura,
 pero ninguna pantalla lo consume todavia. La arquitectura por capas permanece
 preservada: PWA decide lifecycle de cliente y nunca validez de sesion, permisos,
 datos, mutaciones o reglas de negocio.
+
+#### Implementacion 96.2-D - offline, reconexion y recuperacion
+
+Estado: completado y aprobado tecnicamente. Sprint 96.2 queda cerrado y Sprint
+96.3 es el siguiente sprint; todavia no fue iniciado.
+
+"FeedGo abre offline" significa solamente que una visita previa permitio
+precachear `index.html`, JS, CSS, tema e identidad instalada, y que ese shell
+puede abrir y representar rutas frontend. La primera visita sin red no inventa
+un shell ni una pagina paralela. Datos, login, mutaciones, uploads, mapas y toda
+operacion que requiera backend permanecen indisponibles y nunca se encolan ni
+se presentan como confirmados.
+
+`frontend/src/pwa/connectivityRuntime.js` es el owner tecnico de conectividad.
+Sus estados son `offline`, `online-unverified`, `backend-reachable` y
+`backend-unreachable`. `navigator.onLine === true` produce como maximo
+`online-unverified`: nunca demuestra backend saludable, sesion valida ni
+permisos. La senal global reutiliza `Alert` dentro de `MainLayout`, no bloquea
+contenido disponible y solo aparece ante browser offline o fallo real de
+transporte al backend.
+
+El worker mantiene la API network-only y hace passthrough sin cache para GET,
+HEAD, POST, PUT, PATCH y DELETE. Un rechazo de `fetch` por transporte emite
+`BACKEND_UNREACHABLE`; cualquier `Response` HTTP emite `BACKEND_REACHABLE` y se
+devuelve intacta. Por tanto 401, 403, 404, 409, 422 y 5xx nunca se convierten en
+offline ni quedan ocultos. Los mensajes no incluyen URL, metodo, headers,
+token, response, usuario ni payload. La notificacion es best-effort: si una
+ventana desaparece o `postMessage` falla, nunca altera la respuesta HTTP ni el
+error de transporte original.
+
+Cuando vuelve el evento `online`, el estado pasa a `online-unverified` y la
+senal offline desaparece. No hay reload, invalidacion, refetch ni listener de
+Query adicional: TanStack Query conserva su comportamiento de reconexion y su
+contenido en memoria. Una respuesta backend posterior confirma solo alcance
+tecnico y elimina la senal de backend inaccesible.
+
+No se agrega un estado funcional de sesion no verificada ni se modifica Auth.
+Si existe un token local durante una indisponibilidad, la PWA solo representa
+la indisponibilidad tecnica; no afirma ni niega validez de sesion. Mutaciones y
+optimistic updates conservan sus owners actuales y deben recibir confirmacion o
+error desde backend; no existen Background Sync, queues ni persistencia PWA de
+operaciones.
+
+La reparacion es explicita y no agresiva. `repairServiceWorker()` puede
+desregistrar solamente workers same-origin cuyo script sea
+`/service-worker.js`, borrar solamente caches `feedgo-precache-*` y volver a
+registrar mediante el owner unico. No fuerza reload y nunca accede a caches
+ajenos, localStorage funcional, `sessionStorage` funcional, preferencias,
+tokens, IndexedDB, geolocalizacion, Auth, TanStack Query ni datos de negocio.
+Assets faltantes intentan red y una navegacion offline sin shell falla de forma
+segura; la reparacion queda disponible para corrupcion real, no se ejecuta
+automaticamente para ocultar errores.
+
+La frontera `Frontend -> Services -> Backend Routes -> Backend Services ->
+Models/DB` permanece preservada. `src/pwa/` no importa features, services de
+dominio, Auth ni QueryClient y no decide sesion, permisos, datos o resultados.
+Firewall, precache y lifecycle de 96.2-B/96.2-C permanecen vigentes.
+
+Tests unitarios y build verifican contratos, inventario, transporte, multitab,
+anti-loop, cleanup, reconexion y reparacion. La ejecucion real en Service Worker
+browser, instalacion, primera/segunda visita, DevTools offline, multitab real y
+matriz Android/iOS/desktop son gates obligatorios diferidos a Sprint 96.3; no
+justifican incorporar Playwright o Cypress dentro de 96.2-D.
+
+Sprint 96.2 queda cerrado con build reproducible mediante `injectManifest`, app
+shell y precache restrictivo, firewall network-only, lifecycle y actualizacion
+controlados, proteccion multitab, offline y reconexion tecnicos, recuperacion
+acotada, separacion PWA/TanStack Query y prohibicion de negocio en PWA.
+
+Gates obligatorios diferidos a Sprint 96.3, no validados todavia en entorno
+real:
+
+- primera visita offline y visita offline con shell previamente instalado;
+- navegacion y deep links offline;
+- backend inaccesible con navegador online y reconexion real;
+- worker waiting, actualizacion real y comportamiento multitab real;
+- activacion natural y activacion explicita;
+- proteccion real contra loops de reload;
+- recuperacion ante worker o cache corrupto y ante asset faltante;
+- Android Chrome, iPhone Safari, iPadOS Safari, Windows Chrome y Windows Edge;
+- modo standalone, instalacion, desinstalacion y reinstalacion;
+- iconos reales, variante maskable real y orientacion;
+- geolocalizacion desde la experiencia instalada.
+
+Gates de infraestructura productiva que continúan perteneciendo a ETAPA 99 y
+no se consideran validados por el cierre de Sprint 96.2:
+
+- dominio y HTTPS real;
+- API productiva HTTPS y CORS productivo por allowlist;
+- ausencia real de mixed content;
+- fallback SPA del hosting;
+- deep links y refresh directo desplegados.
 
 ### Sprint 96.3 - Experiencia instalada, compatibilidad y gate final
 
