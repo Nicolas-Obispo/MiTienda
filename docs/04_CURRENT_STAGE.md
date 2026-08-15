@@ -566,8 +566,11 @@ Siguiente etapa obligatoria aprobada:
   96.2-B queda completado y aprobado con build `injectManifest`, precache
   restringido del shell, firewall network-only para API, datos privados y
   requests no aprobados, y arquitectura por capas preservada.
-- Siguiente bloque: 96.2-C - lifecycle, actualizacion controlada y cleanup. No
-  iniciado; 96.2-B no incorpora todavia esos comportamientos ni UX offline.
+- 96.2-C queda completado y aprobado tecnicamente: owner unico de registro,
+  estados de runtime, deteccion de updates, activacion natural o explicita,
+  bloqueo multitab, recarga unica y cleanup limitado a precaches FeedGo.
+- Siguiente bloque: 96.2-D - offline controlado, reconexion, recuperacion y
+  validacion integral. No iniciado; Sprint 96.2 permanece abierto.
 - Documento tecnico propietario: `docs/18_PWA_ENTERPRISE.md`.
 - Gate: no pueden comenzar pruebas masivas, beta publica ni lanzamiento
   mientras ETAPA 96 permanezca abierta o conserve bloqueantes criticos o altos.

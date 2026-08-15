@@ -9,6 +9,29 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 96 - Sprint 96.2-C - Lifecycle y actualizacion controlada
+
+**Estado:** Bloque completado y aprobado; Sprint 96.2 permanece abierto
+
+### Resultado
+
+- Se establecio un owner PWA unico para registrar `/service-worker.js` y
+  representar estados exclusivamente tecnicos del runtime.
+- Se implemento deteccion de `waiting`, `updatefound`, instalacion y cambio de
+  controller, preservando la activacion natural como camino preferido.
+- La activacion inmediata requiere `ACTIVATE_VERSION`; `skipWaiting()` solo se
+  ejecuta como consecuencia de ese mensaje y nunca durante `install`.
+- La proteccion multitab bloquea activacion inmediata con mas de una ventana,
+  sin cerrar clientes, recargar otras pestañas ni inspeccionar estado funcional.
+- Se limito la recarga explicita a una por activacion mediante guard tecnico y
+  el cleanup exclusivamente a precaches FeedGo obsoletos.
+- Se verificaron mensajes sin JWT ni datos privados, cache sin API, ausencia de
+  `clients.claim()` y arquitectura por capas preservada. Auth, TanStack Query y
+  backend permanecen intactos.
+- Se agregaron tests contractuales de registro, lifecycle, multitab,
+  activacion, anti-loop, cleanup, privacidad y regresion de 96.2-B. 96.2-D no
+  fue iniciado.
+
 ## ETAPA 96 - Sprint 96.2-B - Build, precache y firewall de requests
 
 **Estado:** Bloque completado y aprobado; Sprint 96.2 permanece abierto

@@ -9,6 +9,7 @@ import { AppRouter, ThemeProvider } from "@core";
 import { AuthProvider } from "@features/auth";
 import { GeographicContextProvider } from "@shared";
 import { queryClient } from "./core/query/queryClient";
+import { registerServiceWorker } from "./pwa/registerServiceWorker";
 
 /*
 |--------------------------------------------------------------------------
@@ -38,10 +39,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   </React.StrictMode>
 );
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/service-worker.js")
-      .catch((err) => console.error("Error SW:", err));
-  });
-}
+registerServiceWorker();

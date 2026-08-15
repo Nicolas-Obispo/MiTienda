@@ -1,8 +1,11 @@
-import { setCacheNameDetails } from "workbox-core";
+import { cacheNames, setCacheNameDetails } from "workbox-core";
 import { matchPrecache, precache } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
 
 import { createRequestClassifier, REQUEST_HANDLING } from "./requestClassifier.js";
+import { cleanupOldFeedGoPrecaches } from "./cacheCleanup.js";
+import { isActivationMessage } from "./lifecycleContract.js";
+import { handleActivationRequest } from "./workerLifecycle.js";
 
 const PRECACHE_ENTRIES = self.__WB_MANIFEST;
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
@@ -38,3 +41,25 @@ registerRoute(
 );
 
 precache(PRECACHE_ENTRIES);
+
+self.addEventListener("message", (event) => {
+  if (!isActivationMessage(event.data)) return;
+
+  event.waitUntil(
+    handleActivationRequest({
+      data: event.data,
+      responsePort: event.ports[0],
+      clientsObject: self.clients,
+      skipWaiting: () => self.skipWaiting(),
+    }),
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    cleanupOldFeedGoPrecaches({
+      cacheStorage: caches,
+      currentPrecacheName: cacheNames.precache,
+    }),
+  );
+});

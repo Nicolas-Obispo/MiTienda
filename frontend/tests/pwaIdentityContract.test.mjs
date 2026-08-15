@@ -59,14 +59,15 @@ test("HTML usa metadata instalada FeedGo y conserva el bootstrap de tema", async
   assert.ok(bootstrapJsIndex > bootstrapCssIndex && appIndex > bootstrapJsIndex);
 });
 
-test("96.2-B conserva un solo owner de worker sin adelantar lifecycle", async () => {
+test("96.2-C conserva un solo owner sin lifecycle automatico peligroso", async () => {
   const worker = await readText("src/pwa/service-worker.js");
 
   await assert.rejects(access(new URL("public/service-worker.js", root)));
   assert.match(worker, /precache\(PRECACHE_ENTRIES\)/);
   assert.match(worker, /REQUEST_HANDLING\.PRECACHE/);
   assert.match(worker, /matchPrecache\("\/index\.html"\)/);
-  assert.doesNotMatch(worker, /skipWaiting|clients\.claim|updatefound|controllerchange/i);
+  assert.doesNotMatch(worker, /clients\.claim/i);
+  assert.doesNotMatch(worker, /addEventListener\(["']install["']/i);
 });
 
 test("assets instalables existen y tienen dimensiones reales contractuales", async () => {

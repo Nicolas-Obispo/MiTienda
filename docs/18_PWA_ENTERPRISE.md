@@ -348,6 +348,47 @@ actualizacion controlada, cleanup entre versiones, UX offline ni recuperacion
 avanzada. Esos contratos permanecen para 96.2-C y 96.2-D; Sprint 96.2 sigue
 abierto.
 
+#### Implementacion 96.2-C - registro, lifecycle y actualizacion controlada
+
+Estado: completado y aprobado tecnicamente. Sprint 96.2 permanece abierto y
+96.2-D no fue iniciado.
+
+`frontend/src/pwa/registerServiceWorker.js` es el owner tecnico unico del
+registro `/service-worker.js`; `main.jsx` solo lo invoca. El runtime publica
+exclusivamente los estados `unsupported`, `registering`, `registered`,
+`installing`, `active`, `update-available`, `activating` y `error`. No contiene
+usuario, sesion ni datos remotos y no constituye estado funcional global.
+
+El owner detecta un worker `waiting` existente, `updatefound`, cambios del
+worker `installing` y `controllerchange`. Una version instalada permanece
+waiting por defecto: no existe `skipWaiting()` en `install` ni
+`clients.claim()` en `activate`. Cerrar las paginas controladas permite la
+activacion natural y la proxima apertura usa la version activa sin recarga
+forzada.
+
+La activacion inmediata requiere el mensaje tecnico `ACTIVATE_VERSION` con un
+identificador tecnico sin datos privados. El worker consulta clientes window
+same-origin, incluyendo no controlados. Con mas de uno responde
+`ACTIVATION_BLOCKED_MULTITAB`, no activa ni recarga; con cero o uno responde
+`ACTIVATION_ACCEPTED` despues de ejecutar `skipWaiting()` exclusivamente desde
+ese handler. Si la solicitud tecnica falla responde `ACTIVATION_FAILED` y la
+pagina publica estado `error`. Solo la pagina solicitante espera el cambio real
+de controller y hace como maximo una recarga. La clave de `sessionStorage`
+`feedgo:pwa:last-activated-version` es un guard tecnico; no almacena version de
+sesion, usuario, token ni negocio y su fallo conserva un guard en memoria.
+
+Durante `activate`, el cleanup solo puede borrar caches cuyo nombre comience
+con `feedgo-precache-` y nunca el precache vigente. No borra otros caches,
+IndexedDB, localStorage funcional, preferencias, Auth ni TanStack Query. El
+firewall, precache restrictivo y navegacion network-first de 96.2-B permanecen
+sin cambios funcionales.
+
+96.2-C no agrega UI de update ni experiencia offline general. El contrato
+tecnico puede observarse y solicitar activacion desde una integracion futura,
+pero ninguna pantalla lo consume todavia. La arquitectura por capas permanece
+preservada: PWA decide lifecycle de cliente y nunca validez de sesion, permisos,
+datos, mutaciones o reglas de negocio.
+
 ### Sprint 96.3 - Experiencia instalada, compatibilidad y gate final
 
 Objetivo: demostrar que FeedGo puede operar como aplicacion instalada en

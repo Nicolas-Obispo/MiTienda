@@ -19,13 +19,16 @@ test("los assets starter y branding duplicados eliminados no reaparecen", async 
 });
 
 test("service worker conserva solo logging operativo de error", async () => {
-  const [main, serviceWorker] = await Promise.all([
+  const [main, registrationOwner, serviceWorker] = await Promise.all([
     readSource("src/main.jsx"),
+    readSource("src/pwa/registerServiceWorker.js"),
     readSource("src/pwa/service-worker.js"),
   ]);
 
-  assert.match(main, /register\("\/service-worker\.js"\)/);
-  assert.match(main, /console\.error\("Error SW:"/);
+  assert.match(main, /registerServiceWorker\(\)/);
+  assert.doesNotMatch(main, /serviceWorker\.register/);
+  assert.match(registrationOwner, /\.register\(SERVICE_WORKER_URL\)/);
+  assert.match(registrationOwner, /logger\.error\("Error SW:"/);
   assert.doesNotMatch(main, /Service Worker registrado/);
   assert.doesNotMatch(serviceWorker, /console\.(?:log|debug)/);
 });
