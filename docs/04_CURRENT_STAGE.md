@@ -562,10 +562,12 @@ Siguiente etapa obligatoria aprobada:
   repositorio; sus gates fisicos y productivos permanecen diferidos de forma
   obligatoria a Sprint 96.3 y ETAPA 99.
 - Alcance comprobado: identidad FeedGo, manifest, metadata, iconos, routing y
-  contratos de instalacion segura; service worker y runtime offline permanecen
-  intactos y pertenecen a Sprint 96.2.
-- Siguiente sprint: 96.2 - Runtime PWA, offline, seguridad y actualizacion. No
-  iniciado.
+  contratos de instalacion segura. Sprint 96.2 se encuentra en curso: el bloque
+  96.2-B queda completado y aprobado con build `injectManifest`, precache
+  restringido del shell, firewall network-only para API, datos privados y
+  requests no aprobados, y arquitectura por capas preservada.
+- Siguiente bloque: 96.2-C - lifecycle, actualizacion controlada y cleanup. No
+  iniciado; 96.2-B no incorpora todavia esos comportamientos ni UX offline.
 - Documento tecnico propietario: `docs/18_PWA_ENTERPRISE.md`.
 - Gate: no pueden comenzar pruebas masivas, beta publica ni lanzamiento
   mientras ETAPA 96 permanezca abierta o conserve bloqueantes criticos o altos.

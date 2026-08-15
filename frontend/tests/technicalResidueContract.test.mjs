@@ -21,7 +21,7 @@ test("los assets starter y branding duplicados eliminados no reaparecen", async 
 test("service worker conserva solo logging operativo de error", async () => {
   const [main, serviceWorker] = await Promise.all([
     readSource("src/main.jsx"),
-    readSource("public/service-worker.js"),
+    readSource("src/pwa/service-worker.js"),
   ]);
 
   assert.match(main, /register\("\/service-worker\.js"\)/);

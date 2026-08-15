@@ -295,6 +295,59 @@ Criterios de cierre:
 - recuperacion ante actualizacion incompatible verificada;
 - pruebas automatizadas del runtime PWA aprobadas.
 
+#### Implementacion 96.2-B - build, precache y firewall
+
+Estado: completado y aprobado tecnicamente. Sprint 96.2 permanece abierto y
+96.2-C es el siguiente bloque; no se inicia mediante este cierre.
+
+Frontera arquitectonica permanente: **el Service Worker y la infraestructura
+PWA son infraestructura tecnica de cliente y nunca una capa de negocio**. Solo
+pueden decidir inventario estatico del app shell, transporte network-only,
+fallback tecnico de navegacion, conectividad, lifecycle, actualizacion y
+recuperacion del runtime. No pueden decidir validez de sesion, permisos,
+privacidad de negocio, disponibilidad, exito de operaciones, datos a mostrar,
+Search, Discovery, Candidate Engine, Ranking, IA ni ninguna decision derivada.
+
+El flujo obligatorio permanece `Frontend -> Services -> Backend Routes ->
+Backend Services -> Models/DB`. Backend conserva reglas, autorizaciones,
+validaciones, decisiones y persistencia; TanStack Query conserva el ownership
+del cache remoto de sesion. El runtime PWA no persiste datos de negocio, no
+infiere estados funcionales y no crea una fuente de verdad paralela. Clasificar
+metodos, origenes, headers sensibles, navegaciones frontend y assets de build
+es exclusivamente una politica tecnica de plataforma.
+
+El source unico del worker reside en `frontend/src/pwa/service-worker.js` y el
+build produce `/service-worker.js` mediante `vite-plugin-pwa` con estrategia
+`injectManifest`. El plugin no genera manifest ni registra automaticamente el
+worker: conserva `frontend/public/manifest.json` y el owner de registro
+existente. El build inyecta nombres hashed y falla si no puede generar el
+worker; no existe un inventario manual posterior sobre `dist`.
+
+Dependencias directas del build/runtime del worker: `vite-plugin-pwa@1.3.0`,
+`workbox-core@7.4.1`, `workbox-precaching@7.4.1` y
+`workbox-routing@7.4.1`. No se usa GenerateSW, Background Sync, cache de
+runtime de API ni registro automatico del plugin.
+
+El precache se limita a `index.html`, bundles JS/CSS generados, bootstrap y
+tokens de tema, manifest, iconos instalables y logo FeedGo aprobados. Excluye
+el propio worker, source maps, `vite.svg`, `icon-180.png` legacy y cualquier
+asset publico no declarado. Las navegaciones frontend validas same-origin son
+network-first y solo ante una excepcion real de red usan el `index.html`
+precacheado; respuestas HTTP 404, 401, 403 u otros errores validos no se
+convierten en shell.
+
+El firewall clasifica como network-only todo metodo distinto de GET/HEAD, API
+publica o autenticada, origen o path sensible, request con `Authorization`,
+origen externo y recurso no incluido explicitamente en el precache. Por tanto,
+Cache Storage contiene plataforma y nunca respuestas API, JWT, uploads, media
+privada, mapas o geocoding. TanStack Query conserva sin cambios el ownership
+de datos remotos durante la sesion.
+
+96.2-B no implementa `skipWaiting`, `clients.claim`, worker waiting,
+actualizacion controlada, cleanup entre versiones, UX offline ni recuperacion
+avanzada. Esos contratos permanecen para 96.2-C y 96.2-D; Sprint 96.2 sigue
+abierto.
+
 ### Sprint 96.3 - Experiencia instalada, compatibilidad y gate final
 
 Objetivo: demostrar que FeedGo puede operar como aplicacion instalada en

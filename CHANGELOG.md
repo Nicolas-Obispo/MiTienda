@@ -9,6 +9,27 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 96 - Sprint 96.2-B - Build, precache y firewall de requests
+
+**Estado:** Bloque completado y aprobado; Sprint 96.2 permanece abierto
+
+### Resultado
+
+- Se integro `injectManifest` con Vite y un unico source de service worker,
+  generando automaticamente el inventario hashed del app shell aprobado.
+- Se implemento precache restringido de plataforma, navegacion frontend
+  network-first con fallback al shell solo ante fallos reales de red y un
+  firewall network-only para API, mutaciones, requests autenticados, origenes
+  externos y recursos no aprobados.
+- Se verifico que Cache Storage no incorpore API, JWT ni datos privados y que
+  TanStack Query conserve el ownership del cache remoto de sesion.
+- El gate confirmo la arquitectura por capas preservada: la infraestructura
+  PWA permanece como infraestructura tecnica del cliente y nunca como capa de
+  negocio.
+- Se agregaron tests contractuales de build, precache, clasificacion de
+  requests y privacidad. Lifecycle, actualizacion controlada, cleanup avanzado
+  y UX offline permanecen fuera de 96.2-B.
+
 ## ETAPA 96 - Sprint 96.1 - Identidad instalada e instalacion segura
 
 **Estado:** Cerrado tecnicamente a nivel de repositorio

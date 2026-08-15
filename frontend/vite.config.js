@@ -1,13 +1,34 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import {
+  PWA_PRECACHE_GLOB_IGNORES,
+  PWA_PRECACHE_GLOB_PATTERNS,
+} from './src/pwa/precacheContract.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src/pwa',
+      filename: 'service-worker.js',
+      injectRegister: false,
+      manifest: false,
+      injectManifest: {
+        globPatterns: [...PWA_PRECACHE_GLOB_PATTERNS],
+        globIgnores: [...PWA_PRECACHE_GLOB_IGNORES],
+      },
+      devOptions: {
+        enabled: false,
+      },
+    }),
+  ],
 
   resolve: {
     alias: {
