@@ -558,8 +558,14 @@ Plan restante oficial de ETAPA 95:
 Siguiente etapa obligatoria aprobada:
 
 - ETAPA 96 - Plataforma Instalable y PWA Enterprise.
-- Estado: pendiente y no iniciada; es la siguiente etapa oficial despues del
-  cierre de ETAPA 95.
+- Estado: en curso. Sprint 96.1 queda cerrado tecnicamente a nivel de
+  repositorio; sus gates fisicos y productivos permanecen diferidos de forma
+  obligatoria a Sprint 96.3 y ETAPA 99.
+- Alcance comprobado: identidad FeedGo, manifest, metadata, iconos, routing y
+  contratos de instalacion segura; service worker y runtime offline permanecen
+  intactos y pertenecen a Sprint 96.2.
+- Siguiente sprint: 96.2 - Runtime PWA, offline, seguridad y actualizacion. No
+  iniciado.
 - Documento tecnico propietario: `docs/18_PWA_ENTERPRISE.md`.
 - Gate: no pueden comenzar pruebas masivas, beta publica ni lanzamiento
   mientras ETAPA 96 permanezca abierta o conserve bloqueantes criticos o altos.

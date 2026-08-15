@@ -9,6 +9,35 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 96 - Sprint 96.1 - Identidad instalada e instalacion segura
+
+**Estado:** Cerrado tecnicamente a nivel de repositorio
+
+### Resultado
+
+- Se establecio identidad instalada exclusivamente FeedGo mediante manifest
+  completo, metadata HTML, favicon, Apple touch icon e iconos PWA `any` y
+  `maskable` con dimensiones verificadas.
+- Se fijaron `id`, `start_url` y `scope` en `/`, modo `standalone`, colores de
+  instalacion y politica de orientacion no restringida.
+- Se aprobaron los contratos de instalacion segura para HTTPS, API productiva,
+  ausencia de mixed content, CORS por allowlist y fallback SPA de rutas
+  frontend validas, incluyendo deep links y refresh directo.
+- Se preservo la separacion entre app shell/cache PWA, TanStack Query como
+  owner de datos remotos durante la sesion y politica inicial `network-only`
+  para API, mutaciones, uploads, datos privados, mapas y geocoding.
+- Se agregaron tests contractuales PWA para identidad, metadata, assets,
+  dimensiones reales, routing y limites de despliegue seguro.
+
+### Gates diferidos obligatorios
+
+- Sprint 96.3: validacion fisica Android, iOS/iPadOS y desktop; instalacion,
+  reinstalacion, standalone, iconos, orientacion y geolocalizacion real.
+- ETAPA 99: dominio, HTTPS, API productiva, CORS productivo, ausencia efectiva
+  de mixed content y fallback SPA del hosting.
+- Sprint 96.3 y ETAPA 99: refresh directo y deep links desplegados.
+- Sprint 96.2 queda como siguiente sprint y no fue iniciado.
+
 ## ETAPA 95 - Experiencia de Lanzamiento y Design System Critico
 
 **Estado:** Cerrada tecnica y documentalmente

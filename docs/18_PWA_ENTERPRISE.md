@@ -17,11 +17,12 @@ lanzamiento.
 
 ## Estado
 
-Alcance funcional aprobado. Implementacion no iniciada.
+Alcance funcional aprobado. Sprint 96.1 cerrado tecnicamente a nivel de
+repositorio por 96.1-B; sus gates diferidos permanecen obligatorios. Sprint
+96.2 es el siguiente sprint y no esta iniciado.
 
-ETAPA 96 permanece pendiente y no iniciada. ETAPA 95 ya fue cerrada por
-95.7-C; este documento gobierna la siguiente etapa oficial sin adelantar su
-implementacion.
+ETAPA 96 esta en curso. ETAPA 95 ya fue cerrada por 95.7-C; este documento
+gobierna la etapa oficial vigente.
 
 ## Principio de producto
 
@@ -103,6 +104,172 @@ Criterios de cierre:
 - instalacion base comprobada en la matriz minima;
 - contratos de despliegue seguro y alcance offline aprobados;
 - build, lint y validaciones especificas aprobados.
+
+#### Contrato de Sprint 96.1-A - identidad instalada
+
+Estado: implementado a nivel de repositorio; pendiente de validacion fisica y
+productiva donde se indica.
+
+Identidad canonica instalada:
+
+- `name`: `FeedGo`;
+- `short_name`: `FeedGo`;
+- `id`: `/`;
+- `start_url`: `/`;
+- `scope`: `/`;
+- `display`: `standalone`;
+- `background_color`: `#030712`;
+- `theme_color`: `#111827` como fallback estatico; el runtime de tema conserva
+  el contrato dinamico aprobado en `21_THEME_CONTRACT.md`;
+- `orientation`: omitida deliberadamente. FeedGo no bloquea una orientacion
+  porque debe funcionar en movil, tablet y desktop y no existe una necesidad
+  de producto documentada para restringirla.
+
+El identificador `/` es estable y relativo al origen. No inventa dominio ni
+proveedor y mantiene la identidad de la aplicacion independiente del ambiente.
+`start_url` y `scope` incluyen todas las rutas publicas, protegidas y profundas
+existentes bajo el origen de FeedGo.
+
+Set de iconos aprobado:
+
+- favicon PNG `48x48`;
+- Apple touch icon PNG `180x180`;
+- icono instalable PNG `192x192`, proposito `any`;
+- icono instalable PNG `512x512`, proposito `any`;
+- icono adaptable PNG `512x512`, proposito `maskable`.
+
+Todos derivan de `frontend/public/logo_Feedgo.png`. La variante maskable no se
+declara solo por metadata: conserva la identidad original completa, reducida y
+centrada sobre el canvas opaco `#030712`, con su caja completa dentro del
+circulo seguro de diametro 80%.
+
+Matriz minima de plataformas para Sprint 96.1:
+
+| Plataforma | Canal minimo | Validacion requerida |
+| --- | --- | --- |
+| Android | Chrome estable | manifest, instalacion, icono any/maskable, nombre, lanzamiento standalone |
+| iOS | Safari y Home Screen | Apple touch icon, nombre, alta, apertura y reinstalacion |
+| iPadOS | Safari y Home Screen | icono, nombre, apertura y orientaciones soportadas |
+| Windows | Chrome y Edge estables | instalacion, icono, nombre y ventana standalone |
+| Navegador sin instalacion PWA | web normal | degradacion progresiva sin bloquear funciones existentes |
+
+Los emuladores y validadores automaticos son evidencia complementaria. El
+cierre de compatibilidad requiere dispositivo fisico Android e iOS/iPadOS en
+96.3.
+
+Contrato de HTTPS, API y mixed content:
+
+- frontend productivo y API productiva deben servirse exclusivamente mediante
+  HTTPS valido;
+- ninguna pagina HTTPS puede depender de API, uploads, media, fuentes, mapas,
+  geocoding o assets activos por HTTP;
+- las variables de build productivas deben exigir una URL API HTTPS o una ruta
+  relativa segura definida por infraestructura;
+- los fallbacks HTTP locales existentes son exclusivos de desarrollo y no son
+  configuracion productiva;
+- CORS productivo debe usar una allowlist explicita de origenes FeedGo HTTPS;
+  no se permite `*` con credenciales ni una regex abierta como contrato
+  productivo;
+- dominio, hosting, certificados, reverse proxy y proveedor no se fijan en esta
+  etapa. ETAPA 99 debe materializar este contrato sin reinterpretarlo.
+
+Contrato de rutas profundas:
+
+- el servidor o plataforma de hosting debe devolver el `index.html` de la SPA
+  para toda navegacion GET/HEAD perteneciente a `scope` que no sea un archivo
+  estatico ni una ruta de API;
+- los assets inexistentes y las rutas API no deben reescribirse a HTML;
+- `/comercios/:id`, `/publicaciones/:id` y todas las rutas reales del router
+  deben admitir acceso directo y refresh;
+- el fallback futuro del service worker no reemplaza el fallback del servidor
+  en la primera visita;
+- ETAPA 99 materializara la configuracion productiva; ETAPA 96 debe conservar
+  el contrato y validarlo en un entorno representativo antes de cerrar.
+
+Matriz inicial offline y cache para Sprint 96.2:
+
+| Categoria | Owner / politica aprobada |
+| --- | --- |
+| App shell | PWA/service worker futuro; precache versionada |
+| HTML y navegacion | PWA/service worker futuro; estrategia explicita con fallback controlado |
+| JS/CSS versionados | PWA/service worker futuro; assets de build versionados |
+| Bootstrap de tema | PWA/service worker futuro; asset obligatorio del app shell |
+| Manifest, iconos y assets publicos aprobados | PWA/service worker futuro |
+| Datos remotos de negocio durante la sesion | TanStack Query; conserva ownership actual |
+| API publica | `network-only` inicial |
+| API autenticada y respuestas privadas/JWT | `network-only`; prohibido Cache Storage |
+| Mutaciones | `network-only`; sin cola, Background Sync ni exito no persistido |
+| Uploads y media privada | `network-only` inicial |
+| Mapas, tiles y geocoding | `network-only` inicial |
+
+Sprint 96.1-A no implementa ninguna estrategia de runtime, no modifica el
+service worker y no habilita funcionamiento offline.
+
+#### Gate de Sprint 96.1-B - instalacion segura
+
+Estado: cerrado tecnicamente a nivel de repositorio. La instalacion y el
+despliegue reales conservan gates diferidos obligatorios que requieren
+dispositivos fisicos o la infraestructura productiva de ETAPA 99.
+
+Evidencia y limites del repositorio:
+
+- `AppRouter` usa `BrowserRouter` y declara `/`, las rutas legales, Auth, Feed,
+  Ranking, seguidos, Explorar, Perfil y las rutas dinamicas
+  `/comercios/:id` y `/publicaciones/:id`. El hosting debe aplicar el contrato
+  de fallback anterior a toda ruta frontend valida, sin reescribir API ni
+  archivos estaticos inexistentes;
+- una primera visita online y el refresh directo dependen del fallback del
+  servidor. Una aplicacion instalada inicia en `start_url="/"`. No se declara
+  apertura offline en Sprint 96.1;
+- el frontend admite configurar la API mediante `VITE_API_URL`; los fallbacks
+  `http://127.0.0.1:8000` y equivalentes son exclusivamente locales. ETAPA 99
+  debe impedir un build productivo con fallback HTTP y materializar una URL
+  HTTPS o una ruta relativa segura;
+- el CORS actual cubre desarrollo local. ETAPA 99 debe reemplazar o extender
+  esa configuracion para produccion mediante una allowlist explicita de los
+  origenes HTTPS reales, sin inventarlos en esta etapa;
+- las claves de geocoding, JWT signing, base de datos y cualquier otro secreto
+  permanecen en configuracion backend. Ningun secreto productivo puede
+  publicarse como variable `VITE_*`, asset o bundle frontend;
+- el service worker productivo y la geolocalizacion solo pueden operar en
+  contexto seguro. La excepcion de navegador para desarrollo local no es un
+  contrato productivo;
+- Cache Storage futuro no puede contener JWT, respuestas autenticadas, datos
+  privados ni media privada. Logout, expiracion y cambio de usuario no pueden
+  dejar contenido privado recuperable desde cache PWA para otra sesion;
+- la promocion de instalacion queda a cargo de Chrome, Edge y Safari/Home
+  Screen. Sprint 96.1 no agrega boton, banner, modal ni tutorial propio.
+
+Matriz de cierre de Sprint 96.1:
+
+| Criterio | Estado | Evidencia | Owner futuro |
+| --- | --- | --- | --- |
+| Identidad instalada exclusivamente FeedGo | CUMPLIDO | manifest, metadata HTML e iconos contractuales | 96.3 valida superficies fisicas |
+| Manifest, assets e iconos validos | CUMPLIDO | test contractual, dimensiones PNG y build | 96.3 valida representacion por plataforma |
+| `id`, `start_url`, `scope`, standalone y orientacion | CUMPLIDO | manifest y contrato 96.1-A | 96.3 valida lanzamiento instalado |
+| Matriz minima de instalacion | CUMPLIDO A NIVEL REPOSITORIO / PENDIENTE DE ENTORNO | canales y resultados esperados definidos | 96.3 ejecuta Android, iOS/iPadOS y Windows |
+| Primera visita y rutas profundas | CUMPLIDO A NIVEL REPOSITORIO / PENDIENTE DE ENTORNO | rutas auditadas y fallback GET/HEAD definido | ETAPA 99 lo materializa; 96.3 lo valida |
+| Frontend y API HTTPS, sin mixed content | CUMPLIDO A NIVEL REPOSITORIO / PENDIENTE DE ENTORNO | API inyectable y contrato productivo definido | ETAPA 99 configura y valida origenes reales |
+| CORS productivo explicito | CUMPLIDO A NIVEL REPOSITORIO / PENDIENTE DE ENTORNO | contrato allowlist definido; configuracion actual solo local | ETAPA 99 materializa la allowlist real |
+| Limites de secretos, sesion y cache privada | CUMPLIDO | contrato de seguridad y matriz offline/cache | 96.2 implementa; 96.3 valida aislamiento |
+| Alcance offline formal | CUMPLIDO | matriz separa app shell, TanStack Query y network-only | 96.2 implementa runtime |
+| Runtime offline | PENDIENTE | fuera de alcance deliberado de 96.1 | 96.2 |
+| Build, lint y tests especificos | CUMPLIDO | gate tecnico ejecutado al cerrar 96.1-B | sin owner pendiente |
+
+Gates diferidos de validacion:
+
+- instalacion, iconos, nombre, standalone, apertura, reinstalacion y
+  orientaciones en la matriz fisica minima: Sprint 96.3;
+- dominio y certificados HTTPS reales, API segura, ausencia efectiva de mixed
+  content, CORS allowlist y fallback SPA del hosting: ETAPA 99;
+- refresh directo de todas las rutas validas en el entorno desplegado: ETAPA
+  99, con comprobacion integral en 96.3;
+- geolocalizacion bajo HTTPS y permisos reales de plataforma: 96.3 y ETAPA 99.
+
+Estos gates son evidencia futura obligatoria y no autorizan declarar lista la
+PWA completa, comenzar beta ni lanzamiento. No constituyen una deficiencia
+resoluble dentro del repositorio sin dispositivos, dominio o infraestructura
+real.
 
 ### Sprint 96.2 - Runtime PWA, offline, seguridad y actualizacion
 
