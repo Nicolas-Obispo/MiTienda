@@ -34,8 +34,10 @@ from app.modules.spaces.services.comercios_ownership_services import (
     ComercioUsuarioNoPropietarioError,
 )
 from app.modules.stories.services.historias_services import (
+    HistoriaNoEncontradaError,
     HistoriaNoVisibleError,
     crear_historia,
+    desactivar_historia,
     listar_historias_activas_por_comercio,
     listar_historias_bar,
 )
@@ -74,6 +76,31 @@ def crear_historia_endpoint(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ComercioUsuarioNoPropietarioError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.delete(
+    "/{historia_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def eliminar_historia_endpoint(
+    historia_id: int,
+    db: Session = Depends(get_db),
+    usuario_actual=Depends(obtener_usuario_actual),
+):
+    """Desactiva exclusivamente una historia administrada por el usuario."""
+
+    try:
+        desactivar_historia(
+            db,
+            historia_id=historia_id,
+            usuario_autenticado=usuario_actual,
+        )
+    except (HistoriaNoEncontradaError, ComercioNoEncontradoError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ComercioUsuarioNoPropietarioError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    return None
 
 
 @router.get(

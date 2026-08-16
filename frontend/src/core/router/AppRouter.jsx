@@ -1,7 +1,6 @@
 // frontend/src/router/AppRouter.jsx
 
-import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Páginas
 import { Home } from "@features/home";
@@ -89,30 +88,10 @@ function PublicOnlyRoute({ children }) {
 /**
  * GuestExploreRoute
  * -----------------
- * Permite explorar sin sesión, pero después de 5 minutos
- * redirige al usuario a login/registro.
+ * Permite descubrir contenido público sin sesión. Las mutaciones protegidas
+ * conservan sus guards y el detalle de espacio aplica su gate específico.
  */
 function GuestExploreRoute({ children }) {
-  const auth = useAuth();
-  const navigate = useNavigate();
-  const isAuthenticated = getIsAuthenticated(auth);
-
-  useEffect(() => {
-    if (isAuthenticated) return;
-
-    const timer = setTimeout(() => {
-      navigate("/login", {
-        replace: true,
-        state: {
-          message:
-            "Para seguir explorando y guardar publicaciones, iniciá sesión o registrate.",
-        },
-      });
-    }, 5 * 60 * 1000);
-
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, navigate]);
-
   return children;
 }
 

@@ -7,9 +7,9 @@
  * - Feed principal queda vertical, pero el comercio queda como galería
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ActiveLayer } from "@core";
+import { ActiveLayer, useAnonymousDetailGate, useProtectedActionRedirect } from "@core";
 
 import { PublicacionCard } from "@features/posts";
 import { CrearHistoriaModal } from "@features/stories";
@@ -80,6 +80,10 @@ export default function CommerceProfilePage() {
   const { id } = useParams();
   const comercioId = Number(id);
   const navigate = useNavigate();
+  const {
+    estaAutenticado,
+    requireAuthentication: usuarioDebeLoguearse,
+  } = useProtectedActionRedirect();
   const seguimientoCacheInicial = seguimientoPerfilComercioCache.get(comercioId);
 
   const [perfilHydratado, setPerfilHydratado] = useState(false);
@@ -96,6 +100,19 @@ export default function CommerceProfilePage() {
       : null
   );
   const [publicaciones, setPublicaciones] = useState([]);
+
+  const redirectAnonymousDetail = useCallback(() => {
+    navigate("/registro", {
+      replace: true,
+      state: { message: "Registrate para seguir explorando este espacio." },
+    });
+  }, [navigate]);
+
+  useAnonymousDetailGate({
+    enabled: !estaAutenticado,
+    ready: Boolean(comercio),
+    onExpire: redirectAnonymousDetail,
+  });
 
   const [isCrearHistoriaOpen, setIsCrearHistoriaOpen] = useState(false);
   const [isCrearPublicacionOpen, setIsCrearPublicacionOpen] = useState(false);
@@ -364,24 +381,6 @@ function esComercioMio(comercioData) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comercioId]);
 
-  function usuarioDebeLoguearse() {
-  const token = localStorage.getItem("access_token");
-
-  if (!token) {
-    navigate("/login", {
-      replace: false,
-      state: {
-        message:
-          "Para poder interactuar con la app, debes iniciá sesión.",
-      },
-    });
-
-    return true;
-  }
-
-  return false;
-}
-
   async function handleToggleLike(pubId) {
     if (usuarioDebeLoguearse()) return;
 
@@ -518,6 +517,15 @@ function esComercioMio(comercioData) {
     } catch {
       // silencioso
     }
+  }
+
+  function handleHistoriaDeleted(historiaId) {
+    setHistorias((prev) =>
+      prev.filter((historia) => historia.id !== historiaId)
+    );
+    setViewerHistorias((prev) =>
+      prev.filter((historia) => historia.id !== historiaId)
+    );
   }
 
   function handleOpenHistorias() {
@@ -1302,6 +1310,7 @@ function esComercioMio(comercioData) {
           isOpen={viewerIsOpen}
           onClose={() => setViewerIsOpen(false)}
           onHistoriaVisible={handleHistoriaVisible}
+          onHistoriaDeleted={handleHistoriaDeleted}
           historias={viewerHistorias}
           titulo={comercio?.nombre || "Historias"}
         />

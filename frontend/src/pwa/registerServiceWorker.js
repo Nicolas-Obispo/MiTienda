@@ -36,9 +36,8 @@ export function createServiceWorkerRuntime({
   const observeInstallingWorker = (worker) => {
     if (!worker || observedWorkers.has(worker)) return;
     observedWorkers.add(worker);
-    publish(PWA_RUNTIME_STATE.INSTALLING);
 
-    worker.addEventListener("statechange", () => {
+    const publishWorkerState = () => {
       if (worker.state === "installed") {
         if (registration?.waiting || navigatorObject.serviceWorker.controller) {
           publish(PWA_RUNTIME_STATE.UPDATE_AVAILABLE);
@@ -47,8 +46,13 @@ export function createServiceWorkerRuntime({
         }
       } else if (worker.state === "activated" && !explicitActivationId) {
         publish(PWA_RUNTIME_STATE.ACTIVE);
+      } else {
+        publish(PWA_RUNTIME_STATE.INSTALLING);
       }
-    });
+    };
+
+    publishWorkerState();
+    worker.addEventListener("statechange", publishWorkerState);
   };
 
   const observeRegistration = (nextRegistration) => {
@@ -129,7 +133,19 @@ export function createServiceWorkerRuntime({
       return () => subscribers.delete(subscriber);
     },
 
-    requestActivation() {
+    async checkForUpdate() {
+      if (!registration?.update) return false;
+      await registration.update();
+      if (navigatorObject.serviceWorker.getRegistration) {
+        registration = await navigatorObject.serviceWorker.getRegistration() || registration;
+      }
+      return true;
+    },
+
+    async requestActivation() {
+      if (navigatorObject.serviceWorker.getRegistration) {
+        registration = await navigatorObject.serviceWorker.getRegistration() || registration;
+      }
       const waitingWorker = registration?.waiting;
       if (
         !waitingWorker ||

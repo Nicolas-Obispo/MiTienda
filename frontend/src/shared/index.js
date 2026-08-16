@@ -2,6 +2,7 @@
 
 // Components
 export { default as InteraccionButton } from "@shared/components/InteraccionButton";
+export { default as PublicationVideo } from "@shared/media/PublicationVideo";
 
 // Utils
 export { getMediaUrlFromAny } from "@shared/utils/mediaUrl";

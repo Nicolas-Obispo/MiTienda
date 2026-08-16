@@ -289,7 +289,9 @@ la Ley 25.326 requiere revision profesional.
 ### 10.1 Usuario que busca
 
 - la ubicacion actual es efimera y se mantiene en memoria;
-- se solicita solo ante una funcion geografica contextual;
+- se resuelve al ingresar en una capacidad territorial: si el permiso tecnico
+  ya esta concedido, la lectura puede comenzar automaticamente; si permanece
+  en `prompt`, FeedGo usa una explicacion contextual minima y el prompt nativo;
 - no se crea historial ni seguimiento en segundo plano;
 - aceptar Terminos y Politica no concede permiso tecnico;
 - el permiso se obtiene mediante el navegador o plataforma;
@@ -297,7 +299,8 @@ la Ley 25.326 requiere revision profesional.
 - debe existir seleccion territorial manual y visible;
 - una ciudad manual nunca se presenta como posicion GPS;
 - territorio inicial: ciudad, provincia y pais;
-- perfil del usuario: fallback explicito, no sustituto de una lectura valida;
+- perfil del usuario: `profile_fallback` automatico ante permiso denegado,
+  siempre diferenciado de GPS y sin coordenadas ni distancia exacta;
 - ampliacion fuera de ciudad: accion explicita, primero 50 km y luego hasta
   100 km;
 - frescura territorial propuesta: cinco minutos con precision de hasta 1.000 m;
@@ -405,12 +408,14 @@ consentimiento universal para todo tratamiento futuro.
 1. No solicitar GPS por crear una cuenta.
 2. Mostrar explicacion breve al pedir resultados cercanos, distancia o territorio
    automatico.
-3. Invocar el mecanismo nativo del navegador solamente tras una accion
-   contextual.
+3. Consultar el permiso tecnico al entrar en una capacidad territorial. Con
+   `granted`, adquirir automaticamente; con `prompt`, solicitar una sola vez
+   mediante el mecanismo nativo y una explicacion contextual minima.
 4. Reutilizar el estado y lecturas aceptables conforme a las capacidades del
    navegador y la politica de frescura.
-5. Ante denegacion, timeout, indisponibilidad o precision insuficiente, ofrecer
-   ciudad manual.
+5. Ante denegacion, usar ciudad de perfil como `profile_fallback` cuando exista;
+   para anonimos, perfiles incompletos, timeout o indisponibilidad, ofrecer
+   ciudad manual compacta.
 6. No insistir repetidamente ante una decision conocida.
 7. La revocacion detiene futuras lecturas y elimina el estado efimero en memoria;
    no elimina cuenta, espacios ni evidencia legal.
@@ -906,8 +911,8 @@ Controles implementados y verificados:
 - la resolucion `POST /geocoding/territory` reutiliza el owner backend y devuelve
   solamente identidad/textos territoriales normalizados; no requiere cuenta y no
   expone domicilio, coordenadas ni payload del proveedor;
-- fallback manual y ciudad de perfil son elecciones visibles diferenciadas de
-  GPS; el perfil nunca se presenta como ubicacion actual;
+- fallback manual y ciudad de perfil permanecen diferenciados de GPS; el perfil
+  nunca se presenta como ubicacion actual ni habilita distancia exacta;
 - las query keys incluyen consulta, territorio, modo, alcance, paginacion y
   revision, pero no latitud/longitud crudas; el request envia la posicion exacta
   solo si conserva vigencia de distancia;
@@ -921,8 +926,8 @@ Controles implementados y verificados:
 
 Evidencia automatizada: permiso recuperable, opciones de lectura, refinamiento,
 frescura, ruido/desplazamiento, cambio territorial, fallback manual/perfil,
-query key/revision, prefetch comun, ausencia de solicitudes automaticas y
-contrato backend territorial sin datos precisos.
+query key/revision, prefetch comun, inicializacion automatica idempotente segun
+permiso y contrato backend territorial sin datos precisos.
 
 ## 29. Gate completado de cierre de ETAPA 95 - Frontend Ownership Audit
 

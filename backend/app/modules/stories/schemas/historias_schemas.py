@@ -55,6 +55,7 @@ class HistoriaRead(HistoriaBase):
         # ETAPA 61 — Likes de historias
     likes_count: int = 0
     liked_by_me: bool = False
+    puede_administrar: bool = False
 
     model_config = {
         "from_attributes": True

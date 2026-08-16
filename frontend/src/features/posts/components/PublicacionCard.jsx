@@ -1,7 +1,7 @@
 // frontend/src/components/PublicacionCard.jsx
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { InteraccionButton } from "@shared";
+import { InteraccionButton, PublicationVideo } from "@shared";
 import { getMediaUrlFromAny } from "@shared";
 
 function MetricBadge({ label, value, icon }) {
@@ -85,12 +85,8 @@ export default function PublicacionCard({
         <div className="relative aspect-square bg-black">
           {mediaUrl ? (
             mediaEsVideo ? (
-              <video
+              <PublicationVideo
                 src={mediaUrl}
-                autoPlay
-                muted
-                loop
-                playsInline
                 preload="metadata"
                 className="h-full w-full object-cover"
               />
@@ -225,12 +221,8 @@ export default function PublicacionCard({
       >
         {mediaUrl ? (
           mediaEsVideo ? (
-            <video
+            <PublicationVideo
               src={mediaUrl}
-              autoPlay
-              muted
-              loop
-              playsInline
               controls
               preload="metadata"
               className="max-h-[78vh] w-full object-contain"

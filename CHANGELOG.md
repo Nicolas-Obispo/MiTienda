@@ -9,6 +9,37 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 96 - Plataforma Instalable y PWA Enterprise
+
+**Estado:** Cerrada
+
+### Resultado
+
+- Se cerro identidad instalada FeedGo, manifest e iconos; build reproducible
+  con Workbox `injectManifest`; app shell y precache restrictivo; firewall
+  network-only para API, Authorization, mutaciones y recursos no aprobados.
+- Se cerro el lifecycle con registro unico, waiting, activacion natural y
+  explicita controlada, proteccion multitab, una unica recarga, cleanup seguro,
+  offline controlado, reconexion y recovery acotado.
+- Se incorporo el harness Playwright con contextos limpios, fixtures N/N+1 y
+  validacion real separada en Chrome y Edge sobre Windows, preservando fuera de
+  la build normal los bridges E2E.
+- Se integro contexto geografico automatico, fallback territorial sin fingir
+  GPS, lectura anonima y gate temporal de detalle, manteniendo backend como
+  owner de territorio, Auth y decisiones funcionales.
+- Se integro `DELETE /historias/{id}` con autenticacion, ownership backend,
+  soft delete, conservacion de media/vistas/likes, papelera contextual y
+  reconciliacion de cache/listas solo despues del `204`.
+- `feedgo.com.ar` queda reservado. DNS, HTTPS, hosting, API/CORS productivos,
+  mixed content, fallback SPA, deep links y refresh desplegados permanecen como
+  gates obligatorios de ETAPA 100.
+- VIDEO HISTORIAS iOS/SAFARI/PWA queda como DEFECTO CONOCIDO DIFERIDO: no se
+  declara resuelto ni validado. Caso B queda preservado y la investigacion pasa
+  a ETAPA 114 - Compatibilidad Multimedia iOS/Safari/PWA, no iniciada.
+- Se preservo la arquitectura por capas, TanStack Query como owner de datos
+  remotos de sesion y la ausencia de cache API, Background Sync o persistencia
+  PWA de negocio.
+
 ## ETAPA 96 - Sprint 96.2 - Runtime PWA, offline, seguridad y actualizacion
 
 **Estado:** Cerrado tecnicamente a nivel de repositorio

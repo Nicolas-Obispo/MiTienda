@@ -6,8 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:e2e": "vite build --mode pwa-e2e",
+    "build:e2e:fixtures": "node e2e/scripts/build-version-fixtures.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "serve:e2e:fixtures": "node e2e/scripts/pwa-fixture-server.mjs",
+    "test:e2e": "npm run build:e2e:fixtures && playwright test"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.10",
@@ -21,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/cli": "^4.1.17",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/react": "^19.2.5",

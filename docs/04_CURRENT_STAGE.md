@@ -175,7 +175,7 @@ Pendientes no bloqueantes programados:
   para sistema global de temas y tokens semanticos compatible con modo oscuro,
   modo claro y configuracion del dispositivo, diferenciada de la correccion del
   mapa y de la revision visual general.
-- ETAPA 104: revisar Productos legacy cuando el dominio oficial de Catalogo de
+- ETAPA 105: revisar Productos legacy cuando el dominio oficial de Catalogo de
   Productos y Disponibilidad Simple defina ownership.
 
 Estado final actual:
@@ -287,7 +287,7 @@ Fuera del cierre actual:
   disenadas, pero no implementadas en el cierre actual de ETAPA 88.
 - Correo electronico, WhatsApp, verificacion de destinos, proveedores,
   plantillas, workers, colas, schedulers productivos, webhooks e intentos de
-  entrega externa quedan diferidos a ETAPA 103 - Mensajeria y Cotizaciones.
+  entrega externa quedan diferidos a ETAPA 104 - Mensajeria y Cotizaciones.
 - Vista Semana, Vista Mes y persistencia de ultima vista, filtros o contexto
   quedan diferidas.
 
@@ -557,50 +557,46 @@ Plan restante oficial de ETAPA 95:
 
 Siguiente etapa obligatoria aprobada:
 
-- ETAPA 96 - Plataforma Instalable y PWA Enterprise.
-- Estado: en curso. Sprints 96.1 y 96.2 quedan cerrados tecnicamente a nivel de
-  repositorio; sus gates fisicos y productivos permanecen diferidos de forma
-  obligatoria a Sprint 96.3 y ETAPA 99.
-- Alcance comprobado: identidad FeedGo, manifest, metadata, iconos, routing y
-  contratos de instalacion segura. Sprint 96.2 se encuentra en curso: el bloque
-  96.2-B queda completado y aprobado con build `injectManifest`, precache
-  restringido del shell, firewall network-only para API, datos privados y
-  requests no aprobados, y arquitectura por capas preservada.
-- 96.2-C queda completado y aprobado tecnicamente: owner unico de registro,
-  estados de runtime, deteccion de updates, activacion natural o explicita,
-  bloqueo multitab, recarga unica y cleanup limitado a precaches FeedGo.
-- 96.2-D queda implementado y validado tecnicamente: shell offline controlado,
-  estado tecnico de conectividad, distincion entre transporte y respuesta HTTP,
-  reconexion sin reload ni refetch duplicado y reparacion PWA acotada.
-- Sprint 96.2 queda cerrado: 96.2-A/B/C/D completados y aprobados, con runtime
-  PWA reproducible, seguro, actualizable, offline controlado y recuperacion
-  acotada. Sprint 96.3 es el siguiente sprint y todavia no fue iniciado; sus
-  gates de validacion en browsers y dispositivos reales permanecen
-  obligatorios.
+- ETAPA 97 - Administracion Operativa Minima.
+- Estado: pendiente; no iniciada durante el cierre de ETAPA 96.
+- ETAPA 96 - Plataforma Instalable y PWA Enterprise queda cerrada tecnica y
+  documentalmente. Sprints 96.1, 96.2 y 96.3 quedan completados.
+- Resultado PWA: identidad FeedGo, manifest e iconos; build reproducible con
+  `injectManifest`; app shell y precache restrictivo; firewall network-only;
+  lifecycle y actualizacion controlados; proteccion multitab; offline,
+  reconexion y recovery acotados; harness Playwright y validacion real de
+  Chrome/Edge sobre Windows.
+- 96.3 incorpora contexto geografico automatico, fallback territorial sin
+  coordenadas, lectura anonima, gate de detalle y la correccion acotada de
+  lifecycle visible para videos de publicaciones. La eliminacion de una
+  Historia vigente se integra como intervencion funcional acotada con ownership
+  backend y soft delete, sin iniciar el resto de ETAPA 97.
+- Dominio `feedgo.com.ar`: reservado. DNS, HTTPS, hosting, API/CORS productivos,
+  mixed content real, fallback SPA, deep links y refresh desplegados permanecen
+  como gates obligatorios de ETAPA 100.
+- DEFECTO CONOCIDO DIFERIDO: determinados videos de Historias no inician en
+  iPhone/Safari/PWA. No se declara resuelto ni validado. Caso B queda preservado
+  en `frontend/.pwa-fixtures/story-video-case-b.html` y la investigacion pasa a
+  ETAPA 114 - Compatibilidad Multimedia iOS/Safari/PWA.
+- ETAPA 99 - Identidad, Registro y Autenticacion permanece futura y no iniciada.
 - Documento tecnico propietario: `docs/18_PWA_ENTERPRISE.md`.
-- Gate: no pueden comenzar pruebas masivas, beta publica ni lanzamiento
-  mientras ETAPA 96 permanezca abierta o conserve bloqueantes criticos o altos.
-- ETAPA 98 - Correccion y Pulido Visual del Frontend: etapa futura completa,
-  posterior a PWA y Administracion Operativa Minima y previa a Infraestructura
-  y Lanzamiento Controlado. No forma parte del cierre de ETAPA 95.
 
 ## Ultima etapa cerrada
 
-ETAPA 95 - Experiencia de Lanzamiento y Design System Critico.
+ETAPA 96 - Plataforma Instalable y PWA Enterprise.
 
 Estado:
 
-Cerrada tecnica y documentalmente por 95.7-C.
+Cerrada tecnica y documentalmente por el gate final de Sprint 96.3.
 
 Resultado:
 
-Sistema de ubicacion y privacidad, Search territorial, contratos legales,
-tema, tokens, primitives, cobertura visual, accesibilidad, overlays,
-responsive, ownership y residuos quedaron confrontados con suites completas y
-gates satisfechos. Los requisitos institucionales y operativos previos a
-produccion permanecen trazados sin declararse aprobados.
+La plataforma instalable, el runtime PWA, cache segura de shell, lifecycle,
+actualizacion, offline controlado, reconexion, recovery y harness browser quedan
+cerrados. La infraestructura productiva permanece en ETAPA 100 y el defecto
+multimedia especifico de Historias en iOS/Safari/PWA queda diferido a ETAPA 114.
 
-## Etapa cerrada anterior
+## Etapa cerrada historica anterior a ETAPA 95
 
 ETAPA 94 - QA Integral y Hardening Funcional.
 
@@ -680,7 +676,8 @@ Pendientes derivados:
   operacion manual que no forman parte de observabilidad base.
 - ETAPA 98: correccion y pulido visual completo del frontend, posterior a PWA
   y operacion minima y previo al lanzamiento controlado.
-- ETAPA 99: infraestructura y lanzamiento controlado.
+- ETAPA 99: identidad, registro y autenticacion, futura y no iniciada.
+- ETAPA 100: infraestructura y lanzamiento controlado.
 - Etapas futuras: infraestructura frontend de tests, carrera extrema potencial
   en likes de historias, actualizacion de Browserslist, optimizacion de chunks,
   warnings historicos de SQLite y migracion de `datetime.utcnow()` a timestamps

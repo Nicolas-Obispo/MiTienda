@@ -28,6 +28,7 @@ import {
 import { usePublicacionesGuardadas } from "@features/posts";
 
 import {
+  collectStoryImageUrls,
   fetchHistoriasPorComercio,
   marcarHistoriaVista,
   useHistoriasBar,
@@ -118,15 +119,7 @@ export default function FeedPage() {
   function preloadHistoriasImages(historias, max = 10) {
     if (!Array.isArray(historias) || historias.length === 0) return;
 
-    const urls = [];
-
-    for (const h of historias) {
-      const url = getMediaUrlFromAny(h);
-      if (url && typeof url === "string") {
-        urls.push(url);
-        if (urls.length >= max) break;
-      }
-    }
+    const urls = collectStoryImageUrls(historias, getMediaUrlFromAny, max);
 
     const doPreload = () => {
       for (const url of urls) {
@@ -400,6 +393,21 @@ export default function FeedPage() {
     }
   }
 
+  function handleHistoriaDeleted(historiaId) {
+    const comercioId = viewerComercioIdRef.current;
+
+    setViewerHistorias((prev) =>
+      prev.filter((historia) => historia.id !== historiaId)
+    );
+
+    if (comercioId && Array.isArray(historiasPorComercioRef.current[comercioId])) {
+      historiasPorComercioRef.current[comercioId] =
+        historiasPorComercioRef.current[comercioId].filter(
+          (historia) => historia.id !== historiaId
+        );
+    }
+  }
+
   return (
     <div className="min-h-screen bg-canvas text-primary">
       <main className="mx-auto max-w-2xl px-3 py-4 sm:px-4 sm:py-6">
@@ -570,14 +578,13 @@ export default function FeedPage() {
         onEnd={abrirSiguienteComercioHistorias}
         onPrevious={abrirAnteriorComercioHistorias}
         onHistoriaVisible={handleHistoriaVisible}
+        onHistoriaDeleted={handleHistoriaDeleted}
         historias={viewerHistorias}
         titulo={viewerTitulo}
       />
     </div>
   );
 }
-
-
 
 
 

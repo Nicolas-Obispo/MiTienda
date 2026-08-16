@@ -448,3 +448,56 @@ No reemplaza la documentación oficial existente.
 - Gate: ETAPA 98 no puede cerrar mientras exista una superficie sin recorrer, un defecto visual bloqueante conocido, un control ilegible o un hallazgo sin corregir o justificar. Tests, lint y build son obligatorios, pero no sustituyen evidencia visual humana/renderizada.
 - Limites: El bloque no agrega funcionalidades, no cambia negocio, Search, ranking, privacidad o geolocalizacion y no habilita redisenos arquitectonicos ni refactors masivos. Los bugs funcionales se clasifican separadamente y se resuelven desde su owner.
 - Impacto: ETAPA 96 conserva numero, nombre, alcance y posicion inmediata despues de ETAPA 95; ETAPA 97 tambien se preserva. Se inserta ETAPA 98 y las antiguas ETAPAS 98-111 se desplazan correlativamente a 99-112, conservando nombre, alcance y orden relativo.
+
+## DEC-048
+
+- ID: DEC-048
+- Titulo: Identidad FeedGo central con metodos de acceso vinculables
+- Estado: Aprobada para incorporacion futura al roadmap; implementacion no iniciada.
+- Problema: El registro actual necesita evolucionar hacia menor friccion,
+  verificacion de email, hardening y proveedores de identidad sin mezclar una
+  cuenta personal con el alta de espacios ni crear usuarios duplicados por
+  metodo de acceso.
+- Decision: `Usuario FeedGo` es la identidad funcional central. Email/password,
+  email verificado, Google y futuros mecanismos son credenciales o proveedores
+  vinculados a esa identidad. Google no es dueno de la cuenta ni emite la
+  sesion funcional FeedGo. Backend conserva validacion, vinculacion,
+  autorizacion y emision de sesion; proveedores externos se integran mediante
+  contratos desacoplados.
+- Regla de producto: registrarse crea una cuenta personal y no crea un espacio.
+  Los datos comerciales, profesionales, de disponibilidad, agenda, catalogo o
+  facturacion permanecen en sus dominios y no se vuelven requisitos del
+  registro general.
+- Limites: la decision no elige proveedor de correo, no define todavia modelo,
+  codigo, expiracion, OAuth/OIDC, SDK ni migracion. La etapa debe comenzar con
+  auditoria de datos, usuarios existentes, seguridad, abuso, privacidad,
+  proveedores, recuperacion y compatibilidad PWA.
+- Roadmap: se incorpora ETAPA 99 - Identidad, Registro y Autenticacion. ETAPAS
+  97 y 98 se preservan. Las antiguas ETAPAS 99-112 pasan a 100-113 conservando
+  nombre, alcance y orden relativo.
+- Relacion con ETAPA 96: esta iniciativa no forma parte de ETAPA 96 y no puede
+  ampliar, bloquear ni reinterpretar su cierre vigente.
+
+## DEC-049
+
+- ID: DEC-049
+- Titulo: Cierre de infraestructura PWA con defecto multimedia iOS diferido
+- Estado: Aprobada
+- Problema: La infraestructura PWA general de ETAPA 96 quedo implementada y
+  validada, pero determinados videos de Historias no inician en
+  iPhone/Safari/PWA. Continuar aplicando cambios sobre lifecycle multimedia sin
+  una causa raiz confirmada aumenta el riesgo de regresion y mezcla
+  compatibilidad de contenido con infraestructura PWA.
+- Decision: ETAPA 96 se cierra con Sprints 96.1, 96.2 y 96.3 completados. El
+  defecto de video queda expresamente DIFERIDO, no resuelto ni validado, y no
+  bloquea el cierre de la plataforma instalable. La investigacion se detiene y
+  pasa a ETAPA 114 - Compatibilidad Multimedia iOS/Safari/PWA, agregada al final
+  del roadmap sin renumerar etapas existentes.
+- Evidencia: Caso B queda preservado en
+  `frontend/.pwa-fixtures/story-video-case-b.html` como fixture diagnostico
+  fuera de navegacion y build productiva. ETAPA 114 debe retomar esa evidencia,
+  Historias de video, Safari normal/standalone, lifecycle, codecs, MIME, Range y
+  dispositivos fisicos.
+- Limites: La decision no declara que todos los videos funcionen en iPhone, no
+  autoriza otro workaround, no modifica Service Worker y no reemplaza los gates
+  productivos de ETAPA 100.

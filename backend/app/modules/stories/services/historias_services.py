@@ -39,6 +39,10 @@ class HistoriaNoVisibleError(ValueError):
     pass
 
 
+class HistoriaNoEncontradaError(ValueError):
+    pass
+
+
 def obtener_historia_visible_o_error(
     db: Session,
     *,
@@ -104,8 +108,33 @@ def crear_historia(
     db.add(nueva_historia)
     db.commit()
     db.refresh(nueva_historia)
+    nueva_historia.puede_administrar = True
 
     return nueva_historia
+
+
+def desactivar_historia(
+    db: Session,
+    *,
+    historia_id: int,
+    usuario_autenticado: Usuario,
+) -> Historia:
+    """Desactiva una historia propia sin borrar entidad, media ni relaciones."""
+
+    historia = db.query(Historia).filter(Historia.id == historia_id).first()
+    if historia is None:
+        raise HistoriaNoEncontradaError("Historia no encontrada")
+
+    obtener_comercio_propio_o_error(
+        db,
+        comercio_id=historia.comercio_id,
+        usuario_autenticado=usuario_autenticado,
+    )
+
+    historia.is_activa = False
+    db.commit()
+    db.refresh(historia)
+    return historia
 
 
 def listar_historias_activas_por_comercio(
@@ -124,7 +153,7 @@ def listar_historias_activas_por_comercio(
         → vista_by_me queda False (no autenticado).
     """
 
-    obtener_comercio_activo_o_error(db, comercio_id)
+    comercio = obtener_comercio_activo_o_error(db, comercio_id)
 
     historias = (
         db.query(Historia)
@@ -144,6 +173,7 @@ def listar_historias_activas_por_comercio(
             h.vista_by_me = False
             h.likes_count = len(h.likes or [])
             h.liked_by_me = False
+            h.puede_administrar = False
         return historias
     
     # Obtener IDs de historias vistas por el usuario
@@ -169,6 +199,7 @@ def listar_historias_activas_por_comercio(
         h.vista_by_me = h.id in vistas_set
         h.likes_count = len(h.likes or [])
         h.liked_by_me = h.id in likes_set
+        h.puede_administrar = comercio.usuario_id == usuario_id
 
     return historias
 

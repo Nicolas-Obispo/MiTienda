@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { getMediaUrlFromAny } from "@shared";
-import { toggleLikeHistoria } from "@features/stories";
+import { Trash2 } from "lucide-react";
+import { ActiveLayer } from "@core";
+import { Button, Surface, getMediaUrlFromAny } from "@shared";
+import {
+  toggleLikeHistoria,
+  useEliminarHistoriaMutation,
+} from "@features/stories";
 import DenunciaModal from "@features/moderation/components/DenunciaModal";
 import { RECURSO_DENUNCIA_HISTORIA } from "@features/moderation/constants/denuncias";
+import {
+  isStoryVideoUrl,
+  pauseStoryVideo,
+  playStoryVideo,
+} from "./storyMediaLifecycle";
+import { reconcileStoryDeletion } from "./storyDeletionState";
 import "./HistoriasViewer.css";
 
 const DURACION_MS_DEFAULT = 4500;
@@ -13,6 +24,7 @@ export default function HistoriasViewer({
   onEnd,
   onPrevious,
   onHistoriaVisible,
+  onHistoriaDeleted,
   historias,
   titulo,
 }) {
@@ -30,12 +42,19 @@ export default function HistoriasViewer({
   const [isLikingHistoria, setIsLikingHistoria] = useState(false);
   const [showFlyingHeart, setShowFlyingHeart] = useState(false);
   const [isDenunciaOpen, setIsDenunciaOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const imgRef = useRef(null);
   const videoRef = useRef(null);
   const rafRef = useRef(null);
   const startTimeRef = useRef(null);
   const runIdRef = useRef(0);
+  const errorAdvanceTimeoutRef = useRef(null);
+  const startedVideoRef = useRef(null);
+  const advanceLockedRef = useRef(false);
+  const deletionTransitionRef = useRef(null);
+  const eliminarHistoriaMutation = useEliminarHistoriaMutation();
 
   const limpiarRaf = useCallback(() => {
     if (rafRef.current) {
@@ -44,10 +63,23 @@ export default function HistoriasViewer({
     }
   }, []);
 
+  const limpiarErrorAdvanceTimeout = useCallback(() => {
+    if (errorAdvanceTimeoutRef.current !== null) {
+      clearTimeout(errorAdvanceTimeoutRef.current);
+      errorAdvanceTimeoutRef.current = null;
+    }
+  }, []);
+
+  const pausarVideoActivo = useCallback(() => {
+    pauseStoryVideo(videoRef.current);
+  }, []);
+
   const cerrarViewer = useCallback(() => {
+    pausarVideoActivo();
+    limpiarErrorAdvanceTimeout();
     limpiarRaf();
     onClose?.();
-  }, [limpiarRaf, onClose]);
+  }, [limpiarErrorAdvanceTimeout, limpiarRaf, onClose, pausarVideoActivo]);
 
   const finalizarGrupo = useCallback(() => {
     // ✅ Si hay onEnd, delegamos al padre (FeedPage) para pasar al próximo comercio
@@ -63,6 +95,11 @@ export default function HistoriasViewer({
   const irSiguiente = useCallback(() => {
     if (!isOpen) return;
     if (historiasList.length === 0) return;
+    if (advanceLockedRef.current) return;
+
+    advanceLockedRef.current = true;
+    pausarVideoActivo();
+    limpiarErrorAdvanceTimeout();
 
     setIndexActual((prev) => {
       if (prev >= historiasList.length - 1) {
@@ -72,11 +109,21 @@ export default function HistoriasViewer({
       }
       return prev + 1;
     });
-  }, [isOpen, historiasList.length, finalizarGrupo]);
+  }, [
+    isOpen,
+    historiasList.length,
+    finalizarGrupo,
+    limpiarErrorAdvanceTimeout,
+    pausarVideoActivo,
+  ]);
 
   const irAnterior = useCallback(() => {
     if (!isOpen) return;
     if (historiasList.length === 0) return;
+
+    pausarVideoActivo();
+    limpiarErrorAdvanceTimeout();
+    advanceLockedRef.current = false;
 
     setIndexActual((prev) => {
       if (prev <= 0) {
@@ -89,26 +136,61 @@ export default function HistoriasViewer({
 
       return prev - 1;
     });
-  }, [isOpen, historiasList.length, onPrevious]);
+  }, [
+    isOpen,
+    historiasList.length,
+    onPrevious,
+    limpiarErrorAdvanceTimeout,
+    pausarVideoActivo,
+  ]);
+
+  const programarAvancePorError = useCallback(() => {
+    limpiarErrorAdvanceTimeout();
+    const expectedRun = runIdRef.current;
+    errorAdvanceTimeoutRef.current = setTimeout(() => {
+      errorAdvanceTimeoutRef.current = null;
+      if (runIdRef.current === expectedRun) irSiguiente();
+    }, 120);
+  }, [irSiguiente, limpiarErrorAdvanceTimeout]);
 
   // Reset fuerte al abrir
   useEffect(() => {
     if (!isOpen) return;
 
     setCycleKey((k) => k + 1);
-    setIndexActual(0);
+    const deletionTransition = deletionTransitionRef.current;
+    if (
+      deletionTransition &&
+      !historiasList.some((historia) => historia.id === deletionTransition.id)
+    ) {
+      setIndexActual(deletionTransition.nextIndex);
+      deletionTransitionRef.current = null;
+    } else {
+      setIndexActual(0);
+    }
     setProgreso(0);
     setMediaLista(false);
 
     startTimeRef.current = null;
     runIdRef.current += 1;
+    advanceLockedRef.current = false;
+    startedVideoRef.current = null;
+    limpiarErrorAdvanceTimeout();
     limpiarRaf();
 
     return () => {
+      pausarVideoActivo();
+      limpiarErrorAdvanceTimeout();
       runIdRef.current += 1;
       limpiarRaf();
     };
-  }, [isOpen, historiasList, limpiarRaf]);
+  }, [
+    isOpen,
+    historiasList,
+    limpiarErrorAdvanceTimeout,
+    limpiarRaf,
+    pausarVideoActivo,
+  ]);
 
   // Si abre sin historias -> cerrar
   useEffect(() => {
@@ -127,10 +209,19 @@ export default function HistoriasViewer({
     setProgreso(0);
     setMediaLista(false);
     startTimeRef.current = null;
+    advanceLockedRef.current = false;
+    startedVideoRef.current = null;
 
     runIdRef.current += 1;
+    limpiarErrorAdvanceTimeout();
     limpiarRaf();
-  }, [isOpen, indexActual, historiasList.length, limpiarRaf]);
+  }, [
+    isOpen,
+    indexActual,
+    historiasList.length,
+    limpiarErrorAdvanceTimeout,
+    limpiarRaf,
+  ]);
 
   const historiaActual = historiasList[indexActual];
   const historiaMediaUrl = getMediaUrlFromAny(historiaActual);
@@ -141,15 +232,7 @@ export default function HistoriasViewer({
     onHistoriaVisible?.(historiaActual.id);
   }, [isOpen, historiaActual?.id, onHistoriaVisible]);
 
-    function esVideo(url) {
-    if (!url || typeof url !== "string") return false;
-
-    return [".mp4", ".webm", ".ogg", ".mov"].some((ext) =>
-      url.toLowerCase().includes(ext)
-    );
-  }
-
-  const historiaEsVideo = esVideo(historiaMediaUrl);
+  const historiaEsVideo = isStoryVideoUrl(historiaMediaUrl);
 
   useEffect(() => {
   setLikedByMe(Boolean(historiaActual?.liked_by_me));
@@ -170,12 +253,45 @@ export default function HistoriasViewer({
     return () => clearTimeout(t);
   }, [isOpen, historiaMediaUrl, cycleKey, indexActual]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      pausarVideoActivo();
+      limpiarErrorAdvanceTimeout();
+      return undefined;
+    }
+
+    const handleVisibilityChange = () => {
+      const video = videoRef.current;
+      if (document.hidden) {
+        pauseStoryVideo(video);
+        return;
+      }
+
+      if (video && mediaLista && startedVideoRef.current === video) {
+        playStoryVideo(video, document);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isOpen, mediaLista, limpiarErrorAdvanceTimeout, pausarVideoActivo]);
+
+  useEffect(
+    () => () => {
+      pausarVideoActivo();
+      limpiarErrorAdvanceTimeout();
+    },
+    [limpiarErrorAdvanceTimeout, pausarVideoActivo]
+  );
+
   // Timer RAF: solo cuando mediaLista=true
   useEffect(() => {
     if (!isOpen) return;
     if (historiasList.length === 0) return;
     if (!mediaLista) return;
-    if (isDenunciaOpen) return;
+    if (isDenunciaOpen || isDeleteConfirmOpen) return;
 
     const myRun = ++runIdRef.current;
 
@@ -211,6 +327,7 @@ export default function HistoriasViewer({
     historiasList.length,
     mediaLista,
     isDenunciaOpen,
+    isDeleteConfirmOpen,
     limpiarRaf,
     irSiguiente,
   ]);
@@ -220,7 +337,7 @@ export default function HistoriasViewer({
     if (!isOpen) return;
 
     const onKeyDown = (e) => {
-      if (isDenunciaOpen) return;
+      if (isDenunciaOpen || isDeleteConfirmOpen) return;
 
       if (e.key === "Escape") cerrarViewer();
       if (e.key === "ArrowLeft") irAnterior();
@@ -229,7 +346,14 @@ export default function HistoriasViewer({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOpen, isDenunciaOpen, cerrarViewer, irAnterior, irSiguiente]);
+  }, [
+    isOpen,
+    isDenunciaOpen,
+    isDeleteConfirmOpen,
+    cerrarViewer,
+    irAnterior,
+    irSiguiente,
+  ]);
 
   if (!isOpen) return null;
   if (historiasList.length === 0) return null;
@@ -271,6 +395,60 @@ export default function HistoriasViewer({
       setLikedByMe(snapshotLiked);
     } finally {
       setIsLikingHistoria(false);
+    }
+  }
+
+  function handleOpenDeleteConfirmation(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!historiaActual?.puede_administrar) return;
+
+    setDeleteError("");
+    setIsDeleteConfirmOpen(true);
+  }
+
+  function handleCloseDeleteConfirmation() {
+    if (eliminarHistoriaMutation.isPending) return;
+    setIsDeleteConfirmOpen(false);
+    setDeleteError("");
+  }
+
+  async function handleConfirmDelete() {
+    const historiaId = historiaActual?.id;
+    const comercioId = historiaActual?.comercio_id;
+    if (!historiaId || !comercioId || eliminarHistoriaMutation.isPending) return;
+
+    const deletionState = reconcileStoryDeletion(
+      historiasList,
+      indexActual,
+      historiaId
+    );
+    if (!deletionState.shouldClose) {
+      deletionTransitionRef.current = {
+        id: historiaId,
+        nextIndex: deletionState.nextIndex,
+      };
+    }
+
+    try {
+      setDeleteError("");
+      await eliminarHistoriaMutation.mutateAsync({ historiaId, comercioId });
+
+      pausarVideoActivo();
+      limpiarErrorAdvanceTimeout();
+      limpiarRaf();
+
+      setIsDeleteConfirmOpen(false);
+      onHistoriaDeleted?.(historiaId);
+
+      if (deletionState.shouldClose && typeof onHistoriaDeleted !== "function") {
+        cerrarViewer();
+      }
+    } catch (error) {
+      deletionTransitionRef.current = null;
+      setDeleteError(
+        error?.publicMessage || error?.message || "No se pudo eliminar la historia."
+      );
     }
   }
 
@@ -339,6 +517,18 @@ export default function HistoriasViewer({
             Denunciar
           </button>
 
+          {historiaActual?.puede_administrar ? (
+            <button
+              type="button"
+              aria-label="Eliminar historia"
+              title="Eliminar historia"
+              onClick={handleOpenDeleteConfirmation}
+              className="relative z-[999] ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              <Trash2 aria-hidden="true" size={17} />
+            </button>
+          ) : null}
+
           <button
             type="button"
             aria-label="Cerrar historias"
@@ -361,24 +551,40 @@ export default function HistoriasViewer({
               ref={videoRef}
               key={`${cycleKey}-${indexActual}-${historiaMediaUrl}`}
               src={historiaMediaUrl}
-              autoPlay
               muted
               playsInline
               preload="metadata"
               className="h-full w-full object-contain"
-              onLoadedData={() => {
-                setMediaLista(true);
-
-                const video = videoRef.current;
-                if (video) {
+              onLoadedMetadata={(event) => {
+                const video = event.currentTarget;
+                if (video === videoRef.current && startedVideoRef.current !== video) {
+                  startedVideoRef.current = video;
                   video.currentTime = 0;
-                  video.play().catch(() => {});
+                  playStoryVideo(video, document).then((started) => {
+                    if (video !== videoRef.current || startedVideoRef.current !== video) {
+                      return;
+                    }
+
+                    if (started) {
+                      setMediaLista(true);
+                      return;
+                    }
+
+                    setMediaLista(false);
+                    programarAvancePorError();
+                  });
+                }
+              }}
+              onLoadedData={(event) => {
+                const video = event.currentTarget;
+                if (video === videoRef.current && startedVideoRef.current === video) {
+                  setMediaLista(true);
                 }
               }}
               onEnded={irSiguiente}
               onError={() => {
                 setMediaLista(false);
-                setTimeout(() => irSiguiente(), 120);
+                programarAvancePorError();
               }}
             />
           ) : (
@@ -393,7 +599,7 @@ export default function HistoriasViewer({
               onLoad={() => setMediaLista(true)}
               onError={() => {
                 setMediaLista(false);
-                setTimeout(() => irSiguiente(), 120);
+                programarAvancePorError();
               }}
             />
           )
@@ -506,6 +712,50 @@ export default function HistoriasViewer({
         recursoId={historiaActual?.id}
         titulo="Denunciar historia"
       />
+      {isDeleteConfirmOpen ? (
+        <ActiveLayer
+          onClose={handleCloseDeleteConfirmation}
+          closeOnBackdrop={!eliminarHistoriaMutation.isPending}
+          closeOnEscape={!eliminarHistoriaMutation.isPending}
+          labelledBy="eliminar-historia-title"
+          contentClassName="mx-4 w-full max-w-sm"
+        >
+          <Surface variant="elevated" className="p-5">
+            <p
+              id="eliminar-historia-title"
+              className="text-lg font-semibold text-primary"
+            >
+              Eliminar historia
+            </p>
+            <p className="mt-2 text-sm text-secondary">
+              ¿Eliminar esta historia?
+            </p>
+            {deleteError ? (
+              <p className="mt-3 text-sm text-danger" role="alert">
+                {deleteError}
+              </p>
+            ) : null}
+            <div className="mt-5 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleCloseDeleteConfirmation}
+                disabled={eliminarHistoriaMutation.isPending}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={handleConfirmDelete}
+                disabled={eliminarHistoriaMutation.isPending}
+              >
+                {eliminarHistoriaMutation.isPending ? "Eliminando..." : "Eliminar"}
+              </Button>
+            </div>
+          </Surface>
+        </ActiveLayer>
+      ) : null}
     </div>
   );
 }

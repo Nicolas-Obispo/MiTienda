@@ -4,10 +4,11 @@ import test from "node:test";
 
 const readSource = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-const [feed, card, storiesBar, storiesViewer, interactionButton, feedHook] =
+const [feed, card, publicationVideo, storiesBar, storiesViewer, interactionButton, feedHook] =
   await Promise.all([
     readSource("../src/features/feed/pages/FeedPage.jsx"),
     readSource("../src/features/posts/components/PublicacionCard.jsx"),
+    readSource("../src/shared/media/PublicationVideo.jsx"),
     readSource("../src/features/stories/components/HistoriasBar.jsx"),
     readSource("../src/features/stories/components/HistoriasViewer.jsx"),
     readSource("../src/shared/components/InteraccionButton.jsx"),
@@ -91,11 +92,13 @@ test("Feed conserva optimistic updates, guardados y contratos de historias", () 
   assert.match(storiesViewer, /toggleLikeHistoria\(historiaActual\.id\)/);
 });
 
-test("reproduccion multimedia conserva atributos y helpers", () => {
+test("reproduccion multimedia conserva atributos y delega lifecycle visible", () => {
   assert.match(card, /getMediaUrlFromAny/);
-  for (const attribute of ["autoPlay", "muted", "loop", "playsInline", "preload=\"metadata\""]) {
-    assert.match(card, new RegExp(attribute));
+  assert.match(card, /<PublicationVideo/);
+  for (const attribute of ["muted", "loop", "playsInline", "preload={preload}"]) {
+    assert.match(publicationVideo, new RegExp(attribute.replace(/[{}]/g, "\\$&")));
   }
+  assert.doesNotMatch(publicationVideo, /autoPlay/);
   assert.match(feed, /requestIdleCallback/);
   assert.match(feed, /img\.decoding = "async"/);
   assert.match(feed, /img\.loading = "eager"/);

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FeedGo Story Video Diagnostic — Case B</title>
+    <style>
+      body { margin: 0; padding: 16px; font: 14px system-ui, sans-serif; background: #111; color: #fff; }
+      video { display: block; width: 100%; max-height: 48vh; background: #000; }
+      button { margin: 12px 8px 12px 0; padding: 10px 12px; }
+      #play-status { margin: 8px 0; font-weight: 700; }
+      pre { min-height: 240px; overflow: auto; white-space: pre-wrap; word-break: break-word; background: #000; padding: 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>Caso B — video HTML mínimo</h1>
+    <video
+      id="diagnostic-video"
+      src="http://192.168.0.94:8000/uploads/865fca6746634cb2a36c821325f78ad1.mov"
+      muted
+      playsinline
+      controls
+      preload="metadata"
+    ></video>
+
+    <button id="programmatic-play" type="button">B2: ejecutar video.play()</button>
+    <button id="copy-log" type="button">Copiar log</button>
+    <div id="play-status">play(): NO INVOCADO</div>
+    <pre id="event-log" aria-live="polite"></pre>
+
+    <script>
+      const video = document.querySelector("#diagnostic-video");
+      const logElement = document.querySelector("#event-log");
+      const statusElement = document.querySelector("#play-status");
+      const startedAt = performance.now();
+      const events = [
+        "loadstart", "loadedmetadata", "loadeddata", "canplay", "canplaythrough",
+        "play", "playing", "waiting", "stalled", "suspend", "pause", "ended",
+        "error", "abort", "emptied",
+      ];
+
+      function finite(value) {
+        return Number.isFinite(value) ? Number(value.toFixed(3)) : String(value);
+      }
+
+      function snapshot(kind, extra = {}) {
+        const record = {
+          ms: Math.round(performance.now() - startedAt),
+          kind,
+          readyState: video.readyState,
+          networkState: video.networkState,
+          currentTime: finite(video.currentTime),
+          duration: finite(video.duration),
+          paused: video.paused,
+          ended: video.ended,
+          errorCode: video.error?.code ?? null,
+          ...extra,
+        };
+        logElement.textContent += `${JSON.stringify(record)}\n`;
+        logElement.scrollTop = logElement.scrollHeight;
+      }
+
+      for (const eventName of events) {
+        video.addEventListener(eventName, () => snapshot(eventName));
+      }
+
+      document.querySelector("#programmatic-play").addEventListener("click", () => {
+        statusElement.textContent = "play(): PENDIENTE";
+        snapshot("play-called");
+
+        let settled = false;
+        const pendingTimer = setTimeout(() => {
+          if (!settled) snapshot("play-pending-5000ms");
+        }, 5000);
+
+        try {
+          Promise.resolve(video.play()).then(
+            () => {
+              settled = true;
+              clearTimeout(pendingTimer);
+              statusElement.textContent = "play(): RESUELVE";
+              snapshot("play-resolved");
+            },
+            (error) => {
+              settled = true;
+              clearTimeout(pendingTimer);
+              statusElement.textContent = "play(): RECHAZA";
+              snapshot("play-rejected", {
+                errorName: error?.name || "",
+                errorMessage: error?.message || "",
+              });
+            }
+          );
+        } catch (error) {
+          settled = true;
+          clearTimeout(pendingTimer);
+          statusElement.textContent = "play(): RECHAZA (sync)";
+          snapshot("play-rejected-sync", {
+            errorName: error?.name || "",
+            errorMessage: error?.message || "",
+          });
+        }
+      });
+
+      document.querySelector("#copy-log").addEventListener("click", () => {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(logElement);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        document.execCommand("copy");
+        selection.removeAllRanges();
+      });
+
+      snapshot("fixture-ready");
+    </script>
+  </body>
+</html>

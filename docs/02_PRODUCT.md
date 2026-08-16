@@ -73,6 +73,23 @@ Todavia no existen:
 Esas capacidades pertenecen a una etapa futura y requieren diseno especifico de
 permisos, ownership, seguridad y operacion.
 
+## Identidad personal y alta de espacios
+
+Una cuenta personal FeedGo permite explorar, interactuar, guardar, seguir y
+usar capacidades personales presentes o futuras sin exigir que la persona cree
+un espacio.
+
+El registro general debe tender a minima friccion y solicitar solamente datos
+necesarios para identidad y funcionamiento de la cuenta. Crear o administrar un
+espacio es un proceso separado, con sus propios datos comerciales,
+profesionales, territoriales y operativos.
+
+`Usuario FeedGo` es la identidad central. Los metodos de acceso presentes o
+futuros, incluidos email/password, email verificado o Google, se vinculan a esa
+identidad y no crean por si mismos cuentas funcionales paralelas. La decision
+arquitectonica y su etapa futura se registran en `DEC-048` y
+`docs/05_SEARCH_ROADMAP.md`.
+
 ## Principios de Producto
 
 - Pedir la menor cantidad posible de información estructurada.

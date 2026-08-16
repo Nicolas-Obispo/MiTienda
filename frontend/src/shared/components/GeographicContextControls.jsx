@@ -1,13 +1,12 @@
 import { useState } from "react";
 
-import { useAuth } from "@features/auth/hooks/useAuth";
 import { useGeographicContext } from "@shared/location/useGeographicContext";
 import { Alert, Button, FormControl, Input, Surface } from "@shared/components/primitives";
 
 export default function GeographicContextControls() {
-  const { usuario } = useAuth();
   const {
     context,
+    browserPermission,
     error,
     permissionState,
     hasTerritory,
@@ -19,7 +18,7 @@ export default function GeographicContextControls() {
   const [province, setProvince] = useState("");
 
   const requesting = permissionState === "requesting";
-  const profileAvailable = Boolean(usuario?.ciudad && usuario?.provincia);
+  const needsAttention = !hasTerritory || Boolean(error);
 
   function submitManual(event) {
     event.preventDefault();
@@ -28,11 +27,11 @@ export default function GeographicContextControls() {
   }
 
   return (
-    <Surface as="section" variant="subtle" className="p-3" aria-labelledby="geographic-context-title">
+    <Surface as="section" variant="subtle" className="p-2" aria-labelledby="geographic-context-title">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p id="geographic-context-title" className="text-sm font-semibold">
-            {hasTerritory ? `Resultados cerca de ${context.city}` : "Elegí dónde buscar"}
+            {hasTerritory ? context.city : "Ubicación no disponible"}
           </p>
           {hasTerritory && (
             <p className="text-xs text-secondary">
@@ -45,31 +44,30 @@ export default function GeographicContextControls() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
+          {(context.source !== "device" || browserPermission === "denied" || needsAttention) && <Button
             type="button"
             disabled={requesting}
             onClick={() => requestDeviceLocation({ needDistance: true, force: hasTerritory })}
             variant="secondary"
             className="px-3 py-2 text-xs"
           >
-            {requesting ? "Obteniendo ubicación…" : hasTerritory ? "Actualizar ubicación" : "Usar mi ubicación"}
+            {requesting ? "Obteniendo ubicación…" : "Habilitar ubicación exacta"}
           </Button>
+          }
           <Button
             type="button"
             onClick={() => setManualOpen((value) => !value)}
             variant="secondary"
             className="px-3 py-2 text-xs"
           >
-            Elegir ciudad
+            Cambiar ciudad
           </Button>
         </div>
       </div>
 
-      {context.source !== "device" && (
+      {!hasTerritory && (
         <p className="mt-2 text-xs text-secondary">
-          FeedGo usa tu ubicación mientras utilizás la app para determinar tu zona,
-          mostrarte resultados cercanos y calcular distancias. No guardamos un
-          historial de tus desplazamientos.
+          Elegí una ciudad para explorar. La distancia exacta requiere habilitar ubicación.
         </p>
       )}
 
@@ -113,23 +111,6 @@ export default function GeographicContextControls() {
           <Button type="submit" variant="primary" className="self-end px-3 py-2 text-xs">
             Buscar en esta ciudad
           </Button>
-          {profileAvailable && (
-            <Button
-              type="button"
-              onClick={() => {
-                selectManualTerritory({
-                  city: usuario.ciudad,
-                  province: usuario.provincia,
-                  source: "profile_fallback",
-                });
-                setManualOpen(false);
-              }}
-              variant="ghost"
-              className="justify-start text-left text-xs underline sm:col-span-3"
-            >
-              Usar {usuario.ciudad}, {usuario.provincia} desde mi perfil
-            </Button>
-          )}
         </form>
       )}
     </Surface>

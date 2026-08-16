@@ -158,6 +158,32 @@ test("waiting existente y updatefound se detectan sin activacion automatica", as
   assert.equal(harness.runtime.getState(), PWA_RUNTIME_STATE.UPDATE_AVAILABLE);
 });
 
+test("worker ya instalado se representa sin quedar atrapado en installing", async () => {
+  const installing = new FakeEventTarget();
+  installing.state = "installed";
+  const registration = createRegistration({ installing });
+  const harness = createHarness({ registration });
+  harness.runtime.start();
+  await flush();
+
+  assert.equal(harness.runtime.getState(), PWA_RUNTIME_STATE.UPDATE_AVAILABLE);
+});
+
+test("checkForUpdate usa y refresca la registration del owner", async () => {
+  let updateCalls = 0;
+  const registration = createRegistration({
+    active: {},
+    update: async () => { updateCalls += 1; },
+  });
+  const harness = createHarness({ registration });
+  harness.serviceWorker.getRegistration = async () => registration;
+  harness.runtime.start();
+  await flush();
+
+  assert.equal(await harness.runtime.checkForUpdate(), true);
+  assert.equal(updateCalls, 1);
+});
+
 test("una pestaña permite activacion explicita y recarga como maximo una vez", async () => {
   let sentMessage;
   const waiting = {

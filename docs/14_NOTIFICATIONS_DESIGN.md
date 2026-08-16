@@ -28,7 +28,7 @@ notificaciones.
 
 Roadmap vigente:
 
-- ETAPA 103 - Mensajeria y Cotizaciones: comunicaciones externas, correo,
+- ETAPA 104 - Mensajeria y Cotizaciones: comunicaciones externas, correo,
   WhatsApp, proveedores, verificacion de destinos, plantillas, reintentos y
   webhooks.
 - ETAPA 107 - Notificaciones Inteligentes: notificaciones locales, campana
@@ -93,7 +93,7 @@ del sistema de notificaciones.
 
 Correo, WhatsApp, verificacion de destinos, proveedores, plantillas,
 infraestructura asincronica, reintentos, webhooks e intentos de entrega quedan
-diferidos a ETAPA 103 - Mensajeria y Cotizaciones.
+diferidos a ETAPA 104 - Mensajeria y Cotizaciones.
 
 ## Separacion conceptual obligatoria
 
@@ -321,9 +321,9 @@ No es:
 - permiso del sistema operativo;
 - Service Worker.
 
-## Disenado para ETAPA 103
+## Disenado para ETAPA 104
 
-Quedan fuera de la implementacion de ETAPA 88 y asignados a ETAPA 103:
+Quedan fuera de la implementacion de ETAPA 88 y asignados a ETAPA 104:
 
 - envio real por correo;
 - envio real por WhatsApp;
@@ -362,7 +362,7 @@ modelo de datos vigente.
 La verificacion de correo o telefono no pertenece al futuro MVP local de
 notificaciones.
 
-Cuando se disene en ETAPA 103 debera contemplar:
+Cuando se disene en ETAPA 104 debera contemplar:
 
 - generacion segura de codigos;
 - almacenamiento no reversible;
@@ -563,7 +563,7 @@ ETAPA 107 - Notificaciones Inteligentes:
 5. Integracion local minima con sucesos de Agenda.
 6. Validacion final del alcance ejecutado.
 
-ETAPA 103 - Mensajeria y Cotizaciones:
+ETAPA 104 - Mensajeria y Cotizaciones:
 
 - servicio transversal de correo;
 - servicio transversal de WhatsApp;
@@ -582,6 +582,6 @@ ETAPA 103 - Mensajeria y Cotizaciones:
 
 Justificacion:
 
-ETAPA 103 existe como etapa futura de Mensajeria y es el dueno natural mas
+ETAPA 104 existe como etapa futura de Mensajeria y es el dueno natural mas
 cercano para comunicaciones externas. Crear una etapa nueva antes de activar
-ETAPA 103 aumentaria la fragmentacion del roadmap sin evidencia suficiente.
+ETAPA 104 aumentaria la fragmentacion del roadmap sin evidencia suficiente.

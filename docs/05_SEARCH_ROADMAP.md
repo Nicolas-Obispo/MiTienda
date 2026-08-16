@@ -965,7 +965,7 @@ Diferenciacion:
 - esas tareas pueden preparar la consistencia visual, pero el sistema de temas
   tendra alcance tecnico propio.
 
-### ☐ ETAPA 96
+### ☑ ETAPA 96
 
 Plataforma Instalable y PWA Enterprise.
 
@@ -977,7 +977,13 @@ preparada para pruebas masivas, beta publica y lanzamiento controlado.
 
 Estado:
 
-Pendiente.
+Cerrada. Sprints 96.1, 96.2 y 96.3 completados. La infraestructura PWA,
+identidad instalada, runtime, offline controlado, actualizacion, recuperacion y
+harness browser quedaron implementados y validados. Los gates que requieren
+dominio, HTTPS, hosting, API/CORS productivos y despliegue real pertenecen a
+ETAPA 100. El defecto especifico de videos de Historias en iOS/Safari/PWA no se
+declara resuelto: queda diferido a ETAPA 114 con su evidencia diagnostica
+preservada.
 
 ### ☐ ETAPA 97
 
@@ -1038,6 +1044,65 @@ Pendiente.
 
 ### ☐ ETAPA 99
 
+Identidad, Registro y Autenticacion.
+
+Objetivo:
+
+Auditar, disenar e implementar de forma controlada una identidad FeedGo
+central con registro personal de minima friccion y metodos de acceso seguros,
+sin mezclar la cuenta de usuario con la creacion o administracion de espacios.
+
+Alcance inicial sujeto a auditoria:
+
+- registro y login existentes, compatibilidad con usuarios actuales y
+  hardening backend;
+- normalizacion y unicidad de email;
+- verificacion de email mediante codigo/token de un solo uso, expiracion,
+  reenvio controlado, limites de intentos, rate limiting, antiabuso,
+  antienumeracion, observabilidad y recuperacion;
+- seleccion futura de proveedor e infraestructura de correo mediante contrato
+  desacoplado, sin proveedor predeterminado por este roadmap;
+- `Continuar con Google` mediante identidad verificada por backend, vinculada a
+  una cuenta FeedGo normal y sin convertir Google en fuente de verdad
+  funcional ni en emisor de la sesion FeedGo;
+- vinculacion segura de multiples metodos de acceso a una misma identidad,
+  evitando usuarios duplicados;
+- recuperacion de contrasena si la auditoria confirma que pertenece al mismo
+  dominio;
+- aceptacion y trazabilidad de Terminos y Privacidad conforme al owner legal;
+- revision critica de los datos minimos necesarios para crear una cuenta.
+
+Principios y exclusiones:
+
+- debe comenzar con auditoria de modelo, seguridad, proveedores, privacidad,
+  compatibilidad y arquitectura;
+- `Usuario FeedGo` es la identidad central; email/password, email verificado y
+  Google son credenciales o proveedores vinculados;
+- backend conserva validacion, identidad, autorizacion y emision de la sesion
+  FeedGo; frontend conserva interaccion y UX;
+- no se incorporan secretos OAuth al frontend ni se confian identidades
+  declaradas solamente por el cliente;
+- registrarse no crea un espacio. El onboarding comercial/profesional de un
+  espacio conserva sus datos, reglas y owners propios;
+- Google Sign-In no es fuente de ubicacion. GPS, ciudad declarada y fallback
+  geografico conservan los owners vigentes;
+- no pertenecen a esta etapa datos de disponibilidad, agenda, facturacion,
+  catalogo, clasificados ni otros dominios futuros.
+
+Dependencias:
+
+- ETAPA 96 debe cerrar sin incorporar esta reforma de Auth;
+- antes de implementar correo real debe coordinarse el contrato transversal de
+  comunicaciones sin duplicar la futura ETAPA 104;
+- cualquier modelo, tabla, proveedor o tratamiento personal nuevo requiere la
+  auditoria y aprobacion documental aplicable.
+
+Estado:
+
+Pendiente. No iniciada.
+
+### ☐ ETAPA 100
+
 Infraestructura y Lanzamiento Controlado.
 
 Objetivo:
@@ -1049,7 +1114,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 100
+### ☐ ETAPA 101
 
 Analytics y Aprendizaje de Uso Real.
 
@@ -1062,7 +1127,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 101
+### ☐ ETAPA 102
 
 Calidad de Datos y Conocimiento Administrable.
 
@@ -1075,7 +1140,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 102
+### ☐ ETAPA 103
 
 Reservas Publicas y Carrito de Reserva.
 
@@ -1088,7 +1153,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 103
+### ☐ ETAPA 104
 
 Mensajeria y Cotizaciones.
 
@@ -1103,7 +1168,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 104
+### ☐ ETAPA 105
 
 Catalogo de Productos y Disponibilidad Simple.
 
@@ -1122,7 +1187,7 @@ Pendiente programado desde ETAPA 90:
 - revisar Productos legacy y definir ownership oficial antes de habilitar
   mutaciones de catalogo o inventario.
 
-### ☐ ETAPA 105
+### ☐ ETAPA 106
 
 Promociones y Fidelizacion.
 
@@ -1135,7 +1200,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 106
+### ☐ ETAPA 107
 
 Opiniones y Motor de Reputacion.
 
@@ -1148,7 +1213,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 107
+### ☐ ETAPA 108
 
 Notificaciones Inteligentes.
 
@@ -1161,7 +1226,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 108
+### ☐ ETAPA 109
 
 Preferencias, Recomendaciones y Contexto.
 
@@ -1174,7 +1239,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 109
+### ☐ ETAPA 110
 
 IA Conversacional.
 
@@ -1187,7 +1252,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 110
+### ☐ ETAPA 111
 
 Tendencias, Oferta, Demanda y Motor Predictivo.
 
@@ -1200,7 +1265,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 111
+### ☐ ETAPA 112
 
 Ranking Dinamico y Descubrimiento Proactivo.
 
@@ -1213,7 +1278,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 112
+### ☐ ETAPA 113
 
 Plataforma Comercial y Backend Universal.
 
@@ -1225,6 +1290,33 @@ de validar uso real, operacion y necesidades del producto.
 Estado:
 
 Pendiente.
+
+### ☐ ETAPA 114
+
+Compatibilidad Multimedia iOS/Safari/PWA.
+
+Objetivo:
+
+Retomar mediante diagnostico reproducible y dispositivos fisicos la
+compatibilidad multimedia de Historias con video, sin reabrir la arquitectura
+PWA general ni aplicar workarounds por hipotesis.
+
+Alcance inicial obligatorio:
+
+- Historias con video en Safari de iPhone e iPad y en PWA instalada iOS/iPadOS;
+- comparacion entre Safari normal y modo standalone;
+- lifecycle de `<video>`, autoplay, muted, playsInline, preload, source,
+  cleanup, background/foreground y cambios entre Historias;
+- contenedor, MIME, codecs, URLs, assets locales/remotos y Range requests
+  cuando la evidencia los haga relevantes;
+- reproduccion despues de navegar, abrir, cerrar y reabrir el viewer;
+- reanudacion del diagnostico Caso B preservado en
+  `frontend/.pwa-fixtures/story-video-case-b.html`;
+- validacion en dispositivos fisicos y regresiones Android y desktop.
+
+Estado:
+
+Pendiente. Defecto conocido diferido; etapa no iniciada.
 
 ## Vision futura complementaria
 
@@ -1252,5 +1344,5 @@ colaboradores, permisos compartidos y administracion multiusuario sin asumir
 que esas capacidades existen hoy.
 
 Esta vision debera revisarse formalmente antes de cualquier reorganizacion del
-roadmap. Mientras no exista decision posterior, prevalecen las etapas 101 a 112
+roadmap. Mientras no exista decision posterior, prevalecen las etapas 102 a 114
 ya definidas en este documento.

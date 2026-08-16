@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { usePublicacionesGuardadas } from "@features/posts";
 import { useMisEspaciosSeguidos } from "@features/spaces";
@@ -14,7 +14,11 @@ import {
 export default function VerSeguidosPage() {
   const [vistaActiva, setVistaActiva] = useState("espacios");
 
-  const { queryContext } = useGeographicContext();
+  const { ensureAutomaticContext, queryContext } = useGeographicContext();
+
+  useEffect(() => {
+    void ensureAutomaticContext();
+  }, [ensureAutomaticContext]);
 
   const {
     data: espaciosData = [],
@@ -141,7 +145,7 @@ export default function VerSeguidosPage() {
                   {c.descripcion || "Sin descripcion"}
                 </p>
                 {c.ciudad && <p className="break-words text-xs text-muted">{c.ciudad}</p>}
-                {typeof c.distancia_km === "number" && (
+                {queryContext?.lat !== null && typeof c.distancia_km === "number" && (
                   <p className="mt-1 text-xs text-interactive-primary">
                     Estas a{" "}
                     {c.distancia_km < 1

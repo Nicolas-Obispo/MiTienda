@@ -146,7 +146,13 @@ export function geographicQueryContext(context, now = Date.now()) {
 }
 
 export async function acquirePosition(read, { needDistance = true } = {}) {
-  let quick = await read(FAST_POSITION_OPTIONS);
+  let quick;
+  try {
+    quick = await read(FAST_POSITION_OPTIONS);
+  } catch (error) {
+    if (error?.code !== 3) throw error;
+    return read(PRECISE_POSITION_OPTIONS);
+  }
   const needsRefinement =
     quick.accuracy > TERRITORY_MAX_ACCURACY_M ||
     (needDistance && quick.accuracy > DISTANCE_MAX_ACCURACY_M);

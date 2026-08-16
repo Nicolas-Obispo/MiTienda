@@ -34,6 +34,7 @@ import {
   GeographicContextControls,
   getMediaUrlFromAny,
   Input,
+  PublicationVideo,
   Skeleton,
   Surface,
   useGeographicContext,
@@ -91,11 +92,16 @@ export default function ExplorarPage() {
   const {
     context: geographicContext,
     distanceFresh,
+    ensureAutomaticContext,
     hasTerritory,
     queryContext,
     requestDeviceLocation,
     territoryFresh,
   } = useGeographicContext();
+
+  useEffect(() => {
+    void ensureAutomaticContext();
+  }, [ensureAutomaticContext]);
   const [searchScope, setSearchScope] = useState({
     scope: "local",
     expansion_km: null,
@@ -477,7 +483,7 @@ export default function ExplorarPage() {
                     {c.ciudad || "Ciudad"}
                   </p>
 
-                  {typeof c.distancia_km === "number" && (
+                  {queryContext?.lat !== null && typeof c.distancia_km === "number" && (
                     <p className="text-xs text-brand">
                       📍 {c.distancia_km < 1
                         ? `${Math.round(c.distancia_km * 1000)} m`
@@ -521,12 +527,8 @@ export default function ExplorarPage() {
                 <div className="aspect-square w-full overflow-hidden bg-surface-subtle">
                   {publicacionImagenUrl ? (
                     esVideo(publicacionImagenUrl) ? (
-                      <video
+                      <PublicationVideo
                         src={publicacionImagenUrl}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
                         preload="metadata"
                         className="w-full h-full object-cover group-hover:scale-105 transition"
                       />

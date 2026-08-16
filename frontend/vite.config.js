@@ -11,7 +11,17 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const pwaE2eEnabled = mode === 'pwa-e2e'
+  const pwaTestVersion = pwaE2eEnabled
+    ? process.env.FEEDGO_PWA_TEST_VERSION || 'harness'
+    : 'production'
+
+  return {
+  define: {
+    __FEEDGO_PWA_E2E__: JSON.stringify(pwaE2eEnabled),
+    __FEEDGO_PWA_TEST_VERSION__: JSON.stringify(pwaTestVersion),
+  },
   plugins: [
     react(),
     VitePWA({
@@ -56,4 +66,5 @@ export default defineConfig({
       '@router': path.resolve(__dirname, './src/router'),
     },
   },
+  }
 })

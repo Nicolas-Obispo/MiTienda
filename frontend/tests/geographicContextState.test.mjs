@@ -46,6 +46,81 @@ test("lectura rápida se refina solo cuando la precisión lo requiere", async ()
   assert.deepEqual(calls, [FAST_POSITION_OPTIONS, PRECISE_POSITION_OPTIONS]);
 });
 
+test("lectura rapida suficiente realiza un unico intento", async () => {
+  const calls = [];
+  const result = await acquirePosition(async (options) => {
+    calls.push(options);
+    return reading({ accuracy: 30 });
+  });
+  assert.equal(result.accuracy, 30);
+  assert.deepEqual(calls, [FAST_POSITION_OPTIONS]);
+});
+
+test("timeout rapido usa una unica lectura precisa como fallback", async () => {
+  const calls = [];
+  const result = await acquirePosition(async (options) => {
+    calls.push(options);
+    if (calls.length === 1) throw Object.assign(new Error("timeout rapido"), { code: 3 });
+    return reading({ accuracy: 25 });
+  });
+  assert.equal(result.accuracy, 25);
+  assert.deepEqual(calls, [FAST_POSITION_OPTIONS, PRECISE_POSITION_OPTIONS]);
+});
+
+test("dos timeouts preservan el error preciso final sin mas intentos", async () => {
+  const calls = [];
+  const preciseTimeout = Object.assign(new Error("timeout preciso"), { code: 3 });
+  await assert.rejects(
+    acquirePosition(async (options) => {
+      calls.push(options);
+      if (calls.length === 1) throw Object.assign(new Error("timeout rapido"), { code: 3 });
+      throw preciseTimeout;
+    }),
+    (error) => error === preciseTimeout
+  );
+  assert.deepEqual(calls, [FAST_POSITION_OPTIONS, PRECISE_POSITION_OPTIONS]);
+});
+
+test("fallback preciso preserva un error final distinto de timeout", async () => {
+  const calls = [];
+  const unavailable = Object.assign(new Error("no disponible"), { code: 2 });
+  await assert.rejects(
+    acquirePosition(async (options) => {
+      calls.push(options);
+      if (calls.length === 1) throw Object.assign(new Error("timeout rapido"), { code: 3 });
+      throw unavailable;
+    }),
+    (error) => error === unavailable
+  );
+  assert.deepEqual(calls, [FAST_POSITION_OPTIONS, PRECISE_POSITION_OPTIONS]);
+});
+
+test("permiso denegado no ejecuta fallback preciso", async () => {
+  const calls = [];
+  const denied = Object.assign(new Error("permiso denegado"), { code: 1 });
+  await assert.rejects(
+    acquirePosition(async (options) => {
+      calls.push(options);
+      throw denied;
+    }),
+    (error) => error === denied
+  );
+  assert.deepEqual(calls, [FAST_POSITION_OPTIONS]);
+});
+
+test("error rapido distinto de timeout se preserva sin fallback", async () => {
+  const calls = [];
+  const unavailable = Object.assign(new Error("no disponible"), { code: 2 });
+  await assert.rejects(
+    acquirePosition(async (options) => {
+      calls.push(options);
+      throw unavailable;
+    }),
+    (error) => error === unavailable
+  );
+  assert.deepEqual(calls, [FAST_POSITION_OPTIONS]);
+});
+
 test("fallo de refinamiento conserva lectura territorial útil", async () => {
   let calls = 0;
   const result = await acquirePosition(async () => {
@@ -120,8 +195,22 @@ test("prefetch y consulta principal comparten el mismo builder", async () => {
   assert.doesNotMatch(source, /navigator\.geolocation/);
 });
 
-test("Seguidos reutiliza el owner y no solicita permiso al montar", async () => {
+test("Seguidos inicia contexto automatico mediante el owner sin usar APIs del navegador directamente", async () => {
   const source = await readFile(new URL("../src/features/spaces/pages/VerSeguidosPage.jsx", import.meta.url), "utf8");
   assert.match(source, /useGeographicContext/);
+  assert.match(source, /ensureAutomaticContext/);
   assert.doesNotMatch(source, /navigator\.geolocation/);
+});
+
+test("resolverTerritorio se ejecuta solo despues de adquirir coordenadas validas", async () => {
+  const source = await readFile(
+    new URL("../src/shared/location/GeographicContext.jsx", import.meta.url),
+    "utf8"
+  );
+  const acquisition = source.indexOf("await acquirePosition(readPosition, { needDistance })");
+  const territoryResolution = source.indexOf("await resolverTerritorio({ latitud: reading.lat, longitud: reading.lng })");
+
+  assert.notEqual(acquisition, -1);
+  assert.notEqual(territoryResolution, -1);
+  assert.ok(acquisition < territoryResolution);
 });

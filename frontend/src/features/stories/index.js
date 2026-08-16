@@ -4,6 +4,7 @@
 export { default as HistoriasBar } from "@features/stories/components/HistoriasBar";
 export { default as HistoriasViewer } from "@features/stories/components/HistoriasViewer";
 export { default as CrearHistoriaModal } from "@features/stories/components/CrearHistoriaModal";
+export * from "@features/stories/components/storyMediaLifecycle";
 
 // Services
 export * from "@features/stories/services/historias_service";
@@ -11,3 +12,4 @@ export * from "@features/stories/services/historias_service";
 // Hooks
 export * from "@features/stories/hooks/useHistoriasBar";
 export * from "@features/stories/hooks/useHistoriasComercio";
+export * from "@features/stories/hooks/useEliminarHistoriaMutation";

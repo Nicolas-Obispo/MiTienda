@@ -27,12 +27,14 @@ test("detalle migra shell, estados y acciones a owners semanticos", async () => 
 });
 
 test("media conserva solo el escenario negro documentado", async () => {
-  const detail = await source(
-    "../src/features/posts/pages/PublicacionDetallePage.jsx"
-  );
+  const [detail, publicationVideo] = await Promise.all([
+    source("../src/features/posts/pages/PublicacionDetallePage.jsx"),
+    source("../src/shared/media/PublicationVideo.jsx"),
+  ]);
 
   assert.equal((detail.match(/bg-black/g) || []).length, 1);
-  assert.match(detail, /<video[\s\S]*playsInline[\s\S]*controls/);
+  assert.match(detail, /<PublicationVideo[\s\S]*controls[\s\S]*detail/);
+  assert.match(publicationVideo, /<video[\s\S]*playsInline[\s\S]*controls=\{controls\}/);
   assert.match(detail, /<img[\s\S]*object-contain/);
   assert.match(detail, /Sin imagen/);
 });

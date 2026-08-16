@@ -30,13 +30,14 @@ test("escenario, progreso, overlays y texto permanecen invariantes", () => {
   assert.match(viewer, /text-white\/70 text-sm/);
 });
 
-test("viewer no hereda runtime de tema, Button ni interactive-bubble", () => {
+test("viewer no hereda runtime de tema ni interactive-bubble", () => {
   assert.doesNotMatch(
     viewer,
     /useTheme|resolvedTheme|setPreference|data-theme=|matchMedia\(|localStorage|dark:/
   );
-  assert.doesNotMatch(viewer, /<Button\b|interactive-bubble/);
+  assert.doesNotMatch(viewer, /interactive-bubble/);
   assert.match(viewer, /<button\b/);
+  assert.match(viewer, /<Button\b[\s\S]*variant="danger"/);
 });
 
 test("cambio de tema no forma parte del estado ni reinicia el ciclo", () => {
@@ -60,7 +61,12 @@ test("navegacion, teclado, timer y reproduccion conservan contrato", () => {
   assert.match(viewer, /e\.key === "Escape"/);
   assert.match(viewer, /e\.key === "ArrowLeft"/);
   assert.match(viewer, /e\.key === "ArrowRight"/);
-  assert.match(viewer, /autoPlay[\s\S]*muted[\s\S]*playsInline[\s\S]*preload="metadata"/);
+  assert.doesNotMatch(viewer, /\bautoPlay\b/);
+  assert.match(viewer, /muted[\s\S]*playsInline[\s\S]*preload="metadata"/);
+  assert.match(viewer, /onLoadedMetadata[\s\S]*playStoryVideo\(video, document\)/);
+  assert.doesNotMatch(viewer, /onLoadedData=[\s\S]{0,300}playStoryVideo/);
+  assert.match(viewer, /pauseStoryVideo/);
+  assert.match(viewer, /visibilitychange/);
   assert.match(viewer, /onEnded=\{irSiguiente\}/);
   assert.match(viewer, /className="h-full w-full object-contain"/);
 });

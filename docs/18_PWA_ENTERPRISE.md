@@ -17,12 +17,16 @@ lanzamiento.
 
 ## Estado
 
-Alcance funcional aprobado. Sprints 96.1 y 96.2 cerrados tecnicamente a nivel
-de repositorio; sus gates diferidos permanecen obligatorios. Sprint 96.3 es el
-siguiente sprint y todavia no fue iniciado.
+ETAPA 96 cerrada tecnica y documentalmente. Sprints 96.1, 96.2 y 96.3 quedan
+completados; el runtime fue validado contractualmente y mediante browser real
+en Google Chrome y Microsoft Edge sobre Windows. Los gates de despliegue y
+contexto productivo permanecen obligatorios bajo ETAPA 100.
 
-ETAPA 96 esta en curso. ETAPA 95 ya fue cerrada por 95.7-C; este documento
-gobierna la etapa oficial vigente.
+La reproduccion de determinados videos de Historias en iPhone/Safari/PWA queda
+como defecto conocido diferido, no resuelto ni validado, bajo ETAPA 114 -
+Compatibilidad Multimedia iOS/Safari/PWA. Esta excepcion acotada no reabre la
+infraestructura PWA general ni habilita beta o lanzamiento sin los gates de
+ETAPA 100.
 
 ## Principio de producto
 
@@ -170,8 +174,9 @@ Contrato de HTTPS, API y mixed content:
 - CORS productivo debe usar una allowlist explicita de origenes FeedGo HTTPS;
   no se permite `*` con credenciales ni una regex abierta como contrato
   productivo;
-- dominio, hosting, certificados, reverse proxy y proveedor no se fijan en esta
-  etapa. ETAPA 99 debe materializar este contrato sin reinterpretarlo.
+- `feedgo.com.ar` esta reservado como dominio canonico. Su reserva no implica
+  DNS, hosting, certificados, reverse proxy ni frontend/API productivos. ETAPA
+  99 debe materializar esas capacidades sin reinterpretar este contrato.
 
 Contrato de rutas profundas:
 
@@ -183,7 +188,7 @@ Contrato de rutas profundas:
   deben admitir acceso directo y refresh;
 - el fallback futuro del service worker no reemplaza el fallback del servidor
   en la primera visita;
-- ETAPA 99 materializara la configuracion productiva; ETAPA 96 debe conservar
+- ETAPA 100 materializara la configuracion productiva; ETAPA 96 debe conservar
   el contrato y validarlo en un entorno representativo antes de cerrar.
 
 Matriz inicial offline y cache para Sprint 96.2:
@@ -209,7 +214,7 @@ service worker y no habilita funcionamiento offline.
 
 Estado: cerrado tecnicamente a nivel de repositorio. La instalacion y el
 despliegue reales conservan gates diferidos obligatorios que requieren
-dispositivos fisicos o la infraestructura productiva de ETAPA 99.
+dispositivos fisicos o la infraestructura productiva de ETAPA 100.
 
 Evidencia y limites del repositorio:
 
@@ -222,10 +227,10 @@ Evidencia y limites del repositorio:
   servidor. Una aplicacion instalada inicia en `start_url="/"`. No se declara
   apertura offline en Sprint 96.1;
 - el frontend admite configurar la API mediante `VITE_API_URL`; los fallbacks
-  `http://127.0.0.1:8000` y equivalentes son exclusivamente locales. ETAPA 99
+  `http://127.0.0.1:8000` y equivalentes son exclusivamente locales. ETAPA 100
   debe impedir un build productivo con fallback HTTP y materializar una URL
   HTTPS o una ruta relativa segura;
-- el CORS actual cubre desarrollo local. ETAPA 99 debe reemplazar o extender
+- el CORS actual cubre desarrollo local. ETAPA 100 debe reemplazar o extender
   esa configuracion para produccion mediante una allowlist explicita de los
   origenes HTTPS reales, sin inventarlos en esta etapa;
 - las claves de geocoding, JWT signing, base de datos y cualquier otro secreto
@@ -248,9 +253,9 @@ Matriz de cierre de Sprint 96.1:
 | Manifest, assets e iconos validos | CUMPLIDO | test contractual, dimensiones PNG y build | 96.3 valida representacion por plataforma |
 | `id`, `start_url`, `scope`, standalone y orientacion | CUMPLIDO | manifest y contrato 96.1-A | 96.3 valida lanzamiento instalado |
 | Matriz minima de instalacion | CUMPLIDO A NIVEL REPOSITORIO / PENDIENTE DE ENTORNO | canales y resultados esperados definidos | 96.3 ejecuta Android, iOS/iPadOS y Windows |
-| Primera visita y rutas profundas | CUMPLIDO A NIVEL REPOSITORIO / PENDIENTE DE ENTORNO | rutas auditadas y fallback GET/HEAD definido | ETAPA 99 lo materializa; 96.3 lo valida |
-| Frontend y API HTTPS, sin mixed content | CUMPLIDO A NIVEL REPOSITORIO / PENDIENTE DE ENTORNO | API inyectable y contrato productivo definido | ETAPA 99 configura y valida origenes reales |
-| CORS productivo explicito | CUMPLIDO A NIVEL REPOSITORIO / PENDIENTE DE ENTORNO | contrato allowlist definido; configuracion actual solo local | ETAPA 99 materializa la allowlist real |
+| Primera visita y rutas profundas | CUMPLIDO A NIVEL REPOSITORIO / PENDIENTE DE ENTORNO | rutas auditadas y fallback GET/HEAD definido | ETAPA 100 lo materializa; 96.3 lo valida |
+| Frontend y API HTTPS, sin mixed content | CUMPLIDO A NIVEL REPOSITORIO / PENDIENTE DE ENTORNO | API inyectable y contrato productivo definido | ETAPA 100 configura y valida origenes reales |
+| CORS productivo explicito | CUMPLIDO A NIVEL REPOSITORIO / PENDIENTE DE ENTORNO | contrato allowlist definido; configuracion actual solo local | ETAPA 100 materializa la allowlist real |
 | Limites de secretos, sesion y cache privada | CUMPLIDO | contrato de seguridad y matriz offline/cache | 96.2 implementa; 96.3 valida aislamiento |
 | Alcance offline formal | CUMPLIDO | matriz separa app shell, TanStack Query y network-only | 96.2 implementa runtime |
 | Runtime offline | PENDIENTE | fuera de alcance deliberado de 96.1 | 96.2 |
@@ -261,10 +266,10 @@ Gates diferidos de validacion:
 - instalacion, iconos, nombre, standalone, apertura, reinstalacion y
   orientaciones en la matriz fisica minima: Sprint 96.3;
 - dominio y certificados HTTPS reales, API segura, ausencia efectiva de mixed
-  content, CORS allowlist y fallback SPA del hosting: ETAPA 99;
+  content, CORS allowlist y fallback SPA del hosting: ETAPA 100;
 - refresh directo de todas las rutas validas en el entorno desplegado: ETAPA
   99, con comprobacion integral en 96.3;
-- geolocalizacion bajo HTTPS y permisos reales de plataforma: 96.3 y ETAPA 99.
+- geolocalizacion bajo HTTPS y permisos reales de plataforma: 96.3 y ETAPA 100.
 
 Estos gates son evidencia futura obligatoria y no autorizan declarar lista la
 PWA completa, comenzar beta ni lanzamiento. No constituyen una deficiencia
@@ -470,16 +475,169 @@ real:
 - iconos reales, variante maskable real y orientacion;
 - geolocalizacion desde la experiencia instalada.
 
-Gates de infraestructura productiva que continúan perteneciendo a ETAPA 99 y
+Gates de infraestructura productiva que continúan perteneciendo a ETAPA 100 y
 no se consideran validados por el cierre de Sprint 96.2:
 
-- dominio y HTTPS real;
+- delegacion/configuracion DNS de `feedgo.com.ar` y HTTPS real;
 - API productiva HTTPS y CORS productivo por allowlist;
 - ausencia real de mixed content;
 - fallback SPA del hosting;
 - deep links y refresh directo desplegados.
 
+#### Implementacion 96.3-B - harness browser y controlabilidad
+
+Estado: implementacion tecnica aprobada y cerrada con Sprint 96.3.
+
+El harness usa `@playwright/test` como unico framework E2E y ejecuta targets
+separados para Chromium administrado por Playwright, Google Chrome instalado y
+Microsoft Edge instalado. Cada test recibe un BrowserContext efimero; no usa
+perfiles personales, `userDataDir` ni contextos persistentes.
+
+El modo Vite `pwa-e2e` habilita un bridge tecnico minimo que delega en el owner
+real `serviceWorkerRuntime`. El bridge solo expone version tecnica, estado,
+check de update, activacion explicita y reparacion. No contiene `skipWaiting`,
+unregister, borrado de caches, Auth, token, QueryClient ni logica de negocio.
+Una build normal define el modo como falso y debe eliminar el import y la API
+global del bundle final.
+
+Los fixtures N y N+1 se generan desde el mismo source con
+`FEEDGO_PWA_TEST_VERSION`; la unica diferencia es metadata tecnica del bridge,
+que modifica hashes y el inventario inyectado sin cambiar textos, pantallas ni
+negocio. Un servidor local controlado puede alternar ambas versiones en el
+mismo origen y simular de forma aislada worker invalido, registro fallido,
+asset faltante, precache incompleto y update fallido. Los directorios de
+fixtures, resultados, trazas y reportes quedan ignorados por Git.
+
+Runbook inicial de validacion local:
+
+1. instalar dependencias bloqueadas con `npm ci`;
+2. instalar el Chromium compatible con `npx playwright install chromium`;
+3. ejecutar `npm run test:e2e`, que genera N/N+1, inicia el servidor local,
+   crea contextos limpios y lo apaga al finalizar;
+4. usar `npx playwright test --project=chromium`, `--project=chrome` o
+   `--project=edge` para repetir un target sobre fixtures ya generados;
+5. inspeccionar solo artefactos ignorados en `test-results/` y
+   `playwright-report/`; nunca reutilizar un perfil personal.
+
+Para waiting y activacion: iniciar N, esperar worker activo y pagina
+controlada, alternar el servidor a N+1, pedir `checkForUpdate()` mediante el
+bridge y comprobar waiting antes de invocar `requestActivation()`. Multitab
+requiere dos paginas del mismo contexto y debe conservar ambas abiertas ante
+el intento. La recarga se mide desde eventos de navegacion del browser y el
+guard tecnico existente, sin contadores agregados a produccion.
+
+Para recovery: crear la falla solo dentro del servidor/contexto de fixture e
+invocar `repair()` mediante el bridge. Deben sobrevivir caches ajenos y storage
+funcional. El rollback PWA local invierte el fixture N+1 -> N y repite waiting
+y activacion del owner; el rollback de despliegue productivo permanece en
+ETAPA 100.
+
+Las safe areas no se corrigen preventivamente. Su validacion final sobre el
+origen seguro desplegado permanece en la matriz instalada de ETAPA 100 y
+cualquier defecto reproducible requerira un bloque acotado aprobado.
+
+El runbook local queda aprobado para diagnostico de update, recovery y rollback
+PWA. El rollback del despliegue productivo pertenece a ETAPA 100.
+
+#### Validacion 96.3-C - Windows Chrome y Edge
+
+Estado: validacion browser completada, aprobada y cerrada. Se ejecuto el build
+Vite real de fixtures `pwa-e2e` con Service
+Worker generado por `injectManifest`, en perfiles efimeros e independientes de
+Google Chrome 151.0.7922.138 y Microsoft Edge 151.0.4129.86 sobre Windows.
+
+Ambos navegadores validaron de forma independiente: primera visita limpia y
+fallo seguro de primera visita offline; registro, control y precache FeedGo;
+apertura y navegacion del shell previamente instalado sin red; mutaciones
+network-only sin exito ficticio, queue ni Background Sync; distincion entre
+navegador offline, fallo de transporte con navegador online y respuestas HTTP
+401, 403, 404, 422 y 500; reconexion sin reload; update N -> N+1 con worker
+waiting; activacion explicita por el owner real con una unica recarga;
+activacion natural sin guard ni reload forzado; bloqueo multitab y posterior
+activacion natural; update fallido conservando N; y repair acotado.
+
+Cache Storage contuvo exclusivamente el namespace `feedgo-precache-*` y los
+assets tecnicos aprobados por el inventario. No aparecieron endpoints API,
+Authorization, JWT, payloads privados ni respuestas de negocio. El repair
+elimino una cache FeedGo corrupta y conservo una cache ajena, localStorage
+funcional de fixture e IndexedDB ajeno. Esto demuestra aislamiento tecnico; no
+constituye persistencia offline ni validacion funcional de Auth.
+
+La automatizacion no sustituye la integracion con el sistema operativo. La
+matriz instalada que requiere un origen productivo seguro permanece como gate
+de despliegue de ETAPA 100. La compatibilidad especifica de video en
+iOS/Safari/PWA pertenece exclusivamente a ETAPA 114.
+
+#### Decision 96.3-D - contexto geografico automatico y lectura anonima
+
+El permiso de geolocalizacion pertenece al navegador/dispositivo. FeedGo no
+persiste una autorizacion paralela. Al entrar en una capacidad territorial,
+`granted` permite adquirir automaticamente y `prompt` habilita una unica
+solicitud nativa idempotente; `denied` no se insiste. La ciudad declarada en el
+perfil puede actuar como `profile_fallback`, nunca como ubicacion fisica actual:
+no contiene coordenadas, no habilita distancia exacta ni expansion radial.
+
+Anonimos pueden usar Explorar en modo lectura. Con permiso concedido usan el
+territorio resuelto por backend; con denegacion seleccionan ciudad manual. Las
+mutaciones siguen protegidas por frontend como UX y por backend como autoridad.
+El detalle publico de un espacio puede mostrarse a un anonimo durante cinco
+segundos desde su disponibilidad efectiva y luego deriva al flujo oficial de
+registro; una accion protegida deriva inmediatamente. PWA y Service Worker no
+participan en permiso, Auth, territorio ni este timer.
+
+La validacion fisica en iPhone/Safari detecto reproduccion sostenida de videos
+de publicaciones fuera de contexto visible. La correccion acotada pertenece al
+owner frontend de media: las publicaciones reproducen con al menos 60 % de
+visibilidad, se pausan fuera del viewport o con el documento oculto y comparten
+exclusion de reproduccion activa. El detalle conserva reproduccion intencional
+mientras la pagina esta visible. Historias, backend Range/206, Service Worker,
+precache y firewall permanecen intactos. La eficacia sobre consumo real sigue
+pendiente de revalidacion fisica en iPhone/Safari dentro de ETAPA 114.
+
+La misma validacion fisica detecto rafagas `206` al recorrer videos de
+Historias. Los rangos backend permanecen validos y `/uploads` sigue
+`network-only`; la correccion queda acotada al owner de Historias: un unico
+inicio explicito del video activo, pausa al cambiar/cerrar/desmontar u ocultar
+el documento, reanudacion solo del medio que continua activo, cancelacion de
+avances por error obsoletos y precarga exclusiva de imagenes. Se preservan el
+avance de 4500 ms, las historias duplicadas intencionales y los contratos de
+vistas. Las historias activas 51 y 52 referencian archivos fisicos faltantes y
+quedan registradas como deuda de integridad sin reparacion de DB. La eficacia
+real del lifecycle permanece pendiente de revalidacion en ETAPA 114.
+
+La primera revalidacion fisica mostro que Safari, con `preload="metadata"`, no
+siempre alcanza `loadeddata` antes de que se solicite reproduccion. Esperar ese
+evento para el primer `play()` produjo un bloqueo circular. El hotfix mantiene
+owner explicito y usa `loadedmetadata` para solicitar una sola reproduccion del
+video activo; `loadeddata` no vuelve a iniciarla. Un rechazo real de `play()`
+usa la salida segura existente y no deja el viewer detenido indefinidamente.
+Pausa, background, cleanup, avance de 4500 ms, backend y PWA permanecen sin
+cambios. La revalidacion fisica demostro que determinados videos continuan sin
+iniciar; por eso el resultado no se declara resuelto y se difiere a ETAPA 114.
+
+#### Defecto conocido diferido - video en Historias / iOS-Safari-PWA
+
+Estado: DIFERIDO. No resuelto. No validado.
+
+Las Historias de imagen continuan funcionando y la infraestructura PWA general
+puede cerrarse. Determinados archivos de video solicitados correctamente con
+respuestas `206 Partial Content` no inician dentro de `HistoriasViewer` en
+iPhone/Safari/PWA. No existe causa raiz confirmada suficiente para otro cambio
+seguro dentro de ETAPA 96.
+
+La evidencia reproducible queda preservada en
+`frontend/.pwa-fixtures/story-video-case-b.html`. El fixture es diagnostico,
+queda fuera de la navegacion y de la build normal y no constituye una solucion
+productiva. ETAPA 114 debe retomar Caso B, comparar Safari normal y standalone,
+inspeccionar lifecycle, eventos, contenedor, MIME, codecs y Range cuando
+corresponda y validar fisicamente iPhone/iPad sin repetir hotfixes por hipotesis.
+
 ### Sprint 96.3 - Experiencia instalada, compatibilidad y gate final
+
+Estado: cerrado. Auditoria, harness browser, validacion Windows, evidencia
+fisica disponible y gate final completados. La matriz que depende de HTTPS y
+despliegue real se conserva en ETAPA 100; el defecto multimedia acotado se
+conserva en ETAPA 114.
 
 Objetivo: demostrar que FeedGo puede operar como aplicacion instalada en
 Android e iOS y avanzar hacia operacion, pruebas masivas, beta y lanzamiento.
@@ -504,14 +662,18 @@ Criterios de cierre:
 - ausencia de bloqueantes criticos o altos;
 - gate PWA habilitado expresamente.
 
-## Bloqueantes de beta y lanzamiento
+## Gates diferidos despues del cierre
 
-No podran comenzar la beta publica ni el lanzamiento oficial si ETAPA 96
-permanece abierta, si existe cualquier bloqueante critico o alto, o si no estan
-aprobados identidad, manifiesto, iconos, HTTPS, API productiva, rutas profundas,
-service worker, actualizacion, recuperacion, apertura offline controlada,
-aislamiento de sesiones, experiencia movil instalada, matriz Android/iOS,
-pruebas automatizadas, rollback y runbooks.
+ETAPA 96 cerrada no equivale a produccion habilitada. ETAPA 100 debe materializar
+y validar DNS, HTTPS, hosting, frontend y API productivos, CORS, ausencia de
+mixed content, fallback SPA, deep links, refresh directo, rollback de despliegue
+y matriz instalada sobre el origen real. `feedgo.com.ar` esta reservado, pero
+esa reserva no demuestra ninguno de esos gates.
+
+Separadamente, ETAPA 114 debe resolver y validar el defecto conocido de video
+en Historias sobre iOS/Safari/PWA. Este defecto no bloquea el cierre de la
+infraestructura PWA, pero debe evaluarse antes de declarar compatible ese
+subdominio multimedia en las plataformas afectadas.
 
 ## Dependencias
 
@@ -521,7 +683,7 @@ pruebas automatizadas, rollback y runbooks.
   de actualizacion, recuperacion, rollback y runbooks PWA.
 - ETAPA 98 - Correccion y Pulido Visual del Frontend ejecutara la pasada final
   de calidad visible despues de PWA y operacion minima.
-- ETAPA 99 - Infraestructura y Lanzamiento Controlado materializara HTTPS,
+- ETAPA 100 - Infraestructura y Lanzamiento Controlado materializara HTTPS,
   configuracion productiva, fallback de rutas, despliegue y rollback sobre la
   PWA ya cerrada.
 
@@ -537,9 +699,9 @@ pruebas automatizadas, rollback y runbooks.
 
 ## Criterio final de aprobacion
 
-ETAPA 96 quedara aprobada solo cuando los tres sprints esten cerrados, todos
-los bloqueantes criticos y altos esten resueltos, la experiencia instalada
-supere los controles objetivos, las sesiones y caches permanezcan aisladas,
-actualizacion y rollback sean verificables, las pruebas y runbooks esten
-aprobados y el gate PWA autorice continuar hacia operacion, infraestructura,
-pruebas masivas, beta y lanzamiento.
+ETAPA 96 queda aprobada con sus tres sprints cerrados, arquitectura por capas,
+sesiones y caches aisladas, API network-only, lifecycle/update/recovery
+verificables, suites y build aprobados y gates futuros identificados sin
+presentarlos como validados. El cierre autoriza continuar con ETAPA 97; no
+autoriza por si mismo produccion, beta ni lanzamiento, que dependen de ETAPA
+100, ni declara resuelto el defecto multimedia diferido a ETAPA 114.

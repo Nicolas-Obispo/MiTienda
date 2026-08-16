@@ -10,6 +10,7 @@ import { AuthProvider } from "@features/auth";
 import { GeographicContextProvider } from "@shared";
 import { queryClient } from "./core/query/queryClient";
 import { registerServiceWorker } from "./pwa/registerServiceWorker";
+import GeographicIdentityCoordinator from "./core/bootstrap/GeographicIdentityCoordinator";
 
 /*
 |--------------------------------------------------------------------------
@@ -29,7 +30,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <GeographicContextProvider>
-            <AppRouter />
+            <GeographicIdentityCoordinator>
+              <AppRouter />
+            </GeographicIdentityCoordinator>
           </GeographicContextProvider>
         </AuthProvider>
 
@@ -39,4 +42,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   </React.StrictMode>
 );
 
-registerServiceWorker();
+const serviceWorkerRuntime = registerServiceWorker();
+
+if (__FEEDGO_PWA_E2E__) {
+  void import("./pwa/e2eBridge").then(({ installPwaE2eBridge }) => {
+    installPwaE2eBridge(serviceWorkerRuntime, __FEEDGO_PWA_TEST_VERSION__);
+  });
+}

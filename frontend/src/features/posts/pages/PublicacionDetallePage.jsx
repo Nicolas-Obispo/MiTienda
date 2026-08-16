@@ -4,6 +4,7 @@ import {
   Alert,
   Button,
   InteraccionButton,
+  PublicationVideo,
   Skeleton,
   Surface,
   getMediaUrlFromAny,
@@ -14,13 +15,14 @@ import {
   useToggleLikePublicacionMutation,
 } from "@features/social";
 import { httpDelete } from "@core/services/http_service";
-import { ActiveLayer } from "@core";
+import { ActiveLayer, useProtectedActionRedirect } from "@core";
 import DenunciaModal from "@features/moderation/components/DenunciaModal";
 import { RECURSO_DENUNCIA_PUBLICACION } from "@features/moderation/constants/denuncias";
 
 export default function PublicacionDetallePage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { requireAuthentication: usuarioDebeLoguearse } = useProtectedActionRedirect();
 
   const {
     data: publicacionQuery,
@@ -44,22 +46,6 @@ export default function PublicacionDetallePage() {
     useState(false);
   const [isDeletingPublicacion, setIsDeletingPublicacion] = useState(false);
   const [isDenunciaOpen, setIsDenunciaOpen] = useState(false);
-
-  function usuarioDebeLoguearse() {
-    const token = localStorage.getItem("access_token");
-
-    if (!token) {
-      navigate("/login", {
-        state: {
-          message: "Para poder interactuar con la app, debes iniciar sesión.",
-        },
-      });
-
-      return true;
-    }
-
-    return false;
-  }
 
   function getNombreComercio(pub) {
     return (
@@ -242,14 +228,10 @@ export default function PublicacionDetallePage() {
             <div className="bg-black">
               {mediaUrl ? (
                 mediaEsVideo ? (
-                  <video
-                    key={mediaUrl}
+                  <PublicationVideo
                     src={mediaUrl}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
                     controls
+                    detail
                     className="max-h-[80vh] w-full object-contain"
                   />
                 ) : (

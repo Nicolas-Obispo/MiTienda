@@ -4,7 +4,7 @@
  * Service de Historias (MiPlaza).
  */
 
-import { httpGet, httpPost } from "@core";
+import { httpDelete, httpGet, httpPost } from "@core";
 
 function getApiBaseUrl() {
   return (
@@ -129,4 +129,12 @@ export async function toggleLikeHistoria(historiaId) {
     body: null,
     auth: true,
   });
+}
+
+export async function eliminarHistoria(historiaId) {
+  if (!historiaId) {
+    throw new Error("eliminarHistoria: historiaId es requerido");
+  }
+
+  return httpDelete(`/historias/${historiaId}`, getAccessToken());
 }
