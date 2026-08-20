@@ -84,6 +84,11 @@ def import_all_models() -> None:
         ContenidoDenuncia,
     )
 
+    # ADMINISTRATION
+    from app.modules.administration.models.administrative_capability_events_models import (  # noqa: F401
+        AdministrativeCapabilityEvent,
+    )
+
     # AI
     from app.modules.ai.models.comercios_embeddings_models import (  # noqa: F401
         ComercioEmbedding,

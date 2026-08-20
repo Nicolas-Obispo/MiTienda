@@ -62,6 +62,15 @@ export const queryKeys = {
     espacio: (espacioId) => ["analytics", "espacio", espacioId],
   },
 
+  administration: {
+    all: ["administration"],
+    capabilities: (usuarioId) => [
+      "administration",
+      "capabilities",
+      usuarioId ?? null,
+    ],
+  },
+
   agenda: {
     all: ["agenda"],
     contexto: (comercioId) => ["agenda", "contexto", Number(comercioId)],

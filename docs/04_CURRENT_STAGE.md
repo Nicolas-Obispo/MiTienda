@@ -555,16 +555,20 @@ Plan restante oficial de ETAPA 95:
   errores, build productivo y `git diff --check` correctos; gates tecnicos y
   documentales satisfechos. ETAPA 95 queda cerrada sin adelantar ETAPA 96;
 
-Siguiente etapa obligatoria aprobada:
+Etapa vigente:
 
 - ETAPA 97 - Administracion Operativa Minima.
-- Estado: pendiente; no iniciada. La integracion documental previa de
-  Clasificados y capacidades transversales fue completada sin autorizar su
-  ejecucion.
-- Primer trabajo cuando exista autorizacion: auditoria acotada de capacidades
-  operativas actuales, circuito de denuncias, incidentes y consumo de contratos
-  existentes; no implementar dashboard ni consola antes de aprobar esa
-  auditoria.
+- Estado: en curso.
+- 97.1 - Contrato administrativo y autorizacion: cerrada. FeedGo dispone de un
+  catalogo inicial de cuatro capacidades administrativas persistidas fuera del
+  JWT, eventos append-only de otorgamiento/revocacion, bootstrap local
+  auditado, autorizacion backend reutilizable, endpoint autenticado de
+  capacidades propias y consumidor frontend compartido. `modo_activo` y el
+  ownership de Espacios no conceden acceso administrativo.
+- No se asignaron operadores durante el cierre y no se construyeron bandeja de
+  denuncias, consola ni dashboard.
+- 97.2 - Circuito administrativo de denuncias: pendiente; no iniciada. Requiere
+  autorizacion e instruccion separadas.
 - ETAPA 96 - Plataforma Instalable y PWA Enterprise queda cerrada tecnica y
   documentalmente. Sprints 96.1, 96.2 y 96.3 quedan completados.
 - Resultado PWA: identidad FeedGo, manifest e iconos; build reproducible con
@@ -726,9 +730,8 @@ Resultado:
   un futuro GO / NO-GO basado en evidencia y riesgos residuales.
 
 El trabajo previo a ETAPA 97 queda formalmente cerrado. ETAPA 96 permanece
-cerrada y ETAPA 97 - Administracion Operativa Minima es la siguiente etapa
-oficial pendiente, todavia no iniciada. Su inicio requiere una ejecucion y
-autorizacion posteriores.
+cerrada. ETAPA 97 - Administracion Operativa Minima se encuentra en curso con
+97.1 cerrada y 97.2 pendiente, todavia no iniciada.
 
 ## Estado ETAPA 92
 

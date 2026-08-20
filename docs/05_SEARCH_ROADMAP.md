@@ -1027,7 +1027,19 @@ integral posterior.
 
 Estado:
 
-Pendiente.
+En curso.
+
+Subetapas:
+
+- 97.1 - Contrato administrativo y autorizacion: cerrada. Implementa catalogo
+  inicial de cuatro capacidades, persistencia append-only fuera del JWT,
+  bootstrap local auditado, dependency backend reutilizable, contrato
+  `/administracion/me/capacidades` y consumidor frontend compartido. El modo de
+  producto y el ownership de recursos no conceden autorizacion administrativa.
+- 97.2 - Circuito administrativo de denuncias: pendiente; no iniciada. No fue
+  adelantada por el cierre de 97.1.
+
+ETAPA 97 permanece abierta.
 
 ### ☐ ETAPA 98
 

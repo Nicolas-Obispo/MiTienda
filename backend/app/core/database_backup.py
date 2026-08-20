@@ -39,6 +39,7 @@ CRITICAL_TABLES = (
     "historias",
     "usuarios_documentos_aceptaciones",
     "contenido_denuncias",
+    "administrative_capability_events",
     "agenda_contextos_agendables",
     "agenda_elementos",
     "feedgo_agenda_contextos",

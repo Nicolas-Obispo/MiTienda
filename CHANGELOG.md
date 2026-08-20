@@ -9,6 +9,24 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 97.1 - Contrato administrativo y autorizacion
+
+**Estado:** Cerrada; ETAPA 97 permanece en curso
+
+- Se incorpora un modulo interno de administracion con cuatro capacidades
+  explicitas y habilitacion progresiva segun consumo.
+- Otorgamientos y revocaciones se persisten como eventos append-only auditados;
+  los permisos permanecen fuera del JWT y se verifican en backend por request.
+- Se incorpora bootstrap local auditado, evolucion aditiva e idempotente de
+  esquema y el contrato autenticado `GET /administracion/me/capacidades`.
+- Frontend consume el contrato mediante service, query por identidad, hook y
+  guard compartidos; la seguridad real permanece en backend.
+- `modo_activo`, ownership de Espacios y claims manipulados no conceden acceso
+  administrativo. No se asignaron operadores ni se iniciaron bandeja de
+  denuncias, dashboard, consola o ETAPA 97.2.
+- Validacion: backend 262/262, frontend 278/278, compileall correcto, lint sin
+  errores, build productivo/PWA correcto y `git diff --check` correcto.
+
 ## Gobierno previo a ETAPA 97 - Integracion de roadmap y arquitectura
 
 **Estado:** Cerrado documentalmente; ETAPA 97 no iniciada
