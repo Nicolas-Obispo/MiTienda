@@ -9,7 +9,8 @@ Documento dueno: `docs/02_PRODUCT.md`.
 Responsable funcional: Producto.
 Documentos relacionados: `00_GOVERNANCE.md`, `05_SEARCH_ROADMAP.md`,
 `07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`,
-`18_PWA_ENTERPRISE.md`.
+`18_PWA_ENTERPRISE.md`, `26_CLASSIFIEDS_CONTRACT.md`,
+`27_COMMERCIAL_PLATFORM_CONTRACT.md`.
 Cuando debe consultarse: antes de definir alcance funcional, experiencia de
 usuario, jerarquia visual, datos solicitados al usuario o cambios de producto.
 
@@ -159,6 +160,45 @@ El sistema debe poder evolucionar incorporando nuevas fuentes de descubrimiento 
 - La identidad principal no cambia automáticamente.
 - Las publicaciones enriquecen el conocimiento del espacio.
 
+## Verticales FeedGo
+
+FeedGo integra dos verticales de primer nivel: FeedGo Espacios y FeedGo
+Clasificados. Clasificados no es una aplicacion, identidad o base de usuarios
+separada. Existe una unica cuenta FeedGo; un usuario puede publicar Clasificados
+sin crear un Espacio y un visitante anonimo puede navegar, buscar, filtrar,
+abrir contenido y utilizar el contacto publico habilitado.
+
+Clasificados conecta comprador y vendedor, pero FeedGo no intermedia la
+compraventa entre particulares. El contrato inicial no incluye checkout del
+bien, carrito transaccional, escrow, custodia de fondos, logistica ni envios.
+WhatsApp puede ser el contacto principal mediante un contrato publico
+minimizado; FeedGo no necesita leer la conversacion externa.
+
+Clasificados es globalmente navegable. Pais, provincia, ciudad y distancia
+pueden informar, filtrar, ordenar o aportar una senal de ranking, pero no
+restringen por defecto el inventario publico como ocurre con el contexto
+territorial de Espacios.
+
+El usuario no debe cargar innecesariamente el mismo contenido para una
+Publicacion, un Clasificado y una Historia. FeedGo debe reutilizar media y datos
+compatibles y pedir solo los complementarios, manteniendo una fuente de verdad
+por dato, lifecycle independiente por superficie y propagaciones explicitas
+decididas por backend.
+
+La creacion de Clasificados se apoya en schemas estructurados por categoria.
+Creacion manual e IA asistida consumen el mismo contrato: la IA propone,
+backend valida, el usuario revisa y confirma, y recien entonces se publica e
+indexa. La IA nunca es fuente de verdad ni publica por si sola.
+
+Clasificados contempla contenido organico, destacado y premium como estados de
+promocion separados del contenido. La promocion se aplica solo despues de
+pertinencia y, al vencer, el mismo Clasificado vuelve a comportamiento organico
+sin eliminarse ni pausarse. Historias de Clasificados conservan entidad y
+lifecycle propios y navegan al Clasificado correspondiente.
+
+Comentarios de Clasificados quedan expresamente posteriores a la primera
+apertura publica. No se anticipa infraestructura especulativa para esa capacidad.
+
 ## Estado público y disponibilidad
 
 - El estado público del espacio usa exclusivamente `Activo` y `En pausa`.
@@ -207,3 +247,28 @@ El sistema debe poder evolucionar incorporando nuevas fuentes de descubrimiento 
 - FeedGo evoluciona agregando conocimiento, no rediseñando arquitectura.
 - La arquitectura debe crecer de menos a más.
 - Toda nueva funcionalidad debe fortalecer el conocimiento reutilizable del sistema.
+- Feed e Historias siguen siendo descubrimiento local mixto: seguir una cuenta
+  aporta afinidad, pero no elimina contenido local relevante. Novedad,
+  exposicion previa, diversidad, cercania y relevancia deben poder intervenir
+  en el ranking backend para evitar repeticion constante.
+- La monetizacion futura debe expresarse mediante politicas de capacidades y no
+  mediante condiciones dispersas en pantallas o dominios. La cantidad de
+  espacios administrables puede ser una capacidad futura, no un limite vigente
+  definido por este documento.
+- La preparacion arquitectonica para monetizacion es transversal y comienza
+  antes de activar cobros: los contratos de usuarios, espacios, permisos,
+  Clasificados, promociones, publicidad, features habilitables y limites de uso
+  no deben asumir de forma irreversible que toda capacidad sera siempre gratuita
+  e ilimitada. Preservar esa extensibilidad no autoriza planes, restricciones,
+  pagos ni suscripciones antes de su etapa aprobada.
+- La capacidad tecnica comercial aprobada, incluidos Payments y Billing, debe
+  quedar realmente operativa dentro de sus etapas owner; no alcanza con
+  interfaces vacias, placeholders o adapters ficticios como solucion final.
+  La politica comercial decide por separado precios, gratuidad, beneficios,
+  campanas y activacion efectiva.
+- La facturacion de capacidades pagas debe permanecer desacoplada. FeedGo
+  conserva planes, identidad y reglas funcionales; un componente o proveedor
+  reemplazable recibe solo los datos minimos necesarios para emitir documentos
+  fiscales y no se convierte en owner del negocio. Existe un unico Billing
+  transversal para Espacios, Clasificados, Advertising, promociones y futuras
+  capacidades aprobadas.

@@ -125,6 +125,20 @@ Reglas:
 - sincronizacion entre pestanas queda fuera del contrato minimo inicial y
   solo se agregara con evidencia, sin impedir una evolucion compatible.
 
+Evolucion aprobada para auditar en ETAPA 99:
+
+- una persona autenticada debe poder conservar su preferencia de apariencia
+  entre dispositivos mediante persistencia backend-owned;
+- frontend continua siendo owner exclusivo de aplicar y representar la
+  preferencia, y el bootstrap local sigue siendo necesario antes de verificar
+  sesion o mientras no exista red;
+- la auditoria debe definir precedencia y reconciliacion entre preferencia de
+  cuenta, storage local y logout/login sin filtrar la eleccion de otra
+  identidad;
+- para una cuenta sin preferencia persistida, el default de cuenta deseado es
+  `dark`; el contrato actual `system` permanece vigente hasta que ETAPA 99
+  implemente y migre esta capacidad de forma compatible.
+
 ## 7. Bootstrap anti-flash
 
 Antes de que el navegador pinte la aplicacion y antes del modulo React, un

@@ -9,7 +9,8 @@ Responsable funcional: Ingenieria.
 Documentos relacionados: `00_GOVERNANCE.md`,
 `08_ENGINEERING_PRINCIPLES.md`, `07_DECISIONS.md`,
 `15_LEGAL_AND_OPERATIONAL.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`,
-`18_PWA_ENTERPRISE.md`.
+`18_PWA_ENTERPRISE.md`, `26_CLASSIFIEDS_CONTRACT.md`,
+`27_COMMERCIAL_PLATFORM_CONTRACT.md`.
 Cuando debe consultarse: antes de disenar, implementar, validar, refactorizar
 o cerrar cambios tecnicos.
 
@@ -105,6 +106,24 @@ La auditoria debe confirmar que:
 - validaciones funcionales
 - compatibilidad hacia atras de endpoints, servicios, tablas, contratos y pantallas existentes
 
+## Calidad y seguridad progresivas
+
+Cada etapa funcional debe incorporar tests, integracion, autorizacion,
+validacion, controles de seguridad y regresion proporcionales a sus cambios.
+Las etapas finales de Calidad y Seguridad consolidan evidencia, ejecutan
+validaciones integrales y cierran brechas; no sustituyen la responsabilidad de
+construir controles desde el owner original.
+
+La matriz de riesgos y flujos criticos prevalece sobre un porcentaje aislado
+de cobertura. Unitarias, contratos, integracion, frontend runtime, E2E,
+compatibilidad y pruebas manuales se combinan segun el riesgo real; ninguna
+categoria demuestra por si sola la calidad completa.
+
+Dependencias, builds y herramientas deben poder ejecutarse de forma
+reproducible y automatizable sin imponer una plataforma CI/CD concreta antes
+de su auditoria. Secret scanning, SCA, inventario y SBOM se incorporan cuando
+corresponda, evitando herramientas solapadas sin beneficio demostrado.
+
 ## Fuente unica de verdad
 
 Cada dato debe tener un unico propietario.
@@ -112,6 +131,11 @@ Cada dato debe tener un unico propietario.
 Las tablas derivadas, caches, indices, embeddings, snapshots y eventos deben
 ser tratadas como artefactos regenerables o historicos, nunca como fuente
 oficial del dominio.
+
+El dominio posee la decision y el estado oficial; el servicio de aplicacion
+coordina el caso de uso; un provider ejecuta solamente el mecanismo externo.
+Solo el owner escribe la fuente oficial. Los providers no activan capacidades,
+no aplican permisos o ranking y no leen ni escriben libremente tablas FeedGo.
 
 ## Concurrencia y transacciones compuestas
 
@@ -151,12 +175,38 @@ Estas tres responsabilidades no deben mezclarse:
 
 Mantener separación entre Discovery, Candidate Engine, Ranking, Knowledge System e Indexador.
 
+## Verticales y capacidades transversales
+
+FeedGo Espacios y FeedGo Clasificados comparten identidad, autenticacion y
+capacidades transversales correctas, pero no duplican ni fusionan forzadamente
+sus dominios. Clasificados conserva modelos, lifecycle, Search, Candidate
+Engine, Ranking, IndexDocument, exposicion y reglas comerciales propios cuando
+el contrato lo requiera.
+
+Una operacion que cree exposiciones en mas de un dominio debe ser orquestada
+por backend. Publicacion, Clasificado, Historia de Espacio e Historia de
+Clasificado conservan lifecycle independiente. La reutilizacion de media y
+datos compatibles debe minimizar cargas repetidas sin convertir una superficie
+en owner de otra ni introducir propagaciones implicitas desde frontend.
+
+Advertising, Payments y Billing son capacidades transversales. Los dominios
+producen operaciones o conceptos comerciales; backend conserva precios,
+politicas, estados, permisos y activacion. Billing es unico para FeedGo y los
+providers externos son adaptadores reemplazables sin acceso a la DB ni
+ownership funcional.
+
 ## Modulos autonomos reutilizables
 
 Cuando una capacidad tenga dominio propio y pueda evolucionar sin pertenecer a
 una pantalla concreta, debe modelarse como modulo autonomo dentro del monorepo.
 
 Esto no implica microservicio, libreria externa ni otro repositorio.
+
+FeedGo es un monolito modular por defecto. Usuarios/Auth, Espacios,
+Publicaciones, Historias, Clasificados, Availability, Agenda, Reservas,
+Discovery, Candidate Engine, Ranking, Knowledge, promociones y entitlements
+permanecen internos salvo evidencia futura suficiente. Un modulo no requiere
+una DB propia.
 
 La modularidad debe lograrse con limites internos claros:
 
@@ -165,6 +215,24 @@ La modularidad debe lograrse con limites internos claros:
 - frontend organizado por feature y componentes reutilizables;
 - backend como propietario de reglas, validaciones, estados, permisos y
   persistencia.
+
+Cuando exista una frontera real, la preparacion para evolucion futura puede
+incluir services desacoplados del router, inputs y outputs explicitos, DTOs o
+comandos utiles, idempotencia, efectos encapsulados, contratos versionables y
+posibilidad de ejecutar jobs. No exige red ni deployment independiente.
+
+Si un modulo se extrae fisicamente en el futuro, no podra usar como contrato
+principal conectarse a la DB FeedGo para modificar tablas ajenas. Debera
+integrarse mediante contratos controlados, como DTOs, comandos, APIs o eventos
+solo cuando correspondan. No se introduce arquitectura event-driven por
+anticipacion.
+
+Providers reemplazables pueden cubrir embeddings, geocoding, pagos,
+facturacion, correo, entrega WhatsApp, storage de assets, backup, restore,
+observabilidad o IA especializada. Su existencia no implica microservicio. No
+deben crearse abstracciones equivalentes en cada metodo interno sin una
+dependencia reemplazable, efecto externo, frontera de seguridad, procesamiento
+pesado o necesidad real de idempotencia o asincronia.
 
 Para ETAPA 88, Agenda debe vivir como modulo propio:
 

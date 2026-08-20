@@ -175,7 +175,7 @@ Pendientes no bloqueantes programados:
   para sistema global de temas y tokens semanticos compatible con modo oscuro,
   modo claro y configuracion del dispositivo, diferenciada de la correccion del
   mapa y de la revision visual general.
-- ETAPA 105: revisar Productos legacy cuando el dominio oficial de Catalogo de
+- ETAPA 115: revisar Productos legacy cuando el dominio oficial de Catalogo de
   Productos y Disponibilidad Simple defina ownership.
 
 Estado final actual:
@@ -287,7 +287,7 @@ Fuera del cierre actual:
   disenadas, pero no implementadas en el cierre actual de ETAPA 88.
 - Correo electronico, WhatsApp, verificacion de destinos, proveedores,
   plantillas, workers, colas, schedulers productivos, webhooks e intentos de
-  entrega externa quedan diferidos a ETAPA 104 - Mensajeria y Cotizaciones.
+  entrega externa quedan diferidos a ETAPA 114 - Mensajeria y Cotizaciones.
 - Vista Semana, Vista Mes y persistencia de ultima vista, filtros o contexto
   quedan diferidas.
 
@@ -558,7 +558,13 @@ Plan restante oficial de ETAPA 95:
 Siguiente etapa obligatoria aprobada:
 
 - ETAPA 97 - Administracion Operativa Minima.
-- Estado: pendiente; no iniciada durante el cierre de ETAPA 96.
+- Estado: pendiente; no iniciada. La integracion documental previa de
+  Clasificados y capacidades transversales fue completada sin autorizar su
+  ejecucion.
+- Primer trabajo cuando exista autorizacion: auditoria acotada de capacidades
+  operativas actuales, circuito de denuncias, incidentes y consumo de contratos
+  existentes; no implementar dashboard ni consola antes de aprobar esa
+  auditoria.
 - ETAPA 96 - Plataforma Instalable y PWA Enterprise queda cerrada tecnica y
   documentalmente. Sprints 96.1, 96.2 y 96.3 quedan completados.
 - Resultado PWA: identidad FeedGo, manifest e iconos; build reproducible con
@@ -572,13 +578,19 @@ Siguiente etapa obligatoria aprobada:
   Historia vigente se integra como intervencion funcional acotada con ownership
   backend y soft delete, sin iniciar el resto de ETAPA 97.
 - Dominio `feedgo.com.ar`: reservado. DNS, HTTPS, hosting, API/CORS productivos,
-  mixed content real, fallback SPA, deep links y refresh desplegados permanecen
-  como gates obligatorios de ETAPA 100.
+  mixed content real, fallback SPA, deep links y refresh desplegados no poseen
+  actualmente una etapa numerada. Solo se planificaran cuando el owner humano
+  abra expresamente una evaluacion de lanzamiento.
 - DEFECTO CONOCIDO DIFERIDO: determinados videos de Historias no inician en
   iPhone/Safari/PWA. No se declara resuelto ni validado. Caso B queda preservado
   en `frontend/.pwa-fixtures/story-video-case-b.html` y la investigacion pasa a
-  ETAPA 114 - Compatibilidad Multimedia iOS/Safari/PWA.
+  ETAPA 124 - Compatibilidad Multimedia iOS/Safari/PWA.
 - ETAPA 99 - Identidad, Registro y Autenticacion permanece futura y no iniciada.
+- FeedGo Clasificados queda incorporado documentalmente como vertical futura
+  de primer nivel en ETAPAS 101 a 105; ETAPAS 106 y 107 preparan Plataforma
+  Comercial, Advertising, Payments y Billing transversal. Ninguna fue iniciada.
+- Documentos tecnicos propietarios: `docs/26_CLASSIFIEDS_CONTRACT.md` y
+  `docs/27_COMMERCIAL_PLATFORM_CONTRACT.md`.
 - Documento tecnico propietario: `docs/18_PWA_ENTERPRISE.md`.
 
 ## Ultima etapa cerrada
@@ -593,8 +605,8 @@ Resultado:
 
 La plataforma instalable, el runtime PWA, cache segura de shell, lifecycle,
 actualizacion, offline controlado, reconexion, recovery y harness browser quedan
-cerrados. La infraestructura productiva permanece en ETAPA 100 y el defecto
-multimedia especifico de Historias en iOS/Safari/PWA queda diferido a ETAPA 114.
+cerrados. La infraestructura productiva no posee etapa numerada y el defecto
+multimedia especifico de Historias en iOS/Safari/PWA queda diferido a ETAPA 124.
 
 ## Etapa cerrada historica anterior a ETAPA 95
 
@@ -677,11 +689,46 @@ Pendientes derivados:
 - ETAPA 98: correccion y pulido visual completo del frontend, posterior a PWA
   y operacion minima y previo al lanzamiento controlado.
 - ETAPA 99: identidad, registro y autenticacion, futura y no iniciada.
-- ETAPA 100: infraestructura y lanzamiento controlado.
+- ETAPA 100: fundacion de validacion y staging aislado.
+- ETAPAS 101 a 105: FeedGo Clasificados, desde dominio y experiencia hasta
+  Search, IA multimodal, Historias, promocion y beneficios.
+- ETAPA 106: plataforma comercial base y Advertising.
+- ETAPA 107: monetizacion, Payments y Billing transversal operativos.
+- ETAPA 108: calidad y validacion funcional integral.
+- ETAPA 109: seguridad y hardening integral.
+- ETAPA 110: confiabilidad, capacidad y resiliencia integral.
+- No existe actualmente una etapa numerada de lanzamiento.
 - Etapas futuras: infraestructura frontend de tests, carrera extrema potencial
   en likes de historias, actualizacion de Browserslist, optimizacion de chunks,
   warnings historicos de SQLite y migracion de `datetime.utcnow()` a timestamps
   timezone-aware.
+
+## Integracion de Clasificados y roadmap previa a ETAPA 97
+
+Estado:
+
+Cerrada documentalmente. Ninguna etapa nueva fue iniciada.
+
+Resultado:
+
+- FeedGo Espacios y FeedGo Clasificados quedan como verticales de primer nivel
+  bajo identidad FeedGo unica y arquitectura por capas;
+- ETAPA 100 resuelve primero reproducibilidad, datos sinteticos, observabilidad
+  base y staging aislado para evitar dependencias circulares;
+- ETAPAS 101 a 105 construyen Clasificados mediante fronteras cerrables;
+- ETAPAS 106 y 107 construyen Advertising, Payments y Billing transversal;
+- ETAPAS 108 a 110 consolidan calidad, seguridad y capacidad/resiliencia;
+- cada etapa funcional debe producir tests y controles progresivos;
+- herramientas concretas permanecen candidatas sujetas a auditoria y politica
+  local-first;
+- completar etapas no autoriza apertura. No existe etapa numerada de
+  lanzamiento; solo una instruccion humana expresa puede abrir su auditoria y
+  un futuro GO / NO-GO basado en evidencia y riesgos residuales.
+
+El trabajo previo a ETAPA 97 queda formalmente cerrado. ETAPA 96 permanece
+cerrada y ETAPA 97 - Administracion Operativa Minima es la siguiente etapa
+oficial pendiente, todavia no iniciada. Su inicio requiere una ejecucion y
+autorizacion posteriores.
 
 ## Estado ETAPA 92
 

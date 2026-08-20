@@ -491,13 +491,169 @@ No reemplaza la documentación oficial existente.
 - Decision: ETAPA 96 se cierra con Sprints 96.1, 96.2 y 96.3 completados. El
   defecto de video queda expresamente DIFERIDO, no resuelto ni validado, y no
   bloquea el cierre de la plataforma instalable. La investigacion se detiene y
-  pasa a ETAPA 114 - Compatibilidad Multimedia iOS/Safari/PWA, agregada al final
+  pasa a ETAPA 119 - Compatibilidad Multimedia iOS/Safari/PWA, agregada al final
   del roadmap sin renumerar etapas existentes.
 - Evidencia: Caso B queda preservado en
   `frontend/.pwa-fixtures/story-video-case-b.html` como fixture diagnostico
-  fuera de navegacion y build productiva. ETAPA 114 debe retomar esa evidencia,
+  fuera de navegacion y build productiva. ETAPA 119 debe retomar esa evidencia,
   Historias de video, Safari normal/standalone, lifecycle, codecs, MIME, Range y
   dispositivos fisicos.
 - Limites: La decision no declara que todos los videos funcionen en iPhone, no
   autoriza otro workaround, no modifica Service Worker y no reemplaza los gates
-  productivos de ETAPA 100.
+  productivos de ETAPAS 100 y 101.
+
+## DEC-050
+
+- ID: DEC-050
+- Titulo: Integracion de necesidades futuras y gates previos al lanzamiento
+- Estado: Aprobada documentalmente; implementacion no iniciada.
+- Problema: Hallazgos de operacion, legalidad, identidad, experiencia, ranking,
+  capacidad y multimedia necesitan ubicacion oficial sin iniciar ETAPA 97,
+  duplicar owners ni convertir notas de producto en implementaciones.
+- Decision: Se amplian las etapas existentes 97, 98 y 99; el alcance previo de
+  ETAPA 100 se divide por tamano y responsabilidad en ETAPA 100 - Confiabilidad,
+  Capacidad y Hardening Pre-Lanzamiento, y ETAPA 101 - Infraestructura y
+  Lanzamiento Controlado. Analytics, conocimiento, capacidades funcionales y
+  etapas posteriores se desplazan preservando su orden relativo.
+- Separaciones: ETAPA 97 consume contratos operativos y cierra el circuito
+  administrativo sin apropiarse de backup, observabilidad o moderacion;
+  ETAPA 100 gobierna confiabilidad y capacidad; ETAPA 101 materializa
+  infraestructura y lanzamiento; ETAPA 116 conserva compatibilidad especifica
+  iOS/Safari/PWA. ETAPA 109 conserva notificaciones transversales y Agenda solo
+  produce sucesos. ETAPA 113 conserva ranking backend. Monetizacion y
+  facturacion se separan en ETAPA 114 de Plataforma Comercial en ETAPA 115.
+- Gate: No debe realizarse una apertura publica significativa hasta demostrar
+  los gates obligatorios de ETAPAS 97 a 101. Los escenarios numericos de
+  carga son hipotesis de prueba, no promesas de capacidad.
+- Vigencia de numeracion: reemplazada posteriormente por DEC-054; se conserva
+  esta redaccion como trazabilidad de la decision que origino la division.
+
+## DEC-051
+
+- ID: DEC-051
+- Titulo: Preferencia de apariencia por identidad con fallback local
+- Estado: Aprobada para auditoria e implementacion futura en ETAPA 99.
+- Decision: Para usuarios autenticados, backend sera owner persistente de la
+  preferencia de apariencia entre dispositivos y frontend sera owner de
+  aplicarla y representarla. El runtime local y anti-flash se conserva para
+  primera carga, offline y sesiones no verificadas. Una cuenta sin preferencia
+  persistida tendra `dark` como default de cuenta.
+- Gate: ETAPA 99 debe definir precedencia, migracion, logout/login, privacidad
+  y reconciliacion con storage actual antes de modificar el contrato vigente.
+  No se autoriza persistir Auth o datos funcionales dentro de la PWA.
+
+## DEC-052
+
+- ID: DEC-052
+- Titulo: Facturacion externa desacoplada del dominio FeedGo
+- Estado: Aprobada como principio de evolucion futura; implementacion no
+  iniciada.
+- Decision: La futura facturacion se integra mediante contrato/adaptador
+  reemplazable y recibe solo los datos minimos necesarios para emitir una
+  factura. FeedGo conserva identidad, planes, capacidades, precios y decisiones
+  funcionales; el proveedor no se convierte en fuente de verdad del negocio.
+- Roadmap: Su auditoria y diseno pertenecen a ETAPA 117. No bloquea lanzamiento
+  mientras no existan capacidades pagas que requieran facturacion.
+- Vigencia de etapa/gate: reemplazada por DEC-055. El desacoplamiento permanece;
+  Payments y Billing operativos pasan a ETAPA 107 y son evidencia obligatoria
+  antes de una futura evaluacion humana de lanzamiento.
+
+## DEC-053
+
+- ID: DEC-053
+- Titulo: Etapas futuras acotadas y lanzamiento posterior al gate de capacidad
+- Estado: Aprobada documentalmente; implementacion no iniciada.
+- Problema: Concentrar carga, backup, capacidad multimedia, infraestructura y
+  lanzamiento en una sola etapa, o mezclar monetizacion, facturacion y backend
+  universal, excede el tamano controlable de aproximadamente seis sprints.
+- Decision: Se crean dos fronteras nuevas. ETAPA 100 cierra confiabilidad y
+  capacidad antes del despliegue; Infraestructura y Lanzamiento Controlado pasa
+  a ETAPA 101. Monetizacion, Capacidades Pagas y Facturacion se establece como
+  ETAPA 114; Plataforma Comercial y Backend Universal pasa a ETAPA 115.
+  Compatibilidad Multimedia iOS/Safari/PWA pasa a ETAPA 116. Las antiguas
+  ETAPAS 101-114 se renumeran de forma correlativa, sin alterar alcance ni orden
+  relativo salvo la division expresamente indicada.
+- Gate: ETAPA 101 no puede iniciar apertura publica hasta que ETAPA 100 cierre
+  sus pruebas y limites. ETAPA 114 no bloquea lanzamiento mientras FeedGo no
+  cobre capacidades que requieran facturacion. ETAPA 116 conserva el defecto
+  multimedia diferido y no se considera iniciada.
+- Vigencia de numeracion: reemplazada posteriormente por DEC-054; las fronteras
+  aprobadas permanecen, con su numeracion actual definida por esa decision.
+
+## DEC-054
+
+- ID: DEC-054
+- Titulo: Modelo pre-lanzamiento de validacion, seguridad y capacidad
+- Estado: Aprobada documentalmente; implementacion no iniciada.
+- Decision: FeedGo separa Fundacion de Validacion y Staging Aislado (ETAPA 100),
+  Calidad y Validacion Funcional (ETAPA 101), Seguridad y Hardening (ETAPA 102),
+  Confiabilidad, Capacidad y Resiliencia (ETAPA 103), e Infraestructura y
+  Lanzamiento Controlado (ETAPA 104). Cada frontera debe ser verificable y
+  cerrable en aproximadamente hasta seis sprints.
+- Progresividad: cada etapa funcional construye sus tests, autorizacion,
+  validacion, seguridad y regresion. ETAPAS 101 y 102 consolidan evidencia y
+  cierran brechas; no posponen controles conocidos ni reconstruyen desde cero.
+- Staging: ETAPA 100 crea un entorno de validacion aislado, reseteable,
+  restringido, reproducible, observable, no indexado, con secretos propios,
+  datos sinteticos y providers sandbox/fake. No anticipa produccion ni apertura.
+- Metodologia: Seguridad adapta OWASP ASVS con objetivo aproximado L2, WSTG,
+  Top 10, API Security Top 10, threat modeling y matriz de abuso. No declara
+  certificacion automatica ni aplica requisitos irrelevantes.
+- Herramientas: Playwright y las candidatas registradas en el Roadmap se evaluan
+  por necesidad, privacidad y solapamiento. No se impone CI/CD ni SaaS concreto.
+- Gate: completar etapas no autoriza lanzamiento. ETAPA 104 requiere decision
+  formal GO / NO-GO basada en evidencia, riesgos residuales y owners. Las
+  antiguas ETAPAS 102-116 pasan correlativamente a 105-119; ETAPA 117 conserva
+  monetizacion, ETAPA 118 plataforma comercial y ETAPA 119 multimedia iOS.
+- Vigencia de numeracion y lanzamiento: reemplazada por DEC-055. Las fronteras
+  de staging, calidad, seguridad y capacidad permanecen con nueva posicion.
+
+## DEC-055
+
+- ID: DEC-055
+- Titulo: FeedGo Clasificados, Plataforma Comercial operativa y roadmap sin
+  etapa numerada de lanzamiento
+- Estado: Aprobada documentalmente; implementacion no iniciada.
+- Verticales: FeedGo integra Espacios y Clasificados como verticales de primer
+  nivel. Existe una unica cuenta, identidad, autenticacion y fuente de verdad
+  de usuarios. Clasificados conserva dominio, lifecycle, Search, Candidate
+  Engine, Ranking, IndexDocument, exposicion y reglas comerciales propios.
+- Acceso: Clasificados es globalmente navegable por anonimos. La autenticacion
+  FeedGo se exige para publicar, administrar, promocionar o consumir beneficios
+  personales. No se requiere un Espacio para publicar.
+- Limite funcional: FeedGo conecta comprador y vendedor y no intermedia la
+  compraventa inicial mediante checkout, escrow, custodia, logistica o envios.
+  Comentarios de Clasificados quedan posteriores a la primera apertura publica.
+- Contratos: lifecycle `draft/active/paused/sold-deleted`, soft delete, schemas
+  versionados por categoria, `ClassifiedIndexDocument`, inventario global,
+  pertinencia antes de promocion, IA que propone bajo validacion backend y
+  confirmacion humana, Historias propias, promocion temporal y retorno a
+  organico quedan gobernados por `26_CLASSIFIEDS_CONTRACT.md`.
+- Multisupeficie: Publicacion, Clasificado, Historia de Espacio e Historia de
+  Clasificado pueden reutilizar datos y media compatibles, pero conservan una
+  fuente de verdad por dato y lifecycle independiente. Toda propagacion es
+  explicita y backend-owned.
+- Comercial: Advertising es independiente. Beneficios/cupones no son dinero.
+  Existe un unico Billing transversal. Payments/Billing deben quedar operativos
+  y validados, no como interfaces vacias; capacidad tecnica y politica comercial
+  activa permanecen separadas conforme a `27_COMMERCIAL_PLATFORM_CONTRACT.md`.
+- Roadmap: ETAPA 97, 98, 99 y 100 se conservan. Se incorporan ETAPAS 101 a 105
+  para Clasificados; ETAPA 106 para Plataforma Comercial Base y Advertising;
+  la anterior ETAPA 117 se adelanta y amplia como ETAPA 107 - Monetizacion,
+  Payments y Billing Transversal. Calidad, Seguridad y Capacidad pasan a ETAPAS
+  108, 109 y 110. Las antiguas ETAPAS 105-116 pasan a 111-122; Plataforma
+  Comercial y Backend Universal pasa a 123; Multimedia iOS/Safari/PWA pasa a
+  124. Ningun alcance futuro aprobado desaparece.
+- Lanzamiento: se retira la ETAPA 104 - Infraestructura y Lanzamiento
+  Controlado como etapa numerada futura. No existe actualmente una etapa de
+  lanzamiento. Solo una instruccion humana expresa puede abrir una auditoria
+  que decida infraestructura, gates adicionales, eventual etapa y GO / NO-GO.
+  El alcance no se declara resuelto ni ejecutado; queda gobernado como proceso
+  futuro sin numeracion.
+- Testing: staging permanece en ETAPA 100; cada etapa produce evidencia propia;
+  ETAPAS 108-110 consolidan calidad, seguridad y capacidad de Espacios,
+  Clasificados y Plataforma Comercial.
+- Evolucion: el roadmap es gobernado y evolutivo. Puede cambiar con evidencia y
+  decision documentada, manteniendo trazabilidad, sin arbitrariedad ni
+  renumeracion de etapas cerradas. Cada etapa futura se mantiene en
+  aproximadamente hasta seis sprints pequenos, verificables y cerrables.

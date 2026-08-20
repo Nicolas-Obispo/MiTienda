@@ -12,7 +12,8 @@ Documentos relacionados: `00_GOVERNANCE.md`, `01_ENGINEERING.md`,
 `08_ENGINEERING_PRINCIPLES.md`, `16_DATA_INTEGRITY_AND_RECOVERY.md`,
 `17_OBSERVABILITY_AND_OPERATIONS.md`.
 Documentos tecnicos relacionados: `18_PWA_ENTERPRISE.md`,
-`19_LOCATION_LEGAL_GATE.md`.
+`19_LOCATION_LEGAL_GATE.md`, `26_CLASSIFIEDS_CONTRACT.md`,
+`27_COMMERCIAL_PLATFORM_CONTRACT.md`.
 Cuando debe consultarse: antes de modificar funcionalidades sensibles,
 proveedores, datos personales, permisos, contenido publico, geolocalizacion,
 comunicaciones, notificaciones, reservas, productos, pagos, IA, logs, backups
@@ -340,6 +341,28 @@ Una funcionalidad es sensible si involucra al menos una de estas categorias:
 
 `[BLOQUEANTE]` Toda funcionalidad sensible requiere ficha, matrices aplicables
 y aprobacion antes de implementarse o lanzarse.
+
+### 5.1 Clasificados y plataforma comercial
+
+FeedGo Clasificados trata contenido generado por usuarios, identidad publica,
+contacto, ubicacion del bien, media, moderacion, IA y eventualmente operaciones
+comerciales. Antes de implementar cada bloque deben auditarse minimizacion,
+base legal, visibilidad, retencion, baja, denuncias, menores, fraude, providers
+y transferencias aplicables.
+
+El contacto publico no habilita a FeedGo a leer conversaciones externas. Debe
+exponerse solo la informacion necesaria y con control del owner. Clasificados
+no intermedia la compraventa inicial, no custodia fondos del bien y no incorpora
+checkout, escrow, logistica o envios sin una decision legal y de producto nueva.
+
+IA multimodal y providers de Payments/Billing requieren evaluacion previa de
+datos enviados, retencion, entrenamiento, seguridad, region, subprocessors,
+secreto, webhooks y contrato. El proveedor de facturacion no accede a DB ni
+recibe credenciales y solo procesa los datos minimos necesarios.
+
+Beneficios y cupones promocionales no deben presentarse como dinero, saldo
+retirable, transferible o reembolsable. Payments no almacena datos sensibles de
+tarjeta y debe contemplar idempotencia, conciliacion, fraude, errores y soporte.
 
 ## 6. Datos personales y tratamientos
 
@@ -854,6 +877,31 @@ Controles minimos:
 `[BLOQUEANTE]` Una accion privada o sensible sin ownership backend no puede
 lanzarse.
 
+### 20.1 Verificacion pre-lanzamiento y herramientas externas
+
+La seguridad debe construirse progresivamente en cada etapa y verificarse de
+forma integral antes del lanzamiento. La auditoria final debe adaptar OWASP
+ASVS con objetivo aproximado L2, OWASP WSTG, OWASP Top 10, OWASP API Security
+Top 10, threat modeling por dominio y una matriz de abuso propia de FeedGo.
+Estas referencias no constituyen certificacion automatica ni obligan a aplicar
+requisitos irrelevantes.
+
+Las pruebas destructivas, fuzzing agresivo, DAST activo, pentest intrusivo,
+carga extrema, corrupcion y simulacion de fallos deben ejecutarse por defecto
+en staging aislado. Produccion se limita normalmente a smoke seguro,
+observacion y comprobaciones acotadas mediante protocolo aprobado.
+
+Datos sinteticos deterministas son el default para testing. Una copia
+productiva sanitizada requiere evaluacion especifica de privacidad, seguridad,
+anonimizacion irreversible, retencion, destruccion y riesgo de
+reidentificacion; nunca es el dataset ordinario.
+
+Las herramientas externas, SaaS o IA requieren aprobacion explicita conforme a
+`00_GOVERNANCE`. La aprobacion debe considerar datos transmitidos, retencion,
+region, entrenamiento, subprocessors, eliminacion, telemetria, seguridad y
+contrato. Ninguna IA acepta riesgos, cierra hallazgos ni reemplaza verificacion
+humana o independiente.
+
 ## 21. Logs, observabilidad y auditoria
 
 La arquitectura tecnica de observabilidad y operacion pertenece a
@@ -1131,19 +1179,43 @@ ficticios.
 - [ ] Derechos de usuarios operativos.
 - [ ] Menores resuelto.
 - [ ] Ownership validado.
+- [ ] Build y dependencias reproducibles.
+- [ ] Flujos criticos y regresion aprobados.
+- [ ] Autorizacion horizontal y vertical aprobadas.
 - [ ] Secretos protegidos.
+- [ ] Vulnerabilidades criticas cerradas.
+- [ ] Riesgos altos corregidos o aceptados formalmente con owner,
+      justificacion, mitigacion y vencimiento.
+- [ ] Uploads y dependencias auditados.
 - [ ] HTTPS.
 - [ ] Rate limiting.
 - [ ] Logs seguros.
 - [ ] Backups.
 - [ ] Restore probado.
+- [ ] Carga nominal, pico, estres y soak contra objetivos aprobados.
+- [ ] Degradacion y recuperacion controladas.
 - [ ] Plan de incidentes.
 - [ ] Denuncias y moderacion.
 - [ ] Soporte.
 - [ ] Observabilidad.
 - [ ] Rollback.
+- [ ] Staging aislado, reproducible y reseteable validado.
+- [ ] Smoke productivo seguro aprobado.
+- [ ] Defectos criticos y altos cerrados o tratados formalmente.
+- [ ] Riesgos residuales documentados.
 - [ ] ETAPA 96 cerrada y gate PWA aprobado.
 - [ ] Piloto controlado aprobado.
+- [ ] Decision formal GO / NO-GO emitida por owners responsables.
+
+Completar etapas o checks tecnicos no autoriza por si mismo el lanzamiento.
+La apertura publica requiere decision GO explicita basada en evidencia. La
+ausencia de esa decision equivale a NO-GO.
+
+No existe actualmente una etapa numerada de lanzamiento. Este checklist y el
+GO / NO-GO quedan preservados para la auditoria integral que solo comenzara por
+instruccion humana expresa. Esa auditoria decidira infraestructura productiva,
+gates pendientes y cualquier etapa adicional sin considerar que el cierre de
+ETAPAS 97 a 110 autoriza apertura.
 
 ### 28.3 Checklist previo a proveedores externos
 

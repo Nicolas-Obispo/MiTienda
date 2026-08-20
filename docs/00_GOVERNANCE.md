@@ -110,6 +110,12 @@ semanticos de ETAPA 95. No reemplaza el inventario ni autoriza migraciones.
 `05_SEARCH_ROADMAP` del gate de residuos de ETAPA 95. Clasifica evidencia y
 acciones; no reemplaza Gobierno ni autoriza refactors generales.
 
+`26_CLASSIFIEDS_CONTRACT` es el documento tecnico propietario del dominio,
+producto y arquitectura de FeedGo Clasificados. `27_COMMERCIAL_PLATFORM_CONTRACT`
+es el documento tecnico propietario de capacidades comerciales transversales,
+Advertising, Payments y Billing. Ninguno reemplaza Producto, Ingenieria,
+Search, Legal, Decisiones ni Roadmap.
+
 Los documentos `10+` pueden ser documentos tecnicos especializados o
 documentos transversales incorporados explicitamente al Sistema de Gobierno.
 
@@ -397,6 +403,27 @@ Esta evolución podrá incluir, entre otros casos:
 - desplazar capacidades hacia etapas posteriores;
 - anticipar dependencias técnicas necesarias.
 
+Como criterio general de control, una etapa futura debe poder resolverse en
+aproximadamente hasta seis sprints pequeños, verificables y cerrables. Este
+límite es una guía de tamaño, no una cuota: una etapa puede requerir menos
+sprints y no deben crearse fragmentos artificiales. Cuando la evidencia indique
+que el alcance excederá claramente esa guía, deberá dividirse por fronteras
+funcionales o arquitectónicas coherentes, con objetivo, dependencias y criterio
+de cierre propios para cada etapa resultante.
+
+El Roadmap es una planificacion gobernada y evolutiva: representa el mejor
+orden conocido con la evidencia disponible, no un contrato inmutable ni una
+autorizacion automatica para ejecutar o lanzar. Nueva evidencia puede justificar
+ampliar, reducir, dividir, insertar, desplazar o diferir etapas futuras mediante
+el procedimiento formal, preservando trazabilidad y sin renumerar etapas
+cerradas. Esta flexibilidad no autoriza cambios arbitrarios.
+
+FeedGo no mantiene actualmente una etapa numerada de lanzamiento. Cerrar una
+cantidad de etapas nunca autoriza apertura publica. Solo una instruccion humana
+expresa puede abrir una futura auditoria de lanzamiento; esa auditoria decidira
+si corresponde crear una etapa, que infraestructura y gates faltan y si procede
+un GO / NO-GO formal.
+
 Este principio:
 
 - no modifica el flujo oficial de trabajo;
@@ -407,6 +434,60 @@ Este principio:
 La evolución del roadmap constituye una actualización del estado oficial del proyecto y reemplaza la planificación anterior.
 
 A partir de ese momento, toda auditoría, diseño, implementación y documentación deberá tomar como referencia exclusivamente la nueva versión oficial.
+
+## Gobierno de modularidad, providers y extraccion
+
+FeedGo adopta un monolito modular por defecto. La existencia de dominios o
+capacidades diferentes no autoriza por si sola otro backend, repositorio, base,
+deployment ni microservicio. Los modulos permanecen dentro del backend
+principal con owners, services, contratos, persistencia controlada y
+arquitectura por capas mientras no exista evidencia suficiente para separarlos.
+
+El desacople logico actual puede preservar una evolucion futura, pero disenar
+para poder extraer no significa extraer ahora. Una separacion fisica solo puede
+evaluarse ante evidencia de escalado independiente, CPU/GPU intensivo, backlog
+sostenido, latencia fuera de SLO, aislamiento de fallos o seguridad, tecnologia
+o ciclo de despliegue diferentes, carga asincronica significativa, multiples
+consumidores reales, reutilizacion comprobada o impacto material sobre OLTP.
+
+Toda propuesta de extraccion debe comparar ese beneficio con latencia de red,
+timeouts, retries, circuit breakers, autenticacion servicio-servicio,
+versionado, compatibilidad, consistencia eventual, observabilidad, debugging
+distribuido, CI/CD, seguridad, fallos parciales y costo operativo. No se aprueba
+extraccion por moda ni apariencia enterprise.
+
+Las integraciones externas o reemplazables se encapsulan mediante contratos y
+adapters cuando exista una frontera real. Un provider ejecuta un mecanismo: no
+decide negocio FeedGo, permisos, Ranking, activacion o lifecycle; no se convierte
+en fuente de verdad ni recibe acceso indiscriminado a la DB. Cada dato conserva
+un owner explicito y cada integracion recibe solo lo necesario.
+
+No debe aplicarse `preparado para extraccion` indiscriminadamente. Ports,
+interfaces, DTOs, comandos o eventos se justifican principalmente por efectos
+externos, dependencia reemplazable, procesamiento pesado, dominio transversal,
+reutilizacion real, frontera de seguridad, idempotencia o ejecucion asincronica
+probable. No se crean anticipadamente APIs internas de red, bases por modulo,
+repositorios separados, service mesh, API gateway interno, Kafka, Kubernetes ni
+otra infraestructura distribuida sin necesidad demostrada.
+
+## Gobierno de herramientas de validacion
+
+El codigo, configuracion, topologia, evidencia operativa y reportes de
+seguridad de FeedGo son informacion privada. La seleccion de herramientas de
+testing, seguridad, observabilidad o IA debe ser local-first, reproducible y
+auditable siempre que resulte razonable.
+
+Ningun servicio externo, SaaS o IA queda autorizado por su sola disponibilidad.
+Antes de transmitir codigo o artefactos debe aprobarse proveedor, version,
+finalidad, datos enviados, retencion, region, entrenamiento, subprocessors,
+eliminacion, permisos, telemetria, seguridad y condiciones contractuales.
+
+Por defecto no deben enviarse a terceros no aprobados repositorio completo,
+codigo propietario, `.env`, secretos, API keys, JWT, dumps, datos reales, logs
+crudos, URLs internas sensibles, topologia ni reportes de seguridad sin
+sanitizar. La IA puede asistir sobre evidencia permitida, pero no reemplaza
+owners, metodologias de verificacion, pentest, aceptacion de riesgo ni cierre
+humano de hallazgos.
 
 ## Regla del Prompt Maestro
 

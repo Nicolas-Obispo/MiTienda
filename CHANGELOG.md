@@ -9,6 +9,27 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## Gobierno previo a ETAPA 97 - Integracion de roadmap y arquitectura
+
+**Estado:** Cerrado documentalmente; ETAPA 97 no iniciada
+
+- FeedGo Clasificados queda incorporado como vertical futura de primer nivel,
+  bajo identidad FeedGo unica y contratos propios de dominio, Search, ranking,
+  IA, Historias y promocion.
+- Se incorporan etapas acotadas para Clasificados, Plataforma Comercial,
+  Advertising, Payments y Billing transversal, preservando el roadmap futuro.
+- Calidad, Seguridad y Capacidad se reorganizan como gates integrales posteriores
+  a las nuevas capacidades.
+- Se retira la etapa numerada de lanzamiento. Una futura evaluacion solo podra
+  abrirse por instruccion humana expresa y conservara el gate GO / NO-GO.
+- El borrador temporal de auditoria queda absorbido por los contratos tecnicos
+  oficiales de Clasificados y Plataforma Comercial.
+- Se formaliza el monolito modular por defecto, con providers reemplazables sin
+  ownership de negocio y extraccion fisica permitida solo ante evidencia.
+- Se cierran las integraciones documentales previas a ETAPA 97. ETAPA 96
+  permanece cerrada y ETAPA 97 - Administracion Operativa Minima queda como
+  siguiente etapa oficial pendiente para una ejecucion posterior.
+
 ## ETAPA 96 - Plataforma Instalable y PWA Enterprise
 
 **Estado:** Cerrada

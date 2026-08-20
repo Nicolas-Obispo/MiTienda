@@ -9,7 +9,7 @@ Documento dueno: `docs/03_SEARCH.md`.
 Responsable funcional: Busqueda y descubrimiento.
 Documentos relacionados: `00_GOVERNANCE.md`, `10_INDEX_DESIGN.md`,
 `11_KNOWLEDGE_DESIGN.md`, `07_DECISIONS.md`,
-`08_ENGINEERING_PRINCIPLES.md`.
+`08_ENGINEERING_PRINCIPLES.md`, `26_CLASSIFIEDS_CONTRACT.md`.
 Cuando debe consultarse: antes de modificar busqueda, descubrimiento,
 indexacion, ranking, taxonomia, conocimiento, senales o recomendaciones.
 
@@ -159,6 +159,44 @@ arquitectonica aprobada y documentada.
 
 Un espacio debe seguir pudiendo aparecer en busqueda aunque no tenga reservas
 publicas habilitadas.
+
+## Universos de Espacios y Clasificados
+
+Explorar busca Espacios y Clasificados busca Clasificados. Ambos universos no
+deben mezclarse silenciosamente; pueden existir sugerencias cruzadas claramente
+identificadas cuando sean pertinentes.
+
+Clasificados requiere `ClassifiedIndexDocument`, collectors, Candidate Engine
+y Ranking propios cuando los contratos de `CommerceIndexDocument` no apliquen.
+Puede reutilizar primitives de Taxonomia, Knowledge, normalizacion, geografia e
+indexacion sin heredar ownership o restricciones de Espacios.
+
+El inventario publico de Clasificados es globalmente elegible. Ubicacion y
+distancia pueden ser dato, filtro, orden o senal, pero el scope territorial de
+Espacios no limita por defecto los candidatos de Clasificados.
+
+En ambos universos rige ausencia antes que irrelevancia. Una promocion solo
+puede ordenar o destacar candidatos ya pertinentes; nunca vuelve relevante un
+resultado que no lo es.
+
+## Fronteras tecnicas y evolucion
+
+Search, Candidate Engine y Ranking permanecen bajo ownership de cada vertical.
+No se crea un Search Service generico que absorba sus reglas. El Indexador es
+una capacidad tecnica controlada y los embeddings, indices sintetizados y
+documentos de indice son artefactos derivados reconstruibles.
+
+La frontera preparada para posible evolucion se concentra en construccion
+masiva, reindexacion, embeddings, persistencia o consulta pesada y ejecucion
+asincronica. El motor de persistencia/consulta puede incorporarse mediante un
+contrato reemplazable sin adquirir ownership de relevancia, elegibilidad o
+Ranking. Una extraccion fisica solo se evalua ante backlog sostenido, costo de
+rebuild, CPU/GPU, volumen de indice, latencia fuera de SLO o necesidad real de
+escalar lectura e indexacion de manera diferente.
+
+Los casos de IA no comparten obligatoriamente un servicio universal. Embeddings,
+creacion multimodal e IA conversacional deben conservar contratos especializados
+cuando sus entradas, salidas, riesgos o validaciones difieran.
 
 ## Pipeline conceptual de indexación
 

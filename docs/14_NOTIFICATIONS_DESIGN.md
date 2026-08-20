@@ -28,10 +28,10 @@ notificaciones.
 
 Roadmap vigente:
 
-- ETAPA 104 - Mensajeria y Cotizaciones: comunicaciones externas, correo,
+- ETAPA 114 - Mensajeria y Cotizaciones: comunicaciones externas, correo,
   WhatsApp, proveedores, verificacion de destinos, plantillas, reintentos y
   webhooks.
-- ETAPA 107 - Notificaciones Inteligentes: notificaciones locales, campana
+- ETAPA 118 - Notificaciones Inteligentes: notificaciones locales, campana
   global, preferencias, integraciones locales e inteligencia futura de
   notificaciones.
 
@@ -93,7 +93,7 @@ del sistema de notificaciones.
 
 Correo, WhatsApp, verificacion de destinos, proveedores, plantillas,
 infraestructura asincronica, reintentos, webhooks e intentos de entrega quedan
-diferidos a ETAPA 104 - Mensajeria y Cotizaciones.
+diferidos a ETAPA 114 - Mensajeria y Cotizaciones.
 
 ## Separacion conceptual obligatoria
 
@@ -120,6 +120,12 @@ que estado, con que relacion a la entidad de origen y respetando preferencias.
 Cuando existan comunicaciones externas, el sistema de notificaciones podra
 solicitar una comunicacion a la infraestructura correspondiente mediante un
 contrato estable. No debera enviar correo ni WhatsApp por su cuenta.
+
+La cadena de ownership es `dominio -> suceso/intencion -> Notificaciones ->
+Comunicaciones -> provider`. Notificaciones decide destinatario, preferencias e
+intencion; Comunicaciones administra entrega; `EmailProvider` o
+`WhatsAppDeliveryProvider` ejecutan el canal. Agenda, Reservas, Clasificados,
+Payments y otros dominios no deben llamar directamente al proveedor final.
 
 ## Sistema transversal de notificaciones
 
@@ -298,7 +304,7 @@ no al futuro MVP local de notificaciones.
 ## Diferido fuera del cierre actual de ETAPA 88
 
 Quedan disenados, pero no implementados en el cierre actual de ETAPA 88 y
-planificados para ETAPA 107 - Notificaciones Inteligentes:
+planificados para ETAPA 118 - Notificaciones Inteligentes:
 
 - modulo transversal de notificaciones locales;
 - campana global para usuarios autenticados;
@@ -321,9 +327,9 @@ No es:
 - permiso del sistema operativo;
 - Service Worker.
 
-## Disenado para ETAPA 104
+## Disenado para ETAPA 114
 
-Quedan fuera de la implementacion de ETAPA 88 y asignados a ETAPA 104:
+Quedan fuera de la implementacion de ETAPA 88 y asignados a ETAPA 114:
 
 - envio real por correo;
 - envio real por WhatsApp;
@@ -362,7 +368,7 @@ modelo de datos vigente.
 La verificacion de correo o telefono no pertenece al futuro MVP local de
 notificaciones.
 
-Cuando se disene en ETAPA 104 debera contemplar:
+Cuando se disene en ETAPA 114 debera contemplar:
 
 - generacion segura de codigos;
 - almacenamiento no reversible;
@@ -554,7 +560,7 @@ UX:
 
 ## Mapa de trabajo
 
-ETAPA 107 - Notificaciones Inteligentes:
+ETAPA 118 - Notificaciones Inteligentes:
 
 1. Diseno detallado del MVP de notificaciones locales.
 2. Implementacion del sistema transversal de notificaciones locales.
@@ -563,7 +569,7 @@ ETAPA 107 - Notificaciones Inteligentes:
 5. Integracion local minima con sucesos de Agenda.
 6. Validacion final del alcance ejecutado.
 
-ETAPA 104 - Mensajeria y Cotizaciones:
+ETAPA 114 - Mensajeria y Cotizaciones:
 
 - servicio transversal de correo;
 - servicio transversal de WhatsApp;
@@ -582,6 +588,6 @@ ETAPA 104 - Mensajeria y Cotizaciones:
 
 Justificacion:
 
-ETAPA 104 existe como etapa futura de Mensajeria y es el dueno natural mas
+ETAPA 114 existe como etapa futura de Mensajeria y es el dueno natural mas
 cercano para comunicaciones externas. Crear una etapa nueva antes de activar
-ETAPA 104 aumentaria la fragmentacion del roadmap sin evidencia suficiente.
+ETAPA 114 aumentaria la fragmentacion del roadmap sin evidencia suficiente.

@@ -9,7 +9,8 @@ Documento dueno: `docs/05_SEARCH_ROADMAP.md`.
 Responsable funcional: Roadmap de producto y arquitectura.
 Documentos relacionados: `00_GOVERNANCE.md`, `04_CURRENT_STAGE.md`,
 `07_DECISIONS.md`, `15_LEGAL_AND_OPERATIONAL.md`,
-`16_DATA_INTEGRITY_AND_RECOVERY.md`.
+`16_DATA_INTEGRITY_AND_RECOVERY.md`, `26_CLASSIFIEDS_CONTRACT.md`,
+`27_COMMERCIAL_PLATFORM_CONTRACT.md`.
 Cuando debe consultarse: antes de proponer, iniciar, diferir, cerrar o
 reordenar etapas.
 
@@ -65,6 +66,11 @@ Las etapas futuras deberan contener unicamente:
 - nombre
 - objetivo
 - estado
+
+Cuando una decision transversal aprobada reorganice dependencias, una etapa
+futura puede registrar ademas bloques maximos aproximados, dependencias y gate
+conceptual indispensables para preservar tamano y trazabilidad. Ese detalle no
+equivale a iniciar la etapa ni fija proveedores, modelos o implementaciones.
 
 Se desarrollaran cuando pasen a ser la etapa activa.
 
@@ -980,9 +986,10 @@ Estado:
 Cerrada. Sprints 96.1, 96.2 y 96.3 completados. La infraestructura PWA,
 identidad instalada, runtime, offline controlado, actualizacion, recuperacion y
 harness browser quedaron implementados y validados. Los gates que requieren
-dominio, HTTPS, hosting, API/CORS productivos y despliegue real pertenecen a
-ETAPA 100. El defecto especifico de videos de Historias en iOS/Safari/PWA no se
-declara resuelto: queda diferido a ETAPA 114 con su evidencia diagnostica
+dominio, HTTPS, hosting, API/CORS productivos y despliegue real solo podran
+planificarse cuando el owner humano abra una evaluacion de lanzamiento. El
+defecto especifico de videos de Historias en iOS/Safari/PWA no se declara
+resuelto: queda diferido a ETAPA 124 con su evidencia diagnostica
 preservada.
 
 ### ☐ ETAPA 97
@@ -997,6 +1004,26 @@ incidentes de una primera version publica controlada.
 Incluye como evolucion futura posible, sin implementacion aprobada todavia, un
 Operations Dashboard interno y una AI Operations Console basados en la
 infraestructura operativa creada en ETAPA 93.
+
+La auditoria inicial de la etapa debe incluir, sin asumir implementacion:
+
+- circuito administrativo real de denuncias: consulta, revision, decision,
+  trazabilidad y permisos, preservando la separacion entre denuncia y decision
+  de moderacion;
+- operacion manual de contenido inconsistente o con assets faltantes;
+- visibilidad operativa de backup, restore, uploads, health y alertas mediante
+  los contratos ya aprobados, sin duplicar sus owners tecnicos;
+- procedimientos minimos para incidentes y acciones administrativas seguras.
+
+Los contratos administrativos y de moderacion deben poder extenderse luego a
+Clasificados sin implementar esa vertical dentro de ETAPA 97.
+
+Administracion y moderacion permanecen modulos del backend FeedGo; esta etapa
+no crea un servicio administrativo separado.
+
+La etapa debe producir tests y evidencia de administracion, autorizacion
+vertical, moderacion y operaciones; esas validaciones no se difieren al gate
+integral posterior.
 
 Estado:
 
@@ -1020,6 +1047,20 @@ Alcance:
 - revisar botones, textos, tipografia, spacing, alineacion, cards, iconos,
   formularios, navegacion, modales, estados, light/dark, responsive visible y
   consistencia general en movil y desktop;
+- revisar textos residuales o internos expuestos al usuario, navegacion y
+  controles de regreso, y convenciones compartidas de hover, feedback y
+  microinteraccion en logo, cards, Ranking, Seguidos, Explorar y superficies
+  equivalentes;
+- revisar la composicion del perfil publico de espacios, incluyendo denuncia,
+  abierto/cerrado, direccion y la separacion entre informacion publica y
+  metricas propias del panel de Estadisticas;
+- revisar la pantalla administrativa de espacios sin confundir su informacion
+  operativa con la disponibilidad publica;
+- revisar Feed e Historias en spacing, fondos, integracion con tema y jerarquia
+  visual sin reducir controles para ocultar problemas de composicion;
+- auditar pull-to-refresh movil como gesto no destructivo y compatible con
+  Cache-First; solo implementarlo si no duplica requests, invalida cache util o
+  fuerza reloads globales;
 - corregir desde `tokens -> primitives -> shared -> dominio -> pantalla`, sin
   parches repetidos ni refactors masivos;
 - exigir evidencia humana/renderizada y capturas/comparaciones cuando sea
@@ -1028,6 +1069,9 @@ Alcance:
 - clasificar por separado cualquier bug funcional y resolverlo desde su owner,
   sin usar esta etapa para cambiar Search, ranking, privacidad,
   geolocalizacion o arquitectura.
+
+La evidencia renderizada debe incluir regresion funcional, navegacion,
+compatibilidad y accesibilidad relevante para alimentar ETAPA 108.
 
 Gate:
 
@@ -1069,6 +1113,12 @@ Alcance inicial sujeto a auditoria:
   evitando usuarios duplicados;
 - recuperacion de contrasena si la auditoria confirma que pertenece al mismo
   dominio;
+- cambio de contrasena autenticado desde la cuenta, con revalidacion y
+  controles backend acordes al modelo de seguridad aprobado;
+- preferencia de apariencia vinculada al usuario para sincronizacion entre
+  dispositivos, con backend como owner persistente y frontend limitado a
+  aplicarla; la auditoria debe migrar de forma compatible el contrato local
+  vigente y definir `dark` como default de cuenta cuando no exista preferencia;
 - aceptacion y trazabilidad de Terminos y Privacidad conforme al owner legal;
 - revision critica de los datos minimos necesarios para crear una cuenta.
 
@@ -1093,9 +1143,17 @@ Dependencias:
 
 - ETAPA 96 debe cerrar sin incorporar esta reforma de Auth;
 - antes de implementar correo real debe coordinarse el contrato transversal de
-  comunicaciones sin duplicar la futura ETAPA 104;
+  comunicaciones sin duplicar la futura ETAPA 114;
 - cualquier modelo, tabla, proveedor o tratamiento personal nuevo requiere la
   auditoria y aprobacion documental aplicable.
+
+Los metodos de acceso externos se integran mediante adapters controlados por
+FeedGo. Usuario FeedGo conserva identidad, autorizacion y sesion; ningun
+proveedor de acceso se convierte en fuente de verdad ni justifica extraer Auth.
+
+La etapa debe cerrar progresivamente pruebas de Auth, verificacion,
+recuperacion/cambio de credenciales, abuso y rate limiting aplicable, sin
+postergar esos controles a ETAPA 109.
 
 Estado:
 
@@ -1103,18 +1161,400 @@ Pendiente. No iniciada.
 
 ### ☐ ETAPA 100
 
-Infraestructura y Lanzamiento Controlado.
+Fundacion de Validacion y Staging Aislado.
 
 Objetivo:
 
-Preparar despliegue, configuracion productiva, checklist final y publicacion
-controlada de FeedGo.
+Construir la base reproducible, restringida y observable necesaria para que
+las validaciones dinamicas posteriores produzcan evidencia confiable sin usar
+produccion ni anticipar infraestructura publica definitiva.
+
+Alcance:
+
+- dependencias declaradas, versiones reproducibles, inventario y SBOM cuando
+  corresponda;
+- ejecucion automatizable de tests, builds y scanners sin imponer todavia una
+  plataforma SaaS o CI/CD concreta;
+- generador determinista de datos sinteticos con seeds y perfiles;
+- staging de validacion aislado, reseteable, restringido, no indexado, con
+  secretos propios, providers sandbox/fake y cero datos productivos ordinarios;
+- observabilidad minima interpretable para calidad, seguridad y capacidad,
+  incluyendo correlacion temporal y exportacion suficiente para RCA sin
+  imponer todavia una plataforma concreta;
+- seleccion auditada de herramientas evitando solapamientos sin beneficio.
+
+La fundacion debe validar configuracion, secretos, health y evidencia de los
+providers utilizados, sin imponer microservicios ni infraestructura distribuida.
+
+Herramientas candidatas, no obligatorias ni aprobadas por su sola inclusion:
+Playwright existente; Vitest con React Testing Library; Coverage.py; c8;
+Schemathesis; Semgrep Community Edition; Gitleaks; pip-audit; npm audit; k6 OSS;
+OWASP ZAP; y Trivy cuando exista infraestructura compatible. Cada owner debe
+seleccionar el conjunto minimo que aporte evidencia y revisar privacidad,
+telemetria, costo, mantenimiento y ejecucion local o automatizada.
+
+El codigo FeedGo es privado y rige la politica local-first de
+`00_GOVERNANCE`. Produccion no es entorno ordinario de fuzzing, pentest activo,
+carga extrema, corrupcion ni simulacion de fallos.
+
+Division maxima sugerida:
+
+- 100.1 - auditoria de reproducibilidad, matriz de herramientas y ejecucion;
+- 100.2 - dependencias, build, inventario, secrets baseline y SBOM;
+- 100.3 - datos sinteticos deterministas y perfiles representativos;
+- 100.4 - staging aislado, reset, accesos y providers de prueba;
+- 100.5 - observabilidad base y correlacion de evidencia;
+- 100.6 - automatizacion reproducible, runbook y gate de fundacion.
 
 Estado:
 
 Pendiente.
 
 ### ☐ ETAPA 101
+
+Clasificados I - Dominio, Identidad Publica y Confianza.
+
+Objetivo:
+
+Construir el nucleo de FeedGo Clasificados con identidad FeedGo unica,
+ownership backend, lifecycle propio, schemas versionados, privacidad y
+moderacion extensible.
+
+Bloques maximos aproximados:
+
+- 101.1 - auditoria de modelo, datos, privacidad y compatibilidad;
+- 101.2 - dominio, lifecycle y soft delete;
+- 101.3 - identidad publica particular/Espacio y ownership;
+- 101.4 - categorias y schemas estructurados versionados;
+- 101.5 - contacto publico, denuncia y moderacion;
+- 101.6 - observabilidad, autorizacion, tests y gate del dominio.
+
+Gate: no existe identidad paralela; el dominio y sus operaciones privadas son
+backend-owned, auditables y compatibles con navegacion publica anonima.
+
+Clasificados se implementa como dominio del monolito modular FeedGo; no crea
+backend, repositorio ni DB independientes.
+
+Dependencias: ETAPAS 97, 99 y 100.
+
+Estado: Pendiente. No iniciada.
+
+### ☐ ETAPA 102
+
+Clasificados II - Experiencia Publica, Gestion y Contenido Multisupeficie.
+
+Objetivo:
+
+Permitir navegar globalmente, crear y administrar Clasificados mediante la
+cuenta FeedGo, reutilizando contenido compatible sin acoplar lifecycles.
+
+Bloques maximos aproximados:
+
+- 102.1 - navegacion publica, categorias, listados y estados;
+- 102.2 - detalle, galeria y contacto publico;
+- 102.3 - creacion manual mediante schema;
+- 102.4 - edicion y lifecycle del owner;
+- 102.5 - una carga, multiples superficies y media reutilizable;
+- 102.6 - PWA, responsive, accesibilidad, tests y gate funcional.
+
+Gate: anonimos navegan; usuarios FeedGo publican y administran; Publicacion,
+Clasificado e Historias conservan lifecycle independiente y propagaciones
+explicitas de backend.
+
+El bloque de media debe resolver `MediaAsset`, ownership, referencias y
+frontera de storage antes de multisupeficie, sin convertir Media en servicio
+independiente ni fijar proveedor antes de la auditoria.
+
+Dependencias: ETAPA 101 y contratos transversales existentes.
+
+Estado: Pendiente. No iniciada.
+
+### ☐ ETAPA 103
+
+Clasificados III - Indexacion, Search, Discovery y Ranking.
+
+Objetivo:
+
+Construir `ClassifiedIndexDocument`, indexacion, candidatos y ranking propios
+para un inventario globalmente navegable, reutilizando solo primitives con
+ownership correcto.
+
+Bloques maximos aproximados:
+
+- 103.1 - contrato de indice y fuentes oficiales;
+- 103.2 - collectors, builders, persistencia y reindexacion;
+- 103.3 - Candidate Engine y filtros;
+- 103.4 - geografia como dato, filtro y orden, sin exclusion por defecto;
+- 103.5 - Ranking, pertinencia, diversidad y sugerencias cruzadas;
+- 103.6 - observabilidad, volumen, tests y gate de Search.
+
+Gate: ausencia prevalece sobre irrelevancia; promocion no altera elegibilidad;
+Explorar y Clasificados conservan universos diferenciados.
+
+Indexacion y reindexacion deben quedar preparadas para jobs idempotentes cuando
+la evidencia lo requiera; Search y Ranking permanecen domain-owned.
+
+Dependencias: ETAPAS 101 y 102; Indexador, Search y Knowledge vigentes.
+
+Estado: Pendiente. No iniciada.
+
+### ☐ ETAPA 104
+
+Clasificados IV - Creacion Asistida por IA Multimodal.
+
+Objetivo:
+
+Implementar creacion asistida sobre el mismo schema manual, con provider
+desacoplado, validacion backend y confirmacion humana obligatoria.
+
+La etapa debe usar un contrato especializado de propuesta y no crear un
+`AIService` universal. Embeddings e IA conversacional conservan contratos
+independientes cuando sus casos de uso difieran.
+
+Bloques maximos aproximados:
+
+- 104.1 - dataset de evaluacion y benchmark de providers/modelos;
+- 104.2 - contrato multimodal y salida estructurada;
+- 104.3 - integracion backend y datos compatibles multisupeficie;
+- 104.4 - validacion, incertidumbre y advertencias;
+- 104.5 - revision, confirmacion y fallback manual;
+- 104.6 - privacidad, costo, abuso, resiliencia, tests y gate.
+
+Gate: IA propone, backend valida, usuario revisa y confirma; IA no publica ni
+se convierte en fuente de verdad.
+
+Dependencias: ETAPAS 101 a 103 y politica de providers externos.
+
+Estado: Pendiente. No iniciada.
+
+### ☐ ETAPA 105
+
+Clasificados V - Historias, Promocion y Beneficios.
+
+Objetivo:
+
+Construir Historias de Clasificados, promocion temporal y beneficios
+promocionales sin duplicar contenido ni crear saldo financiero.
+
+Promociones y beneficios son reglas internas; ningun provider decide vigencia,
+elegibilidad, consumo o prioridad.
+
+Bloques maximos aproximados:
+
+- 105.1 - modelo y lifecycle de promocion;
+- 105.2 - organico, destacado/premium y vigencia;
+- 105.3 - vencimiento, aviso, renovacion y retorno a organico;
+- 105.4 - beneficios especificos, cupones e idempotencia;
+- 105.5 - Historias de Clasificados, agregacion y navegacion;
+- 105.6 - ranking promocional, antifraude, tests y gate.
+
+Gate: pertinencia precede promocion; vencer no elimina ni pausa el Clasificado;
+beneficios no son dinero; Historias conservan lifecycle propio.
+
+Dependencias: ETAPAS 102 a 104 y moderacion extensible de ETAPA 97.
+
+Estado: Pendiente. No iniciada.
+
+### ☐ ETAPA 106
+
+Plataforma Comercial Base y Advertising.
+
+Objetivo:
+
+Construir la base transversal de capacidades comerciales, politicas,
+entitlements minimos y Advertising reutilizable por las verticales FeedGo.
+
+Catalogo, politicas, entitlements y Advertising permanecen internos. Los
+dominios externos ejecutan mecanismos aprobados, no decisiones comerciales.
+
+Bloques maximos aproximados:
+
+- 106.1 - catalogo transversal de productos y capacidades;
+- 106.2 - politicas, gratuidad, bonificacion y feature flags;
+- 106.3 - entitlements y compatibilidad;
+- 106.4 - dominio de campanas y creatividades;
+- 106.5 - superficies, vigencia, moderacion y metricas;
+- 106.6 - administracion, seguridad, tests y gate.
+
+Gate: Advertising no usa Clasificados falsos; sin campana no existe bloque
+vacio; capacidad construida y politica activa permanecen separadas.
+
+Dependencias: ETAPAS 101 a 105.
+
+Estado: Pendiente. No iniciada.
+
+### ☐ ETAPA 107
+
+Monetizacion, Payments y Billing Transversal.
+
+Objetivo:
+
+Dejar operativos los pagos de capacidades aprobadas y el unico Billing de
+FeedGo, sin crear sistemas fiscales por vertical ni ceder negocio a providers.
+
+Bloques maximos aproximados:
+
+- 107.1 - auditoria legal, fiscal, comercial y de providers;
+- 107.2 - ordenes, estados, referencias e idempotencia;
+- 107.3 - PaymentProvider, sandbox final y webhook verificado;
+- 107.4 - conciliacion y activacion exactamente una vez;
+- 107.5 - Billing unico e InvoiceProvider reemplazable;
+- 107.6 - seguridad, fallos, rollback, pruebas comerciales y gate.
+
+Gate: no se aceptan interfaces vacias, TODOs ni adapters ficticios como
+solucion final. El circuito real debe poder activarse sin reconstruccion
+estructural; precios, cobros efectivos y politica comercial requieren decision
+separada.
+
+El contrato debe preservar `CommercialOperation -> PaymentOrder ->
+PaymentProvider -> confirmacion interna idempotente` y `CommercialOperation
+confirmada -> BillingService -> InvoiceProvider`. Providers no activan dominio,
+no consultan libremente la DB y Billing permanece unico e interno.
+
+Dependencias: ETAPA 106, identidad FeedGo, legalidad y staging de ETAPA 100.
+
+Estado: Pendiente. No iniciada.
+
+### ☐ ETAPA 108
+
+Calidad y Validacion Funcional Integral.
+
+Objetivo:
+
+Consolidar la evidencia progresiva de etapas anteriores y demostrar en el
+staging aprobado los flujos criticos, integraciones y regresiones de FeedGo
+Espacios, FeedGo Clasificados y Plataforma Comercial sin
+reconstruir los tests desde cero ni usar cobertura porcentual como unico gate.
+
+Alcance:
+
+- matriz de riesgos y flujos criticos;
+- unitarias, integracion, contratos y backend contra DB representativa cuando
+  corresponda;
+- frontend runtime real, E2E y regresion;
+- compatibilidad y accesibilidad relevantes, consumiendo la evidencia visual
+  y funcional producida por ETAPA 98;
+- errores, estados vacios, permisos insuficientes y casos limite;
+- gate integral reproducible de calidad.
+
+La matriz debe incluir contratos de providers y fallos externos: timeout,
+rechazo, respuesta invalida, duplicacion, retry e indisponibilidad.
+
+Division maxima sugerida:
+
+- 108.1 - matriz de riesgos, flujos y evidencia heredada;
+- 108.2 - integracion backend, DB representativa y contratos API;
+- 108.3 - frontend runtime y componentes interactivos;
+- 108.4 - E2E de flujos criticos y regresion;
+- 108.5 - compatibilidad, accesibilidad y escenarios adversos;
+- 108.6 - gate integral de calidad y cierre de brechas.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 109
+
+Seguridad y Hardening Integral.
+
+Objetivo:
+
+Ejecutar la auditoria integral y el hardening final de seguridad sobre los
+controles construidos progresivamente por cada etapa, con evidencia dinamica,
+revision manual, remediacion y retest.
+
+Alcance:
+
+- threat modeling por dominio, matriz de abuso FeedGo y OWASP ASVS con objetivo
+  aproximado L2 adaptado;
+- OWASP WSTG, Top 10 y API Security Top 10 como referencias, no como falsa
+  certificacion automatica;
+- Auth, sesiones, autorizacion horizontal/vertical, inputs, uploads, XSS,
+  inyeccion, APIs costosas, IA, promociones, beneficios, Advertising,
+  Payments/Billing, webhooks, abuso, fraude y rate limiting;
+- secretos, dependencias, supply chain, SAST, SCA y builds reproducibles;
+- DAST y pentest manual sobre staging aislado;
+- remediacion, retest y aceptacion formal de riesgos con owner, justificacion,
+  mitigacion y vencimiento cuando corresponda.
+
+La auditoria debe cubrir secretos, minimo privilegio, callbacks/webhooks,
+uploads y datos entregados a providers, sin asumir confianza por ser terceros.
+
+Division maxima sugerida:
+
+- 109.1 - threat model, ASVS adaptado y matriz de abuso;
+- 109.2 - identidad, sesiones, autorizacion y aislamiento;
+- 109.3 - inputs, uploads, IA, APIs costosas, fraude y rate limiting;
+- 109.4 - secretos, dependencias, SAST, SCA y supply chain;
+- 109.5 - DAST y pentest manual controlado;
+- 109.6 - remediacion, retest y cierre formal de riesgos.
+
+Estado:
+
+Pendiente.
+
+### ☐ ETAPA 110
+
+Confiabilidad, Capacidad y Resiliencia Integral.
+
+Objetivo:
+
+Demostrar con objetivos medibles y observabilidad suficiente que FeedGo puede
+operar, degradarse y recuperarse dentro de limites conocidos antes del
+despliegue productivo.
+
+Alcance:
+
+- baseline, trafico esperado de apertura, margen de pico, escalones, saturacion
+  y capacidad soportada; 50.000 concurrentes permanece escenario conceptual;
+- SLO por clase de operacion, no un umbral universal;
+- automatizacion de backups, antiguedad monitoreada, restore recurrente,
+  cifrado, recovery y rollback;
+- carga nominal, pico, estres y soak/endurance sobre API, DB, Search, Candidate
+  Engine, Ranking, geografia, caches y operaciones costosas;
+- capacidad multimedia: limites, almacenamiento, transferencia, serving,
+  ancho de banda y consumo cliente/servidor;
+- evidencia correlacionable de p50/p95/p99, throughput, error rate, CPU, RAM,
+  red, disco, conexiones y espera de pool DB, slow queries, cache, response
+  size, Search, Candidate Engine, Ranking, geografia y candidatos;
+- degradacion controlada y gate integral de confiabilidad.
+
+La etapa debe medir señales que permitirian evaluar una futura extraccion:
+backlog, CPU/GPU, latencia contra SLO, impacto OLTP, fallos, throughput y
+necesidad de escalado independiente. Medir no autoriza separar fisicamente.
+
+La capacidad multimedia de esta etapa no reemplaza ETAPA 124: ETAPA 110 mide
+y limita capacidad; ETAPA 124 investiga compatibilidad de reproduccion
+iOS/Safari/PWA.
+
+Division maxima sugerida:
+
+- 110.1 - objetivos, baseline, SLO por operacion y datos de carga;
+- 110.2 - backup, cifrado, restore, recovery y rollback;
+- 110.3 - API, DB, Search, Candidate Engine y Ranking de ambas verticales;
+- 110.4 - geografia, pico, estres, soak y degradacion;
+- 110.5 - IA, providers, Payments/Billing y capacidad multimedia;
+- 110.6 - gate integral de confiabilidad y resiliencia.
+
+Estado:
+
+Pendiente.
+
+## Evaluacion futura de lanzamiento - sin etapa numerada
+
+No existe actualmente una etapa numerada de lanzamiento. Cerrar ETAPAS 97 a
+110 no autoriza apertura publica ni crea automaticamente infraestructura
+productiva. Cuando el owner humano lo indique expresamente, una auditoria
+integral utilizara la evidencia acumulada para decidir si corresponde crear una
+etapa, que infraestructura, legalidad, recovery, observabilidad, multimedia y
+gates adicionales faltan y si procede un GO / NO-GO.
+
+El concepto de GO / NO-GO permanece vigente, pero no esta asociado a un numero
+actual. Dominio, DNS, hosting, HTTPS, API/CORS productivos, secretos,
+observabilidad, rollback, soporte, smoke y estrategia de apertura se resolveran
+solo dentro de ese proceso futuro documentado.
+
+### ☐ ETAPA 111
 
 Analytics y Aprendizaje de Uso Real.
 
@@ -1123,11 +1563,20 @@ Objetivo:
 Medir uso real de manera respetuosa de privacidad para orientar decisiones
 posteriores al lanzamiento.
 
+Debe auditar y evolucionar el panel de Estadisticas existente, sus metricas,
+snapshots, permisos, costo de consulta, utilidad real y separacion respecto de
+datos publicos del perfil del espacio. No debe confundir analytics de producto,
+metricas operativas ni ranking.
+
+Analytics permanece interno salvo evidencia de volumen o carga que afecte OLTP;
+una separacion eventual no mezcla analytics, observabilidad, auditoria ni
+evidencia de recovery.
+
 Estado:
 
 Pendiente.
 
-### ☐ ETAPA 102
+### ☐ ETAPA 112
 
 Calidad de Datos y Conocimiento Administrable.
 
@@ -1140,7 +1589,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 103
+### ☐ ETAPA 113
 
 Reservas Publicas y Carrito de Reserva.
 
@@ -1153,7 +1602,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 104
+### ☐ ETAPA 114
 
 Mensajeria y Cotizaciones.
 
@@ -1164,11 +1613,15 @@ para FeedGo, incluyendo correo, WhatsApp, destinos verificables, proveedores,
 plantillas, infraestructura asincronica, reintentos, idempotencia, webhooks,
 observabilidad y futuras politicas de capacidades comerciales.
 
+Los providers de email y WhatsApp ejecutan entrega; los dominios producen
+sucesos y Notificaciones/Comunicaciones conservan destinatario, preferencias,
+intencion, estados e idempotencia.
+
 Estado:
 
 Pendiente.
 
-### ☐ ETAPA 105
+### ☐ ETAPA 115
 
 Catalogo de Productos y Disponibilidad Simple.
 
@@ -1187,7 +1640,7 @@ Pendiente programado desde ETAPA 90:
 - revisar Productos legacy y definir ownership oficial antes de habilitar
   mutaciones de catalogo o inventario.
 
-### ☐ ETAPA 106
+### ☐ ETAPA 116
 
 Promociones y Fidelizacion.
 
@@ -1200,7 +1653,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 107
+### ☐ ETAPA 117
 
 Opiniones y Motor de Reputacion.
 
@@ -1213,7 +1666,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 108
+### ☐ ETAPA 118
 
 Notificaciones Inteligentes.
 
@@ -1222,11 +1675,19 @@ Objetivo:
 Disenar e implementar notificaciones locales y futuras notificaciones
 inteligentes, reutilizando la infraestructura transversal que corresponda.
 
+Agenda y futuras Reservas son productores de sucesos notificables, no owners
+del sistema. Esta etapa debe reutilizar el contrato transversal vigente y
+contemplar recordatorios, cambios, cancelaciones y preferencias sin duplicar
+schedulers, proveedores ni estados de negocio.
+
+El sistema de Notificaciones permanece separado del mecanismo y provider de
+entrega externa.
+
 Estado:
 
 Pendiente.
 
-### ☐ ETAPA 109
+### ☐ ETAPA 119
 
 Preferencias, Recomendaciones y Contexto.
 
@@ -1239,7 +1700,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 110
+### ☐ ETAPA 120
 
 IA Conversacional.
 
@@ -1248,11 +1709,14 @@ Objetivo:
 Evaluar e incorporar IA conversacional cuando existan datos, gobernanza y
 necesidades de producto suficientes.
 
+Debe definir un contrato propio y no reutilizar automaticamente el contrato
+multimodal de Clasificados ni crear una abstraccion universal de IA.
+
 Estado:
 
 Pendiente.
 
-### ☐ ETAPA 111
+### ☐ ETAPA 121
 
 Tendencias, Oferta, Demanda y Motor Predictivo.
 
@@ -1265,7 +1729,7 @@ Estado:
 
 Pendiente.
 
-### ☐ ETAPA 112
+### ☐ ETAPA 122
 
 Ranking Dinamico y Descubrimiento Proactivo.
 
@@ -1274,24 +1738,38 @@ Objetivo:
 Evolucionar ranking y descubrimiento con senales reales, trazabilidad y
 controles de calidad.
 
+Debe auditar especificamente Feed e Historias como descubrimiento local mixto,
+sin convertirlos en contenido exclusivo de cuentas seguidas. El diseno futuro
+debe combinar afinidad/seguimiento, relevancia, proximidad, novedad, exposicion
+previa, diversidad y control de repeticion. Historias vistas y publicaciones ya
+consumidas pueden perder prioridad, pero backend conserva el ranking y no se
+autoriza una regla rigida de seguidos primero.
+
 Estado:
 
 Pendiente.
 
-### ☐ ETAPA 113
+### ☐ ETAPA 123
 
 Plataforma Comercial y Backend Universal.
 
 Objetivo:
 
-Evaluar la expansion hacia capacidades comerciales y backend universal despues
-de validar uso real, operacion y necesidades del producto.
+Evaluar, mediante un nuevo gate de evidencia, si capacidades comerciales o
+tecnicas concretas justifican expansion o reutilizacion fuera de FeedGo despues
+de validar uso real, operacion y monetizacion, sin reabrir los contratos
+fiscales o de entitlement de ETAPA 107.
+
+`Backend Universal` no es un resultado obligatorio. No se generalizan dominios,
+se extraen servicios ni se construye una plataforma para aplicaciones
+hipoteticas sin consumidores reales, frontera natural y beneficio demostrado
+frente al costo operativo.
 
 Estado:
 
 Pendiente.
 
-### ☐ ETAPA 114
+### ☐ ETAPA 124
 
 Compatibilidad Multimedia iOS/Safari/PWA.
 
@@ -1300,6 +1778,10 @@ Objetivo:
 Retomar mediante diagnostico reproducible y dispositivos fisicos la
 compatibilidad multimedia de Historias con video, sin reabrir la arquitectura
 PWA general ni aplicar workarounds por hipotesis.
+
+La incompatibilidad cliente no justifica por si sola crear un servicio Media.
+Una separacion fisica requiere las señales de capacidad, procesamiento o
+aislamiento definidas por Gobierno y ETAPA 110.
 
 Alcance inicial obligatorio:
 
@@ -1344,5 +1826,5 @@ colaboradores, permisos compartidos y administracion multiusuario sin asumir
 que esas capacidades existen hoy.
 
 Esta vision debera revisarse formalmente antes de cualquier reorganizacion del
-roadmap. Mientras no exista decision posterior, prevalecen las etapas 102 a 114
+roadmap. Mientras no exista decision posterior, prevalecen las etapas 97 a 124
 ya definidas en este documento.

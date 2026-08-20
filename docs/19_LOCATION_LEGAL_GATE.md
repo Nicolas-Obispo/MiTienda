@@ -365,14 +365,17 @@ Espacio historico sin ubicacion valida:
 - existe `usuarios_documentos_aceptaciones` como dueno persistente separado;
 - se registran usuario, tipo, version, fecha, canal, metodo, estado y referencia;
 - existen tests backend para rechazo, atomicidad, evidencia y unicidad;
+- `/terminos-y-condiciones` y `/politica-de-privacidad` poseen rutas y paginas
+  frontend publicas, accesibles desde Registro;
 - Explorar y perfiles publicos pueden utilizarse sin cuenta mediante rutas de
-  invitado, aunque hoy existe una redireccion temporal despues de cinco minutos.
+  invitado; el detalle publico de una publicacion aplica el gate temporal
+  vigente de cinco segundos antes de redirigir a Registro.
 
 ### 11.2 Gaps obligatorios
 
-- `/terminos-y-condiciones` y `/politica-de-privacidad` no tienen rutas ni
-  paginas implementadas; los enlaces caen en el fallback general;
-- no existen textos publicos completos que respalden las referencias `v1`;
+- las superficies existentes contienen texto funcional, pero aun deben
+  completarse y formalizarse los datos institucionales, responsable, contacto,
+  derechos, retencion, vigencia y aprobacion profesional antes de produccion;
 - `documento_referencia` es una referencia logica, no evidencia de un contenido
   legal real aprobado;
 - falta incorporar la referencia formal de la aprobacion legal ya confirmada y
@@ -381,9 +384,8 @@ Espacio historico sin ubicacion valida:
 - falta tratamiento de cuentas anteriores sin evidencia;
 - falta comprobar que la navegacion a documentos no pierda el formulario;
 - falta accesibilidad, impresion/descarga o mecanismo equivalente de consulta;
-- la continuidad indefinida de Explorar sin registro es una decision de
-  producto pendiente porque el router actualmente limita la sesion invitada a
-  cinco minutos.
+- el gate temporal del detalle anonimo no reemplaza el acceso de lectura a
+  Explorar ni define por si mismo una politica legal de registro.
 
 No se necesita otra tabla para la evidencia minima actual.
 
@@ -419,6 +421,20 @@ consentimiento universal para todo tratamiento futuro.
 6. No insistir repetidamente ante una decision conocida.
 7. La revocacion detiene futuras lecturas y elimina el estado efimero en memoria;
    no elimina cuenta, espacios ni evidencia legal.
+
+### 13.1 Gate de confiabilidad pendiente
+
+El runtime vigente evita insistir ante `denied`, consulta Permissions API cuando
+esta disponible y ejecuta como maximo una lectura rapida seguida por una unica
+lectura precisa ante imprecision o `TIMEOUT`. Aun existe evidencia fisica
+intermitente de primeros intentos que pueden terminar en "La ubicacion no
+respondio a tiempo" bajo condiciones donde intentos posteriores funcionan.
+
+Estado: parcial; no debe declararse resuelto por tests contractuales. ETAPA 110
+debe validar en dispositivos y contexto seguro la adquisicion inicial,
+reingreso tardio, cambios de permiso y fallback preciso. Si reproduce un
+defecto, la correccion pertenece al owner geografico frontend sin trasladar al
+cliente territorio, distancia, ranking ni reglas de cercania del backend.
 
 ## 14. Cambios materiales, revocacion y derechos
 
