@@ -71,6 +71,34 @@ export const queryKeys = {
     ],
   },
 
+  moderation: {
+    all: ["moderation"],
+    reports: {
+      all: ["moderation", "reports"],
+      list: (filters) => ["moderation", "reports", "list", filters],
+      detail: (reportId) => ["moderation", "reports", "detail", reportId],
+      decisions: (reportId) => ["moderation", "reports", "detail", reportId, "decisions"],
+    },
+  },
+
+  incidents: {
+    all: ["incidents"],
+    list: (filters) => ["incidents", "list", filters],
+    detail: (publicId) => ["incidents", "detail", publicId],
+    timeline: (publicId) => ["incidents", "detail", publicId, "timeline"],
+  },
+
+  operations: {
+    all: ["operations"],
+    status: () => ["operations", "status"],
+    resourceIntegrity: (resourceType, resourceId) => [
+      "operations",
+      "resource-integrity",
+      resourceType ?? null,
+      resourceId ?? null,
+    ],
+  },
+
   agenda: {
     all: ["agenda"],
     contexto: (comercioId) => ["agenda", "contexto", Number(comercioId)],

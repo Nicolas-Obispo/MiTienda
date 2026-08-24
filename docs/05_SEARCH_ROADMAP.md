@@ -992,7 +992,7 @@ defecto especifico de videos de Historias en iOS/Safari/PWA no se declara
 resuelto: queda diferido a ETAPA 124 con su evidencia diagnostica
 preservada.
 
-### ☐ ETAPA 97
+### ☑ ETAPA 97
 
 Administracion Operativa Minima.
 
@@ -1027,7 +1027,7 @@ integral posterior.
 
 Estado:
 
-En curso.
+Cerrada.
 
 Subetapas:
 
@@ -1036,10 +1036,60 @@ Subetapas:
   bootstrap local auditado, dependency backend reutilizable, contrato
   `/administracion/me/capacidades` y consumidor frontend compartido. El modo de
   producto y el ownership de recursos no conceden autorizacion administrativa.
-- 97.2 - Circuito administrativo de denuncias: pendiente; no iniciada. No fue
-  adelantada por el cierre de 97.1.
+- 97.2 - Bandeja y consulta de denuncias: cerrada. Implementa listado y detalle
+  read-only protegidos por `moderation.reports.read`, paginacion keyset,
+  filtros controlados, minimizacion total del denunciante, disponibilidad
+  actual del recurso sin valor historico y consumidor frontend compartido con
+  estados UX y cancelacion de consultas obsoletas.
+- 97.3 - Decisiones y acciones de moderacion: cerrada. Implementa decisiones
+  append-only protegidas por `moderation.decisions.write`, versionado de la
+  denuncia y revision de moderacion del recurso, idempotencia por clave y
+  fingerprint, trazabilidad durable y ocultamiento/restauracion mediante los
+  services propietarios. `moderation_hidden` no modifica el lifecycle del
+  owner (`activo`/`is_activa`). Sanciones, apelaciones, asignaciones y
+  automatizacion permanecen fuera del alcance.
+- 97.4 - Gestion minima de incidentes: cerrada. Implementa expediente durable,
+  lifecycle controlado, cronologia append-only, severidad SEV1-SEV4, owner,
+  plazos operativos configurables, concurrencia optimista, idempotencia, riesgo
+  residual y evaluacion legal. La autorizacion se protege con
+  `operations.incidents.manage`; la evidencia admite solo referencias opacas y
+  tipos controlados. La apertura inicial es manual mediante UI/API. No modifica
+  Observabilidad ni Recovery, no crea dashboard o automatizacion y no elimina
+  expedientes sin una politica de retencion aprobada.
+- 97.5 - Operacion segura de contratos existentes: cerrada. Implementa una
+  proyeccion administrativa estrictamente diagnostica y read-only protegida por
+  `operations.status.read`. Reutiliza Health, agregados allowlisted, alertas
+  sanitizadas y evidencia segura de backup/restore con alcance
+  `process_local`, volatil, no historico y no global. La inspeccion puntual de
+  Comercio, Publicacion e Historia se delega a sus services propietarios y no
+  expone URLs, filenames, paths, owners ni payloads. No declara freshness o
+  RPO, no ejecuta Recovery, no realiza red externa o barridos y no crea
+  dashboard, modelos, migraciones ni endpoints de escritura. Abrir incidentes
+  conserva el flujo existente y requiere `operations.incidents.manage`.
+- 97.6 - Gate integral: cerrada. Las validaciones automatizadas, el smoke
+  operativo controlado de email y los bloques manuales funcionales se
+  encuentran aprobados. Tambien quedaron aprobados lenguaje administrativo,
+  diferenciacion de formularios y errores, navegacion, foco y responsive
+  movil/escritorio, incluida la navegacion global sin superposiciones. La guia
+  practica interna fue incorporada sin publicar documentacion sensible. La
+  consolidacion final revalido suites completas, concurrencia MySQL aislada,
+  esquema y migraciones, worker, canal operativo, compileall, lint, build/PWA,
+  Playwright, secretos y diff; la auditoria de tests y residuos no detecto un
+  bloqueo funcional.
+- Evidencia adicional 97.6: la evolucion aditiva e idempotente de la outbox fue
+  aplicada sobre MySQL local; las intenciones sinteticas de denuncias 2 a 4 se
+  reconciliaron como `suppressed` sin eliminacion. La denuncia real 5 atraveso
+  automaticamente Dominio, Notificaciones, outbox, worker, Comunicaciones y el
+  provider en un intento, sin duplicados, y su recepcion humana fue confirmada.
+  Los gates de canal y dispatcher quedaron nuevamente deshabilitados.
+- Evidencia final de cierre: el launcher integrado inicio API y worker como
+  procesos separados; la denuncia real 6 paso una sola vez de `pending` a
+  `sent`, con `attempt_count=1` y sin duplicados, y el correo fue recibido en
+  Operaciones. El worker registro `active -> stopped`, el apagado fue limpio,
+  no quedaron procesos huerfanos y ambos gates volvieron a `false`.
 
-ETAPA 97 permanece abierta.
+ETAPA 97 queda formalmente cerrada con sus subetapas 97.1 a 97.6 cerradas.
+ETAPA 98 es la siguiente etapa oficial, pendiente y no iniciada.
 
 ### ☐ ETAPA 98
 

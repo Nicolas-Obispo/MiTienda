@@ -10,6 +10,7 @@ import sys
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.database import SessionLocal, engine
+from app.core.model_registry import import_all_models
 from app.modules.administration.capabilities import ADMINISTRATIVE_CAPABILITIES
 from app.modules.administration.services.administrative_authorization_services import (
     BOOTSTRAP_SOURCE,
@@ -42,6 +43,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     print(f"Destino: {safe_database_target()}")
+
+    # Registra relaciones ORM sin crear ni alterar tablas.
+    import_all_models()
 
     db = SessionLocal()
     try:

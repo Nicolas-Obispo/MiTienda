@@ -116,7 +116,9 @@ def listar_publicaciones_guardadas(
         .filter(
             PublicacionGuardada.usuario_id == usuario_id,
             Publicacion.is_activa.is_(True),
+            Publicacion.moderation_hidden.is_(False),
             Comercio.activo.is_(True),
+            Comercio.moderation_hidden.is_(False),
         )
         .order_by(PublicacionGuardada.created_at.desc())
         .all()

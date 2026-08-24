@@ -16,8 +16,8 @@ from __future__ import annotations
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.modules.stories.models.historias_models import Historia
 from app.modules.stories.models.historias_vistas_models import HistoriaVista
+from app.modules.stories.services.historias_services import obtener_historia_visible_o_error
 
 
 def marcar_historia_como_vista(db: Session, historia_id: int, usuario_id: int) -> HistoriaVista:
@@ -34,9 +34,7 @@ def marcar_historia_como_vista(db: Session, historia_id: int, usuario_id: int) -
     :return: HistoriaVista
     """
     # 1) Validar que exista la historia
-    historia = db.query(Historia).filter(Historia.id == historia_id).first()
-    if not historia:
-      raise ValueError("Historia no encontrada")
+    obtener_historia_visible_o_error(db, historia_id=historia_id)
 
     # 2) Chequear si ya existe la vista
     existing = (

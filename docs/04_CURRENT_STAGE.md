@@ -558,7 +558,9 @@ Plan restante oficial de ETAPA 95:
 Etapa vigente:
 
 - ETAPA 97 - Administracion Operativa Minima.
-- Estado: en curso.
+- Estado: cerrada.
+- Siguiente etapa: ETAPA 98 - Correccion y Pulido Visual del Frontend,
+  pendiente y no iniciada.
 - 97.1 - Contrato administrativo y autorizacion: cerrada. FeedGo dispone de un
   catalogo inicial de cuatro capacidades administrativas persistidas fuera del
   JWT, eventos append-only de otorgamiento/revocacion, bootstrap local
@@ -567,8 +569,117 @@ Etapa vigente:
   ownership de Espacios no conceden acceso administrativo.
 - No se asignaron operadores durante el cierre y no se construyeron bandeja de
   denuncias, consola ni dashboard.
-- 97.2 - Circuito administrativo de denuncias: pendiente; no iniciada. Requiere
-  autorizacion e instruccion separadas.
+- 97.2 - Bandeja y consulta de denuncias: cerrada. Incorpora listado y detalle
+  administrativos read-only protegidos por `moderation.reports.read`,
+  paginacion keyset, filtros controlados, minimizacion total del denunciante y
+  disponibilidad actual del recurso sin presentarla como evidencia historica.
+  El frontend consume estos contratos mediante una bandeja compartida de solo
+  lectura con estados de carga, vacio, error y concurrencia controlada.
+- 97.3 - Decisiones y acciones de moderacion: cerrada. Incorpora decisiones
+  append-only protegidas por `moderation.decisions.write`, version de denuncia,
+  revision de moderacion del recurso, idempotencia por clave y fingerprint,
+  trazabilidad del operador y acciones de ocultamiento/restauracion delegadas
+  a los services propietarios. La visibilidad de moderacion permanece separada
+  de `activo` e `is_activa`; no se incorporaron sanciones, apelaciones,
+  asignaciones ni automatizacion.
+- 97.4 - Gestion minima de incidentes: cerrada. Incorpora expediente durable,
+  lifecycle controlado, cronologia append-only, severidad SEV1-SEV4, owner,
+  plazos operativos configurables, concurrencia, idempotencia, riesgo residual
+  y evaluacion legal, protegido por `operations.incidents.manage`. La evidencia
+  se limita a referencias opacas tipadas; no se modificaron Observabilidad ni
+  Recovery y no se incorporaron dashboard, automatizacion o borrado.
+- 97.5 - Operacion segura de contratos existentes: cerrada. Incorpora estado
+  operativo seguro protegido por `operations.status.read`, compuesto desde
+  Health, agregados allowlisted y alertas sanitizadas. El contrato declara
+  alcance local, volatil, no historico y no global; la evidencia de Recovery no
+  declara freshness ni RPO. Comercio, Publicacion e Historia conservan el
+  ownership de sus inspecciones puntuales read-only. No se incorporaron
+  mutaciones, red externa, barridos, modelos, migraciones, dashboard ni acciones
+  de backup/restore.
+- 97.6 - Gate integral: cerrada. El gate automatizado cubre autorizacion,
+  privacidad, trazabilidad, concurrencia, idempotencia, migraciones,
+  visibilidad publica, incidentes, estado operativo, errores administrativos y
+  regresiones backend/frontend/PWA. La outbox operativa y el canal
+  `Notificaciones -> Comunicaciones -> EmailProvider` permanecen desacoplados;
+  el smoke controlado `operations.email.smoke` quedo validado con estado
+  `sent`, un unico intento, sin error sanitizado, con `sent_at` y referencia
+  externa generica. No se documentan destinatario, credenciales, payload ni
+  respuesta del provider.
+- El canal operativo automatico completo quedo validado sobre MySQL local. La
+  migracion aditiva de `operational_notification_outbox` incorporo claims,
+  leases, supresion e indice de despacho y su segunda ejecucion fue idempotente.
+  Las intenciones sinteticas correspondientes a las denuncias 2, 3 y 4 fueron
+  marcadas `suppressed` con motivo controlado, sin eliminar filas, denuncias,
+  payloads ni deduplicacion. La denuncia real 5 permanecio elegible y fue
+  entregada automaticamente por el worker dedicado en un unico intento, sin
+  duplicados, con recepcion humana confirmada. Canal y dispatcher fueron
+  restaurados a `false` despues de la prueba.
+- El cierre integral revalido el launcher local unico con API y worker como
+  procesos separados. La denuncia real 6 paso exactamente una vez de `pending`
+  a `sent`, con `attempt_count=1`, una unica intencion, `sent_at` y referencia
+  externa generica; la recepcion humana en Operaciones fue confirmada. El
+  heartbeat del worker registro `active -> stopped`, el apagado fue limpio, no
+  quedaron procesos huerfanos y ambos gates fueron restaurados a `false`.
+- Los bloques funcionales manuales de portada, bandeja, moderacion, incidentes,
+  estado operativo y control 422 estan aprobados. El
+  cierre transversal de lenguaje, diferenciacion de campos/acciones,
+  navegacion, foco y responsive fue implementado y validado. La guia practica
+  interna de Administracion quedo incorporada en su owner legal-operativo y en
+  una superficie privada para operadores. La consolidacion final revalido las
+  suites completas, concurrencia MySQL aislada, esquema fisico y migraciones,
+  worker, canal operativo, compileall, lint, build/PWA, Playwright, secretos y
+  diff. La auditoria de tests y residuos no detecto un bloqueo funcional.
+- Matriz manual 97.6, bloque Portada administrativa: **APROBADO**. Quedaron
+  validados anonimato, usuario comun, operador con capacidades parciales,
+  revocacion y restauracion durante la misma sesion sin reemitir JWT, y la
+  proteccion coherente de navegacion global, portada y acceso directo. La
+  consulta de capacidades revalida al montar, recuperar foco y reconectar, y
+  su contrato HTTP impide reutilizar una respuesta cacheada. El bootstrap
+  auditado conserva eventos persistentes append-only y no crea roles ni cambia
+  el mecanismo de autorizacion.
+- Matriz manual 97.6, bloque Bandeja de denuncias: **APROBADO**. Quedaron
+  validados listado y filtros, vacio filtrado, detalle con y sin texto
+  adicional, privacidad total del denunciante, ausencia de controles de
+  decision para un operador de solo lectura, error de conexion recuperable y
+  cancelacion de consulta obsoleta bajo red 3G. No se aplicaron decisiones ni
+  efectos sobre recursos durante este bloque.
+- Matriz manual 97.6, bloque Decisiones de moderacion: **APROBADO**. Se valido
+  `resolver_sin_accion` unico y sin derecho a restaurar, ocultamiento publico,
+  rechazo 409 de una decision concurrente obsoleta, restauracion causal y
+  trazabilidad append-only. La verificacion read-only confirmo Comercio 1 con
+  `activo=true` y revision 0, y Publicacion 9 e Historia 37 con
+  `is_activa=true`, visibles, revision 2 y sin decision de ocultamiento vigente.
+  No hubo eliminacion ni desactivacion del lifecycle owner.
+- Matriz manual 97.6, bloque Incidentes: **APROBADO**. Se validaron evaluacion
+  legal, conflicto 409 mediante probe local con `expected_version` congelada,
+  ausencia del evento rechazado, lifecycle completo hasta `reviewed`, riesgo
+  residual medio con owner y fecha, cronologia append-only y terminalidad. La
+  verificacion read-only confirmo en
+  `INC-5090E87615484E53BCCBD5A4E82499B5` las versiones consecutivas 1 a 6 y
+  las transiciones `opened`, `record_legal_assessment`,
+  `start_investigation`, `contain`, `resolve` y `review`. El expediente previo
+  se conserva integro como evidencia del defecto corregido de ajuste sin
+  efecto.
+- Matriz manual 97.6, bloque Estado Operativo: **APROBADO**. Se validaron
+  alcance local, volatil y no historico; ausencia de afirmaciones globales,
+  freshness o RPO; Health y Recovery sanitizados; ausencia de acciones de
+  backup, restore o reparacion; agregados y alertas sin payloads ni datos
+  privados; inspeccion correcta de Comercio 1, Publicacion 9 e Historia 37;
+  assets externos clasificados sin exponer referencias; 404 controlado; y
+  fallo de conexion con recuperacion posterior y componentes `healthy`.
+- Usabilidad administrativa 97.6: **APROBADA** para lenguaje, diferenciacion
+  de campos y acciones, ownership visual de errores, navegacion, foco y
+  responsive movil/escritorio. La validacion incluye formularios y acciones
+  adaptables, detalles sin desborde y acceso global a Administracion sin
+  superposiciones en anchos moviles. La guia practica interna queda disponible
+  solo para identidades con capacidades administrativas y no expone contratos,
+  credenciales ni evidencia de prueba.
+- Matriz manual 97.6, control 422: **APROBADO**. El formulario existente de
+  reasignacion rechazo un owner sintetico inexistente con el mensaje sanitizado
+  `Los datos enviados no son validos`. La verificacion read-only confirmo que
+  `INC-2BE9B24CEFF94E4E9CEB87A8A17C9FCA` conserva estado `open`, SEV4, owner
+  32, version 1 y un unico evento `opened`; no se persistio `assign_owner` ni
+  se modificaron denuncias, otros incidentes o recursos.
 - ETAPA 96 - Plataforma Instalable y PWA Enterprise queda cerrada tecnica y
   documentalmente. Sprints 96.1, 96.2 y 96.3 quedan completados.
 - Resultado PWA: identidad FeedGo, manifest e iconos; build reproducible con
@@ -730,8 +841,10 @@ Resultado:
   un futuro GO / NO-GO basado en evidencia y riesgos residuales.
 
 El trabajo previo a ETAPA 97 queda formalmente cerrado. ETAPA 96 permanece
-cerrada. ETAPA 97 - Administracion Operativa Minima se encuentra en curso con
-97.1 cerrada y 97.2 pendiente, todavia no iniciada.
+cerrada. ETAPA 97 - Administracion Operativa Minima queda formalmente cerrada
+con 97.1, 97.2, 97.3, 97.4, 97.5 y 97.6 cerradas. ETAPA 98 - Correccion y
+Pulido Visual del Frontend es la siguiente etapa oficial, pendiente y no
+iniciada.
 
 ## Estado ETAPA 92
 

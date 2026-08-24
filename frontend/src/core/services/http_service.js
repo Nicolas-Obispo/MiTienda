@@ -75,10 +75,12 @@ function buildHeaders(token) {
  * @param {string|null} token - JWT opcional
  * @returns {Promise<any>} JSON parseado
  */
-export async function httpGet(path, token = null) {
+export async function httpGet(path, token = null, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "GET",
     headers: buildHeaders(token),
+    signal: options.signal,
+    cache: options.cache,
   });
 
   // Si el backend responde error, no propagamos el cuerpo crudo.

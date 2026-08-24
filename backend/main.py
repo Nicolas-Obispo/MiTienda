@@ -41,6 +41,10 @@ from app.modules.administration.routes.administration_routers import (
     router as administration_router,
 )
 from app.modules.operations.routes.health_routers import router as health_router
+from app.modules.operations.routes.operational_status_routers import router as operational_status_router
+from app.modules.incidents.routes.operational_incidents_routers import (
+    router as operational_incidents_router,
+)
 from app.modules.geocoding.routes.geocoding_routers import router as geocoding_router
 
 # 🔥 ETAPA 60 — Seguidores
@@ -140,6 +144,8 @@ app.include_router(media_router)
 app.include_router(moderation_router)
 app.include_router(administration_router)
 app.include_router(health_router)
+app.include_router(operational_status_router)
+app.include_router(operational_incidents_router)
 app.include_router(geocoding_router)
 
 # 🔥 ETAPA 60 — Seguidores

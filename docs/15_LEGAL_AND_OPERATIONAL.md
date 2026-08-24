@@ -1000,6 +1000,150 @@ Debe contemplar:
 Los requerimientos de autoridad deben tener procedimiento aprobado, verificacion
 de legitimidad, registro y revision legal cuando corresponda.
 
+### 23.1 Contrato operativo y legal minimo de incidentes
+
+ETAPA 97.4 incorpora un expediente durable para incidentes operativos. Su owner
+de negocio permanece en Operaciones y Seguridad; Observabilidad aporta senales
+y referencias tecnicas, Recovery conserva sus propios procedimientos y Legal
+evalua las consecuencias aplicables sin que ninguno de esos dominios duplique
+el expediente.
+
+Contrato implementado:
+
+- apertura manual mediante UI o API, con identificador publico opaco;
+- severidades `SEV1` para seguridad, datos o indisponibilidad critica, `SEV2`
+  para funcion critica o degradacion grave, `SEV3` para impacto parcial con
+  alternativa y `SEV4` para impacto bajo y acotado;
+- lifecycle controlado `open -> investigating -> contained -> resolved ->
+  reviewed`, con reapertura explicita antes de la revision final;
+- owner operativo, plazos internos configurables y cronologia append-only con
+  operador, fecha, cambio y contexto tecnico seguro;
+- concurrencia mediante version esperada e idempotencia mediante clave y
+  fingerprint;
+- proteccion backend y frontend mediante `operations.incidents.manage`;
+- riesgo residual `high` o `critical` bloquea `reviewed`; riesgo `medium` exige
+  owner y fecha de revision;
+- un mismo operador puede abrir, resolver y revisar, incluso `SEV1`, y cada
+  intervencion queda atribuida expresamente;
+- evaluacion legal registrada sin inventar owner: el responsable legal puede
+  permanecer pendiente;
+- evidencia limitada a referencias opacas y tipos controlados. No admite
+  archivos, URLs, rutas, secretos, credenciales ni payloads;
+- conservacion indefinida inicial: no existe eliminacion automatica hasta que
+  se apruebe una politica de retencion.
+
+Los plazos son campos operativos y no declaran por si mismos obligaciones
+regulatorias. La revision final acredita el cierre operativo interno, no una
+aprobacion legal profesional ni el cumplimiento automatico de deberes de
+notificacion. Cualquier requerimiento de autoridad, comunicacion externa,
+brecha de datos o plazo normativo exige la evaluacion legal correspondiente.
+
+Quedan fuera de este contrato dashboard, automatizacion avanzada, integraciones
+externas, archivos de evidencia, retencion automatizada y modificaciones de los
+contratos propietarios de Observabilidad o Recovery.
+
+### 23.2 Guia practica interna de Administracion
+
+Esta guia es un procedimiento de uso para operadores habilitados. No reemplaza
+los contratos de moderacion de la seccion 13, el expediente de incidentes de
+23.1, los owners de Observabilidad o Recovery ni la autorizacion backend. La
+portada administrativa muestra solo las superficies permitidas por las
+capacidades vigentes del operador; una revocacion debe reflejarse durante la
+sesion sin depender del JWT.
+
+#### Acceso y portada
+
+- ingresar por la portada privada de Administracion;
+- utilizar solamente las superficies visibles para las capacidades vigentes;
+- ante una revocacion o acceso denegado, volver a la portada y actualizar la
+  consulta; no intentar sustituir permisos mediante rutas directas;
+- usar la guia privada como orientacion y los contratos oficiales como fuente
+  de verdad ante una duda operativa.
+
+#### Denuncias y decisiones
+
+1. Filtrar y abrir la denuncia que se revisara.
+2. Examinar el detalle minimizado y la disponibilidad actual del recurso. Esa
+   disponibilidad no constituye evidencia historica.
+3. Si existe capacidad de decision, elegir la accion aplicable y registrar un
+   fundamento claro, proporcional y minimo.
+4. En evidencia ingresar unicamente una referencia opaca. La referencia ayuda
+   a localizar evidencia custodiada por su owner; no es el contenido de la
+   evidencia.
+5. Confirmar la accion y verificar la trazabilidad append-only resultante.
+
+Resolver sin accion no habilita restauracion. Ocultar modifica la visibilidad
+por moderacion sin modificar el lifecycle elegido por el owner. Restaurar solo
+puede revertir causalmente la decision de ocultamiento vigente que el backend
+reconoce; ante un conflicto de version debe actualizarse el detalle y revisarse
+el estado antes de intentar otra decision.
+
+#### Incidentes
+
+1. Abrir el expediente con titulo, descripcion minima, severidad y responsable.
+2. Registrar la evaluacion legal operativa sin inventar un owner legal ni
+   presentar el resultado como revision profesional.
+3. Iniciar investigacion y agregar hallazgos seguros a la cronologia.
+4. Registrar contencion, luego resolucion y riesgo residual.
+5. Cuando el riesgo sea medio, consignar responsable y fecha de revision. Un
+   riesgo alto o critico impide completar la revision.
+6. Completar la revision final solo cuando las condiciones del expediente lo
+   permitan. Toda transicion queda atribuida y no se reescribe.
+
+Un conflicto indica que otro cambio avanzo la version: debe actualizarse el
+expediente y revisarse nuevamente. Un error de validacion requiere corregir el
+formulario que lo muestra. Una perdida de conexion no autoriza reenvios a
+ciegas; primero debe comprobarse si la accion fue confirmada.
+
+#### Estado Operativo y correo
+
+Estado Operativo es una lectura local, volatil y no historica. No declara salud
+global, freshness, RPO ni exito actual de toda la infraestructura. No ejecuta
+backup, restore, reparacion ni barridos. Sus inspecciones puntuales deben
+interpretarse dentro de estos limites y un incidente se abre mediante el flujo
+propietario existente.
+
+El canal operativo por correo es complementario. Los eventos habilitados crean
+una intencion durable para el destinatario configurado; la entrega no reemplaza
+la bandeja, el expediente ni la cronologia. Un fallo de provider no revierte la
+denuncia o el incidente y debe recuperarse mediante el mecanismo operativo
+aprobado, nunca reenviando datos sensibles manualmente.
+
+El destino funcional aprobado es `operaciones@feedgo.com.ar`. Cloudflare Email
+Routing administra su recepcion y reenvio hacia un destino privado que no debe
+documentarse, persistirse en eventos ni exponerse en interfaces. La entrega
+saliente utiliza actualmente el adapter Resend y un remitente bajo el subdominio
+verificado `mail.feedgo.com.ar`. Resend continúa siendo reemplazable y no es
+owner de denuncias, incidentes, destinatarios ni decisiones administrativas.
+
+La configuracion del canal pertenece al entorno. Canal y dispatcher permanecen
+deshabilitados por defecto y sus secretos nunca se almacenan en documentacion,
+logs, outbox, fixtures o respuestas. Los correos operativos deben minimizar su
+contenido: no incluyen identidad o datos del denunciante, detalle libre,
+evidencia, payloads, rutas, URLs internas, credenciales, headers, respuestas del
+provider ni el destino privado final de Email Routing.
+
+La outbox, deduplicacion, leases, reintentos acotados y supresion preservan
+trazabilidad tecnica sin transformar el correo en fuente de verdad. La bandeja
+administrativa y los expedientes propietarios continúan siendo el registro
+operativo oficial.
+
+#### Informacion prohibida
+
+Ningun formulario administrativo, fundamento, referencia o resumen debe
+contener:
+
+- secretos, API keys, tokens o contrasenas;
+- datos privados o personales innecesarios;
+- URLs internas o direcciones de infraestructura;
+- rutas de archivos o filesystem;
+- payloads, respuestas crudas, headers o credenciales;
+- contenido completo de evidencia cuando basta una referencia opaca.
+
+La interfaz privada expone una version practica de esta guia sin incluir
+credenciales, fixtures, identificadores de prueba ni detalles internos de
+infraestructura.
+
 ## 24. App stores y plataformas de distribucion
 
 Antes de publicar una app movil se debe verificar:
@@ -1127,6 +1271,7 @@ ficticios.
 
 | Tipo | Severidad | Responsable | Evidencia | Comunicacion | Plazo interno | Accion minima |
 | --- | --- | --- | --- | --- | --- | --- |
+| Incidente operativo FeedGo | SEV1-SEV4 segun impacto aprobado | Owner operativo; owner legal puede quedar pendiente | Referencias opacas tipadas y cronologia append-only; nunca archivos, URLs, rutas, secretos o payloads | Se registra evaluacion e intencion; toda comunicacion externa requiere decision del owner aplicable | Campo configurable; no representa por si mismo plazo regulatorio | Abrir, investigar, contener, resolver, evaluar riesgo/legal y revisar conforme al lifecycle controlado |
 
 ### 27.12 Matriz de IA
 

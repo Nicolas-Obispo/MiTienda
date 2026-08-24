@@ -82,6 +82,10 @@ class Publicacion(Base):
     # -------------------------
     # Likes = señal de interés, no “me gusta social”
     is_activa = Column(Boolean, nullable=False, server_default="1")
+    moderation_hidden = Column(Boolean, nullable=False, server_default="0")
+    moderation_revision = Column(Integer, nullable=False, server_default="0")
+    moderation_hidden_by_decision_id = Column(Integer, ForeignKey("moderation_decisions.id", ondelete="RESTRICT"), nullable=True)
+    moderation_updated_at = Column(DateTime(timezone=True), nullable=True)
 
     # -------------------------
     # Auditoría

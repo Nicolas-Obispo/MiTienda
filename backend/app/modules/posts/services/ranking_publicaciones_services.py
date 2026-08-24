@@ -67,7 +67,9 @@ def listar_publicaciones_ranked(db: Session) -> List[Publicacion]:
         )
         .filter(
             Publicacion.is_activa.is_(True),
+            Publicacion.moderation_hidden.is_(False),
             Comercio.activo.is_(True),
+            Comercio.moderation_hidden.is_(False),
         )
         .group_by(Publicacion.id)
         .order_by(

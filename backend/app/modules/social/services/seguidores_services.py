@@ -151,6 +151,7 @@ def listar_espacios_seguidos_por_usuario(db: Session, usuario_id: int):
         .filter(
             Seguidores.usuario_id == usuario_id,
             Comercio.activo.is_(True),
+            Comercio.moderation_hidden.is_(False),
         )
         .order_by(Seguidores.created_at.desc())
         .all()

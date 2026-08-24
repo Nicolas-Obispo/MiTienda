@@ -14,9 +14,13 @@ import { ExplorarPage } from "@features/explore";
 import { PublicacionDetallePage } from "@features/posts";
 import { VerSeguidosPage } from "@features/spaces";
 import { PrivacyPolicyPage, TermsPage } from "@features/legal";
+import { AdministrativeReportsPage } from "@features/moderation";
+import { AdministrativeAccessDenied, AdministrativeAccessGuard, AdministrativeGuidePage, AdministrativeHomePage } from "@features/administration";
+import { OperationalIncidentsPage } from "@features/incidents";
+import { OperationalStatusPage } from "@features/operations";
 
 // Layout
-import { MainLayout } from "@shared";
+import { MainLayout, Skeleton } from "@shared";
 
 // Auth
 import { useAuth } from "@features/auth";
@@ -163,6 +167,65 @@ export default function AppRouter() {
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/administracion"
+            element={
+              <ProtectedRoute>
+                <AdministrativeHomePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/administracion/guia"
+            element={
+              <ProtectedRoute>
+                <AdministrativeGuidePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/administracion/denuncias"
+            element={
+              <ProtectedRoute>
+                <AdministrativeAccessGuard
+                  capability="moderation.reports.read"
+                  fallback={<AdministrativeAccessDenied />}
+                  loadingFallback={
+                    <main className="mx-auto w-full max-w-3xl px-4 py-8">
+                      <Skeleton className="h-32 w-full" />
+                    </main>
+                  }
+                >
+                  <AdministrativeReportsPage />
+                </AdministrativeAccessGuard>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/administracion/incidentes"
+            element={
+              <ProtectedRoute>
+                <AdministrativeAccessGuard capability="operations.incidents.manage" fallback={<AdministrativeAccessDenied />}>
+                  <OperationalIncidentsPage />
+                </AdministrativeAccessGuard>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/administracion/operaciones/estado"
+            element={
+              <ProtectedRoute>
+                <AdministrativeAccessGuard capability="operations.status.read" fallback={<AdministrativeAccessDenied />}>
+                  <OperationalStatusPage />
+                </AdministrativeAccessGuard>
               </ProtectedRoute>
             }
           />

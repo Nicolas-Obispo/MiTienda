@@ -28,6 +28,8 @@ class ContenidoDenuncia(Base):
     motivo = Column(String(80), nullable=False)
     detalle = Column(String(500), nullable=True)
     estado = Column(String(40), nullable=False)
+    version = Column(Integer, nullable=False, server_default="1")
+    resuelta_en = Column(DateTime(timezone=True), nullable=True)
     creado_en = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -48,5 +50,11 @@ class ContenidoDenuncia(Base):
             "ix_contenido_denuncias_recurso",
             "recurso_tipo",
             "recurso_id",
+        ),
+        Index(
+            "ix_contenido_denuncias_estado_creado_id",
+            "estado",
+            "creado_en",
+            "id",
         ),
     )

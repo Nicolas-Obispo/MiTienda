@@ -5,5 +5,7 @@ export async function fetchMyAdministrativeCapabilities(tokenJWT) {
     throw new Error("Falta token para consultar capacidades administrativas");
   }
 
-  return httpGet("/administracion/me/capacidades", tokenJWT);
+  return httpGet("/administracion/me/capacidades", tokenJWT, {
+    cache: "no-store",
+  });
 }

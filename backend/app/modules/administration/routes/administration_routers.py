@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from app.core.auth import obtener_usuario_actual
@@ -19,9 +19,11 @@ router = APIRouter(prefix="/administracion", tags=["Administracion"])
     response_model=MyAdministrativeCapabilitiesResponse,
 )
 def get_my_administrative_capabilities(
+    response: Response,
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
+    response.headers["Cache-Control"] = "no-store, private"
     capacidades = list_active_administrative_capabilities(
         db,
         usuario_id=usuario_actual.id,

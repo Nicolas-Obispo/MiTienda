@@ -24,7 +24,8 @@ const queryKeys = fs.readFileSync(
 );
 
 test("administrative service consumes the backend contract through shared HTTP", () => {
-  assert.match(service, /httpGet\("\/administracion\/me\/capacidades", tokenJWT\)/);
+  assert.match(service, /httpGet\("\/administracion\/me\/capacidades", tokenJWT, \{/);
+  assert.match(service, /cache:\s*"no-store"/);
   assert.doesNotMatch(service, /fetch\s*\(/);
 });
 
@@ -32,6 +33,10 @@ test("administrative query is scoped to the authenticated identity", () => {
   assert.match(hook, /queryKeys\.administration\.capabilities\(usuario\?\.id\)/);
   assert.match(hook, /estaAutenticado && accessToken && usuario\?\.id/);
   assert.match(queryKeys, /capabilities:\s*\(usuarioId\)/);
+});
+
+test("administrative capabilities opt into mount, focus and reconnect revalidation", () => {
+  assert.match(hook, /ADMINISTRATIVE_CAPABILITIES_QUERY_RUNTIME_OPTIONS/);
 });
 
 test("frontend guard consumes capabilities without inferring modo_activo", () => {

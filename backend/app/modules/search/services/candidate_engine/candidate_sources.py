@@ -285,7 +285,7 @@ class ComercioNombreCandidateSource:
 
         rows = (
             db.query(Comercio.id, Comercio.nombre)
-            .filter(Comercio.activo == True)
+            .filter(Comercio.activo == True, Comercio.moderation_hidden.is_(False))
             .filter(Comercio.nombre.ilike(like))
             .order_by(Comercio.id.desc())
             .limit(limit)
@@ -448,7 +448,7 @@ class RubroCandidateSource:
                 Rubro.nombre,
             )
             .join(Rubro, Rubro.id == Comercio.rubro_id)
-            .filter(Comercio.activo == True)
+            .filter(Comercio.activo == True, Comercio.moderation_hidden.is_(False))
             .filter(Comercio.rubro_id.in_(rubro_ids))
             .order_by(Comercio.id.desc())
             .limit(limit)
@@ -547,7 +547,9 @@ class PublicacionCandidateSource:
             .join(Comercio, Publicacion.comercio_id == Comercio.id)
             .filter(
                 Publicacion.is_activa.is_(True),
+                Publicacion.moderation_hidden.is_(False),
                 Comercio.activo.is_(True),
+                Comercio.moderation_hidden.is_(False),
             )
             .filter(
                 or_(

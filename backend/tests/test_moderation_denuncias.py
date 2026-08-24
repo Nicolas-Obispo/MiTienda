@@ -34,6 +34,7 @@ from app.modules.moderation.schemas.contenido_denuncias_schemas import (
 from app.modules.moderation.services.contenido_denuncias_services import (
     crear_denuncia_contenido,
 )
+from app.modules.notifications.models.operational_notification_outbox_models import OperationalNotificationOutbox
 from app.modules.posts.models.publicaciones_models import Publicacion
 from app.modules.products.models.rubros_models import Rubro
 from app.modules.products.models.secciones_models import Seccion
@@ -223,6 +224,12 @@ class ModerationDenunciasTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json()["recurso_tipo"], RECURSO_TIPO_COMERCIO)
+        db = TestingSessionLocal()
+        notice = db.query(OperationalNotificationOutbox).one()
+        self.assertEqual(notice.deduplication_key, f"moderation.report.created:{response.json()['id']}")
+        self.assertNotIn("usuario", notice.payload_json)
+        self.assertNotIn("detalle", notice.payload_json)
+        db.close()
 
     def test_publicacion_activa_crea_denuncia(self):
         db = TestingSessionLocal()

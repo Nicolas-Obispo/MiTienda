@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import math
+from datetime import datetime, timezone
 
 from sqlalchemy import case, or_
 from sqlalchemy.exc import OperationalError, ProgrammingError
@@ -68,6 +69,36 @@ class RubroInvalidoError(ValueError):
     pass
 
 
+def obtener_comercio_para_moderacion(db: Session, comercio_id: int) -> Comercio | None:
+    return db.query(Comercio).filter(Comercio.id == comercio_id).with_for_update().first()
+
+
+def obtener_comercio_para_inspeccion_operativa(db: Session, comercio_id: int) -> dict | None:
+    comercio = db.query(Comercio).filter(Comercio.id == comercio_id).first()
+    if comercio is None:
+        return None
+    return {
+        "lifecycle": "active" if comercio.activo else "inactive",
+        "moderation_hidden": bool(comercio.moderation_hidden),
+        "publicly_eligible": bool(comercio.activo and not comercio.moderation_hidden),
+        "media_reference": comercio.portada_url,
+    }
+
+
+def aplicar_ocultamiento_moderacion_comercio(comercio: Comercio, decision_id: int) -> None:
+    comercio.moderation_hidden = True
+    comercio.moderation_revision += 1
+    comercio.moderation_hidden_by_decision_id = decision_id
+    comercio.moderation_updated_at = datetime.now(timezone.utc)
+
+
+def restaurar_ocultamiento_moderacion_comercio(comercio: Comercio) -> None:
+    comercio.moderation_hidden = False
+    comercio.moderation_revision += 1
+    comercio.moderation_hidden_by_decision_id = None
+    comercio.moderation_updated_at = datetime.now(timezone.utc)
+
+
 class ComercioNoVisibleError(ValueError):
     pass
 
@@ -81,6 +112,7 @@ def obtener_comercio_activo_o_error(
         .filter(
             Comercio.id == comercio_id,
             Comercio.activo.is_(True),
+            Comercio.moderation_hidden.is_(False),
         )
         .first()
     )
@@ -747,7 +779,7 @@ def obtener_comercio_por_id(
     comercio = (
         db.query(Comercio)
         .options(selectinload(Comercio.rubro))
-        .filter(Comercio.id == comercio_id, Comercio.activo == True)
+        .filter(Comercio.id == comercio_id, Comercio.activo == True, Comercio.moderation_hidden.is_(False))
         .first()
     )
     if comercio:
@@ -772,7 +804,7 @@ def listar_comercios(
     query = (
         db.query(Comercio)
         .options(selectinload(Comercio.rubro))
-        .filter(Comercio.activo == True)
+        .filter(Comercio.activo == True, Comercio.moderation_hidden.is_(False))
     )
 
     if ciudad:
@@ -862,7 +894,7 @@ def listar_comercios_activos(
     query = (
         db.query(Comercio)
         .options(selectinload(Comercio.rubro))
-        .filter(Comercio.activo == True)
+        .filter(Comercio.activo == True, Comercio.moderation_hidden.is_(False))
     )
 
     # Normalizamos q (si viene vacía, tratamos como cadena vacía)
@@ -1068,7 +1100,7 @@ def listar_comercios_activos(
             comercio_id
             for (comercio_id,) in (
                 db.query(Publicacion.comercio_id)
-                .filter(Publicacion.is_activa.is_(True))
+                .filter(Publicacion.is_activa.is_(True), Publicacion.moderation_hidden.is_(False))
                 .filter(
                     or_(
                         Publicacion.titulo.ilike(like_publicaciones),
@@ -1152,7 +1184,7 @@ def listar_comercios_activos(
         comercios_con_historias = set(
             row[0] for row in (
                 db.query(Historia.comercio_id)
-                .filter(Historia.comercio_id.in_(comercio_ids))
+                .filter(Historia.comercio_id.in_(comercio_ids), Historia.is_activa.is_(True), Historia.moderation_hidden.is_(False))
                 .distinct()
                 .all()
             )
@@ -1161,7 +1193,7 @@ def listar_comercios_activos(
         comercios_con_publicaciones = set(
             row[0] for row in (
                 db.query(Publicacion.comercio_id)
-                .filter(Publicacion.comercio_id.in_(comercio_ids))
+                .filter(Publicacion.comercio_id.in_(comercio_ids), Publicacion.is_activa.is_(True), Publicacion.moderation_hidden.is_(False))
                 .distinct()
                 .all()
             )
@@ -1292,7 +1324,7 @@ def listar_comercios_activos(
             comercio_id
             for (comercio_id,) in (
                 db.query(Publicacion.comercio_id)
-                .filter(Publicacion.is_activa.is_(True))
+                .filter(Publicacion.is_activa.is_(True), Publicacion.moderation_hidden.is_(False))
                 .filter(
                     or_(
                         Publicacion.titulo.ilike(like),
@@ -1343,7 +1375,7 @@ def listar_comercios_activos(
         comercios_con_historias = set(
             row[0] for row in (
                 db.query(Historia.comercio_id)
-                .filter(Historia.comercio_id.in_(comercio_ids))
+                .filter(Historia.comercio_id.in_(comercio_ids), Historia.is_activa.is_(True), Historia.moderation_hidden.is_(False))
                 .distinct()
                 .all()
             )
@@ -1352,7 +1384,7 @@ def listar_comercios_activos(
         comercios_con_publicaciones = set(
             row[0] for row in (
                 db.query(Publicacion.comercio_id)
-                .filter(Publicacion.comercio_id.in_(comercio_ids))
+                .filter(Publicacion.comercio_id.in_(comercio_ids), Publicacion.is_activa.is_(True), Publicacion.moderation_hidden.is_(False))
                 .distinct()
                 .all()
             )

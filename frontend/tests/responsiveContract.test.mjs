@@ -35,6 +35,8 @@ test("ActiveLayer mantiene contenido alto accesible dentro del viewport", () => 
 
 test("MainLayout controla overflow de navegacion sin ocultarlo globalmente", () => {
   assert.match(mainLayout, /min-w-0 flex-1 items-center gap-2 overflow-x-auto/);
+  assert.match(mainLayout, /flex-wrap items-center[\s\S]*sm:flex-nowrap/);
+  assert.match(mainLayout, /order-3 flex min-w-0 w-full[\s\S]*sm:order-none sm:w-auto sm:shrink-0/);
   assert.doesNotMatch(mainLayout, /overflow-x-hidden/);
 });
 

@@ -1,0 +1,1 @@
+"""Rutas administrativas de incidentes."""

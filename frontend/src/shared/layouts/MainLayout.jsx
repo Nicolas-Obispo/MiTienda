@@ -6,6 +6,7 @@ import {
 import { useAuth } from "@features/auth";
 import SessionInactivityGuard from "@features/auth/components/SessionInactivityGuard";
 import ConnectivityNotice from "@shared/components/ConnectivityNotice";
+import { AdministrativeNavigationLink } from "@features/administration";
 
 export default function MainLayout() {
   const { estaAutenticado } = useAuth();
@@ -23,7 +24,7 @@ export default function MainLayout() {
 
       {/* HEADER */}
       <header className="sticky top-0 z-30 border-b border-border bg-surface backdrop-blur">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-3 py-2 sm:gap-0 sm:px-4 sm:py-3">
+        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 px-3 py-2 sm:flex-nowrap sm:gap-0 sm:px-4 sm:py-3">
           {/* LOGO */}
           <Link
             to="/"
@@ -136,7 +137,9 @@ export default function MainLayout() {
           </nav>
 
           {/* SESIÓN */}
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <div className={estaAutenticado
+            ? "order-3 flex min-w-0 w-full items-center justify-end border-t border-border-subtle pt-2 sm:order-none sm:w-auto sm:shrink-0 sm:border-0 sm:pt-0"
+            : "flex shrink-0 items-center gap-2 sm:gap-3"}>
             {!estaAutenticado && (
               <Link
                 to="/login"
@@ -145,6 +148,8 @@ export default function MainLayout() {
                 Ingresar
               </Link>
             )}
+
+            {estaAutenticado && <AdministrativeNavigationLink />}
           </div>
         </div>
       </header>

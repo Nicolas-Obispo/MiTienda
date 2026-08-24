@@ -89,6 +89,10 @@ class Comercio(Base):
     # Estado
     # -----------------------------
     activo = Column(Boolean, default=True)
+    moderation_hidden = Column(Boolean, nullable=False, default=False, server_default="0")
+    moderation_revision = Column(Integer, nullable=False, default=0, server_default="0")
+    moderation_hidden_by_decision_id = Column(Integer, ForeignKey("moderation_decisions.id", ondelete="RESTRICT"), nullable=True)
+    moderation_updated_at = Column(DateTime(timezone=True), nullable=True)
 
     # -----------------------------
     # Timestamps

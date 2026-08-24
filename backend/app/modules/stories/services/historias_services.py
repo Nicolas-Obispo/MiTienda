@@ -11,11 +11,12 @@ Reglas:
 - ETAPA 44: Resolver estado vista_by_me en backend (estado real por usuario)
 """
 
+from datetime import datetime, timezone
 from typing import List, Optional
 from urllib.parse import urlparse
 
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.modules.stories.models.historias_models import Historia
 from app.modules.stories.models.historias_vistas_models import HistoriaVista
@@ -33,6 +34,46 @@ LOCAL_UPLOAD_HOSTS = {
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 }
+
+
+def obtener_historia_para_moderacion(db: Session, historia_id: int) -> Historia | None:
+    return db.query(Historia).filter(Historia.id == historia_id).with_for_update().first()
+
+
+def obtener_historia_para_inspeccion_operativa(db: Session, historia_id: int) -> dict | None:
+    historia = (
+        db.query(Historia)
+        .options(joinedload(Historia.comercio))
+        .filter(Historia.id == historia_id)
+        .first()
+    )
+    if historia is None:
+        return None
+    comercio_visible = bool(
+        historia.comercio
+        and historia.comercio.activo
+        and not historia.comercio.moderation_hidden
+    )
+    return {
+        "lifecycle": "active" if historia.is_activa else "inactive",
+        "moderation_hidden": bool(historia.moderation_hidden),
+        "publicly_eligible": bool(historia.is_activa and not historia.moderation_hidden and comercio_visible),
+        "media_reference": historia.media_url,
+    }
+
+
+def aplicar_ocultamiento_moderacion_historia(historia: Historia, decision_id: int) -> None:
+    historia.moderation_hidden = True
+    historia.moderation_revision += 1
+    historia.moderation_hidden_by_decision_id = decision_id
+    historia.moderation_updated_at = datetime.now(timezone.utc)
+
+
+def restaurar_ocultamiento_moderacion_historia(historia: Historia) -> None:
+    historia.moderation_hidden = False
+    historia.moderation_revision += 1
+    historia.moderation_hidden_by_decision_id = None
+    historia.moderation_updated_at = datetime.now(timezone.utc)
 
 
 class HistoriaNoVisibleError(ValueError):
@@ -54,7 +95,9 @@ def obtener_historia_visible_o_error(
         .filter(
             Historia.id == historia_id,
             Historia.is_activa.is_(True),
+            Historia.moderation_hidden.is_(False),
             Comercio.activo.is_(True),
+            Comercio.moderation_hidden.is_(False),
         )
         .first()
     )
@@ -161,7 +204,9 @@ def listar_historias_activas_por_comercio(
         .filter(
             Historia.comercio_id == comercio_id,
             Historia.is_activa.is_(True),
+            Historia.moderation_hidden.is_(False),
             Comercio.activo.is_(True),
+            Comercio.moderation_hidden.is_(False),
         )
         .order_by(Historia.created_at.desc())
         .all()
@@ -227,7 +272,9 @@ def listar_historias_bar(
         .join(Historia, Historia.comercio_id == Comercio.id)
         .filter(
             Comercio.activo.is_(True),
+            Comercio.moderation_hidden.is_(False),
             Historia.is_activa.is_(True),
+            Historia.moderation_hidden.is_(False),
         )
         .distinct()
         .all()
@@ -243,6 +290,7 @@ def listar_historias_bar(
         .filter(
             Historia.comercio_id.in_(comercio_ids),
             Historia.is_activa.is_(True),
+            Historia.moderation_hidden.is_(False),
         )
         .order_by(Historia.created_at.desc())
         .all()

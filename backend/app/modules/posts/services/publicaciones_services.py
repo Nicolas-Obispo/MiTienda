@@ -16,6 +16,7 @@ ETAPA 57:
 - Se guarda imagen_url al crear publicaciones
 """
 
+from datetime import datetime, timezone
 from typing import List, Dict, Optional
 
 from sqlalchemy.orm import Session, joinedload
@@ -28,6 +29,46 @@ from app.modules.spaces.services.comercios_ownership_services import (
 )
 from app.modules.social.models.publicaciones_guardadas_models import PublicacionGuardada
 from app.modules.social.models.likes_publicaciones_models import LikePublicacion
+
+
+def obtener_publicacion_para_moderacion(db: Session, publicacion_id: int) -> Publicacion | None:
+    return db.query(Publicacion).filter(Publicacion.id == publicacion_id).with_for_update().first()
+
+
+def obtener_publicacion_para_inspeccion_operativa(db: Session, publicacion_id: int) -> dict | None:
+    publicacion = (
+        db.query(Publicacion)
+        .options(joinedload(Publicacion.comercio))
+        .filter(Publicacion.id == publicacion_id)
+        .first()
+    )
+    if publicacion is None:
+        return None
+    comercio_visible = bool(
+        publicacion.comercio
+        and publicacion.comercio.activo
+        and not publicacion.comercio.moderation_hidden
+    )
+    return {
+        "lifecycle": "active" if publicacion.is_activa else "inactive",
+        "moderation_hidden": bool(publicacion.moderation_hidden),
+        "publicly_eligible": bool(publicacion.is_activa and not publicacion.moderation_hidden and comercio_visible),
+        "media_reference": publicacion.imagen_url,
+    }
+
+
+def aplicar_ocultamiento_moderacion_publicacion(publicacion: Publicacion, decision_id: int) -> None:
+    publicacion.moderation_hidden = True
+    publicacion.moderation_revision += 1
+    publicacion.moderation_hidden_by_decision_id = decision_id
+    publicacion.moderation_updated_at = datetime.now(timezone.utc)
+
+
+def restaurar_ocultamiento_moderacion_publicacion(publicacion: Publicacion) -> None:
+    publicacion.moderation_hidden = False
+    publicacion.moderation_revision += 1
+    publicacion.moderation_hidden_by_decision_id = None
+    publicacion.moderation_updated_at = datetime.now(timezone.utc)
 from app.modules.posts.schemas.publicaciones_schemas import PublicacionCreate
 from app.modules.users.models.usuarios_models import Usuario
 
@@ -51,7 +92,9 @@ def obtener_publicacion_visible_o_error(
         .filter(
             Publicacion.id == publicacion_id,
             Publicacion.is_activa.is_(True),
+            Publicacion.moderation_hidden.is_(False),
             Comercio.activo.is_(True),
+            Comercio.moderation_hidden.is_(False),
         )
         .first()
     )
@@ -128,7 +171,9 @@ def listar_publicaciones_activas(
         .options(joinedload(Publicacion.comercio))
         .filter(
             Publicacion.is_activa.is_(True),
+            Publicacion.moderation_hidden.is_(False),
             Comercio.activo.is_(True),
+            Comercio.moderation_hidden.is_(False),
         )
     )
 
@@ -177,6 +222,7 @@ def listar_publicaciones_por_comercio(
         .filter(
             Publicacion.comercio_id == comercio_id,
             Publicacion.is_activa.is_(True),
+            Publicacion.moderation_hidden.is_(False),
         )
         .order_by(Publicacion.created_at.desc())
         .all()
@@ -207,7 +253,9 @@ def obtener_publicacion_por_id_y_sumar_view(
         .filter(
             Publicacion.id == publicacion_id,
             Publicacion.is_activa.is_(True),
+            Publicacion.moderation_hidden.is_(False),
             Comercio.activo.is_(True),
+            Comercio.moderation_hidden.is_(False),
         )
         .first()
     )
@@ -232,7 +280,9 @@ def obtener_publicacion_por_id_y_sumar_view(
         .filter(
             Publicacion.id == publicacion_id,
             Publicacion.is_activa.is_(True),
+            Publicacion.moderation_hidden.is_(False),
             Comercio.activo.is_(True),
+            Comercio.moderation_hidden.is_(False),
         )
         .first()
     )

@@ -17,7 +17,9 @@ plantillas, reintentos, webhooks o capacidades comerciales asociadas a canales.
 
 ## Estado
 
-Diseno aprobado, no implementado.
+Diseno transversal aprobado. El canal operativo administrativo de ETAPA 97.6
+esta implementado; las notificaciones de usuario, Agenda y Reservas continúan
+según sus etapas owner futuras.
 
 Este documento nace durante ETAPA 88 - Agenda y Reservas, luego de Agenda
 Core, integracion FeedGo-Agenda, Agenda privada y Agenda general implementadas
@@ -35,7 +37,8 @@ Roadmap vigente:
   global, preferencias, integraciones locales e inteligencia futura de
   notificaciones.
 
-No implementa:
+Fuera del canal operativo administrativo acotado de ETAPA 97.6, este documento
+no implementa todavía:
 
 - backend;
 - frontend;
@@ -426,20 +429,66 @@ Los recordatorios de Agenda y Reservas no deben asumirse como mensajes libres.
 
 ## Programacion temporal
 
-La auditoria de codigo no encontro scheduler, worker, cola, Redis, Celery, RQ,
-APScheduler ni proveedor equivalente.
+ETAPA 88 no incorporo scheduler, worker, cola, Redis, Celery, RQ ni APScheduler
+para Agenda o notificaciones de usuario. Ese limite historico permanece para
+esos dominios: no deben enviar desde requests frontend ni depender de que el
+usuario mantenga una pantalla abierta.
 
-Por lo tanto:
+ETAPA 97.6 incorpora una excepcion acotada y productiva para correo operativo
+administrativo. Utiliza una outbox durable y un worker dedicado que continúa
+dentro del monolito modular, pero se ejecuta como segundo proceso supervisado.
+No es un microservicio, no posee negocio de Moderacion o Incidentes y no
+reemplaza las futuras etapas generales de Notificaciones y Comunicaciones.
 
-- no se debe prometer entrega externa exacta en segundo plano durante ETAPA 88;
-- no se deben enviar recordatorios desde requests frontend;
-- no se debe depender de que el usuario tenga abierta la Agenda para ejecutar
-  trabajos diferidos;
-- reprogramaciones y cancelaciones deberan invalidar notificaciones o entregas
-  pendientes cuando exista infraestructura para ello.
+### Canal operativo automatico
 
-El futuro MVP local de notificaciones debe limitarse a lo que pueda sostenerse
-sin inventar infraestructura externa inexistente.
+Los dominios confirman su cambio y la intencion notificable en una misma
+transaccion. La cadena permanece:
+
+`dominio -> Notificaciones -> operational_notification_outbox -> Comunicaciones -> EmailProvider`.
+
+La outbox conserva evento, agregado, payload minimo, fingerprint, clave de
+deduplicacion estable, estado, intentos y evidencia generica de entrega. El
+worker:
+
+- reclama lotes con `FOR UPDATE SKIP LOCKED` sobre MySQL;
+- persiste `processing`, un `claimed_by` opaco y un lease durable;
+- confirma el claim antes de invocar al provider, evitando locks de DB durante
+  la red;
+- recupera leases vencidos despues de reinicios;
+- aplica backoff y maximo de intentos configurables;
+- conserva la misma idempotency key en todos los intentos;
+- admite supresion explicita y auditada sin eliminar filas;
+- deja de reclamar filas nuevas durante el apagado controlado.
+
+La deduplicacion de FeedGo evita intenciones repetidas. La entrega efectiva
+ante una caida entre provider y persistencia depende además de la idempotencia
+del adapter seleccionado; no se declara `exactly once` distribuido.
+
+Canal y dispatcher poseen gates separados y permanecen deshabilitados por
+defecto. Activacion, lote, polling, lease, reintentos, destinatario, remitente y
+provider se resuelven exclusivamente por entorno. El preflight bloquea esquema
+incompleto, configuracion invalida o backlog anterior no reconciliado.
+
+El arranque local reutiliza `backend/activate.ps1`: `./backend/activate.ps1 -Run`
+inicia, desde un unico comando, la API y el worker como procesos separados
+bajo un supervisor comun. Un fallo parcial detiene el proceso hermano y el
+apagado controlado espera ambos procesos para no dejar huerfanos. Si los gates
+estan deshabilitados, inicia solamente la API y Estado Operativo informa el
+worker como `disabled`. Los defaults del codigo permanecen en `false`; un
+`.env` local expresamente autorizado puede conservar ambos gates en `true`.
+
+Estado Operativo expone unicamente `active`, `stopped` o `disabled` a partir de
+un heartbeat local y volatil. No publica PID, identidad del claim, rutas,
+configuracion ni datos del provider, y no presenta ese dato como estado global.
+En produccion API y worker deben ejecutarse y supervisarse como dos procesos
+separados. El worker no se incorpora al lifecycle de FastAPI.
+
+`EmailProvider` es el unico contrato consumido por Comunicaciones. Resend es el
+adapter seleccionado actualmente para salida, sin adquirir ownership ni filtrar
+estructuras propias hacia dominio u outbox. Puede sustituirse por SMTP, Google
+Workspace u otro adapter compatible sin modificar los productores ni la fuente
+durable.
 
 ## Eventos notificables
 

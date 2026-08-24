@@ -29,3 +29,25 @@ MOTIVOS_DENUNCIA = {
 }
 
 ESTADO_DENUNCIA_RECIBIDA = "recibida"
+ESTADO_DENUNCIA_RESUELTA = "resuelta"
+ESTADOS_DENUNCIA = {ESTADO_DENUNCIA_RECIBIDA, ESTADO_DENUNCIA_RESUELTA}
+
+ACCION_RESOLVER_SIN_ACCION = "resolver_sin_accion"
+ACCION_OCULTAR_RECURSO = "ocultar_recurso"
+ACCION_RESTAURAR_RECURSO = "restaurar_recurso"
+ACCIONES_MODERACION = {
+    ACCION_RESOLVER_SIN_ACCION,
+    ACCION_OCULTAR_RECURSO,
+    ACCION_RESTAURAR_RECURSO,
+}
+
+RESULTADO_APLICADO = "aplicado"
+RESULTADO_SIN_CAMBIO = "sin_cambio"
+
+MOTIVOS_DECISION_MODERACION = {
+    "sin_incumplimiento",
+    "incumplimiento_confirmado",
+    "contenido_no_disponible",
+    "correccion_operativa",
+    "otro",
+}

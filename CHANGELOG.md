@@ -9,6 +9,145 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 97 - Administracion Operativa Minima
+
+**Estado:** Cerrada; ETAPA 98 pendiente y no iniciada
+
+- Se cierra formalmente ETAPA 97 con 97.1 a 97.6 cerradas: autorizacion
+  administrativa persistente, bandeja read-only de denuncias, decisiones de
+  moderacion trazables, gestion minima de incidentes, estado operativo seguro
+  y gate integral automatizado/manual.
+- El launcher integrado quedo aprobado con API y worker dedicado como procesos
+  separados. La denuncia real 6 paso exactamente una vez de `pending` a
+  `sent`, con `attempt_count=1`, sin duplicados y con recepcion humana
+  confirmada en Operaciones.
+- El worker registro `active -> stopped`, el apagado fue limpio, no quedaron
+  procesos huerfanos y los gates de canal y dispatcher fueron restaurados a
+  `false`.
+- Gate minimo final: backend 430 pruebas correctas (1 omitida), frontend
+  330/330, `compileall` correcto, lint sin errores (4 advertencias historicas)
+  y build productivo/PWA correcto. Configuracion y evidencia operativa quedaron
+  sanitizadas, sin procesos activos ni secretos versionables; documentacion y
+  `git diff --check` quedaron correctos.
+- ETAPA 98 - Correccion y Pulido Visual del Frontend queda como siguiente etapa
+  oficial, pendiente y no iniciada.
+
+## ETAPA 97.6 - Gate integral
+
+**Estado:** Cerrada; ETAPA 97 permanece en curso
+
+- Se consolida la validacion integral de autorizacion y revocacion,
+  confidencialidad, trazabilidad append-only, concurrencia, idempotencia,
+  migraciones, visibilidad publica, incidentes y estado operativo.
+- La matriz manual queda aprobada para portada administrativa, bandeja de
+  denuncias, decisiones de moderacion, incidentes, estado operativo y rechazo
+  422 sin persistencia; tambien quedan aprobados lenguaje, navegacion, foco,
+  guia interna y responsive movil/escritorio.
+- El canal operativo automatico conserva la separacion
+  `Dominio -> Notificaciones -> Comunicaciones -> EmailProvider`, outbox
+  durable, worker dedicado, reintentos acotados y provider intercambiable. La
+  entrega real controlada fue confirmada una sola vez y sin duplicados; canal y
+  dispatcher permanecen deshabilitados por defecto.
+- Validacion final: backend 414 ejecutados sin fallos (1 omitido), concurrencia MySQL real 9/9
+  sobre `mitienda_stage97_test`, frontend 329/329, worker/canal 37/37,
+  compileall correcto, lint sin errores, build productivo/PWA correcto,
+  Playwright 30/30, esquema fisico y migraciones correctos, sin firmas de
+  secretos versionables y `git diff --check` correcto.
+- La auditoria de tests y residuos confirma `backend/tests` como ubicacion
+  canonica, sin duplicados exactos ni dependencia accidental de la DB normal.
+  No queda otra subetapa funcional planificada; ETAPA 97 requiere un cierre
+  formal posterior y no se cierra en este hito.
+
+## ETAPA 97.5 - Operacion segura de contratos existentes
+
+**Estado:** Cerrada; ETAPA 97 permanece en curso; 97.6 pendiente y no iniciada
+
+- Se incorpora `GET /administracion/operaciones/estado`, protegido por
+  `operations.status.read`, como composicion segura de Health, agregados
+  allowlisted, alertas sanitizadas y evidencia de backup/restore.
+- La respuesta declara expresamente alcance local al proceso, volatil, no
+  historico y no global; no afirma freshness, RPO ni estado general del
+  deployment.
+- Se incorpora inspeccion puntual read-only de Comercio, Publicacion e Historia
+  mediante sus services propietarios, sin exponer URL, nombre de archivo, path,
+  owner o payload.
+- Los assets locales se clasifican sin barrer el filesystem y las URLs externas
+  quedan `not_verified` sin realizar requests de red.
+- La superficie frontend no contiene graficos ni acciones destructivas. La
+  apertura de incidentes reutiliza el flujo existente y permanece condicionada
+  a `operations.incidents.manage`.
+- No se agregan modelos, migraciones, endpoints de escritura, backup/restore
+  desde UI ni cambios en Observabilidad o Recovery.
+- Validacion: backend 365/365, suite especifica 35/35, frontend 302/302,
+  contrato frontend 8/8, schema 31/31 sin diferencias, lint sin errores, build
+  productivo/PWA correcto y `git diff --check` correcto.
+
+## ETAPA 97.4 - Gestion minima de incidentes
+
+**Estado:** Cerrada; ETAPA 97 permanece en curso; 97.5 pendiente y no iniciada
+
+- Se incorpora un expediente durable de incidentes operativos con identificador
+  opaco, severidad SEV1-SEV4, owner, plazos configurables, lifecycle controlado
+  y cronologia append-only.
+- Apertura y acciones quedan protegidas por `operations.incidents.manage`, con
+  concurrencia por version esperada, transacciones e idempotencia por clave y
+  fingerprint.
+- La revision final bloquea riesgos residuales `high` o `critical`; riesgo
+  `medium` exige owner y fecha de revision. Un mismo operador puede abrir,
+  resolver y revisar, incluida SEV1, con atribucion durable.
+- La evaluacion legal permite owner pendiente y no inventa identidades. Los
+  plazos son operativos y no se presentan como obligaciones regulatorias.
+- La evidencia se limita a referencias opacas de tipos controlados; no se
+  almacenan archivos, URLs, rutas, secretos ni payloads. No existe eliminacion
+  automatica hasta aprobar una politica de retencion.
+- Se incorpora UI administrativa minima para apertura, listado, detalle,
+  cronologia y acciones, sin dashboard, automatizacion ni integraciones
+  externas y sin modificar Observabilidad o Recovery.
+- Validacion: backend 330/330, escenarios especificos 30/30, frontend 294/294,
+  migracion repetida correcta, paridad completa de esquema, lint sin errores,
+  build productivo/PWA correcto y `git diff --check` correcto.
+
+## ETAPA 97.3 - Decision de moderacion y trazabilidad
+
+**Estado:** Cerrada; ETAPA 97 permanece en curso
+
+- Se incorporan decisiones de moderacion append-only protegidas por
+  `moderation.decisions.write`, con operador, fecha, motivo, evidencia y
+  resultado trazables.
+- La concurrencia se controla mediante version de denuncia y revision de
+  moderacion del recurso; ocultar registra la decision causal y restaurar exige
+  referenciarla sin poder revertir un ocultamiento posterior.
+- La idempotencia combina clave y fingerprint, y las acciones se ejecutan en
+  transacciones con bloqueos mediante los services propietarios de Comercio,
+  Publicacion e Historia.
+- `moderation_hidden` se integra en los consumidores publicos sin alterar
+  `activo` ni `is_activa`; restaurar visibilidad de moderacion tampoco reactiva
+  contenido desactivado por su owner.
+- Se incorporan controles frontend minimos sin sanciones, apelaciones,
+  asignaciones ni automatizacion. ETAPA 97.4 no fue iniciada.
+- Validacion: backend 299/299, suite especifica de decisiones 22/22, migracion
+  aditiva e idempotente y paridad completa entre metadata y esquema fisico.
+
+## ETAPA 97.2 - Bandeja y consulta de denuncias
+
+**Estado:** Cerrada; ETAPA 97 permanece en curso
+
+- Se incorporan listado y detalle administrativos read-only protegidos en
+  backend por `moderation.reports.read`.
+- La consulta utiliza paginacion keyset estable, filtros controlados e indice
+  compuesto con evolucion de esquema aditiva e idempotente.
+- Los contratos minimizan totalmente al denunciante y presentan solamente la
+  disponibilidad actual del recurso, sin atribuirle valor de evidencia
+  historica ni inventar rutas publicas inexistentes.
+- Se incorpora una bandeja frontend de solo lectura con filtros, detalle,
+  carga incremental, estados de carga/vacio/error y cancelacion de requests
+  obsoletos.
+- No se implementan decisiones, cambios de estado, asignaciones, sanciones,
+  ocultamiento ni acciones sobre recursos. ETAPA 97.3 permanece pendiente y no
+  iniciada.
+- Validacion: backend 277/277, frontend 285/285, compileall correcto, lint sin
+  errores, build productivo/PWA correcto y `git diff --check` correcto.
+
 ## ETAPA 97.1 - Contrato administrativo y autorizacion
 
 **Estado:** Cerrada; ETAPA 97 permanece en curso

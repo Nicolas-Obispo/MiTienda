@@ -157,6 +157,7 @@ class AdministrativeAuthorizationTests(unittest.TestCase):
                 "capacidades": [MODERATION_REPORTS_READ],
             },
         )
+        self.assertEqual(response.headers["cache-control"], "no-store, private")
 
     def test_guard_returns_401_for_anonymous_user(self):
         response = client.get("/administration-test/moderation")
@@ -224,6 +225,26 @@ class AdministrativeAuthorizationTests(unittest.TestCase):
             ).status_code,
             403,
         )
+
+    def test_capabilities_endpoint_reflects_revocation_with_same_token(self):
+        self._create_user()
+        headers = self._headers()
+        self._change(OPERATIONS_STATUS_READ, "grant")
+        granted = client.get(
+            "/administracion/me/capacidades",
+            headers=headers,
+        )
+        self.assertEqual(granted.status_code, 200)
+        self.assertIn(OPERATIONS_STATUS_READ, granted.json()["capacidades"])
+
+        self._change(OPERATIONS_STATUS_READ, "revoke")
+        revoked = client.get(
+            "/administracion/me/capacidades",
+            headers=headers,
+        )
+        self.assertEqual(revoked.status_code, 200)
+        self.assertNotIn(OPERATIONS_STATUS_READ, revoked.json()["capacidades"])
+        self.assertEqual(revoked.headers["cache-control"], "no-store, private")
 
     def test_bootstrap_events_are_audited_and_idempotent(self):
         self._create_user()

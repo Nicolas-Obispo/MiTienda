@@ -83,10 +83,24 @@ def import_all_models() -> None:
     from app.modules.moderation.models.contenido_denuncias_models import (  # noqa: F401
         ContenidoDenuncia,
     )
+    from app.modules.moderation.models.moderation_decisions_models import (  # noqa: F401
+        ModerationDecision,
+    )
 
     # ADMINISTRATION
     from app.modules.administration.models.administrative_capability_events_models import (  # noqa: F401
         AdministrativeCapabilityEvent,
+    )
+
+    # OPERATIONAL INCIDENTS
+    from app.modules.incidents.models.operational_incidents_models import (  # noqa: F401
+        OperationalIncident,
+        OperationalIncidentEvent,
+    )
+
+    # OPERATIONAL NOTIFICATIONS / COMMUNICATIONS
+    from app.modules.notifications.models.operational_notification_outbox_models import (  # noqa: F401
+        OperationalNotificationOutbox,
     )
 
     # AI

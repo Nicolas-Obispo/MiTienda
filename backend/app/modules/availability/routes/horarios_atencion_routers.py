@@ -78,7 +78,7 @@ def obtener_horarios_atencion_endpoint(
         and comercio.usuario_id == usuario_actual.id
     )
 
-    if not comercio.activo and not es_propietario:
+    if (not comercio.activo or comercio.moderation_hidden) and not es_propietario:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Comercio no encontrado",
