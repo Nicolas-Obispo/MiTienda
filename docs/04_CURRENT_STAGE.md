@@ -555,10 +555,9 @@ Plan restante oficial de ETAPA 95:
   errores, build productivo y `git diff --check` correctos; gates tecnicos y
   documentales satisfechos. ETAPA 95 queda cerrada sin adelantar ETAPA 96;
 
-Etapa vigente:
+Estado de continuidad:
 
-- ETAPA 97 - Administracion Operativa Minima.
-- Estado: cerrada.
+- Ultima etapa cerrada: ETAPA 97 - Administracion Operativa Minima.
 - Siguiente etapa: ETAPA 98 - Correccion y Pulido Visual del Frontend,
   pendiente y no iniciada.
 - 97.1 - Contrato administrativo y autorizacion: cerrada. FeedGo dispone de un
@@ -710,18 +709,19 @@ Etapa vigente:
 
 ## Ultima etapa cerrada
 
-ETAPA 96 - Plataforma Instalable y PWA Enterprise.
+ETAPA 97 - Administracion Operativa Minima.
 
 Estado:
 
-Cerrada tecnica y documentalmente por el gate final de Sprint 96.3.
+Cerrada tecnica y documentalmente con sus subetapas 97.1 a 97.6 cerradas.
 
 Resultado:
 
-La plataforma instalable, el runtime PWA, cache segura de shell, lifecycle,
-actualizacion, offline controlado, reconexion, recovery y harness browser quedan
-cerrados. La infraestructura productiva no posee etapa numerada y el defecto
-multimedia especifico de Historias en iOS/Safari/PWA queda diferido a ETAPA 124.
+Quedaron integradas y validadas la autorizacion administrativa, la consulta y
+decision trazable de denuncias, la gestion minima de incidentes, el estado
+operativo seguro y el canal operativo automatico. ETAPA 98 - Correccion y
+Pulido Visual del Frontend es la siguiente etapa oficial, pendiente y no
+iniciada.
 
 ## Etapa cerrada historica anterior a ETAPA 95
 
