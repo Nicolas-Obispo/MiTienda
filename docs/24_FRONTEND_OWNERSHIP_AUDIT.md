@@ -160,3 +160,24 @@ reabrir Search, Ranking ni el contrato geografico:
 PerfilComercio y Ranking conservan sus owners locales preexistentes donde no
 fueron autorizados cambios adicionales. Este checkpoint no declara resuelta
 toda la deuda historica de ownership ni cierra ETAPA 98.
+
+## Checkpoint de ownership previo a densidad responsive
+
+- `InteraccionButton` conserva handlers, estado, ARIA, animaciones y Liquid;
+  solo el token `text-primary` gobierna ahora labels e iconos inactivos por
+  tema. Los simbolos activos continúan en el owner compartido de iconos
+  sociales consumido tambien por las metricas.
+- Publicacion, espacio e historia resuelven la visibilidad del disparador de
+  denuncia desde owners existentes: `useComercioDetalle(...).es_propietario`,
+  `PerfilComercioPage.esComercioMio(...)` y
+  `historiaActual.puede_administrar`. No se agregaron requests de ownership ni
+  se modificaron permisos backend.
+- `DenunciaModal` conserva payload, recurso, id, submit y acciones internas;
+  el cambio `...` pertenece exclusivamente a sus triggers visibles.
+- `PerfilComercioPage` conserva consultas y datos de metricas porque
+  Estadisticas los consume. Solo se retiro su representacion publica del
+  encabezado; la direccion y el estado horario reutilizan sus owners vigentes.
+- No existe todavia owner de densidad responsive. La auditoria recomienda uno
+  transversal y moderado, pero su implementacion y cualquier adopcion mediante
+  tokens o container queries quedan pendientes de una prueba separada y
+  reversible.

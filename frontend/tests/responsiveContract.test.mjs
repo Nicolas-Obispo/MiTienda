@@ -57,8 +57,11 @@ test("cards flexibles reservan media y contraen texto", () => {
 test("perfil de espacio usa ancho valido y metadata envolvente", () => {
   assert.match(spaceProfile, /max-w-5xl/);
   assert.doesNotMatch(spaceProfile, /max-w-5x1|flex-nowrap/);
-  assert.match(spaceProfile, /mt-3 flex flex-wrap items-center gap-1/);
-  assert.match(spaceProfile, /max-w-full break-words rounded-full/);
+  assert.match(spaceProfile, /min-w-0 flex-1 text-left/);
+  assert.doesNotMatch(spaceProfile, /\{publicacionesCountVisible\} publicaciones|\{seguidoresCountLabel\}/);
+  assert.equal((spaceProfile.match(/rounded-xl px-2 py-1 text-xs/g) || []).length, 7);
+  assert.match(spaceProfile, /flex w-full flex-wrap items-end gap-x-4 gap-y-2/);
+  assert.match(spaceProfile, /ml-auto flex max-w-full flex-col items-end gap-1 text-right/);
 });
 
 test("mapa y documentos legales permanecen contenidos", () => {

@@ -37,6 +37,12 @@ El fallback sin `backdrop-filter` y `prefers-reduced-motion` pertenecen al
 owner visual compartido. Ninguna pantalla puede duplicar logica de tema para
 compensar Liquid.
 
+`InteraccionButton` consume `text-primary` para labels e iconos outline
+inactivos: oscuro en light y claro en dark. Los estados activos conservan los
+simbolos compartidos `❤️` y `⭐`, mientras el label sigue adaptandose al tema.
+Este contrato no modifica `interactive-on-primary`: las acciones primary con
+fondo naranja continuan usando texto blanco en ambos temas.
+
 ## 2. Owner
 
 El owner de implementacion sera `frontend/src/core/theme/`. Ninguna feature,

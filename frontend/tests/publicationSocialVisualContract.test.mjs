@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const [interactionButton, publicationCard, socialIcons] = await Promise.all([
+const [interactionButton, publicationCard, socialIcons, button, themeTokens] = await Promise.all([
   readFile(
     new URL("../src/shared/components/InteraccionButton.jsx", import.meta.url),
     "utf8"
@@ -15,6 +15,11 @@ const [interactionButton, publicationCard, socialIcons] = await Promise.all([
     new URL("../src/shared/constants/socialIcons.js", import.meta.url),
     "utf8"
   ),
+  readFile(
+    new URL("../src/shared/components/primitives/Button.jsx", import.meta.url),
+    "utf8"
+  ),
+  readFile(new URL("../public/theme-tokens.css", import.meta.url), "utf8"),
 ]);
 
 test("activos y métricas consumen los mismos símbolos compartidos", () => {
@@ -38,11 +43,16 @@ test("inactivos usan Lucide outline y activos no construyen otro SVG", () => {
   assert.doesNotMatch(interactionButton, /fill-current|activeColor/);
 });
 
-test("labels permanecen blancos y contratos sociales no cambian", () => {
+test("labels e iconos inactivos usan texto principal adaptativo", () => {
   assert.match(
     interactionButton,
-    /<span className="text-interactive-on-primary">\{label\}<\/span>/
+    /<span className="text-primary">\{label\}<\/span>/
   );
+  assert.match(interactionButton, /fill-none stroke-current[\s\S]*text-primary/);
+  assert.doesNotMatch(interactionButton, /text-interactive-on-primary/);
+  assert.match(themeTokens, /:root,[\s\S]*--fg-color-text-primary: #f9fafb;/);
+  assert.match(themeTokens, /html\[data-theme="light"\][\s\S]*--fg-color-text-primary: #111827;/);
+  assert.match(button, /bg-interactive-primary text-interactive-on-primary/);
   assert.match(interactionButton, /onClick=\{handleClick\}/);
   assert.match(interactionButton, /disabled=\{disabled\}/);
   assert.match(interactionButton, /aria-label=\{iconOnly \? accessibleLabel : undefined\}/);

@@ -30,12 +30,13 @@ test("escenario, progreso, overlays y texto permanecen invariantes", () => {
   assert.match(viewer, /text-white\/70 text-sm/);
 });
 
-test("viewer no hereda runtime de tema ni interactive-bubble", () => {
+test("viewer no hereda runtime de tema y delega Liquid al Button compartido", () => {
   assert.doesNotMatch(
     viewer,
     /useTheme|resolvedTheme|setPreference|data-theme=|matchMedia\(|localStorage|dark:/
   );
   assert.doesNotMatch(viewer, /interactive-bubble/);
+  assert.match(viewer, /historiaActual\?\.puede_administrar === false[\s\S]*<Button[\s\S]*aria-label="Denunciar historia"[\s\S]*>\s*\.\.\.\s*<\/span>/);
   assert.match(viewer, /<button\b/);
   assert.match(viewer, /<Button\b[\s\S]*variant="danger"/);
 });

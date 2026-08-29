@@ -21,7 +21,7 @@ test("detalle migra shell, estados y acciones a owners semanticos", async () => 
   assert.match(detail, /<Alert variant="danger" role="alert"/);
   assert.match(detail, /<InteraccionButton[\s\S]*type="like"/);
   assert.match(detail, /<InteraccionButton[\s\S]*type="guardar"/);
-  assert.match(detail, /<Button[\s\S]*Denunciar[\s\S]*<\/Button>/);
+  assert.match(detail, /<Button[\s\S]*aria-label="Denunciar publicación"[\s\S]*>\s*\.\.\.\s*<\/span>[\s\S]*<\/Button>/);
   assert.doesNotMatch(detail, physicalUiColors);
   assert.doesNotMatch(detail, manualTheme);
 });
@@ -84,6 +84,7 @@ test("denuncia preserva payload, limites y estados de submit", async () => {
   assert.match(modal, /DENUNCIA_DETALLE_MAX_LENGTH/);
   assert.match(modal, /!puedeEnviar \|\| isSubmitting \|\| Boolean\(successMessage\)/);
   assert.match(service, /\/moderacion\/denuncias/);
+  assert.match(modal, /\{isSubmitting \? "Enviando\.\.\." : "Enviar denuncia"\}/);
 });
 
 test("detalle preserva query cache e interacciones sociales", async () => {
@@ -96,6 +97,8 @@ test("detalle preserva query cache e interacciones sociales", async () => {
   assert.match(hook, /staleTime: 1000 \* 30/);
   assert.match(detail, /useToggleLikePublicacionMutation/);
   assert.match(detail, /useToggleGuardadoPublicacionMutation/);
+  assert.match(detail, /useComercioDetalle\(comercioId\)/);
+  assert.match(detail, /comercioOwnershipQuery\.data\?\.es_propietario/);
   assert.match(detail, /setLiked\(snapshotLiked\)/);
   assert.match(detail, /setGuardada\(snapshotGuardada\)/);
 });

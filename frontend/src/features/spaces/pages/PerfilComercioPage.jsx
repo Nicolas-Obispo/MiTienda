@@ -794,28 +794,9 @@ function esComercioMio(comercioData) {
           </div>
         )}
               
-              <div className="flex items-start justify-between">
-  
-            {/* IZQUIERDA (todo tu contenido actual) */}
-            <div>
-              {/* nombre, descripción, etc */}
-            </div>
-
-            {/* DERECHA (botón) */}
-            {!esComercioMio(comercio) && (
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 flex-1 items-start gap-4">
               <Button
-                variant={siguiendoVisible ? "secondary" : "primary"}
-                onClick={handleToggleFollow}
-                className="rounded-xl px-2 py-1 text-xs"
-              >
-                {siguiendoVisible ? "Siguiendo" : "+Seguir"}
-              </Button>
-            )}
-
-          </div>
-
-          <div className="flex items-start gap-4">
-            <Button
               variant="ghost"
               onClick={handleOpenHistorias}
               aria-label={`Abrir historias de ${comercio?.nombre || "comercio"}`}
@@ -855,7 +836,7 @@ function esComercioMio(comercioData) {
                 </div>
               )}
             </div>
-            </Button>
+              </Button>
                   
                 <div className="min-w-0 flex-1 text-left">
                   <h1 className="text-2xl font-bold leading-tight text-primary sm:truncate">
@@ -872,37 +853,41 @@ function esComercioMio(comercioData) {
                     </p>
                   )}
 
-                  {comercio?.ciudad && (
-                    <p className="mt-2 flex max-w-full items-start gap-2 break-words text-sm text-secondary">
-                      <MapPin size={14} className="shrink-0" aria-hidden="true" />
-                      {comercio?.direccion
-                        ? `${comercio.direccion}, ${comercio.ciudad}`
-                        : comercio.ciudad}
-                      {comercio?.provincia && comercio?.direccion
-                        ? `, ${comercio.provincia}`
-                        : ""}
-                    </p>
-                  )}
-
-                  <div className="mt-3 flex flex-wrap items-center gap-1">
-                    
-                    {/* PUBLICACIONES */}
-                    <span className="max-w-full break-words rounded-full border border-border bg-surface-subtle px-3 py-1 text-xs">
-                      {publicacionesCountVisible} publicaciones
-                    </span>
-
-                    {/* SEGUIDORES */}
-                    <span className="max-w-full break-words rounded-full border border-border bg-surface-subtle px-3 py-1 text-xs">
-                      {seguidoresCountLabel}
-                    </span>
-
-                  </div>
-
-                </div>
               </div>
+            </div>
+
+            {!esComercioMio(comercio) && (
+              <div className="flex shrink-0 flex-col items-center gap-2">
+                <Button
+                  variant={siguiendoVisible ? "secondary" : "primary"}
+                  onClick={handleToggleFollow}
+                  className="rounded-xl px-2 py-1 text-xs"
+                >
+                  {siguiendoVisible ? "Siguiendo" : "+Seguir"}
+                </Button>
+
+                {comercio?.id ? (
+                  <Button
+                    iconOnly
+                    variant="secondary"
+                    onClick={() => setIsDenunciaComercioOpen(true)}
+                    aria-label="Denunciar espacio"
+                    className="text-primary"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex h-full w-full items-center justify-center text-lg leading-none text-primary"
+                    >
+                      ...
+                    </span>
+                  </Button>
+                ) : null}
+              </div>
+            )}
+          </div>
 
               {/* INFO DEL ESPACIO */}
-              <div className="mt-4 flex w-full flex-wrap items-center gap-x-4 gap-y-2">
+              <div className="mt-4 flex w-full flex-wrap items-end gap-x-4 gap-y-2">
 
                 {/* WHATSAPP */}
                 {comercio?.whatsapp && (
@@ -910,9 +895,9 @@ function esComercioMio(comercioData) {
                     href={`https://wa.me/${String(comercio.whatsapp).replace(/\D/g, "")}?text=Hola%2C%20te%20encontré%20en%20FeedGo%20y%20quiero%20consultarte`}
                     target="_blank"
                     rel="noreferrer"
-                    className="interactive-bubble interactive-bubble--liquid group cursor-pointer text-xs font-semibold"
+                    className="interactive-bubble interactive-bubble--liquid group cursor-pointer rounded-xl px-2 py-1 text-xs font-semibold"
                   >
-                    <span className="inline-flex items-center gap-2 text-green-400 group-hover:text-green-300">
+                    <span className="inline-flex items-center gap-1 text-green-400 group-hover:text-green-300">
                       <MessageCircle size={14} aria-hidden="true" />
                       WhatsApp
                     </span>
@@ -926,9 +911,9 @@ function esComercioMio(comercioData) {
                     href={`https://instagram.com/${String(comercio.instagram).replace("@", "")}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="interactive-bubble interactive-bubble--liquid group cursor-pointer text-xs font-semibold"
+                    className="interactive-bubble interactive-bubble--liquid group cursor-pointer rounded-xl px-2 py-1 text-xs font-semibold"
                   >
-                    <span className="inline-flex items-center gap-2 text-pink-400 group-hover:text-pink-300">
+                    <span className="inline-flex items-center gap-1 text-pink-400 group-hover:text-pink-300">
                       <Camera size={14} aria-hidden="true" />
                       Instagram
                     </span>
@@ -946,9 +931,9 @@ function esComercioMio(comercioData) {
                     }
                     target="_blank"
                     rel="noreferrer"
-                    className="interactive-bubble interactive-bubble--liquid group cursor-pointer text-xs font-semibold"
+                    className="interactive-bubble interactive-bubble--liquid group cursor-pointer rounded-xl px-2 py-1 text-xs font-semibold"
                   >
-                    <span className="inline-flex items-center gap-2 text-brand group-hover:text-brand-strong">
+                    <span className="inline-flex items-center gap-1 text-brand group-hover:text-brand-strong">
                     <MapPin size={14} aria-hidden="true" />
                     Cómo llegar
                     </span>
@@ -956,23 +941,25 @@ function esComercioMio(comercioData) {
                   </a>
                 ) : null}
 
-                <EstadoHorarioBadge
-                  horarioAtencion={comercio?.horario_atencion}
-                  variant="inline"
-                  className="ml-auto justify-end"
-                />
+                <div className="ml-auto flex max-w-full flex-col items-end gap-1 text-right">
+                  {comercio?.ciudad && (
+                    <p className="flex max-w-full items-start justify-end gap-2 break-words text-xs text-secondary">
+                      <MapPin size={14} className="shrink-0" aria-hidden="true" />
+                      {comercio?.direccion
+                        ? `${comercio.direccion}, ${comercio.ciudad}`
+                        : comercio.ciudad}
+                      {comercio?.provincia && comercio?.direccion
+                        ? `, ${comercio.provincia}`
+                        : ""}
+                    </p>
+                  )}
 
-                {comercio?.id ? (
-                  <Button
-                    variant="ghost"
-                    onClick={() => setIsDenunciaComercioOpen(true)}
-                    className="group cursor-pointer text-xs"
-                  >
-                    <span className="inline-flex items-center gap-2 text-secondary group-hover:text-primary">
-                      Denunciar
-                    </span>
-                  </Button>
-                ) : null}
+                  <EstadoHorarioBadge
+                    horarioAtencion={comercio?.horario_atencion}
+                    variant="inline"
+                    className="ml-auto justify-end"
+                  />
+                </div>
 
               </div>
 
@@ -980,33 +967,33 @@ function esComercioMio(comercioData) {
                 <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
                   <Button
                     variant="ghost"
-                    className="group cursor-pointer text-sm"
+                    className="group cursor-pointer rounded-xl px-2 py-1 text-xs"
                     onClick={() => setIsCrearHistoriaOpen(true)}
                   >
-                    <span className="inline-flex items-center gap-2 text-secondary group-hover:text-primary">
-                      <PlusCircle size={16} aria-hidden="true" />
+                    <span className="inline-flex items-center gap-1 text-secondary group-hover:text-primary">
+                      <PlusCircle size={14} aria-hidden="true" />
                       Historia
                     </span>
                   </Button>
 
                   <Button
                     variant="ghost"
-                    className="group cursor-pointer text-sm"
+                    className="group cursor-pointer rounded-xl px-2 py-1 text-xs"
                     onClick={() => setIsCrearPublicacionOpen(true)}
                   >
-                    <span className="inline-flex items-center gap-2 text-secondary group-hover:text-primary">
-                      <PlusCircle size={16} aria-hidden="true" />
+                    <span className="inline-flex items-center gap-1 text-secondary group-hover:text-primary">
+                      <PlusCircle size={14} aria-hidden="true" />
                     Publicación
                     </span>
                   </Button>
 
                   <Button
                     variant="ghost"
-                    className="group cursor-pointer text-sm"
+                    className="group cursor-pointer rounded-xl px-2 py-1 text-xs"
                     onClick={() => setIsEstadisticasOpen(true)}
                   >
-                    <span className="inline-flex items-center gap-2 text-secondary group-hover:text-primary">
-                      <BarChart3 size={16} aria-hidden="true" />
+                    <span className="inline-flex items-center gap-1 text-secondary group-hover:text-primary">
+                      <BarChart3 size={14} aria-hidden="true" />
                     Estadísticas
                     </span>
                   </Button>

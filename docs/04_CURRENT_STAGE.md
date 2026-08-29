@@ -562,6 +562,23 @@ Estado de continuidad:
 - Checkpoint intermedio aprobado: sistema visual Liquid consolidado y bloque
   correctivo incidental de publicaciones e interacciones validado. Este
   checkpoint no cierra ETAPA 98 ni habilita otra etapa.
+- Checkpoint previo a la prueba de densidad responsive: los labels e iconos
+  inactivos de `InteraccionButton` adoptan texto principal adaptativo en
+  light/dark y los activos conservan los simbolos sociales compartidos. Los
+  disparadores publicos de denuncia muestran `...` con nombre accesible y se
+  ocultan cuando el ownership vigente demuestra que el recurso es propio. El
+  perfil publico alinea identidad y acciones en columnas superiores, agrupa
+  direccion sobre estado horario a la derecha, oculta las metricas publicas
+  del encabezado y conserva su consulta privada mediante Estadisticas; sus
+  contactos y acciones de administracion usan el patron compacto aprobado.
+- La auditoria global de escala responsive rechazo `transform: scale()` y
+  `zoom` globales y el escalado literal proporcional por resultar incompatible
+  con legibilidad, areas tactiles, inputs, portales, fixed, Leaflet, historias
+  y multimedia. La direccion recomendada es hibrida: densidad global moderada
+  mediante tokens y `clamp()`, complementada por container queries y reflow
+  solo cuando sea necesario. Ese owner global no fue implementado; la prueba
+  reversible permanece pendiente y debe tratar mapas, historias, multimedia y
+  overlays como casos especificos. ETAPA 98 permanece abierta.
 - 97.1 - Contrato administrativo y autorizacion: cerrada. FeedGo dispone de un
   catalogo inicial de cuatro capacidades administrativas persistidas fuera del
   JWT, eventos append-only de otorgamiento/revocacion, bootstrap local

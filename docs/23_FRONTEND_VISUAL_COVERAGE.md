@@ -31,6 +31,36 @@ portada drag-and-drop, controles inmersivos y zonas anterior/siguiente de
 file inputs, enlaces textuales y metricas informativas. La validacion de este
 checkpoint no cierra ETAPA 98 ni reemplaza su gate humano/renderizado final.
 
+## Checkpoint visual previo a densidad responsive
+
+Los cambios posteriores al checkpoint Liquid quedan cubiertos de forma
+acotada:
+
+- `InteraccionButton` usa texto principal adaptativo para labels e iconos
+  outline inactivos; los activos reutilizan los mismos `❤️` y `⭐` de las
+  metricas informativas;
+- los disparadores de denuncia de publicacion, espacio e historia representan
+  visualmente solo `...`, conservan nombres accesibles especificos, el mismo
+  recurso/id y no se renderizan cuando el owner vigente demuestra propiedad;
+- el perfil publico conserva avatar, identidad y columna `+Seguir`/`...`
+  alineados arriba; direccion y estado horario forman una unidad a la derecha,
+  con contactos a la izquierda;
+- publicaciones, seguidores y estados equivalentes dejaron de renderizarse en
+  el encabezado publico. La consulta y presentacion privada permanecen
+  disponibles mediante Estadisticas;
+- WhatsApp, Instagram, Como llegar, Historia, Publicacion y Estadisticas
+  reutilizan el patron compacto aprobado sin cambiar textos, destinos,
+  handlers, Liquid ni light/dark.
+
+La auditoria transversal de escala responsive posterior no modifico archivos.
+Demostro que un escalado literal global reduciria texto y targets por debajo de
+limites utilizables y afectaria portales, controles fixed/sticky, teclado
+movil, Leaflet, Historias, multimedia y Liquid. Se recomienda una estrategia
+hibrida con tokens globales de densidad moderada, `clamp()` y container queries,
+manteniendo reflow en las excepciones inevitables. No existen todavia tokens
+de densidad, container queries ni owner implementado; la prueba reversible
+permanece pendiente y ETAPA 98 sigue abierta.
+
 ## 2. Matriz acumulada
 
 | Superficie / owner | Estado | Evidencia | Excepcion o pendiente |

@@ -121,7 +121,7 @@ export default function InteraccionButton({
         <Icon
           aria-hidden="true"
           className={`
-            shrink-0 fill-none stroke-current leading-none text-interactive-on-primary transition
+            shrink-0 fill-none stroke-current leading-none text-primary transition
             ${iconOnly ? "h-[1.125rem] w-[1.125rem]" : "h-5 w-5"}
             ${isAnimating ? cfg.animation : ""}
           `}
@@ -129,7 +129,7 @@ export default function InteraccionButton({
       )}
 
       {/* TEXTO SOLO SI NO ES iconOnly */}
-      {!iconOnly && <span className="text-interactive-on-primary">{label}</span>}
+      {!iconOnly && <span className="text-primary">{label}</span>}
       <InteractiveLiquidLayers />
     </button>
   );

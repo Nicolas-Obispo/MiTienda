@@ -104,7 +104,7 @@ test("InteraccionButton conserva su owner funcional y animaciones", () => {
   assert.match(interactionButton, /import InteractiveLiquidLayers from "@shared\/components\/InteractiveLiquidLayers"/);
   assert.equal((interactionButton.match(/interactive-bubble--liquid/g) || []).length, 1);
   assert.equal((interactionButton.match(/<InteractiveLiquidLayers \/>/g) || []).length, 1);
-  assert.match(interactionButton, /\{!iconOnly && <span className="text-interactive-on-primary">\{label\}<\/span>\}\s*<InteractiveLiquidLayers \/>/);
+  assert.match(interactionButton, /\{!iconOnly && <span className="text-primary">\{label\}<\/span>\}\s*<InteractiveLiquidLayers \/>/);
   assert.match(interactionButton, /animate-like/);
   assert.match(interactionButton, /animate-save/);
   assert.match(interactionButton, /setTimeout[\s\S]*300/);
@@ -117,9 +117,10 @@ test("InteraccionButton conserva su owner funcional y animaciones", () => {
   assert.match(interactionButton, /active \? cfg\.activeBubbleClass : "interactive-bubble--secondary"/);
   assert.match(interactionButton, /aria-label=\{iconOnly \? accessibleLabel : undefined\}/);
   assert.match(interactionButton, /active \? \([\s\S]*<span[\s\S]*\{cfg\.activeIcon\}[\s\S]*\) : \([\s\S]*<Icon/);
-  assert.match(interactionButton, /<Icon[\s\S]*fill-none stroke-current[\s\S]*text-interactive-on-primary/);
+  assert.match(interactionButton, /<Icon[\s\S]*fill-none stroke-current[\s\S]*text-primary/);
   assert.doesNotMatch(interactionButton, /fill-current|activeColor/);
-  assert.match(interactionButton, /<span className="text-interactive-on-primary">\{label\}<\/span>/);
+  assert.match(interactionButton, /<span className="text-primary">\{label\}<\/span>/);
+  assert.doesNotMatch(interactionButton, /text-interactive-on-primary/);
   assert.doesNotMatch(interactionButton, /icon: "[^"]+"|inactiveColor/);
 });
 

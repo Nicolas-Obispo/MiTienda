@@ -9,6 +9,32 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 98 - Checkpoint previo a densidad responsive
+
+**Estado:** Checkpoint aprobado; ETAPA 98 permanece abierta
+
+- `InteraccionButton` adapta labels e iconos inactivos mediante texto principal
+  semantico: oscuro en light y claro en dark. Los estados activos conservan
+  los simbolos compartidos `❤️` y `⭐`; las acciones primary naranjas mantienen
+  texto blanco.
+- Los disparadores visibles de denuncia de publicacion, espacio e historia
+  muestran exclusivamente `...`, conservan nombre accesible, recurso, id y
+  apertura del modal, y se ocultan cuando los owners vigentes demuestran que
+  el recurso pertenece al usuario.
+- El perfil publico recupera la alineacion superior de identidad y acciones,
+  presenta direccion inmediatamente sobre el estado horario a la derecha,
+  oculta publicaciones/seguidores del encabezado publico y conserva esas
+  metricas dentro de Estadisticas. Contactos y acciones de administracion
+  adoptan el patron compacto aprobado sin cambiar handlers ni destinos.
+- La auditoria global responsive no modifico archivos. Rechaza el escalado
+  literal global y recomienda una estrategia hibrida de densidad moderada,
+  `clamp()`, container queries y reflow acotado. El owner global, sus tokens y
+  la prueba reversible permanecen pendientes; mapas, historias, multimedia y
+  overlays requieren tratamiento especifico.
+- Validacion: 389/389 tests frontend, 111/111 tests especificos, build
+  productivo/PWA y `git diff --check` correctos. Backend permanece sin cambios.
+- Este checkpoint no implementa densidad responsive ni cierra ETAPA 98.
+
 ## ETAPA 98 - Checkpoint Liquid e interacciones
 
 **Estado:** Checkpoint aprobado; ETAPA 98 permanece abierta

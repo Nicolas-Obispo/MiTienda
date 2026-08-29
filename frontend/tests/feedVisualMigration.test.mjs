@@ -64,7 +64,8 @@ test("InteraccionButton conserva owner, callbacks y animaciones", () => {
   assert.match(interactionButton, /Icon: Star/);
   assert.match(interactionButton, /aria-hidden="true"/);
   assert.match(interactionButton, /fill-none stroke-current/);
-  assert.match(interactionButton, /text-interactive-on-primary/);
+  assert.match(interactionButton, /text-primary/);
+  assert.doesNotMatch(interactionButton, /text-interactive-on-primary/);
   assert.match(interactionButton, /activeIcon: SOCIAL_ICONS\.like/);
   assert.match(interactionButton, /activeIcon: SOCIAL_ICONS\.guardado/);
   assert.doesNotMatch(interactionButton, /text-red-|text-yellow-|text-gray-|border-red-|border-yellow-|border-gray-/);

@@ -505,17 +505,26 @@ export default function HistoriasViewer({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsDenunciaOpen(true);
-            }}
-            className="relative z-[999] ml-3 rounded-full bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            Denunciar
-          </button>
+          {historiaActual?.puede_administrar === false ? (
+            <Button
+              iconOnly
+              variant="ghost"
+              aria-label="Denunciar historia"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDenunciaOpen(true);
+              }}
+              className="relative z-[999] ml-3 text-primary"
+            >
+              <span
+                aria-hidden="true"
+                className="inline-flex h-full w-full items-center justify-center text-lg leading-none text-primary"
+              >
+                ...
+              </span>
+            </Button>
+          ) : null}
 
           {historiaActual?.puede_administrar ? (
             <button

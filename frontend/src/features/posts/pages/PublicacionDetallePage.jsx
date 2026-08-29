@@ -10,6 +10,7 @@ import {
   getMediaUrlFromAny,
 } from "@shared";
 import { usePublicacionDetalle } from "@features/posts";
+import { useComercioDetalle } from "@features/spaces";
 import {
   useToggleGuardadoPublicacionMutation,
   useToggleLikePublicacionMutation,
@@ -185,6 +186,10 @@ export default function PublicacionDetallePage() {
     typeof publicacionVisible?.comercio_id === "number"
       ? publicacionVisible.comercio_id
       : null;
+  const comercioOwnershipQuery = useComercioDetalle(comercioId);
+  const esPropietarioPublicacion = Boolean(
+    comercioOwnershipQuery.data?.es_propietario
+  );
 
   return (
     <div className="min-h-screen bg-canvas text-primary">
@@ -280,14 +285,23 @@ export default function PublicacionDetallePage() {
                   label={guardada ? "Guardada" : "Guardar"}
                 />
 
-                <Button
-                  type="button"
-                  onClick={() => setIsDenunciaOpen(true)}
-                  variant="secondary"
-                  className="text-sm"
-                >
-                  Denunciar
-                </Button>
+                {!esPropietarioPublicacion ? (
+                  <Button
+                    type="button"
+                    onClick={() => setIsDenunciaOpen(true)}
+                    variant="secondary"
+                    iconOnly
+                    aria-label="Denunciar publicación"
+                    className="text-primary"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex h-full w-full items-center justify-center text-lg leading-none text-primary"
+                    >
+                      ...
+                    </span>
+                  </Button>
+                ) : null}
               </div>
 
               <div className="flex items-center justify-between text-sm text-muted">
