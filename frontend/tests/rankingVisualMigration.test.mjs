@@ -33,8 +33,10 @@ test("Ranking no introduce colores fisicos ni logica manual de tema", () => {
   assert.doesNotMatch(ranking, /resolvedTheme|data-theme|dark:|matchMedia\(|localStorage\./);
 });
 
-test("la pantalla no inventa tabs, filtros ni botones inexistentes", () => {
-  assert.doesNotMatch(ranking, /<button\b|<Button\b/);
+test("la pantalla no inventa tabs, filtros ni interacciones de publicaciones", () => {
+  assert.equal((ranking.match(/<Button\b/g) || []).length, 1);
+  assert.match(ranking, /<Button variant="ghost" onClick=\{\(\) => setNoticeMessage\(""\)\}/);
+  assert.doesNotMatch(ranking, /<button\b|<InteraccionButton\b|compactActions/);
   assert.doesNotMatch(ranking, /role="tab"|setFiltro|setTab|setRango/);
 });
 

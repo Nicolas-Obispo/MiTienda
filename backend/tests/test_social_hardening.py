@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import MagicMock, patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -8,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.auth import crear_token_jwt
 from app.core.database import Base, get_db
+from app.core.model_registry import import_all_models
 from app.modules.ai.models.comercios_embeddings_models import ComercioEmbedding
 from app.modules.analytics.models.comercios_metricas_sociales_models import (
     ComercioMetricasSociales,
@@ -46,6 +48,9 @@ from app.modules.users.models.usuarios_documentos_aceptaciones_models import (
 from app.modules.users.models.usuarios_models import Usuario
 
 
+import_all_models()
+
+
 engine = create_engine(
     "sqlite://",
     connect_args={"check_same_thread": False},
@@ -69,6 +74,7 @@ app.include_router(seguidores_router)
 app.include_router(moderation_router)
 app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
+non_raising_client = TestClient(app, raise_server_exceptions=False)
 
 
 class SocialHardeningTests(unittest.TestCase):
@@ -213,6 +219,59 @@ class SocialHardeningTests(unittest.TestCase):
         self.assertEqual(second.status_code, 200)
         self.assertEqual(second.json(), {"liked": False})
 
+    def test_like_creado_sigue_confirmado_si_falla_embedding(self):
+        db = TestingSessionLocal()
+        self._crear_usuario(db)
+        self._crear_comercio(db)
+        self._crear_publicacion(db)
+        db.close()
+
+        with self.assertLogs("feedgo.social_embeddings", level="ERROR") as logs:
+            with patch(
+                "app.modules.ai.services.usuarios_embeddings_services.regenerar_embedding_usuario_si_corresponde",
+                side_effect=RuntimeError("detalle interno sensible"),
+            ):
+                response = non_raising_client.post(
+                    "/likes/publicaciones/20",
+                    headers=self._auth_headers(),
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"liked": True})
+        db = TestingSessionLocal()
+        self.assertEqual(db.query(LikePublicacion).count(), 1)
+        self.assertEqual(db.query(Usuario).count(), 1)
+        db.close()
+        self.assertIn("social_embedding_maintenance_failed", logs.output[0])
+        self.assertIn("error_class=RuntimeError", logs.output[0])
+        self.assertNotIn("detalle interno sensible", logs.output[0])
+
+    def test_like_quitado_sigue_confirmado_si_falla_embedding(self):
+        db = TestingSessionLocal()
+        self._crear_usuario(db)
+        self._crear_comercio(db)
+        self._crear_publicacion(db)
+        db.add(LikePublicacion(usuario_id=1, publicacion_id=20))
+        db.commit()
+        db.close()
+
+        with self.assertLogs("feedgo.social_embeddings", level="ERROR"):
+            with patch(
+                "app.modules.ai.services.usuarios_embeddings_services.regenerar_embedding_usuario_si_corresponde",
+                side_effect=RuntimeError("secondary failure"),
+            ):
+                response = non_raising_client.post(
+                    "/likes/publicaciones/20",
+                    headers=self._auth_headers(),
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"liked": False})
+        db = TestingSessionLocal()
+        self.assertEqual(db.query(LikePublicacion).count(), 0)
+        self.assertEqual(db.query(Usuario).count(), 1)
+        db.close()
+
     def test_guardar_publicacion_valida_crea_guardado(self):
         db = TestingSessionLocal()
         self._crear_usuario(db)
@@ -250,6 +309,31 @@ class SocialHardeningTests(unittest.TestCase):
         self.assertEqual(first.status_code, 201)
         self.assertEqual(second.status_code, 201)
         self.assertEqual(first.json()["id"], second.json()["id"])
+
+    def test_guardado_creado_sigue_confirmado_si_falla_embedding(self):
+        db = TestingSessionLocal()
+        self._crear_usuario(db)
+        self._crear_comercio(db)
+        self._crear_publicacion(db)
+        db.close()
+
+        with self.assertLogs("feedgo.social_embeddings", level="ERROR"):
+            with patch(
+                "app.modules.ai.services.usuarios_embeddings_services.regenerar_embedding_usuario_si_corresponde",
+                side_effect=RuntimeError("secondary failure"),
+            ):
+                response = non_raising_client.post(
+                    "/publicaciones/guardadas",
+                    json={"publicacion_id": 20},
+                    headers=self._auth_headers(),
+                )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["publicacion_id"], 20)
+        db = TestingSessionLocal()
+        self.assertEqual(db.query(PublicacionGuardada).count(), 1)
+        self.assertEqual(db.query(Usuario).count(), 1)
+        db.close()
 
     def test_guardar_publicacion_inexistente_devuelve_404(self):
         db = TestingSessionLocal()
@@ -309,6 +393,71 @@ class SocialHardeningTests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 204)
+
+    def test_guardado_quitado_sigue_confirmado_si_falla_embedding(self):
+        db = TestingSessionLocal()
+        self._crear_usuario(db)
+        self._crear_comercio(db)
+        self._crear_publicacion(db)
+        db.add(PublicacionGuardada(usuario_id=1, publicacion_id=20))
+        db.commit()
+        db.close()
+
+        with self.assertLogs("feedgo.social_embeddings", level="ERROR"):
+            with patch(
+                "app.modules.ai.services.usuarios_embeddings_services.regenerar_embedding_usuario_si_corresponde",
+                side_effect=RuntimeError("secondary failure"),
+            ):
+                response = non_raising_client.delete(
+                    "/publicaciones/guardadas/20",
+                    headers=self._auth_headers(),
+                )
+
+        self.assertEqual(response.status_code, 204)
+        db = TestingSessionLocal()
+        self.assertEqual(db.query(PublicacionGuardada).count(), 0)
+        self.assertEqual(db.query(Usuario).count(), 1)
+        db.close()
+
+    def test_fallo_commit_like_hace_rollback_y_no_regenera_embedding(self):
+        db = MagicMock()
+        db.query.return_value.filter.return_value.first.return_value = None
+        db.commit.side_effect = RuntimeError("primary commit failed")
+
+        with patch(
+            "app.modules.social.services.likes_publicaciones_services.obtener_publicacion_visible_o_error"
+        ), patch(
+            "app.modules.social.services.likes_publicaciones_services.mantener_embedding_usuario_post_commit"
+        ) as maintenance:
+            from app.modules.social.services.likes_publicaciones_services import (
+                toggle_like_publicacion,
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "primary commit failed"):
+                toggle_like_publicacion(db, usuario_id=1, publicacion_id=20)
+
+        db.rollback.assert_called_once_with()
+        maintenance.assert_not_called()
+
+    def test_fallo_commit_guardado_hace_rollback_y_no_regenera_embedding(self):
+        db = MagicMock()
+        db.query.return_value.filter.return_value.first.return_value = None
+        db.commit.side_effect = RuntimeError("primary commit failed")
+
+        with patch(
+            "app.modules.social.services.publicaciones_guardadas_services.obtener_publicacion_visible_o_error"
+        ), patch(
+            "app.modules.social.services.publicaciones_guardadas_services.mantener_embedding_usuario_post_commit"
+        ) as maintenance:
+            from app.modules.social.services.publicaciones_guardadas_services import (
+                guardar_publicacion,
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "primary commit failed"):
+                guardar_publicacion(db, usuario_id=1, publicacion_id=20)
+
+        db.rollback.assert_called_once_with()
+        maintenance.assert_not_called()
 
     def test_quitar_guardado_inexistente_es_idempotente(self):
         db = TestingSessionLocal()

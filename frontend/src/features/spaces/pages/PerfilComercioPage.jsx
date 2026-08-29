@@ -73,6 +73,7 @@ import AgendaPrivadaModal from "@features/agenda/components/AgendaPrivadaModal";
 import EstadoHorarioBadge from "@features/availability/components/EstadoHorarioBadge";
 import DenunciaModal from "@features/moderation/components/DenunciaModal";
 import { RECURSO_DENUNCIA_COMERCIO } from "@features/moderation/constants/denuncias";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
 const seguimientoPerfilComercioCache = new Map();
 
@@ -88,6 +89,7 @@ export default function CommerceProfilePage() {
 
   const [perfilHydratado, setPerfilHydratado] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [noticeMessage, setNoticeMessage] = useState("");
 
   const [comercio, setComercio] = useState(null);
   const [historias, setHistorias] = useState([]);
@@ -291,7 +293,13 @@ function esComercioMio(comercioData) {
 
       setPublicaciones(mergedPubs);
     } catch (error) {
-      setErrorMessage(error.message || "Error refrescando publicaciones.");
+      if (publicaciones.length > 0) {
+        setNoticeMessage(
+          "No se pudieron actualizar las publicaciones. Seguís viendo la última información disponible."
+        );
+      } else {
+        setErrorMessage(error.message || "Error refrescando publicaciones.");
+      }
     }
   }
 
@@ -360,7 +368,12 @@ function esComercioMio(comercioData) {
       comercioQuery.error || publicacionesQuery.error || historiasQuery.error;
 
     if (!principalError) return;
-    if (comercio || publicaciones.length > 0 || historias.length > 0) return;
+    if (comercio || publicaciones.length > 0 || historias.length > 0) {
+      setNoticeMessage(
+        "No se pudo actualizar toda la información del espacio. Seguís viendo la última información disponible."
+      );
+      return;
+    }
 
     setErrorMessage(
       principalError.message ||
@@ -394,9 +407,11 @@ function esComercioMio(comercioData) {
 
     try {
       await toggleLikeMutation.mutateAsync(pubId);
-    } catch (error) {
+    } catch {
       setPublicaciones(snapshot);
-      setErrorMessage(error.message || "Error al togglear like.");
+      setNoticeMessage(
+        "No se pudo actualizar Me gusta. Intentá nuevamente."
+      );
     } finally {
       setLikeLock(pubId, false);
     }
@@ -487,9 +502,11 @@ function esComercioMio(comercioData) {
         publicacionId: pubId,
         estabaGuardada,
       });
-    } catch (error) {
+    } catch {
       setPublicaciones(snapshot);
-      setErrorMessage(error.message || "Error al guardar/quitar guardado.");
+      setNoticeMessage(
+        "No se pudo actualizar el guardado. Intentá nuevamente."
+      );
     } finally {
       setSaveLock(pubId, false);
     }
@@ -692,14 +709,23 @@ function esComercioMio(comercioData) {
           </div>
         )}
 
-        {!isInitialLoading && errorMessage && (
+        {!isInitialLoading && errorMessage && !hayDatosVisibles && (
           <Alert className="p-5" variant="danger">
             <p className="font-semibold">Error</p>
             <p className="mt-2 break-words">{errorMessage}</p>
           </Alert>
         )}
 
-        {!isInitialLoading && !errorMessage && (
+        {!isInitialLoading && noticeMessage && hayDatosVisibles && (
+          <Alert variant="warning" role="status" aria-live="polite" className="mb-4 flex items-center justify-between gap-3">
+            <span>{noticeMessage}</span>
+            <Button variant="ghost" onClick={() => setNoticeMessage("")} className="shrink-0 text-xs">
+              Cerrar
+            </Button>
+          </Alert>
+        )}
+
+        {!isInitialLoading && (!errorMessage || hayDatosVisibles) && (
           <>
             <Surface as="section" className="relative p-4 sm:p-6">
               
@@ -881,15 +907,16 @@ function esComercioMio(comercioData) {
                 {/* WHATSAPP */}
                 {comercio?.whatsapp && (
                   <a
-                    href={`https://wa.me/${String(comercio.whatsapp).replace(/\D/g, "")}?text=Hola%2C%20te%20encontré%20en%20MiPlaza%20y%20quiero%20consultarte`}
+                    href={`https://wa.me/${String(comercio.whatsapp).replace(/\D/g, "")}?text=Hola%2C%20te%20encontré%20en%20FeedGo%20y%20quiero%20consultarte`}
                     target="_blank"
                     rel="noreferrer"
-                    className="interactive-bubble group cursor-pointer text-xs font-semibold"
+                    className="interactive-bubble interactive-bubble--liquid group cursor-pointer text-xs font-semibold"
                   >
                     <span className="inline-flex items-center gap-2 text-green-400 group-hover:text-green-300">
                       <MessageCircle size={14} aria-hidden="true" />
                       WhatsApp
                     </span>
+                    <InteractiveLiquidLayers />
                   </a>
                 )}
 
@@ -899,12 +926,13 @@ function esComercioMio(comercioData) {
                     href={`https://instagram.com/${String(comercio.instagram).replace("@", "")}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="interactive-bubble group cursor-pointer text-xs font-semibold"
+                    className="interactive-bubble interactive-bubble--liquid group cursor-pointer text-xs font-semibold"
                   >
                     <span className="inline-flex items-center gap-2 text-pink-400 group-hover:text-pink-300">
                       <Camera size={14} aria-hidden="true" />
                       Instagram
                     </span>
+                    <InteractiveLiquidLayers />
                   </a>
                 )}
 
@@ -918,12 +946,13 @@ function esComercioMio(comercioData) {
                     }
                     target="_blank"
                     rel="noreferrer"
-                    className="interactive-bubble group cursor-pointer text-xs font-semibold"
+                    className="interactive-bubble interactive-bubble--liquid group cursor-pointer text-xs font-semibold"
                   >
                     <span className="inline-flex items-center gap-2 text-brand group-hover:text-brand-strong">
                     <MapPin size={14} aria-hidden="true" />
                     Cómo llegar
                     </span>
+                    <InteractiveLiquidLayers />
                   </a>
                 ) : null}
 
@@ -1034,7 +1063,7 @@ function esComercioMio(comercioData) {
                   <div className="mb-5 flex items-start justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-brand">
-                        MiPlaza Analytics
+                        FeedGo Analytics
                       </p>
 
                       <h3 id="estadisticas-espacio-title" className="mt-1 text-xl font-bold text-primary">

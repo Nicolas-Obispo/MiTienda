@@ -27,7 +27,7 @@ import {
 import { PublicacionCard } from "@features/posts";
 import { usePublicacionesGuardadas } from "@features/posts";
 import { useRankingPublicaciones } from "@features/posts/hooks/useRankingPublicaciones";
-import { Alert, Skeleton, Surface } from "@shared";
+import { Alert, Button, Skeleton, Surface } from "@shared";
 
 import {
   optimisticToggleGuardado,
@@ -51,6 +51,7 @@ export default function RankingPage() {
   const [rankingHydratado, setRankingHydratado] = useState(false);
   const [publicaciones, setPublicaciones] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const [noticeMessage, setNoticeMessage] = useState("");
   const {
     likeLocks,
     saveLocks,
@@ -127,7 +128,13 @@ export default function RankingPage() {
       setPublicaciones(merged);
       setRankingHydratado(true);
     } catch (error) {
-      setErrorMessage(error.message || "Error desconocido cargando el ranking.");
+      if (publicaciones.length > 0) {
+        setNoticeMessage(
+          "No se pudieron actualizar las tendencias. Seguís viendo la última información disponible."
+        );
+      } else {
+        setErrorMessage(error.message || "Error desconocido cargando el ranking.");
+      }
       setRankingHydratado(true);
     } finally {
       setIsLoading(false);
@@ -170,9 +177,11 @@ export default function RankingPage() {
 
     try {
       await toggleLikeMutation.mutateAsync(pubId);
-    } catch (error) {
+    } catch {
       setPublicaciones(snapshot);
-      setErrorMessage(error.message || "Error al togglear like.");
+      setNoticeMessage(
+        "No se pudo actualizar Me gusta. Intentá nuevamente."
+      );
     } finally {
       setLikeLock(pubId, false);
     }
@@ -198,9 +207,11 @@ export default function RankingPage() {
         publicacionId: pubId,
         estabaGuardada,
       });
-    } catch (error) {
+    } catch {
       setPublicaciones(snapshot);
-      setErrorMessage(error.message || "Error al guardar/quitar guardado.");
+      setNoticeMessage(
+        "No se pudo actualizar el guardado. Intentá nuevamente."
+      );
     } finally {
       setSaveLock(pubId, false);
     }
@@ -213,7 +224,7 @@ export default function RankingPage() {
         <div className="mb-6">
           <h1 className="text-xl font-bold sm:text-2xl">Tendencias</h1>
           <p className="mt-1 text-sm text-secondary">
-            Publicaciones ordenadas por score (likes + recencia).
+            Publicaciones que están siendo tendencia en FeedGo.
           </p>
         </div>
 
@@ -227,10 +238,19 @@ export default function RankingPage() {
         )}
 
         {/* Estado: Error */}
-        {!isLoading && errorMessage && (
+        {!isLoading && errorMessage && publicaciones.length === 0 && (
           <Alert variant="danger" role="alert" className="p-5">
             <p className="font-semibold">Error</p>
             <p className="mt-2 break-words">{errorMessage}</p>
+          </Alert>
+        )}
+
+        {noticeMessage && publicaciones.length > 0 && (
+          <Alert variant="warning" role="status" aria-live="polite" className="mb-4 flex items-center justify-between gap-3">
+            <span>{noticeMessage}</span>
+            <Button variant="ghost" onClick={() => setNoticeMessage("")} className="shrink-0 text-xs">
+              Cerrar
+            </Button>
           </Alert>
         )}
 
@@ -245,7 +265,7 @@ export default function RankingPage() {
         )}
 
         {/* Estado: OK */}
-        {!errorMessage && publicaciones.length > 0 && (
+        {publicaciones.length > 0 && (
           <div
             className="
               grid

@@ -3,6 +3,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import SessionLocal
+from app.core.model_registry import import_all_models
+
+import_all_models()
+
 from app.core.error_handlers import register_exception_handlers
 from app.core.operation_logging import configure_logging, get_operation_logger, safe_error_class
 from app.core.operation_alerts import configure_default_alerting

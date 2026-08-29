@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 import { classNames } from "./classNames";
 
 const VARIANT_CLASSES = {
@@ -48,7 +49,7 @@ const Button = forwardRef(function Button(
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       className={classNames(
-        "interactive-bubble max-w-full whitespace-normal break-words text-center font-semibold",
+        "interactive-bubble interactive-bubble--liquid max-w-full whitespace-normal break-words text-center font-semibold",
         variantClass,
         iconOnly && "h-10 w-10 shrink-0 rounded-full p-0",
         disabled &&
@@ -57,6 +58,7 @@ const Button = forwardRef(function Button(
       )}
     >
       {children}
+      <InteractiveLiquidLayers />
     </button>
   );
 });

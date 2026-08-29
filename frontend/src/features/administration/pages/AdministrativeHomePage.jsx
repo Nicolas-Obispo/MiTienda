@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Alert, Skeleton, Surface } from "@shared";
 import { useAdministrativeCapabilities } from "@features/administration/hooks/useAdministrativeCapabilities";
 import { useFocusOnAdministrativeError } from "@features/administration/hooks/useAdministrativeFocus";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
 const SURFACES = [
   { capability: "moderation.reports.read", to: "/administracion/denuncias", title: "Denuncias", description: "Consultar denuncias recibidas." },
@@ -33,7 +34,7 @@ export function AdministrativeHomePage() {
             <Surface key={surface.to} className="flex min-w-0 flex-col p-4 sm:p-5">
               <h2 className="font-semibold">{surface.title}</h2>
               <p className="mb-3 text-sm text-secondary">{surface.description}</p>
-              <Link className="interactive-bubble mt-auto inline-flex min-h-11 w-full items-center justify-center text-sm font-semibold text-interactive-primary sm:w-auto" to={surface.to}>Abrir</Link>
+              <Link className="interactive-bubble interactive-bubble--liquid mt-auto inline-flex min-h-11 w-full items-center justify-center text-sm font-semibold text-interactive-primary sm:w-auto" to={surface.to}>Abrir<InteractiveLiquidLayers /></Link>
             </Surface>
           ))}
         </div>
@@ -41,7 +42,7 @@ export function AdministrativeHomePage() {
       {available.length > 0 ? <Surface className="p-4 sm:p-5">
         <h2 className="font-semibold">¿Necesitás ayuda?</h2>
         <p className="mt-1 text-sm text-secondary">Consultá cómo revisar denuncias, registrar decisiones, gestionar incidentes y usar el estado operativo de forma segura.</p>
-        <Link className="interactive-bubble mt-3 inline-flex min-h-11 w-full items-center justify-center text-sm font-semibold text-interactive-primary sm:w-auto" to="/administracion/guia">Abrir guía práctica</Link>
+        <Link className="interactive-bubble interactive-bubble--liquid mt-3 inline-flex min-h-11 w-full items-center justify-center text-sm font-semibold text-interactive-primary sm:w-auto" to="/administracion/guia">Abrir guía práctica<InteractiveLiquidLayers /></Link>
       </Surface> : null}
     </main>
   );

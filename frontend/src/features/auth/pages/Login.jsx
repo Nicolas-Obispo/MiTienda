@@ -64,7 +64,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-canvas px-4 text-primary">
+    <div className="flex flex-col items-center justify-start bg-canvas px-4 text-primary">
 
       {/* LOGO ARRIBA */}
       <div className="mb-0 animate-logo">
@@ -106,7 +106,7 @@ export default function Login() {
           </FormControl>
 
           {/* Password */}
-          <FormControl label="Password" labelFor="login-password">
+          <FormControl label="Contraseña" labelFor="login-password">
             <Input
               id="login-password"
               type={mostrarPassword ? "text" : "password"}
@@ -144,18 +144,14 @@ export default function Login() {
           <Button
             type="submit"
             disabled={cargando}
-            variant="primary"
-            className="w-full px-4 py-2 text-sm"
+            variant="ghost"
+            className="w-full px-4 py-2 text-sm text-secondary hover:border-brand hover:text-secondary"
           >
             {cargando ? "Ingresando..." : "Ingresar"}
           </Button>
         </form>
 
         <div className="mt-4 space-y-2">
-          <p className="text-xs text-muted">
-            Tip: si venías con un token viejo, al loguearte de nuevo se reemplaza.
-          </p>
-
           <p className="text-sm text-secondary">
             ¿No tenés cuenta?{" "}
             <Link

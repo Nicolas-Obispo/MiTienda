@@ -23,6 +23,29 @@ privacidad, retencion y operacion desde la perspectiva legal y de compliance.
 
 No contiene dumps, credenciales, secretos ni procedimientos con contrasenas.
 
+## Checkpoint de integridad social en ETAPA 98
+
+El bloque correctivo incidental de ETAPA 98 fija dos fronteras distintas:
+
+- el commit principal de like o guardado requiere metadata ORM completa; un
+  fallo de esa transaccion devuelve error y ejecuta rollback;
+- la regeneracion de embeddings ocurre despues del commit principal. Si ese
+  mantenimiento secundario falla, la interaccion ya confirmada conserva una
+  respuesta exitosa, el fallo se registra de forma sanitizada y la sesion
+  ejecuta rollback de cualquier transaccion secundaria incompleta.
+
+`app.core.model_registry.import_all_models` se ejecuta centralmente durante el
+arranque backend, antes de operaciones ORM que resuelvan foreign keys, y su
+registro es idempotente e independiente del orden de imports de routers. No se
+modificaron modelos, foreign keys, migraciones, tablas fisicas, endpoints ni
+payloads.
+
+La captura del fallo secundario no equivale a recuperacion durable. Permanece
+como deuda explicita un mecanismo de reintento durable o reparacion del
+embedding que no revierta ni vuelva a ejecutar el toggle social confirmado.
+Este checkpoint no modifica las obligaciones generales de backup, restore o
+validacion de schema de este documento.
+
 ## 1. Estado de ETAPA 92
 
 ### 1.1 Sprint 92.1

@@ -113,36 +113,16 @@
   padding: 0;
 }
 
-.interactive-bubble--story {
-  --story-bubble-mask:
-    radial-gradient(circle 35px at 50% 35px, #000 98%, transparent 100%),
-    linear-gradient(#000 0 0) center 54px / 60px 14px no-repeat,
-    linear-gradient(#000 0 0) center 64px / 100% calc(100% - 76px) no-repeat,
-    linear-gradient(#000 0 0) center bottom / calc(100% - 18px) 18px no-repeat,
-    radial-gradient(9px at 9px calc(100% - 9px), #000 98%, transparent 100%),
-    radial-gradient(9px at calc(100% - 9px) calc(100% - 9px), #000 98%, transparent 100%);
-  display: flex;
-  min-height: 0;
-  border-width: 0;
-  border-radius: 0;
-  overflow: hidden;
-  padding: 0;
-  color: inherit;
-}
-
-.interactive-bubble.interactive-bubble--story:hover,
-.interactive-bubble.interactive-bubble--story:focus-visible {
-  color: inherit;
-}
-
 .interactive-bubble::before,
-.interactive-bubble::after {
+.interactive-bubble::after,
+.interactive-bubble > .interactive-bubble__rainbow-border {
   position: absolute;
   pointer-events: none;
   content: "";
 }
 
-.interactive-bubble::before {
+.interactive-bubble::before,
+.interactive-bubble > .interactive-bubble__rainbow-border {
   inset: 0;
   z-index: -1;
   border-radius: inherit;
@@ -203,15 +183,6 @@
     box-shadow 180ms ease-out;
 }
 
-.interactive-bubble--story::before,
-.interactive-bubble--story::after {
-  border-radius: 0;
-  -webkit-mask: var(--story-bubble-mask);
-  mask: var(--story-bubble-mask);
-  -webkit-mask-composite: source-over;
-  mask-composite: add;
-}
-
 .interactive-bubble:hover,
 .interactive-bubble:focus-visible {
   border-color: var(--bubble-border-hover);
@@ -220,7 +191,10 @@
 
 .interactive-bubble:hover::before,
 .interactive-bubble:focus-visible::before,
-.interactive-bubble:active::before {
+.interactive-bubble:active::before,
+.interactive-bubble:hover > .interactive-bubble__rainbow-border,
+.interactive-bubble:focus-visible > .interactive-bubble__rainbow-border,
+.interactive-bubble:active > .interactive-bubble__rainbow-border {
   opacity: 1;
   filter: saturate(1.35) blur(0.2px);
   box-shadow:
@@ -259,7 +233,8 @@
 }
 
 .interactive-bubble:disabled::before,
-.interactive-bubble:disabled::after {
+.interactive-bubble:disabled::after,
+.interactive-bubble:disabled > .interactive-bubble__rainbow-border {
   opacity: 0.08;
 }
 
@@ -269,15 +244,131 @@
 }
 
 .interactive-bubble--flush::before,
-.interactive-bubble--flush::after {
+.interactive-bubble--flush::after,
+.interactive-bubble--flush > .interactive-bubble__rainbow-border {
   inset: -1px;
 }
 
 @supports not ((mask-composite: exclude) or (-webkit-mask-composite: xor)) {
-  .interactive-bubble::before {
+  .interactive-bubble::before,
+  .interactive-bubble > .interactive-bubble__rainbow-border {
     border: 1px solid var(--bubble-border-hover);
     background: transparent;
     padding: 0;
+  }
+}
+
+/* Productive liquid surface shared by interactive controls. */
+.interactive-bubble--liquid {
+  --liquid-upper-reflection: var(--fg-color-surface-elevated);
+  background:
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--fg-color-surface-elevated) 22%, transparent),
+      color-mix(in srgb, var(--fg-color-surface-subtle) 8%, transparent) 58%,
+      color-mix(in srgb, var(--fg-color-text-primary) 5%, transparent)
+    );
+  -webkit-backdrop-filter: blur(5px) saturate(1.18) contrast(1.06);
+  backdrop-filter: blur(5px) saturate(1.18) contrast(1.06);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--fg-color-surface-elevated) 68%, transparent),
+    inset 1px 0 4px color-mix(in srgb, var(--fg-color-text-primary) 9%, transparent),
+    inset 0 -5px 8px color-mix(in srgb, var(--fg-color-border-strong) 13%, transparent),
+    0 3px 7px color-mix(in srgb, var(--fg-color-text-primary) 8%, transparent);
+}
+
+html[data-theme="dark"] .interactive-bubble--liquid {
+  --liquid-upper-reflection: color-mix(
+    in srgb,
+    var(--fg-color-text-primary) 58%,
+    transparent
+  );
+}
+
+.interactive-bubble--liquid::before {
+  inset: 1px;
+  padding: 0;
+  background:
+    radial-gradient(
+      ellipse 72% 46% at 35% 8%,
+      color-mix(in srgb, var(--liquid-upper-reflection) 72%, transparent) 0%,
+      color-mix(in srgb, var(--fg-color-text-primary) 16%, transparent) 30%,
+      transparent 66%
+    ),
+    linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--fg-color-surface-elevated) 22%, transparent),
+      transparent 32%,
+      transparent 74%,
+      color-mix(in srgb, var(--fg-color-text-primary) 8%, transparent)
+    );
+  opacity: 0.7;
+  filter: none;
+  box-shadow:
+    inset 2px 0 5px color-mix(in srgb, var(--fg-color-surface-elevated) 28%, transparent),
+    inset -2px 0 5px color-mix(in srgb, var(--fg-color-border-strong) 9%, transparent);
+  -webkit-mask: none;
+  mask: none;
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+}
+
+.interactive-bubble--liquid::after {
+  inset: 2px;
+  background:
+    radial-gradient(
+      ellipse 36% 24% at 28% 14%,
+      color-mix(in srgb, var(--liquid-upper-reflection) 76%, transparent),
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 58% 48% at 82% 68%,
+      color-mix(in srgb, var(--fg-color-surface-elevated) 16%, transparent),
+      transparent 72%
+    );
+  opacity: 0.68;
+  box-shadow:
+    inset 0 2px 4px color-mix(in srgb, var(--fg-color-surface-elevated) 24%, transparent),
+    inset 0 -5px 8px color-mix(in srgb, var(--fg-color-border-strong) 12%, transparent);
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+}
+
+.interactive-bubble--liquid:hover,
+.interactive-bubble--liquid:focus-visible {
+  -webkit-backdrop-filter: blur(6px) saturate(1.24) contrast(1.08);
+  backdrop-filter: blur(6px) saturate(1.24) contrast(1.08);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--fg-color-surface-elevated) 74%, transparent),
+    inset 1px 0 5px color-mix(in srgb, var(--fg-color-text-primary) 11%, transparent),
+    inset 0 -6px 10px color-mix(in srgb, var(--fg-color-border-strong) 14%, transparent),
+    0 4px 9px color-mix(in srgb, var(--fg-color-text-primary) 9%, transparent);
+}
+
+.interactive-bubble--liquid:hover::before,
+.interactive-bubble--liquid:focus-visible::before {
+  opacity: 0.86;
+  transform: translate3d(1px, 1px, 0);
+}
+
+.interactive-bubble--liquid:hover::after,
+.interactive-bubble--liquid:focus-visible::after {
+  opacity: 0.82;
+  transform: translate3d(1px, 0, 0);
+}
+
+.interactive-bubble--liquid:disabled {
+  background: var(--fg-color-disabled-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .interactive-bubble--liquid {
+    background:
+      linear-gradient(
+        155deg,
+        color-mix(in srgb, var(--fg-color-surface-elevated) 48%, transparent),
+        color-mix(in srgb, var(--fg-color-surface-subtle) 24%, transparent)
+      );
   }
 }
 
@@ -295,6 +386,11 @@
   }
 
   .interactive-bubble:active {
+    transform: none;
+  }
+
+  .interactive-bubble--liquid::before,
+  .interactive-bubble--liquid::after {
     transform: none;
   }
 }

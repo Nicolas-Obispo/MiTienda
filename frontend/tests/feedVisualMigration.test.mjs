@@ -57,7 +57,16 @@ test("InteraccionButton conserva owner, callbacks y animaciones", () => {
   assert.match(interactionButton, /animate-save/);
   assert.match(interactionButton, /interactive-bubble--danger/);
   assert.match(interactionButton, /interactive-bubble--warning/);
+  assert.match(interactionButton, /interactive-bubble--liquid/);
+  assert.equal((interactionButton.match(/<InteractiveLiquidLayers \/>/g) || []).length, 1);
   assert.match(interactionButton, /aria-label=\{iconOnly \? accessibleLabel : undefined\}/);
+  assert.match(interactionButton, /Icon: Heart/);
+  assert.match(interactionButton, /Icon: Star/);
+  assert.match(interactionButton, /aria-hidden="true"/);
+  assert.match(interactionButton, /fill-none stroke-current/);
+  assert.match(interactionButton, /text-interactive-on-primary/);
+  assert.match(interactionButton, /activeIcon: SOCIAL_ICONS\.like/);
+  assert.match(interactionButton, /activeIcon: SOCIAL_ICONS\.guardado/);
   assert.doesNotMatch(interactionButton, /text-red-|text-yellow-|text-gray-|border-red-|border-yellow-|border-gray-/);
 });
 
@@ -74,14 +83,16 @@ test("Cache-First y carga no bloquean datos utilizables", () => {
   assert.match(feedHook, /queryKey: queryKeys\.feed\.publicaciones\(\)/);
   assert.match(feedHook, /queryFn: fetchFeedPublicaciones/);
   assert.match(feedHook, /staleTime: 1000 \* 30/);
-  assert.match(feed, /feedItems\.length > 0 && publicaciones\.length === 0/);
-  assert.match(feed, /isFeedLoading && publicaciones\.length === 0 && feedItems\.length === 0/);
+  assert.match(feed, /const publicaciones = useMemo\(\(\) => \{/);
+  assert.match(feed, /const isLoading = isFeedLoading && publicaciones\.length === 0/);
+  assert.match(feed, /const feedHydratado = !isFeedLoading/);
   assert.match(feed, /isLoading && publicaciones\.length === 0/);
 });
 
 test("Feed conserva optimistic updates, guardados y contratos de historias", () => {
-  assert.match(feed, /optimisticToggleLike\(prev, pubId\)/);
-  assert.match(feed, /optimisticToggleGuardado\(prev, pubId\)/);
+  assert.doesNotMatch(feed, /\[publicaciones, setPublicaciones\]|setPublicaciones\(/);
+  assert.doesNotMatch(feed, /optimisticToggleLike|optimisticToggleGuardado/);
+  assert.match(feed, /guardadasSet\.has\(publicacion\.id\)/);
   assert.match(feed, /toggleLikeMutation\.mutateAsync\(pubId\)/);
   assert.match(feed, /toggleGuardadoMutation\.mutateAsync\(/);
   assert.match(feed, /fetchHistoriasPorComercio\(comercioId\)/);

@@ -3,8 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   actualizarGuardadasOptimistaEnCache,
   aplicarGuardadoOptimistaEnCache,
-  invalidarPublicacionesQueries,
-  publicacionesQueryFilters,
+  guardadoQueryFilters,
+  invalidarGuardadoQueries,
   restaurarSnapshotCache,
   snapshotPublicacionesCache,
   toggleGuardado,
@@ -30,9 +30,13 @@ export function useToggleGuardadoPublicacionMutation() {
     mutationFn: toggleGuardado,
 
     onMutate: async ({ publicacionId, estabaGuardada }) => {
-      await queryClient.cancelQueries(publicacionesQueryFilters());
+      const queryFilters = guardadoQueryFilters();
+      await queryClient.cancelQueries(queryFilters);
 
-      const snapshotCache = snapshotPublicacionesCache(queryClient);
+      const snapshotCache = snapshotPublicacionesCache(
+        queryClient,
+        queryFilters
+      );
 
       aplicarGuardadoOptimistaEnCache(queryClient, publicacionId);
       actualizarGuardadasOptimistaEnCache({
@@ -53,7 +57,7 @@ export function useToggleGuardadoPublicacionMutation() {
     },
 
     onSettled: () => {
-      return invalidarPublicacionesQueries(queryClient);
+      return invalidarGuardadoQueries(queryClient);
     },
   });
 }

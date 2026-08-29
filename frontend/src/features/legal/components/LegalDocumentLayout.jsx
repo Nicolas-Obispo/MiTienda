@@ -17,7 +17,7 @@ export default function LegalDocumentLayout({ type, title, children }) {
             {error && "No fue posible verificar la versión vigente."}
           </p>
           <Alert variant="warning" className="mt-4">
-            Documento implementado para validación técnica. Su habilitación
+            Este documento se encuentra disponible para consulta. Su habilitación
             productiva requiere completar la identificación del responsable y el
             canal formal de contacto definidos como pendientes por el Gobierno.
           </Alert>

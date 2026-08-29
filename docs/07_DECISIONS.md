@@ -657,3 +657,30 @@ No reemplaza la documentación oficial existente.
   decision documentada, manteniendo trazabilidad, sin arbitrariedad ni
   renumeracion de etapas cerradas. Cada etapa futura se mantiene en
   aproximadamente hasta seis sprints pequenos, verificables y cerrables.
+
+## DEC-056
+
+- ID: DEC-056
+- Titulo: Superficie Liquid como owner visual compartido de controles FeedGo
+- Estado: Aprobada e implementada parcialmente durante ETAPA 98; etapa abierta.
+- Problema: La aplicacion mantenia un efecto burbuja compartido, pero botones y
+  enlaces visuales podian recibir capas, reflejos y borde de forma manual o
+  localizada, con riesgo de divergencia y duplicacion.
+- Decision: `.interactive-bubble--liquid` es el unico owner productivo de la
+  superficie liquida de FeedGo. `Button` e `InteraccionButton` inyectan una
+  unica capa `InteractiveLiquidLayers`; los nodos navegables no construidos con
+  esos primitives componen la misma capa de forma explicita. El helper es
+  exclusivamente decorativo y `aria-hidden`.
+- Invariantes: Liquid modifica solo superficie. No cambia texto, iconos,
+  acciones, destinos, handlers, variantes semanticas, color de texto,
+  dimensiones, padding, ubicacion, responsive, foco, disabled, loading ni
+  funcionamiento light/dark. El gradiente, fallback y reduced motion tienen un
+  unico owner compartido.
+- Exclusiones: controles invisibles o inmersivos, areas drag-and-drop, controles
+  blancos superpuestos sobre video, zonas extensas anterior/siguiente de
+  Historias, Leaflet, inputs, selects, file inputs y enlaces textuales no se
+  convierten automaticamente en Liquid.
+- Gate: contratos globales deben impedir burbujas manuales sin Liquid, capas
+  duplicadas y helpers manuales dentro de consumidores de `Button`.
+- Impacto: el alias experimental fue retirado. El checkpoint no cierra ETAPA
+  98; la evidencia visual humana/renderizada restante continua obligatoria.

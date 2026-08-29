@@ -22,6 +22,10 @@ from app.modules.posts.services.publicaciones_services import (
 from app.modules.ai.services.comercios_embeddings_services import (
     obtener_vector_embedding_comercio,
 )
+from app.core.operation_logging import get_operation_logger, safe_error_class
+
+
+logger = get_operation_logger("social_embeddings")
 
 # Ventana mínima para evitar recálculos innecesarios
 VENTANA_RECALCULO_MINUTOS = 5
@@ -217,3 +221,26 @@ def regenerar_embedding_usuario_si_corresponde(
         usuario_id=usuario_id,
         model_version=model_version,
     )
+
+
+def mantener_embedding_usuario_post_commit(
+    db: Session,
+    *,
+    usuario_id: int,
+) -> bool:
+    """Aisla el mantenimiento secundario de una interaccion ya confirmada."""
+
+    try:
+        regenerar_embedding_usuario_si_corresponde(
+            db=db,
+            usuario_id=usuario_id,
+        )
+        return True
+    except Exception as exc:
+        db.rollback()
+        logger.error(
+            "social_embedding_maintenance_failed usuario_id=%s error_class=%s",
+            usuario_id,
+            safe_error_class(exc),
+        )
+        return False

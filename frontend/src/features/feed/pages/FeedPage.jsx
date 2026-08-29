@@ -7,7 +7,7 @@
  * - Backend sigue siendo fuente de verdad
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ActiveLayer } from "@core";
 
@@ -18,8 +18,6 @@ import { Alert, Button, getMediaUrlFromAny, Skeleton, Surface } from "@shared";
 import { useFeedPublicaciones } from "@features/feed/hooks/useFeedPublicaciones";
 
 import {
-  optimisticToggleGuardado,
-  optimisticToggleLike,
   useSocialInteractions,
   useToggleLikePublicacionMutation,
   useToggleGuardadoPublicacionMutation,
@@ -45,7 +43,7 @@ export default function FeedPage() {
   } = useFeedPublicaciones();
 
   const {
-    data: guardadasData = [],
+    data: guardadasData,
   } = usePublicacionesGuardadas();
 
   const {
@@ -55,10 +53,8 @@ export default function FeedPage() {
     refetch: refetchHistoriasBar,
   } = useHistoriasBar();
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [feedHydratado, setFeedHydratado] = useState(false);
-  const [publicaciones, setPublicaciones] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const [noticeMessage, setNoticeMessage] = useState("");
   const historiasErrorMessage = historiasBarError
     ? historiasBarError.message || "Error desconocido cargando historias."
     : "";
@@ -90,6 +86,31 @@ export default function FeedPage() {
   
   const toggleGuardadoMutation =
     useToggleGuardadoPublicacionMutation();
+
+  const publicaciones = useMemo(() => {
+    const feedItems = Array.isArray(feedData)
+      ? feedData
+      : feedData?.items || [];
+
+    if (guardadasData === undefined) return feedItems;
+
+    const guardadasItems = Array.isArray(guardadasData)
+      ? guardadasData
+      : guardadasData?.items || [];
+    const guardadasSet = new Set(
+      guardadasItems
+        .map((guardada) => guardada?.id)
+        .filter((id) => typeof id === "number")
+    );
+
+    return feedItems.map((publicacion) => ({
+      ...publicacion,
+      guardada_by_me: guardadasSet.has(publicacion.id),
+    }));
+  }, [feedData, guardadasData]);
+
+  const isLoading = isFeedLoading && publicaciones.length === 0;
+  const feedHydratado = !isFeedLoading;
 
   async function cerrarViewer() {
     if (huboVistasNuevasRef.current) {
@@ -154,75 +175,22 @@ export default function FeedPage() {
     return list;
   }
 
-  async function loadFeed() {
-    try {
-      setErrorMessage("");
-
-      if (feedQueryError) {
-        throw feedQueryError;
-      }
-
-      const feedItems = Array.isArray(feedData)
-        ? feedData
-        : feedData?.items || [];
-
-      const guardadasItems = Array.isArray(guardadasData)
-        ? guardadasData
-        : guardadasData?.items || [];
-
-      const guardadasSet = new Set(
-        guardadasItems
-          .map((g) => g?.id)
-          .filter((id) => typeof id === "number")
-      );
-
-      const merged = feedItems.map((p) => ({
-        ...p,
-        guardada_by_me: guardadasSet.has(p.id),
-      }));
-
-      setPublicaciones(merged);
-      setFeedHydratado(true);
-      setIsLoading(false);
-    } catch (error) {
-      setErrorMessage(error?.message || "Error desconocido cargando el feed.");
-      setFeedHydratado(true);
-      setIsLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    const feedItems = Array.isArray(feedData)
-      ? feedData
-      : feedData?.items || [];
-
-    if (feedItems.length > 0 && publicaciones.length === 0) {
-      setPublicaciones(feedItems);
-      setIsLoading(false);
-    }
-
-    if (isFeedLoading && publicaciones.length === 0 && feedItems.length === 0) {
-      return;
-    }
-
-    loadFeed();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feedData, guardadasData, isFeedLoading, feedQueryError]);
-
-
   useEffect(() => {
     if (feedQueryError) {
-      setErrorMessage(
-        feedQueryError?.message || "Error desconocido cargando el feed."
-      );
-      setIsLoading(false);
+      if (publicaciones.length > 0) {
+        setNoticeMessage(
+          "No se pudieron actualizar las publicaciones. Seguís viendo la última información disponible."
+        );
+      } else {
+        setErrorMessage(
+          feedQueryError?.message || "Error desconocido cargando el feed."
+        );
+      }
       return;
     }
 
-    setIsLoading(!feedHydratado && publicaciones.length === 0);
-
-  }, [feedHydratado, isFeedLoading, feedQueryError, publicaciones.length]);
+    setErrorMessage("");
+  }, [feedQueryError, publicaciones.length]);
 
   useEffect(() => {
     const shouldShowWelcome =
@@ -339,12 +307,13 @@ export default function FeedPage() {
     if (isLikeLocked(pubId)) return;
 
     setLikeLock(pubId, true);
-    setPublicaciones((prev) => optimisticToggleLike(prev, pubId));
 
     try {
       await toggleLikeMutation.mutateAsync(pubId);
-    } catch (error) {
-      setErrorMessage(error?.message || "Error al togglear like.");
+    } catch {
+      setNoticeMessage(
+        "No se pudo actualizar Me gusta. Intentá nuevamente."
+      );
     } finally {
       setLikeLock(pubId, false);
     }
@@ -357,15 +326,15 @@ export default function FeedPage() {
     const current = publicaciones.find((p) => p.id === pubId);
     const estabaGuardada = Boolean(current?.guardada_by_me);
 
-    setPublicaciones((prev) => optimisticToggleGuardado(prev, pubId));
-
     try {
       await toggleGuardadoMutation.mutateAsync({
         publicacionId: pubId,
         estabaGuardada,
       });
-    } catch (error) {
-      setErrorMessage(error?.message || "Error al guardar/quitar guardado.");
+    } catch {
+      setNoticeMessage(
+        "No se pudo actualizar el guardado. Intentá nuevamente."
+      );
     } finally {
       setSaveLock(pubId, false);
     }
@@ -435,10 +404,19 @@ export default function FeedPage() {
           </div>
         )}
 
-        {!isLoading && errorMessage && (
+        {!isLoading && errorMessage && publicaciones.length === 0 && (
           <Alert variant="danger" role="alert" className="p-5">
             <p className="font-semibold">Error</p>
             <p className="mt-2 break-words">{errorMessage}</p>
+          </Alert>
+        )}
+
+        {noticeMessage && publicaciones.length > 0 && (
+          <Alert variant="warning" role="status" aria-live="polite" className="mb-4 flex items-center justify-between gap-3">
+            <span>{noticeMessage}</span>
+            <Button variant="ghost" onClick={() => setNoticeMessage("")} className="shrink-0 text-xs">
+              Cerrar
+            </Button>
           </Alert>
         )}
 
@@ -451,7 +429,7 @@ export default function FeedPage() {
           </Surface>
         )}
 
-        {!isLoading && !errorMessage && publicaciones.length > 0 && (
+        {!isLoading && publicaciones.length > 0 && (
           <section className="space-y-6">
             {publicaciones.map((p) => (
               <Surface
@@ -554,7 +532,7 @@ export default function FeedPage() {
 
           <Surface variant="subtle" className="mt-6 p-4">
             <p className="text-sm text-brand">
-              MiPlaza no solo conecta personas, negocios y oportunidades en un solo lugar.
+              FeedGo no solo conecta personas, negocios y oportunidades en un solo lugar.
             </p>
           </Surface>
 
@@ -585,10 +563,6 @@ export default function FeedPage() {
     </div>
   );
 }
-
-
-
-
 
 
 

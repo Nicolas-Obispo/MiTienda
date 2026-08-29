@@ -80,7 +80,7 @@ export default function HistoriasBar({ items = [], onClickComercio }) {
                 key={item.comercioId}
                 type="button"
                 variant="ghost"
-                className="interactive-bubble--avatar-circle flex w-[70px] shrink-0 flex-col items-center gap-2"
+                className="flex w-[70px] shrink-0 flex-col items-center gap-2"
                 onClick={() => {
                   if (typeof onClickComercio === "function") {
                     onClickComercio(item.comercioId);

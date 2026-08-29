@@ -269,7 +269,7 @@ export default function ExplorarPage() {
       publicacion?.nombre_comercio ||
       publicacion?.comercio?.nombre ||
       publicacion?.descripcion ||
-      "MiPlaza"
+      "FeedGo"
     );
   }
 

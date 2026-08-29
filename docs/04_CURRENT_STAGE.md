@@ -558,8 +558,10 @@ Plan restante oficial de ETAPA 95:
 Estado de continuidad:
 
 - Ultima etapa cerrada: ETAPA 97 - Administracion Operativa Minima.
-- Siguiente etapa: ETAPA 98 - Correccion y Pulido Visual del Frontend,
-  pendiente y no iniciada.
+- Etapa vigente: ETAPA 98 - Correccion y Pulido Visual del Frontend, abierta.
+- Checkpoint intermedio aprobado: sistema visual Liquid consolidado y bloque
+  correctivo incidental de publicaciones e interacciones validado. Este
+  checkpoint no cierra ETAPA 98 ni habilita otra etapa.
 - 97.1 - Contrato administrativo y autorizacion: cerrada. FeedGo dispone de un
   catalogo inicial de cuatro capacidades administrativas persistidas fuera del
   JWT, eventos append-only de otorgamiento/revocacion, bootstrap local
@@ -720,8 +722,8 @@ Resultado:
 Quedaron integradas y validadas la autorizacion administrativa, la consulta y
 decision trazable de denuncias, la gestion minima de incidentes, el estado
 operativo seguro y el canal operativo automatico. ETAPA 98 - Correccion y
-Pulido Visual del Frontend es la siguiente etapa oficial, pendiente y no
-iniciada.
+Pulido Visual del Frontend es la etapa vigente y permanece abierta despues de
+su checkpoint intermedio de Liquid e interacciones.
 
 ## Etapa cerrada historica anterior a ETAPA 95
 
@@ -843,8 +845,8 @@ Resultado:
 El trabajo previo a ETAPA 97 queda formalmente cerrado. ETAPA 96 permanece
 cerrada. ETAPA 97 - Administracion Operativa Minima queda formalmente cerrada
 con 97.1, 97.2, 97.3, 97.4, 97.5 y 97.6 cerradas. ETAPA 98 - Correccion y
-Pulido Visual del Frontend es la siguiente etapa oficial, pendiente y no
-iniciada.
+Pulido Visual del Frontend permanece abierta; el checkpoint intermedio de
+sistema Liquid e interacciones no constituye cierre.
 
 ## Estado ETAPA 92
 

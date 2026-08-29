@@ -21,7 +21,7 @@ from app.modules.posts.services.publicaciones_services import (
     obtener_publicacion_visible_o_error,
 )
 from app.modules.ai.services.usuarios_embeddings_services import (
-    regenerar_embedding_usuario_si_corresponde
+    mantener_embedding_usuario_post_commit,
 )
 
 
@@ -52,10 +52,14 @@ def toggle_like_publicacion(
 
     if like_existente:
         db.delete(like_existente)
-        db.commit()
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
 
         # ✅ ETAPA 55: recalcular SOLO si corresponde
-        regenerar_embedding_usuario_si_corresponde(
+        mantener_embedding_usuario_post_commit(
             db=db,
             usuario_id=usuario_id,
         )
@@ -68,10 +72,14 @@ def toggle_like_publicacion(
     )
 
     db.add(nuevo_like)
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
     # ✅ ETAPA 55: recalcular SOLO si corresponde
-    regenerar_embedding_usuario_si_corresponde(
+    mantener_embedding_usuario_post_commit(
         db=db,
         usuario_id=usuario_id,
     )

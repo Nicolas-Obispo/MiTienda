@@ -1,3 +1,5 @@
+import { queryKeys } from "../../../core/constants/queryKeys.js";
+
 // Utilidades compartidas para actualizar publicaciones en la cache de TanStack Query.
 // Objetivo: que Feed, Ranking y Detalle puedan sincronizar likes/guardados
 // sin duplicar lógica local en cada pantalla.
@@ -6,15 +8,31 @@ function esPublicacionPorId(item, publicacionId) {
   return Number(item?.id) === Number(publicacionId);
 }
 
-function esQueryKeyDePublicaciones(queryKey) {
-  const keyText = JSON.stringify(queryKey || []);
-
+function coincideConPrefijo(queryKey, prefix) {
   return (
-    keyText.includes("feed") ||
-    keyText.includes("ranking") ||
-    keyText.includes("posts") ||
-    keyText.includes("publicaciones")
+    Array.isArray(queryKey) &&
+    prefix.every((segment, index) => queryKey[index] === segment)
   );
+}
+
+const PUBLICATION_CACHE_PREFIXES = [
+  queryKeys.feed.publicaciones(),
+  queryKeys.ranking.publicaciones(),
+  queryKeys.posts.detalle(null).slice(0, 2),
+  queryKeys.posts.guardadas(),
+  queryKeys.spaces.publicaciones(null).slice(0, 2),
+  queryKeys.explore.posts().slice(0, 2),
+];
+
+const PUBLICATION_RECONCILIATION_PREFIXES = [
+  queryKeys.feed.publicaciones(),
+  queryKeys.ranking.publicaciones(),
+  queryKeys.spaces.publicaciones(null).slice(0, 2),
+  queryKeys.explore.posts().slice(0, 2),
+];
+
+function perteneceAFamilias(queryKey, prefixes) {
+  return prefixes.some((prefix) => coincideConPrefijo(queryKey, prefix));
 }
 
 function esQueryKeyPostsGuardadas(queryKey) {
@@ -139,20 +157,37 @@ function insertarPublicacionEnData(data, publicacion) {
   };
 }
 
-export function publicacionesQueryPredicate(query) {
-  return esQueryKeyDePublicaciones(query.queryKey);
+export function likeQueryPredicate(query) {
+  return perteneceAFamilias(query.queryKey, PUBLICATION_CACHE_PREFIXES);
 }
 
-export function publicacionesQueryFilters() {
+export function guardadoQueryPredicate(query) {
+  return perteneceAFamilias(query.queryKey, PUBLICATION_CACHE_PREFIXES);
+}
+
+export function likeQueryFilters() {
+  return { predicate: likeQueryPredicate };
+}
+
+export function guardadoQueryFilters() {
+  return { predicate: guardadoQueryPredicate };
+}
+
+function reconciliationQueryFilters() {
   return {
-    predicate: publicacionesQueryPredicate,
+    predicate: (query) =>
+      perteneceAFamilias(
+        query.queryKey,
+        PUBLICATION_RECONCILIATION_PREFIXES
+      ),
+    refetchType: "none",
   };
 }
 
-export function snapshotPublicacionesCache(queryClient) {
+export function snapshotPublicacionesCache(queryClient, filters) {
   return queryClient
     .getQueryCache()
-    .findAll(publicacionesQueryFilters())
+    .findAll(filters)
     .map((query) => ({
       queryKey: query.queryKey,
       data: queryClient.getQueryData(query.queryKey),
@@ -167,12 +202,16 @@ export function restaurarSnapshotCache(queryClient, snapshotCache) {
   });
 }
 
-export function invalidarPublicacionesQueries(queryClient) {
-  return queryClient.invalidateQueries(publicacionesQueryFilters());
+export function invalidarLikeQueries(queryClient) {
+  return queryClient.invalidateQueries(reconciliationQueryFilters());
 }
 
-export function obtenerPublicacionEnCache(queryClient, publicacionId) {
-  const queries = queryClient.getQueryCache().findAll(publicacionesQueryFilters());
+export function invalidarGuardadoQueries(queryClient) {
+  return queryClient.invalidateQueries(reconciliationQueryFilters());
+}
+
+export function obtenerPublicacionEnCache(queryClient, publicacionId, filters) {
+  const queries = queryClient.getQueryCache().findAll(filters);
 
   for (const query of queries) {
     const publicacion = obtenerPublicacionDeData(
@@ -186,9 +225,14 @@ export function obtenerPublicacionEnCache(queryClient, publicacionId) {
   return null;
 }
 
-export function actualizarPublicacionEnCache(queryClient, publicacionId, updater) {
+export function actualizarPublicacionEnCache(
+  queryClient,
+  publicacionId,
+  updater,
+  filters
+) {
   queryClient.setQueriesData(
-    publicacionesQueryFilters(),
+    filters,
     (oldData) => actualizarPublicacionEnData(oldData, publicacionId, updater)
   );
 }
@@ -208,7 +252,7 @@ export function aplicarLikeOptimistaEnCache(queryClient, publicacionId) {
         (publicacion?.interacciones_count || 0) + delta
       ),
     };
-  });
+  }, likeQueryFilters());
 }
 
 export function actualizarGuardadasOptimistaEnCache({
@@ -227,7 +271,11 @@ export function actualizarGuardadasOptimistaEnCache({
     return;
   }
 
-  const publicacion = obtenerPublicacionEnCache(queryClient, publicacionId);
+  const publicacion = obtenerPublicacionEnCache(
+    queryClient,
+    publicacionId,
+    guardadoQueryFilters()
+  );
 
   if (!publicacion) return;
 
@@ -254,5 +302,5 @@ export function aplicarGuardadoOptimistaEnCache(queryClient, publicacionId) {
         (publicacion?.interacciones_count || 0) + delta
       ),
     };
-  });
+  }, guardadoQueryFilters());
 }

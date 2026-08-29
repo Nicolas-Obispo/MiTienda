@@ -10,6 +10,7 @@ import {
   useOperationalStatus,
 } from "@features/operations/hooks/useOperationalStatus";
 import { Alert, Button, FormControl, Input, Select, Skeleton, Surface } from "@shared";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
 
 function statusVariant(status) {
@@ -43,7 +44,7 @@ export default function OperationalStatusPage() {
       <p className="mt-2 text-sm text-secondary">
         Lectura volátil del proceso actual. No constituye historial, estado global, garantía de vigencia ni objetivo de recuperación.
       </p>
-      <Link className="interactive-bubble mt-3 inline-flex min-h-11 items-center text-link underline underline-offset-2" to="/administracion">Volver a Administración</Link>
+      <Link className="interactive-bubble interactive-bubble--liquid mt-3 inline-flex min-h-11 items-center text-link underline underline-offset-2" to="/administracion">Volver a Administración<InteractiveLiquidLayers /></Link>
     </header>
 
     {status.isLoading ? <Skeleton className="h-44 w-full" /> : null}
@@ -104,7 +105,7 @@ export default function OperationalStatusPage() {
         <p>Estado del contenido: {administrativeLabel(integrity.data.lifecycle)} · Moderación: {integrity.data.moderation_hidden ? "Oculto" : "Visible"}</p>
         <p>Archivo: {administrativeLabel(integrity.data.asset.kind)} · {administrativeLabel(integrity.data.asset.status)}</p>
         {integrity.data.issues.map((issue) => <Alert key={issue.code} variant="warning">{administrativeLabel(issue.code)}</Alert>)}
-        {integrity.data.issues.length && capabilities.tieneCapacidad("operations.incidents.manage") ? <Link className="interactive-bubble inline-flex min-h-11 w-full items-center justify-center text-link sm:w-auto" to="/administracion/incidentes">Abrir incidente mediante el flujo existente</Link> : null}
+        {integrity.data.issues.length && capabilities.tieneCapacidad("operations.incidents.manage") ? <Link className="interactive-bubble interactive-bubble--liquid inline-flex min-h-11 w-full items-center justify-center text-link sm:w-auto" to="/administracion/incidentes">Abrir incidente mediante el flujo existente<InteractiveLiquidLayers /></Link> : null}
       </div> : null}
     </Surface>
   </main>;

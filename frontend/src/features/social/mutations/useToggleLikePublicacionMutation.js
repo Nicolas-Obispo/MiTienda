@@ -2,8 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   aplicarLikeOptimistaEnCache,
-  invalidarPublicacionesQueries,
-  publicacionesQueryFilters,
+  invalidarLikeQueries,
+  likeQueryFilters,
   restaurarSnapshotCache,
   snapshotPublicacionesCache,
   toggleLike,
@@ -29,9 +29,13 @@ export function useToggleLikePublicacionMutation() {
     mutationFn: toggleLike,
 
     onMutate: async (publicacionId) => {
-      await queryClient.cancelQueries(publicacionesQueryFilters());
+      const queryFilters = likeQueryFilters();
+      await queryClient.cancelQueries(queryFilters);
 
-      const snapshotCache = snapshotPublicacionesCache(queryClient);
+      const snapshotCache = snapshotPublicacionesCache(
+        queryClient,
+        queryFilters
+      );
 
       aplicarLikeOptimistaEnCache(queryClient, publicacionId);
 
@@ -47,7 +51,7 @@ export function useToggleLikePublicacionMutation() {
     },
 
     onSettled: () => {
-      return invalidarPublicacionesQueries(queryClient);
+      return invalidarLikeQueries(queryClient);
     },
   });
 }

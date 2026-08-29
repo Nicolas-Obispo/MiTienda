@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
 import {
   useActOnOperationalIncident, useOpenOperationalIncident,
@@ -145,7 +146,7 @@ export default function OperationalIncidentsPage() {
   }, [selected]);
   function closeDetail() { restoreDetailFocusRef.current = true; setSelected(null); }
   return <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-    <h1 className="text-2xl font-semibold text-primary">Incidentes operativos</h1><p className="mt-1 text-sm text-secondary">Registro manual, cronología y gestión de estado. No reemplaza observabilidad ni recuperación.</p><Link className="interactive-bubble mt-3 inline-flex min-h-11 items-center text-link underline underline-offset-2" to="/administracion">Volver a Administración</Link>
+    <h1 className="text-2xl font-semibold text-primary">Incidentes operativos</h1><p className="mt-1 text-sm text-secondary">Registro manual, cronología y gestión de estado. No reemplaza observabilidad ni recuperación.</p><Link className="interactive-bubble interactive-bubble--liquid mt-3 inline-flex min-h-11 items-center text-link underline underline-offset-2" to="/administracion">Volver a Administración<InteractiveLiquidLayers /></Link>
     <Surface variant="subtle" className="mt-5 p-4"><form className="grid gap-3 sm:grid-cols-2" onSubmit={submit}>
       <FormControl label="Titulo" labelFor="incident-title"><Input id="incident-title" required minLength="3" maxLength="160" value={form.title} onChange={(e) => update("title",e.target.value)} /></FormControl>
       <FormControl label="ID del operador responsable" labelFor="incident-owner"><Input id="incident-owner" type="number" min="1" required value={form.owner_usuario_id} onChange={(e) => update("owner_usuario_id",e.target.value)} /></FormControl>

@@ -56,7 +56,8 @@ test("radios nativos preservan teclado, foco y estado seleccionado", () => {
   assert.match(selectorSource, /focus-within:outline-focus-ring/);
   assert.match(selectorSource, /border-border-strong bg-surface text-primary shadow-elevation/);
   assert.doesNotMatch(selectorSource, /selected-(?:border|surface|text)|purple|violet|lila/i);
-  assert.match(selectorSource, /interactive-bubble interactive-bubble--secondary/);
+  assert.match(selectorSource, /interactive-bubble interactive-bubble--liquid interactive-bubble--secondary/);
+  assert.equal((selectorSource.match(/<InteractiveLiquidLayers \/>/g) || []).length, 1);
 });
 
 test("Editar perfil adopta primitives sin mover estado de formulario", () => {

@@ -135,3 +135,28 @@ real antes de conservar, documentar o eliminar. 95.7-C confronto esta evidencia
 sin repetir la auditoria y confirmo que la deuda de token, query keys, doble
 estado y transporte directo no constituye un bloqueante del cierre tecnico de
 ETAPA 95 ni autoriza una limpieza automatica.
+
+## Actualizacion de ownership en ETAPA 98
+
+El checkpoint intermedio de ETAPA 98 actualiza los siguientes owners sin
+reabrir Search, Ranking ni el contrato geografico:
+
+- `Button` e `InteraccionButton` son los owners de inyeccion automatica de
+  Liquid; `InteractiveLiquidLayers` solo representa decoracion;
+- TanStack Query es el unico owner de las publicaciones renderizadas y del
+  estado social de Feed. Ya no existe una copia local paralela del array;
+- `socialCacheUtils` selecciona familias mediante segmentos estructurales de
+  query keys, diferenciando like y guardado, sin `JSON.stringify` ni
+  coincidencias por substring;
+- optimistic update y rollback actualizan caches por `id`; el resultado se
+  marca stale sin refetch inmediato, preservando el orden visible hasta una
+  carga o refresh normal posterior;
+- los errores de interaccion o refresh con datos son avisos no bloqueantes en
+  Feed, Ranking y PerfilComercio; solo la carga inicial fallida sin datos
+  conserva el error bloqueante;
+- detalle y guardados se actualizan directamente y no se refetchean de forma
+  accidental por una interaccion social.
+
+PerfilComercio y Ranking conservan sus owners locales preexistentes donde no
+fueron autorizados cambios adicionales. Este checkpoint no declara resuelta
+toda la deuda historica de ownership ni cierra ETAPA 98.

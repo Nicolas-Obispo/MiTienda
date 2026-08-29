@@ -3,10 +3,12 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { InteraccionButton, PublicationVideo } from "@shared";
 import { getMediaUrlFromAny } from "@shared";
+import { SOCIAL_ICONS } from "@shared/constants/socialIcons";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
 function MetricBadge({ label, value, icon }) {
   return (
-    <div className="inline-flex items-center rounded-full border border-border bg-surface-subtle px-3 py-1 text-xs text-primary">
+    <div className="inline-flex items-center px-3 py-1 text-xs text-primary">
       <span className="mr-1" aria-hidden="true">{icon}</span>
       <span className="mr-1 text-secondary">{label}</span>
       <span className="font-semibold">{value ?? 0}</span>
@@ -201,9 +203,10 @@ export default function PublicacionCard({
           {comercioId ? (
             <Link
               to={`/comercios/${comercioId}`}
-              className="interactive-bubble interactive-bubble--secondary text-xs"
+              className="interactive-bubble interactive-bubble--liquid interactive-bubble--secondary text-xs"
             >
               <span>Ver espacio</span>
+              <InteractiveLiquidLayers />
             </Link>
           ) : null}
 
@@ -279,8 +282,8 @@ export default function PublicacionCard({
         </div>
 
         <footer className="mt-4 flex flex-wrap items-center gap-2">
-          <MetricBadge label="Likes" value={pub?.likes_count} icon="❤️" />
-          <MetricBadge label="Guardados" value={pub?.guardados_count} icon="⭐" />
+          <MetricBadge label="Likes" value={pub?.likes_count} icon={SOCIAL_ICONS.like} />
+          <MetricBadge label="Guardados" value={pub?.guardados_count} icon={SOCIAL_ICONS.guardado} />
 
           {showInteracciones ? (
             <MetricBadge

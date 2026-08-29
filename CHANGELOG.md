@@ -9,6 +9,39 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 98 - Checkpoint Liquid e interacciones
+
+**Estado:** Checkpoint aprobado; ETAPA 98 permanece abierta
+
+- Se consolida `.interactive-bubble--liquid` como owner productivo de la
+  superficie compartida de botones y enlaces visuales. `Button` e
+  `InteraccionButton` inyectan una unica capa decorativa; navegacion, Home,
+  administracion, publicaciones, espacios y selector de apariencia reutilizan
+  el mismo owner sin cambiar acciones, destinos, geometria ni accesibilidad.
+- La superficie conserva lente, refraccion, reflejo claro en dark, borde
+  multicolor unico, fallback sin `backdrop-filter`, reduced motion y variantes
+  semanticas. Se retiran el alias experimental y modifiers CSS sin consumidores
+  y se incorpora un contrato global contra burbujas o capas duplicadas.
+- Los textos y marca residuales auditados fueron corregidos sin alterar
+  contratos legales sustantivos. Home incorpora su informacion de bienvenida
+  aprobada y Login conserva su ajuste vertical, logo y animacion.
+- Las interacciones sociales aislan el mantenimiento de embeddings posterior
+  al commit: un fallo secundario queda registrado y limpia su transaccion sin
+  convertir en error una interacción ya confirmada. Permanece pendiente un
+  reintento durable de embeddings.
+- El runtime registra central e idempotentemente todos los modelos SQLAlchemy
+  antes de resolver foreign keys. No se modificaron modelos, FKs, migraciones,
+  endpoints ni tablas fisicas.
+- Feed, Ranking y PerfilComercio conservan contenido valido ante errores
+  sociales o de refresh. Las caches sociales se seleccionan mediante query keys
+  estructurales, Feed usa TanStack Query como owner unico y las mutaciones
+  mantienen el orden visible sin refetch inmediato.
+- Validacion del checkpoint: 379/379 tests frontend, build productivo/PWA,
+  438 tests backend correctos con 1 omitido, `compileall app` y
+  `git diff --check` correctos.
+- Este checkpoint no cierra ETAPA 98 ni sustituye el gate visual humano y
+  renderizado de las superficies restantes.
+
 ## ETAPA 97 - Administracion Operativa Minima
 
 **Estado:** Cerrada; ETAPA 98 pendiente y no iniciada

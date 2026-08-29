@@ -29,6 +29,19 @@ Dark debe conservar la identidad actual. Light adapta canvas, superficies,
 texto, bordes y estados sin convertir toda la interfaz en blanco/negro ni
 eliminar profundidad o marca.
 
+### Contrato Liquid y acciones primary
+
+Liquid es una superficie visual y no una variante semantica. Primary,
+secondary, ghost, danger, success, warning, iconOnly, disabled y loading
+conservan sus roles, foregrounds y estados. Las acciones primary naranjas usan
+`interactive-on-primary` blanco en light y dark; en dark los tokens primary,
+hover y active deben conservar contraste WCAG AA de al menos 4.5:1. Liquid no
+puede imponer un color de texto ni cambiar el significado de una variante.
+
+El reflejo, la refraccion y el borde multicolor consumen los tokens existentes
+sin crear una paleta paralela. El gradiente decorativo permanece centralizado
+y no se replica por pantalla.
+
 ## 2. Principios semanticos
 
 1. Los nombres expresan responsabilidad, nunca color fisico o tema.

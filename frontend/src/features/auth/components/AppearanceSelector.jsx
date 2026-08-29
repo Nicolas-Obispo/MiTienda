@@ -1,4 +1,5 @@
 import { useTheme } from "@core";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
 const APPEARANCE_OPTIONS = [
   {
@@ -36,7 +37,7 @@ export default function AppearanceSelector() {
             <label
               key={option.value}
               className={[
-                "interactive-bubble interactive-bubble--secondary flex cursor-pointer items-start justify-start gap-3 rounded-xl p-3 text-left",
+                "interactive-bubble interactive-bubble--liquid interactive-bubble--secondary flex cursor-pointer items-start justify-start gap-3 rounded-xl p-3 text-left",
                 "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus-ring",
                 isSelected
                   ? "border-border-strong bg-surface text-primary shadow-elevation"
@@ -59,6 +60,7 @@ export default function AppearanceSelector() {
                   {option.description}
                 </span>
               </span>
+              <InteractiveLiquidLayers />
             </label>
           );
         })}

@@ -97,6 +97,8 @@ test("pares aprobados alcanzan contraste WCAG en ambos temas", () => {
     ["text-secondary", "canvas"],
     ["text-secondary", "surface"],
     ["interactive-on-primary", "interactive-primary"],
+    ["interactive-on-primary", "interactive-primary-hover"],
+    ["interactive-on-primary", "interactive-primary-active"],
     ["success-text", "success-surface"],
     ["warning-text", "warning-surface"],
     ["danger-text", "danger-surface"],
@@ -120,6 +122,12 @@ test("pares aprobados alcanzan contraste WCAG en ambos temas", () => {
       assert.ok(ratio >= 3, `${themeName}: focus-ring/${background} = ${ratio}`);
     }
   }
+});
+
+test("acciones naranjas solidas usan texto blanco en ambos temas", () => {
+  assert.equal(dark.get("--fg-color-interactive-on-primary"), "#ffffff");
+  assert.equal(light.get("--fg-color-interactive-on-primary"), "#ffffff");
+  assert.match(globalCss, /\.interactive-bubble--primary-action\s*\{[\s\S]*--bubble-text:\s*var\(--fg-color-interactive-on-primary\);[\s\S]*--bubble-text-hover:\s*var\(--fg-color-interactive-on-primary\);/);
 });
 
 test("canvas es fuente unica para anti-flash y theme-color", () => {

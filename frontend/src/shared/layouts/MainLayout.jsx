@@ -6,6 +6,7 @@ import {
 import { useAuth } from "@features/auth";
 import SessionInactivityGuard from "@features/auth/components/SessionInactivityGuard";
 import ConnectivityNotice from "@shared/components/ConnectivityNotice";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 import { AdministrativeNavigationLink } from "@features/administration";
 
 export default function MainLayout() {
@@ -28,7 +29,7 @@ export default function MainLayout() {
           {/* LOGO */}
           <Link
             to="/"
-            className="interactive-bubble interactive-bubble--flush shrink-0 items-center"
+            className="interactive-bubble interactive-bubble--flush interactive-bubble--liquid shrink-0 items-center"
           >
             <div className="h-9 w-9 overflow-hidden rounded-full border border-border bg-surface-subtle sm:h-12 sm:w-12">
               <img
@@ -37,6 +38,7 @@ export default function MainLayout() {
                 className="h-full w-full object-contain p-1"
               />
             </div>
+            <InteractiveLiquidLayers />
           </Link>
 
           {/* NAV */}
@@ -45,7 +47,7 @@ export default function MainLayout() {
             {estaAutenticado && (
               <Link
                 to="/feed"
-                className="interactive-bubble group shrink-0 text-xs sm:text-sm"
+                className="interactive-bubble interactive-bubble--liquid group shrink-0 text-xs sm:text-sm"
               >
                 <span
                   className={
@@ -56,6 +58,7 @@ export default function MainLayout() {
                 >
                 🌎Feed
                 </span>
+                <InteractiveLiquidLayers />
               </Link>
             )}
 
@@ -70,24 +73,27 @@ export default function MainLayout() {
                         "Creá tu cuenta FeedGo para guardar publicaciones y administrar espacios.",
                     }
               }
-              className="interactive-bubble group shrink-0 text-xs font-semibold sm:text-sm"
+              className="interactive-bubble interactive-bubble--liquid group shrink-0 text-xs font-semibold sm:text-sm"
             >
               <span
                 className={
-                  location.pathname.startsWith("/perfil")
+                  location.pathname === "/login"
+                    ? "text-secondary group-hover:text-secondary"
+                    : location.pathname.startsWith("/perfil")
                     ? "text-selected-text"
                     : "text-secondary group-hover:text-primary"
                 }
               >
               Perfil administrador
               </span>
+              <InteractiveLiquidLayers />
             </Link>
 
             {/* RANKING */}
             {estaAutenticado && (
               <Link
                 to="/ranking"
-                className="interactive-bubble group shrink-0 text-xs sm:text-sm"
+                className="interactive-bubble interactive-bubble--liquid group shrink-0 text-xs sm:text-sm"
               >
                 <span
                   className={
@@ -98,6 +104,7 @@ export default function MainLayout() {
                 >
                 Tendencias
                 </span>
+                <InteractiveLiquidLayers />
               </Link>
             )}
 
@@ -105,7 +112,7 @@ export default function MainLayout() {
             {estaAutenticado && (
               <Link
                 to="/ver-seguidos"
-                className="interactive-bubble group shrink-0 text-xs sm:text-sm"
+                className="interactive-bubble interactive-bubble--liquid group shrink-0 text-xs sm:text-sm"
               >
                 <span
                   className={
@@ -116,23 +123,27 @@ export default function MainLayout() {
                 >
                 Seguidos
                 </span>
+                <InteractiveLiquidLayers />
               </Link>
             )}
 
             {/* EXPLORAR */}
             <Link
               to="/explorar"
-              className="interactive-bubble group shrink-0 text-xs font-semibold sm:text-sm"
+              className="interactive-bubble interactive-bubble--liquid group shrink-0 text-xs font-semibold sm:text-sm"
             >
               <span
                 className={
-                  location.pathname.startsWith("/explorar")
+                  location.pathname === "/login"
+                    ? "text-secondary group-hover:text-secondary"
+                    : location.pathname.startsWith("/explorar")
                     ? "text-selected-text"
                     : "text-secondary group-hover:text-primary"
                 }
               >
               🔎Explorar
               </span>
+              <InteractiveLiquidLayers />
             </Link>
           </nav>
 
@@ -143,9 +154,20 @@ export default function MainLayout() {
             {!estaAutenticado && (
               <Link
                 to="/login"
-                className="interactive-bubble interactive-bubble--primary-action rounded-lg bg-interactive-primary px-1.5 py-1 text-[11px] font-bold text-interactive-on-primary hover:bg-interactive-primary-hover sm:rounded-xl sm:px-2 sm:text-xs"
+                className={`interactive-bubble interactive-bubble--liquid shrink-0 ${
+                  location.pathname === "/login"
+                    ? "group text-xs font-semibold sm:text-sm"
+                    : "interactive-bubble--primary-action rounded-lg bg-interactive-primary px-1.5 py-1 text-[11px] font-bold text-interactive-on-primary hover:bg-interactive-primary-hover sm:rounded-xl sm:px-2 sm:text-xs"
+                }`}
               >
-                Ingresar
+                {location.pathname === "/login" ? (
+                  <span className="text-secondary group-hover:text-secondary">
+                    Ingresar
+                  </span>
+                ) : (
+                  "Ingresar"
+                )}
+                <InteractiveLiquidLayers />
               </Link>
             )}
 

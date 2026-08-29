@@ -1,6 +1,40 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@features/auth";
 import { Surface } from "@shared";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
+
+const INFORMATION_BLOCKS = [
+  {
+    title: "Descubrí negocios y servicios",
+    description:
+      "Encontrá comercios, profesionales, oficios y servicios activos en tu zona desde un solo lugar.",
+  },
+  {
+    title: "Explorá sin registrarte",
+    description:
+      "Recorré perfiles, publicaciones y novedades de FeedGo sin necesidad de crear una cuenta.",
+  },
+  {
+    title: "Interactuá con la plataforma",
+    description:
+      "Creá tu cuenta para guardar publicaciones, dar like y personalizar tu experiencia.",
+  },
+  {
+    title: "Creá tu propio espacio",
+    description:
+      "Si tenés un negocio, ofrecés un servicio o ejercés una profesión, creá un espacio para mostrar quién sos, qué hacés y cómo contactarte.",
+  },
+  {
+    title: "Mostrá tu actividad",
+    description:
+      "Publicá contenido y novedades para mantener tu espacio actualizado y acercar tu propuesta a potenciales clientes.",
+  },
+  {
+    title: "Gestioná los espacios de tus clientes",
+    description:
+      "Si trabajás con publicidad, comunicación o redes, administrá desde un mismo perfil los espacios de tu cartera de clientes y mantené cada negocio organizado.",
+  },
+];
 
 export default function Home() {
   const { estaAutenticado } = useAuth();
@@ -38,65 +72,47 @@ export default function Home() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               to="/explorar"
-              className="interactive-bubble interactive-bubble--primary-action rounded-2xl bg-interactive-primary px-5 py-3 text-center text-sm font-bold text-interactive-on-primary hover:bg-interactive-primary-hover"
+              className="interactive-bubble interactive-bubble--liquid interactive-bubble--primary-action rounded-2xl bg-interactive-primary px-5 py-3 text-center text-sm font-bold text-interactive-on-primary hover:bg-interactive-primary-hover"
             >
               <span>Explorar sin registrarme</span>
+              <InteractiveLiquidLayers />
             </Link>
 
             {estaAutenticado ? (
               <Link
                 to="/feed"
-                className="interactive-bubble interactive-bubble--secondary rounded-2xl bg-surface-subtle px-5 py-3 text-center text-sm font-bold text-primary hover:bg-surface"
+                className="interactive-bubble interactive-bubble--liquid interactive-bubble--secondary rounded-2xl bg-surface-subtle px-5 py-3 text-center text-sm font-bold text-primary hover:bg-surface"
               >
                 <span>Ir a mi feed</span>
+                <InteractiveLiquidLayers />
               </Link>
             ) : (
               <Link
                 to="/registro"
-                className="interactive-bubble interactive-bubble--secondary rounded-2xl bg-surface-subtle px-5 py-3 text-center text-sm font-bold text-primary hover:bg-surface"
+                className="interactive-bubble interactive-bubble--liquid interactive-bubble--secondary rounded-2xl bg-surface-subtle px-5 py-3 text-center text-sm font-bold text-primary hover:bg-surface"
               >
                 <span>Crear cuenta gratis</span>
+                <InteractiveLiquidLayers />
               </Link>
             )}
           </div>
 
           <p className="mt-4 text-xs text-muted">
-            Podés explorar sin cuenta. Solo necesitás registrarte para guardar,
-            dar like o personalizar tu experiencia.
+            Podés explorar sin cuenta. Solo necesitás registrarte para interactuar
+            con la plataforma.
           </p>
         </div>
       </Surface>
 
-      <section className="mt-6 grid gap-4 md:grid-cols-3">
-        <Surface className="p-5">
-          <h2 className="text-lg font-bold">
-            Descubrí negocios y servicios
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-secondary">
-            Conocé perfiles, publicaciones y novedades de negocios, servicios y profesionales
-            activos en tu zona desde un solo lugar.
-          </p>
-        </Surface>
-
-        <Surface className="p-5">
-          <h2 className="text-lg font-bold">
-            Explorá sin registrarte
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-secondary">
-            Entrá, mirá y conocé MiPlaza sin compromiso. Registrarte solo hace
-            falta cuando quieras interactuar.
-          </p>
-        </Surface>
-
-        <Surface className="p-5">
-          <h2 className="text-lg font-bold">
-            Guardá lo que te interesa
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-secondary">
-            Creá tu cuenta para guardar publicaciones, dar like y recibir una
-            experiencia más personalizada.
-          </p>
-        </Surface>
+      <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {INFORMATION_BLOCKS.map(({ title, description }) => (
+          <Surface key={title} className="p-5">
+            <h2 className="text-lg font-bold">{title}</h2>
+            <p className="mt-2 text-sm leading-6 text-secondary">
+              {description}
+            </p>
+          </Surface>
+        ))}
       </section>
     </div>
   );

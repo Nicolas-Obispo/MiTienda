@@ -7,6 +7,9 @@
  */
 
 import { useState } from "react";
+import { Heart, Star } from "lucide-react";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
+import { SOCIAL_ICONS } from "@shared/constants/socialIcons";
 
 export default function InteraccionButton({
   active = false,
@@ -23,17 +26,15 @@ export default function InteraccionButton({
   */
   const config = {
     like: {
-      icon: "♥",
-      activeColor: "text-danger-text",
-      inactiveColor: "text-secondary",
+      Icon: Heart,
+      activeIcon: SOCIAL_ICONS.like,
       activeBubbleClass: "interactive-bubble--danger",
       borderActive: "border-danger-border",
       animation: "animate-like",
     },
     guardar: {
-      icon: "★",
-      activeColor: "text-warning-text",
-      inactiveColor: "text-secondary",
+      Icon: Star,
+      activeIcon: SOCIAL_ICONS.guardado,
       activeBubbleClass: "interactive-bubble--warning",
       borderActive: "border-warning-border",
       animation: "animate-save",
@@ -41,6 +42,7 @@ export default function InteraccionButton({
   };
 
   const cfg = config[type];
+  const Icon = cfg.Icon;
 
   /*
   ====================================================
@@ -79,7 +81,6 @@ export default function InteraccionButton({
 
   const bubbleVariantClass =
     active ? cfg.activeBubbleClass : "interactive-bubble--secondary";
-
   const accessibleLabel =
     label ||
     (type === "guardar"
@@ -98,25 +99,38 @@ export default function InteraccionButton({
       aria-label={iconOnly ? accessibleLabel : undefined}
       className={`
         ${baseClass}
+        interactive-bubble--liquid
         ${bubbleVariantClass}
         ${iconOnly ? (active ? cfg.borderActive : "border-border") : ""}
         ${disabled ? "cursor-not-allowed opacity-60" : iconOnly ? "hover:bg-surface-subtle" : ""}
       `}
     >
       {/* ICONO */}
-      <span
-        className={`
-          leading-none transition
-          ${iconOnly ? "text-lg" : "text-xl"}
-          ${active ? cfg.activeColor : cfg.inactiveColor}
-          ${isAnimating ? cfg.animation : ""}
-        `}
-      >
-        {cfg.icon}
-      </span>
+      {active ? (
+        <span
+          aria-hidden="true"
+          className={`
+            inline-flex shrink-0 items-center justify-center text-base leading-none transition
+            ${iconOnly ? "h-[1.125rem] w-[1.125rem]" : "h-5 w-5"}
+            ${isAnimating ? cfg.animation : ""}
+          `}
+        >
+          {cfg.activeIcon}
+        </span>
+      ) : (
+        <Icon
+          aria-hidden="true"
+          className={`
+            shrink-0 fill-none stroke-current leading-none text-interactive-on-primary transition
+            ${iconOnly ? "h-[1.125rem] w-[1.125rem]" : "h-5 w-5"}
+            ${isAnimating ? cfg.animation : ""}
+          `}
+        />
+      )}
 
       {/* TEXTO SOLO SI NO ES iconOnly */}
-      {!iconOnly && <span>{label}</span>}
+      {!iconOnly && <span className="text-interactive-on-primary">{label}</span>}
+      <InteractiveLiquidLayers />
     </button>
   );
 }

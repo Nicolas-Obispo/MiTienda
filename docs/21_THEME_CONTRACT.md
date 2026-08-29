@@ -24,6 +24,19 @@ pero no gobierna el runtime.
 El contrato no define todavia todos los tokens, no migra pantallas y no
 convierte branding de espacios en tema global.
 
+### Superficie interactiva Liquid
+
+Desde el checkpoint intermedio de ETAPA 98, la superficie Liquid consume el
+tema resuelto exclusivamente mediante tokens CSS bajo `data-theme`. No lee ni
+persiste preferencia, no agrega listeners y no participa del bootstrap. Light
+y dark conservan la misma geometria, contenido, acciones y accesibilidad; dark
+adapta reflejos y transparencia sin convertir la lente en una superficie negra
+ni alterar el selector de apariencia.
+
+El fallback sin `backdrop-filter` y `prefers-reduced-motion` pertenecen al
+owner visual compartido. Ninguna pantalla puede duplicar logica de tema para
+compensar Liquid.
+
 ## 2. Owner
 
 El owner de implementacion sera `frontend/src/core/theme/`. Ninguna feature,

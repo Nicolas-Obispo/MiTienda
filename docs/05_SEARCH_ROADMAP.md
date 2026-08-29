@@ -1089,7 +1089,7 @@ Subetapas:
   no quedaron procesos huerfanos y ambos gates volvieron a `false`.
 
 ETAPA 97 queda formalmente cerrada con sus subetapas 97.1 a 97.6 cerradas.
-ETAPA 98 es la siguiente etapa oficial, pendiente y no iniciada.
+ETAPA 98 es la etapa oficial vigente y permanece abierta.
 
 ### ☐ ETAPA 98
 
@@ -1146,7 +1146,32 @@ Gate:
 
 Estado:
 
-Pendiente.
+Abierta. Checkpoint intermedio aprobado y validado, sin cierre de etapa.
+
+Checkpoint intermedio:
+
+- la superficie Liquid queda consolidada como owner visual productivo de
+  `Button`, `InteraccionButton` y enlaces visuales migrados, con una unica capa
+  decorativa, borde multicolor, fallback, reduced motion y adaptacion
+  semantica light/dark;
+- se preservan literalmente variantes, acciones, destinos, geometria,
+  responsive, foco, disabled, loading y nombres accesibles;
+- permanecen excluidos los controles especializados sin apariencia de boton:
+  backdrop de `ActiveLayer`, portada drag-and-drop, zonas anterior/siguiente y
+  like inmersivo de Historias, controles blancos sobre video, Leaflet, inputs,
+  selects, file inputs y enlaces textuales;
+- el bloque incidental aisla fallos de embedding posteriores al commit,
+  registra todos los modelos ORM al iniciar runtime, conserva contenido valido
+  ante errores sociales, acota caches mediante query keys estructurales,
+  establece TanStack Query como owner unico del Feed y evita refetch inmediato
+  que reordene publicaciones tras una interaccion;
+- la deuda de reintento durable para mantenimiento de embeddings permanece
+  abierta y no se presenta como garantia implementada;
+- validacion del checkpoint: 379 tests frontend, build productivo/PWA, 438
+  tests backend con 1 omitido, `compileall` y `git diff --check` correctos.
+
+Este checkpoint no sustituye el render real y la revision de las superficies
+restantes exigidos por el gate de ETAPA 98.
 
 ### ☐ ETAPA 99
 

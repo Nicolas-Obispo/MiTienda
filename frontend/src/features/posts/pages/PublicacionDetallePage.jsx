@@ -18,6 +18,7 @@ import { httpDelete } from "@core/services/http_service";
 import { ActiveLayer, useProtectedActionRedirect } from "@core";
 import DenunciaModal from "@features/moderation/components/DenunciaModal";
 import { RECURSO_DENUNCIA_PUBLICACION } from "@features/moderation/constants/denuncias";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
 export default function PublicacionDetallePage() {
   const { id } = useParams();
@@ -218,9 +219,10 @@ export default function PublicacionDetallePage() {
               {comercioId && (
                 <Link
                   to={`/comercios/${comercioId}`}
-                  className="interactive-bubble interactive-bubble--secondary shrink-0 text-xs font-semibold"
+                  className="interactive-bubble interactive-bubble--liquid interactive-bubble--secondary shrink-0 text-xs font-semibold"
                 >
                   Ver perfil
+                  <InteractiveLiquidLayers />
                 </Link>
               )}
             </header>

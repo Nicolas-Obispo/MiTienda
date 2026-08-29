@@ -12,7 +12,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.modules.ai.services.usuarios_embeddings_services import (
-    regenerar_embedding_usuario_si_corresponde,
+    mantener_embedding_usuario_post_commit,
 )
 from app.modules.posts.models.publicaciones_models import Publicacion
 from app.modules.posts.services.publicaciones_services import (
@@ -54,10 +54,14 @@ def guardar_publicacion(
     )
 
     db.add(guardado)
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     db.refresh(guardado)
 
-    regenerar_embedding_usuario_si_corresponde(
+    mantener_embedding_usuario_post_commit(
         db=db,
         usuario_id=usuario_id,
     )
@@ -89,9 +93,13 @@ def quitar_publicacion_guardada(
         return
 
     db.delete(guardado)
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
-    regenerar_embedding_usuario_si_corresponde(
+    mantener_embedding_usuario_post_commit(
         db=db,
         usuario_id=usuario_id,
     )

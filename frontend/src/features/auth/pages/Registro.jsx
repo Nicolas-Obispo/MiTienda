@@ -43,7 +43,7 @@ export default function Registro() {
 
     if (!aceptaTerminos || !aceptaPrivacidad) {
       setErrorMensaje(
-        "Debes aceptar Terminos y Condiciones y Politica de Privacidad."
+        "Debes aceptar Términos y Condiciones y Política de Privacidad."
       );
       return;
     }
@@ -205,7 +205,7 @@ export default function Registro() {
                   rel="noopener noreferrer"
                   className="font-medium text-brand underline decoration-current underline-offset-2 hover:text-brand-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                 >
-                  Terminos y Condiciones
+                  Términos y Condiciones
                 </Link>
                 .
               </span>
@@ -227,7 +227,7 @@ export default function Registro() {
                   rel="noopener noreferrer"
                   className="font-medium text-brand underline decoration-current underline-offset-2 hover:text-brand-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                 >
-                  Politica de Privacidad
+                  Política de Privacidad
                 </Link>
                 .
               </span>

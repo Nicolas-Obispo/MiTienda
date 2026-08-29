@@ -29,6 +29,10 @@ const sources = Object.fromEntries(
 );
 const combined = Object.values(sources).join("\n");
 const globalCss = await readFile(new URL("../src/index.css", import.meta.url), "utf8");
+const liquidLayers = await readFile(
+  new URL("../src/shared/components/InteractiveLiquidLayers.jsx", import.meta.url),
+  "utf8"
+);
 const interactionButton = await readFile(
   new URL("../src/shared/components/InteraccionButton.jsx", import.meta.url),
   "utf8"
@@ -59,6 +63,17 @@ test("Button cubre variantes justificadas sobre una unica interactive-bubble", (
   assert.equal((globalCss.match(/\.interactive-bubble\s*\{/g) || []).length, 1);
 });
 
+test("Button inyecta Liquid una sola vez sin alterar su API ni geometria", () => {
+  assert.match(sources.button, /import InteractiveLiquidLayers from "@shared\/components\/InteractiveLiquidLayers"/);
+  assert.match(sources.button, /"interactive-bubble interactive-bubble--liquid max-w-full whitespace-normal break-words text-center font-semibold"/);
+  assert.equal((sources.button.match(/<InteractiveLiquidLayers \/>/g) || []).length, 1);
+  assert.match(sources.button, />\s*\{children\}\s*<InteractiveLiquidLayers \/>\s*<\/button>/);
+  assert.match(liquidLayers, /aria-hidden="true"/);
+  assert.doesNotMatch(liquidLayers, /on[A-Z][A-Za-z]*=|useState|useEffect|useReducer|useRef/);
+  assert.match(sources.button, /iconOnly && "h-10 w-10 shrink-0 rounded-full p-0"/);
+  assert.match(sources.button, /className\s*\)\s*\}/);
+});
+
 test("interactive-bubble queda en components y no anula utilities semanticas", () => {
   assert.match(sources.button, /bg-interactive-primary text-interactive-on-primary/);
   assert.match(sources.button, /bg-surface-subtle text-primary/);
@@ -84,7 +99,12 @@ test("Button iconOnly exige un nombre accesible sin imponer su contenido", () =>
 });
 
 test("InteraccionButton conserva su owner funcional y animaciones", () => {
+  assert.match(interactionButton, /import \{ Heart, Star \} from "lucide-react"/);
   assert.match(interactionButton, /interactive-bubble/);
+  assert.match(interactionButton, /import InteractiveLiquidLayers from "@shared\/components\/InteractiveLiquidLayers"/);
+  assert.equal((interactionButton.match(/interactive-bubble--liquid/g) || []).length, 1);
+  assert.equal((interactionButton.match(/<InteractiveLiquidLayers \/>/g) || []).length, 1);
+  assert.match(interactionButton, /\{!iconOnly && <span className="text-interactive-on-primary">\{label\}<\/span>\}\s*<InteractiveLiquidLayers \/>/);
   assert.match(interactionButton, /animate-like/);
   assert.match(interactionButton, /animate-save/);
   assert.match(interactionButton, /setTimeout[\s\S]*300/);
@@ -94,6 +114,13 @@ test("InteraccionButton conserva su owner funcional y animaciones", () => {
     globalCss,
     /\.interactive-bubble:disabled[\s\S]*--fg-color-disabled-text/
   );
+  assert.match(interactionButton, /active \? cfg\.activeBubbleClass : "interactive-bubble--secondary"/);
+  assert.match(interactionButton, /aria-label=\{iconOnly \? accessibleLabel : undefined\}/);
+  assert.match(interactionButton, /active \? \([\s\S]*<span[\s\S]*\{cfg\.activeIcon\}[\s\S]*\) : \([\s\S]*<Icon/);
+  assert.match(interactionButton, /<Icon[\s\S]*fill-none stroke-current[\s\S]*text-interactive-on-primary/);
+  assert.doesNotMatch(interactionButton, /fill-current|activeColor/);
+  assert.match(interactionButton, /<span className="text-interactive-on-primary">\{label\}<\/span>/);
+  assert.doesNotMatch(interactionButton, /icon: "[^"]+"|inactiveColor/);
 });
 
 test("Surface centraliza solo superficie y preserva semantica componible", () => {

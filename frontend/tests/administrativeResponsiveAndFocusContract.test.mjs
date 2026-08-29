@@ -45,7 +45,7 @@ test("errores administrativos reciben foco programático junto a su origen", () 
 });
 
 test("la navegación Administración-superficie usa controles nativos", () => {
-  for (const page of [reports, incidents, status]) assert.match(page, /<Link[\s\S]*to="\/administracion">Volver a Administración<\/Link>/);
-  assert.match(home, /<Link[\s\S]*to=\{surface\.to\}>Abrir<\/Link>/);
+  for (const page of [reports, incidents, status]) assert.match(page, /<Link[\s\S]*to="\/administracion">Volver a Administración<InteractiveLiquidLayers \/><\/Link>/);
+  assert.match(home, /<Link[\s\S]*to=\{surface\.to\}>Abrir<InteractiveLiquidLayers \/><\/Link>/);
   assert.doesNotMatch([home, reports, incidents, status].join("\n"), /role="button"|tabIndex=\{0\}/);
 });

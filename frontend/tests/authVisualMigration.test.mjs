@@ -10,6 +10,10 @@ const login = await readFile(
   new URL("../src/features/auth/pages/Login.jsx", import.meta.url),
   "utf8"
 );
+const mainLayout = await readFile(
+  new URL("../src/shared/layouts/MainLayout.jsx", import.meta.url),
+  "utf8"
+);
 const authSurfaces = `${registro}\n${login}`;
 
 test("Registro y Login adoptan primitives semanticas", () => {
@@ -27,22 +31,26 @@ test("formularios Auth delegan contraccion responsive en primitives", () => {
   assert.doesNotMatch(authSurfaces, /min-w-\[|w-\[\d/);
 });
 
-test("submits conservan accion, loading y Button primary", () => {
+test("submits conservan accion, loading y variantes visuales aprobadas", () => {
   assert.match(registro, /onSubmit=\{manejarSubmitRegistro\}/);
   assert.match(registro, /disabled=\{cargando\}[\s\S]*variant="primary"/);
   assert.match(registro, /cargando \? "Creando cuenta\.\.\." : "Crear cuenta"/);
 
   assert.match(login, /onSubmit=\{manejarSubmitLogin\}/);
-  assert.match(login, /disabled=\{cargando\}[\s\S]*variant="primary"/);
+  assert.match(login, /disabled=\{cargando\}[\s\S]*variant="ghost"/);
+  assert.match(login, /className="w-full px-4 py-2 text-sm text-secondary hover:border-brand hover:text-secondary"/);
   assert.match(login, /cargando \? "Ingresando\.\.\." : "Ingresar"/);
   assert.doesNotMatch(authSurfaces, /<button\b/);
-  assert.doesNotMatch(authSurfaces, /interactive-bubble/);
+  assert.doesNotMatch(authSurfaces, /interactive-bubble--primary/);
+  assert.equal((mainLayout.match(/location\.pathname === "\/login"[\s\S]{0,120}\? "text-secondary group-hover:text-secondary"/g) || []).length, 2);
+  assert.equal((mainLayout.match(/interactive-bubble--liquid/g) || []).length, 7);
+  assert.match(mainLayout, /location\.pathname === "\/login" \? \([\s\S]*<span className="text-secondary group-hover:text-secondary">[\s\S]*Ingresar[\s\S]*<\/span>/);
 });
 
 test("visibilidad de password mantiene controles accesibles", () => {
   assert.equal((authSurfaces.match(/iconOnly/g) || []).length, 3);
   assert.equal((authSurfaces.match(/aria-label=/g) || []).length, 3);
-  assert.equal((authSurfaces.match(/aria-hidden="true"/g) || []).length, 3);
+  assert.equal((authSurfaces.match(/<span aria-hidden="true">\s*\{mostrar(?:Confirmar)?Password \?/g) || []).length, 3);
   assert.match(registro, /labelFor="registro-password"/);
   assert.match(registro, /id="registro-password"/);
   assert.match(login, /labelFor="login-password"/);
@@ -53,7 +61,7 @@ test("password toggle usa el slot trailing compartido dentro del Input", () => {
   assert.equal((authSurfaces.match(/trailingAction=/g) || []).length, 3);
   assert.doesNotMatch(authSurfaces, /absolute right-1 top-1\/2|-translate-y-1\/2/);
   assert.doesNotMatch(authSurfaces, /className="pr-12 text-sm"/);
-  assert.equal((authSurfaces.match(/variant="ghost"/g) || []).length, 3);
+  assert.equal((authSurfaces.match(/variant="ghost"/g) || []).length, 4);
 });
 
 test("Registro preserva aceptaciones legales separadas y desmarcadas", () => {

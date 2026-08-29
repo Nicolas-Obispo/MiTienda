@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AdministrativeAccessDenied } from "@features/administration/components/AdministrativeAccessDenied";
 import { useAdministrativeCapabilities } from "@features/administration/hooks/useAdministrativeCapabilities";
 import { Alert, Skeleton, Surface } from "@shared";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
 const GUIDE_SECTIONS = [
   {
@@ -53,7 +54,7 @@ export function AdministrativeGuidePage() {
     <header>
       <h1 className="text-2xl font-semibold text-primary">Guía práctica de Administración</h1>
       <p className="mt-2 text-sm text-secondary">Orientación operativa para usar las herramientas habilitadas sin exponer información sensible.</p>
-      <Link className="interactive-bubble mt-3 inline-flex min-h-11 items-center text-link underline underline-offset-2" to="/administracion">Volver a Administración</Link>
+      <Link className="interactive-bubble interactive-bubble--liquid mt-3 inline-flex min-h-11 items-center text-link underline underline-offset-2" to="/administracion">Volver a Administración<InteractiveLiquidLayers /></Link>
     </header>
 
     <Alert variant="warning" role="note">

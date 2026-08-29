@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
 import { MOTIVOS_DENUNCIA } from "@features/moderation/constants/denuncias";
 import {
@@ -254,7 +255,7 @@ export default function AdministrativeReportsPage() {
         <p className="mt-1 text-sm text-secondary">
           Consulta y decisión operativa según tus capacidades administrativas.
         </p>
-        <Link className="interactive-bubble mt-3 inline-flex min-h-11 items-center text-link underline underline-offset-2" to="/administracion">Volver a Administración</Link>
+        <Link className="interactive-bubble interactive-bubble--liquid mt-3 inline-flex min-h-11 items-center text-link underline underline-offset-2" to="/administracion">Volver a Administración<InteractiveLiquidLayers /></Link>
       </header>
 
       <Surface variant="subtle" className="mt-5 p-4">

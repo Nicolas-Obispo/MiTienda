@@ -11,6 +11,26 @@ describe adopcion tecnica y no basta por si solo: el cierre exige tambien
 `Validado light/dark` en la matriz visual. Las excepciones se limitan a
 contenido o integraciones que no son apariencia global de FeedGo.
 
+## Checkpoint Liquid de ETAPA 98
+
+El checkpoint intermedio de ETAPA 98 consolida la lente Liquid con borde
+multicolor en `Button`, `InteraccionButton`, navegacion global, CTA de Home,
+enlaces administrativos/operativos, enlaces de publicaciones y espacios, y
+las tres opciones de apariencia. Cada control incluido recibe exactamente una
+capa decorativa; las variantes, textos, iconos, destinos, geometria,
+responsive, focus, active, disabled y loading permanecen en sus owners.
+
+Cobertura contractual: owner productivo unico, helper `aria-hidden`, gradiente
+unico, fallback, reduced motion, reflejo claro en dark, recepcion automatica
+desde los dos owners de botones, ausencia de burbujas manuales sin Liquid y
+ausencia de helpers manuales dentro de `Button`.
+
+Exclusiones justificadas e intactas: backdrop invisible de `ActiveLayer`,
+portada drag-and-drop, controles inmersivos y zonas anterior/siguiente de
+`HistoriasViewer`, controles blancos sobre video, Leaflet, inputs, selects,
+file inputs, enlaces textuales y metricas informativas. La validacion de este
+checkpoint no cierra ETAPA 98 ni reemplaza su gate humano/renderizado final.
+
 ## 2. Matriz acumulada
 
 | Superficie / owner | Estado | Evidencia | Excepcion o pendiente |

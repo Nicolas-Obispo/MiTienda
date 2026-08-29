@@ -15,10 +15,10 @@ html[data-theme="dark"] {
   --fg-color-border-strong: #4b5563;
   --fg-color-brand: #fb923c;
   --fg-color-brand-strong: #f97316;
-  --fg-color-interactive-primary: #fb923c;
-  --fg-color-interactive-primary-hover: #fdba74;
-  --fg-color-interactive-primary-active: #f97316;
-  --fg-color-interactive-on-primary: #111827;
+  --fg-color-interactive-primary: #c2410c;
+  --fg-color-interactive-primary-hover: #9a3412;
+  --fg-color-interactive-primary-active: #7c2d12;
+  --fg-color-interactive-on-primary: #ffffff;
   --fg-color-disabled-surface: #1f2937;
   --fg-color-disabled-text: #6b7280;
   --fg-color-disabled-border: #374151;
