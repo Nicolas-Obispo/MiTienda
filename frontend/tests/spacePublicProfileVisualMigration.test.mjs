@@ -20,6 +20,14 @@ test("perfil publico de espacio usa shell, estados y primitives semanticos", () 
   assert.match(profile, /<Textarea\b/);
 });
 
+test("perfil aprovecha el ancho y conserva la grilla responsive sin separaciones", () => {
+  assert.match(profile, /<main className="mx-auto max-w-7xl px-0 py-4 sm:px-4 sm:py-6">/);
+  assert.match(profile, /<div className="mb-4 flex items-center justify-end gap-2">[\s\S]*← Volver/);
+  assert.match(profile, /grid grid-cols-2 gap-0 sm:grid-cols-3 \[&>\*\]:w-full/);
+  assert.doesNotMatch(profile, /grid-cols-2 gap-1\.5 sm:grid-cols-3 sm:gap-2 md:gap-3/);
+  assert.match(profile, /<PublicacionCard[\s\S]*key=\{p\.id\}[\s\S]*compact[\s\S]*compactWholeCardLink/);
+});
+
 test("acciones migradas reutilizan Button y una unica infraestructura bubble", () => {
   assert.ok((profile.match(/<Button\b/g) || []).length >= 10);
   assert.match(profile, /variant="primary"/);
@@ -47,13 +55,14 @@ test("owners de publicaciones, historias, horarios, agenda y moderacion se reuti
   assert.match(profile, /<DenunciaModal\b/);
 });
 
-test("denuncia de espacio queda bajo Seguir y se oculta al propietario", () => {
+test("denuncia de espacio queda a la izquierda de Volver y se oculta al propietario", () => {
   assert.match(
     profile,
-    /!esComercioMio\(comercio\)[\s\S]*flex shrink-0 flex-col items-center gap-2[\s\S]*\+Seguir[\s\S]*aria-label="Denunciar espacio"[\s\S]*>\s*\.\.\.\s*<\/span>/
+    /mb-4 flex items-center justify-end gap-2[\s\S]*!esComercioMio\(comercio\) && comercio\?\.id[\s\S]*aria-label="Denunciar espacio"[\s\S]*h-6 min-h-6 w-6 min-w-6 shrink-0 rounded-full p-0[\s\S]*>\s*\.\.\.\s*<\/span>[\s\S]*← Volver/
   );
   assert.equal((profile.match(/setIsDenunciaComercioOpen\(true\)/g) || []).length, 1);
   assert.match(profile, /recursoTipo=\{RECURSO_DENUNCIA_COMERCIO\}[\s\S]*recursoId=\{comercio\?\.id\}/);
+  assert.doesNotMatch(profile, /\+Seguir[\s\S]*aria-label="Denunciar espacio"/);
 });
 
 test("identidad y acciones comparten una cabecera superior sin mover contactos ni horario", () => {
@@ -64,23 +73,40 @@ test("identidad y acciones comparten una cabecera superior sin mover contactos n
   assert.doesNotMatch(profile, /IZQUIERDA \(todo tu contenido actual\)|nombre, descripción/);
   assert.match(
     profile,
-    /mt-4 flex w-full flex-wrap items-end gap-x-4 gap-y-2[\s\S]*WhatsApp[\s\S]*Instagram[\s\S]*Cómo llegar[\s\S]*<EstadoHorarioBadge[\s\S]*className="ml-auto justify-end"/
+    /mt-4 flex w-full flex-wrap items-end gap-x-4 gap-y-2[\s\S]*WhatsApp[\s\S]*Instagram[\s\S]*Cómo llegar[\s\S]*puedoCrearHistoria[\s\S]*Historia[\s\S]*Publicación[\s\S]*Estadísticas[\s\S]*grid-cols-\[minmax\(0,1fr\)_auto\][\s\S]*<EstadoHorarioBadge/
   );
 });
 
 test("direccion se renderiza una sola vez inmediatamente sobre el estado operativo", () => {
   assert.equal((profile.match(/comercio\?\.direccion\s*\? `\$\{comercio\.direccion\}, \$\{comercio\.ciudad\}`/g) || []).length, 1);
   assert.match(profile, /min-w-0 flex-1 text-left/);
-  assert.match(profile, /ml-auto flex max-w-full flex-col items-end gap-1 text-right/);
-  assert.match(profile, /flex max-w-full items-start justify-end gap-2 break-words text-xs text-secondary/);
-  const addressPosition = profile.indexOf("{comercio?.ciudad && (", profile.indexOf("items-end gap-1 text-right"));
+  assert.match(profile, /grid-cols-\[minmax\(0,1fr\)_auto\] items-start gap-x-4/);
+  assert.match(profile, /flex min-h-9 min-w-0 items-start gap-2 break-words py-1 text-xs leading-4 text-secondary/);
+  assert.match(profile, /<MapPin size=\{14\} className="mt-1\.5 shrink-0" aria-hidden="true" \/>/);
+  assert.match(profile, /<span className="min-w-0 break-words pt-1\.5">/);
+  const actionsPosition = profile.indexOf("{puedoCrearHistoria && (");
+  const addressPosition = profile.indexOf("{comercio?.ciudad && (", actionsPosition);
   const schedulePosition = profile.indexOf("<EstadoHorarioBadge", addressPosition);
-  assert.ok(addressPosition > -1 && schedulePosition > addressPosition);
+  assert.ok(actionsPosition > -1 && addressPosition > actionsPosition && schedulePosition > addressPosition);
   assert.doesNotMatch(
     profile,
-    /min-w-0 flex-1 text-left[\s\S]*comercio\?\.ciudad[\s\S]*ml-auto flex max-w-full flex-col items-end/
+    /mt-4 flex w-full flex-wrap items-end gap-x-4 gap-y-2[\s\S]*comercio\?\.ciudad[\s\S]*puedoCrearHistoria/
   );
+  assert.equal((profile.match(/<EstadoHorarioBadge\b/g) || []).length, 1);
+  assert.match(profile, /className="min-w-0 justify-self-end justify-end text-right leading-4"/);
   assert.match(scheduleBadge, /isInline[\s\S]*min-h-9 py-1 text-xs/);
+});
+
+test("fila operativa cierra la tarjeta con tipografia y padding compactos", () => {
+  assert.match(profile, /<Surface as="section" className="relative p-4 pb-2 sm:p-6 sm:pb-2">/);
+  assert.match(profile, /mt-2 grid w-full grid-cols-\[minmax\(0,1fr\)_auto\] items-start gap-x-4/);
+  const finalRow = profile.slice(
+    profile.indexOf('<div className="mt-2 grid w-full grid-cols-[minmax(0,1fr)_auto]'),
+    profile.indexOf("</Surface>", profile.indexOf('<div className="mt-2 grid w-full grid-cols-[minmax(0,1fr)_auto]'))
+  );
+  assert.match(finalRow, /text-xs leading-4/);
+  assert.match(finalRow, /text-right leading-4/);
+  assert.doesNotMatch(finalRow, /mt-auto|flex-grow|justify-between|min-h-screen|mb-/);
 });
 
 test("metricas publicas se ocultan pero Estadisticas conserva datos y acceso", () => {

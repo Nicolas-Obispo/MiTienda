@@ -230,7 +230,8 @@ export default function RankingPage() {
 
         {/* Estado: Loading */}
         {isLoading && publicaciones.length === 0 && (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-3 gap-0 sm:grid-cols-3 md:grid-cols-4 [&>*]:w-full">
+            <Skeleton className="aspect-square rounded-2xl border border-border" />
             <Skeleton className="aspect-square rounded-2xl border border-border" />
             <Skeleton className="aspect-square rounded-2xl border border-border" />
             <Skeleton className="aspect-square rounded-2xl border border-border" />
@@ -269,11 +270,11 @@ export default function RankingPage() {
           <div
             className="
               grid
-              grid-cols-2
+              grid-cols-3
               sm:grid-cols-3
-              md:grid-cols-3
-              gap-2
-              sm:gap-3
+              md:grid-cols-4
+              gap-0
+              [&>*]:w-full
             "
           >
             {publicaciones.map((p, idx) => (
@@ -287,6 +288,7 @@ export default function RankingPage() {
                 onToggleLike={() => handleToggleLike(p.id)}
                 onToggleSave={() => handleToggleSave(p.id)}
                 compact
+                compactWholeCardLink
               />
             ))}
           </div>

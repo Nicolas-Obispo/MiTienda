@@ -112,6 +112,12 @@ Ranking
 - ordena candidatos
 - no genera conocimiento
 
+Para Feed e Historias, `docs/28_DYNAMIC_FEED_DESIGN.md` especializa este
+pipeline sin cambiar sus fronteras: Candidate Generation construye pools
+acotados, elegibilidad precede al scoring, Ranking aplica señales y reranking,
+y el backend emite snapshots estables con cursores opacos. El frontend no
+reconstruye ranking ni mezcla páginas de snapshots diferentes.
+
 ## Principios
 
 - Discovery interpreta.
@@ -197,6 +203,12 @@ escalar lectura e indexacion de manera diferente.
 Los casos de IA no comparten obligatoriamente un servicio universal. Embeddings,
 creacion multimodal e IA conversacional deben conservar contratos especializados
 cuando sus entradas, salidas, riesgos o validaciones difieran.
+
+El Dynamic Feed no crea un Search Service universal. Puede reutilizar Candidate
+Engine, índices y conocimiento existentes, pero Feed, Historias, Clasificados y
+Advertising conservan elegibilidad, lifecycle y contratos domain-owned. Las
+fuentes se integran mediante envelopes tipados; una promoción nunca convierte
+en elegible o relevante un candidato que no lo era.
 
 ## Pipeline conceptual de indexación
 

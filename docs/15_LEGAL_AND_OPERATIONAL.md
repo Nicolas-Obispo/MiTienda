@@ -395,6 +395,16 @@ No se recolectaran salvo decision especifica:
 - identificadores publicitarios persistentes;
 - datos sensibles inferidos.
 
+Excepcion aprobada y todavia no implementada: `DEC-057` autoriza que ETAPA 99
+incorpore `fecha_nacimiento` como dato privado, nullable y no publico para
+evaluar en backend elegibilidad y capacidad por funcionalidad. No se incorpora
+inicialmente al Registro, la edad debe calcularse sin persistirse y los
+usuarios existentes permanecen compatibles mediante `null`. Sexo o genero no
+se recolectan mientras no exista una finalidad funcional suficiente,
+documentada y aprobada. Antes de implementar este tratamiento deben definirse
+finalidad, base aplicable, acceso, retencion, rectificacion, supresion y
+controles para datos de menores.
+
 ## 7. Bases legales, consentimientos y evidencia
 
 ### 7.1 Fundamento distinto de consentimiento
@@ -521,22 +531,45 @@ de derechos de usuarios.
 
 ## 9. Menores de edad
 
-Las personas menores de 18 anos tienen proteccion especial.
+Las personas menores de 18 anos tienen proteccion especial. FeedGo adopta el
+siguiente contenido conceptual conforme a `DEC-057`:
 
-Antes del lanzamiento debe existir decision formal sobre:
+- una persona menor de 18 anos no queda excluida automaticamente de crear una
+  cuenta basica para explorar e interactuar dentro de las funciones
+  habilitadas;
+- deben considerarse capacidad progresiva, edad y grado de madurez, junto con
+  intervencion, asistencia o representacion cuando legalmente corresponda;
+- como politica vigente, crear o administrar espacios, publicar contenido
+  asociado a ellos y utilizar futuras funciones comerciales dependientes de
+  esa capacidad requiere tener 18 anos o mas, salvo excepcion legal y de
+  producto posterior expresamente documentada;
+- otras funcionalidades pueden establecer requisitos adicionales de edad,
+  capacidad, autorizacion o representacion;
+- los datos de menores requieren minimizacion, finalidad determinada,
+  proteccion reforzada, acceso limitado y mecanismos aplicables de derechos;
+- FeedGo puede restringir capacidades cuando corresponda, sin que esta
+  facultad elimine ni limite sus propias obligaciones legales.
 
-- edad minima;
-- si menores pueden registrarse;
-- consentimiento parental cuando corresponda;
-- contenido visible;
-- contacto con comercios;
-- ubicacion;
-- moderacion;
-- denuncias;
-- eliminacion.
+Este contenido debe interpretarse considerando el Codigo Civil y Comercial de
+la Nacion, el principio de capacidad progresiva, la Ley 26.061 y la Ley 25.326,
+sin afirmar que la cuenta basica exige en todos los casos mayoria de edad.
 
-`[BLOQUEANTE]` No se implementaran funciones dirigidas especificamente a
-menores sin revision legal y decision de direccion.
+TEXTO SUJETO A REVISION Y APROBACION POR PROFESIONAL JURIDICO ARGENTINO ANTES
+DEL LANZAMIENTO.
+
+`[BLOQUEANTE]` Antes del lanzamiento, un profesional juridico argentino debe
+revisar y aprobar los Terminos y Condiciones completos, la Politica de
+Privacidad completa, la politica de menores, el requisito de edad para crear o
+administrar espacios y publicar contenido asociado, el tratamiento de
+`fecha_nacimiento`, el flujo de aceptacion mediante autenticacion tradicional
+y Google y la estrategia de versionado y reaceptacion. Hasta esa aprobacion no
+debe declararse juridicamente validado ninguno de esos textos o criterios.
+
+La incorporacion del contenido publico sobre menores o fecha de nacimiento en
+Terminos o Privacidad requiere una nueva version legal y una estrategia de
+reaceptacion conforme a `DEC-041`. Los documentos publicos `v1` permanecen
+intactos hasta completar esa revision; no se inventan aceptaciones
+retroactivas.
 
 ## 10. Geolocalizacion
 

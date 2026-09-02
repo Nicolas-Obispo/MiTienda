@@ -207,6 +207,13 @@ Matriz inicial offline y cache para Sprint 96.2:
 | Uploads y media privada | `network-only` inicial |
 | Mapas, tiles y geocoding | `network-only` inicial |
 
+El futuro Dynamic Feed conserva esta frontera. TanStack Query puede mostrar y
+prefetchear páginas dentro de la sesión, mientras el backend gobierna snapshot,
+cursor, ranking, contexto y exposición. Workbox no almacena el Feed privado,
+JWT ni respuestas autenticadas. Una persistencia funcional en IndexedDB exige
+una decisión futura explícita; no queda autorizada por el contrato de
+cache-first. Véase `docs/28_DYNAMIC_FEED_DESIGN.md`.
+
 Sprint 96.1-A no implementa ninguna estrategia de runtime, no modifica el
 service worker y no habilita funcionamiento offline.
 
@@ -696,6 +703,8 @@ subdominio multimedia en las plataformas afectadas.
 - integraciones nativas;
 - reescritura del frontend o rediseño general del sistema visual;
 - reglas de negocio en frontend.
+- dependencia de ejecución sostenida con la app cerrada, GPS continuo o
+  Background Sync móvil para que el Dynamic Feed funcione correctamente;
 
 ## Criterio final de aprobacion
 

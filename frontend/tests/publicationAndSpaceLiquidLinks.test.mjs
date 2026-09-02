@@ -9,8 +9,9 @@ const [card, detail, profile] = await Promise.all([
 ]);
 
 test("cinco enlaces navegables reciben exactamente una capa Liquid", () => {
-  assert.equal((card.match(/interactive-bubble--liquid/g) || []).length, 1);
-  assert.equal((card.match(/<InteractiveLiquidLayers \/>/g) || []).length, 1);
+  const cardSpaceLink = card.match(/<Link[\s\S]*?to=\{`\/comercios\/\$\{comercioId\}`\}[\s\S]*?<\/Link>/)?.[0] || "";
+  assert.equal((cardSpaceLink.match(/interactive-bubble--liquid/g) || []).length, 1);
+  assert.equal((cardSpaceLink.match(/<InteractiveLiquidLayers \/>/g) || []).length, 1);
   assert.equal((detail.match(/interactive-bubble--liquid/g) || []).length, 1);
   assert.equal((detail.match(/<InteractiveLiquidLayers \/>/g) || []).length, 1);
   assert.equal((profile.match(/interactive-bubble--liquid/g) || []).length, 3);

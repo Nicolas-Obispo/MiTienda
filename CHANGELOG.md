@@ -9,9 +9,42 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 98 - Correccion y Pulido Visual del Frontend
+
+**Estado:** Cerrada
+
+- Liquid queda consolidado como sistema visual compartido de botones y enlaces
+  visuales, preservando variantes, acciones, geometria, accesibilidad,
+  light/dark, fallback y reduced motion.
+- Se completan los ajustes aprobados de navegacion, Home, Feed, Ranking,
+  Explorar, publicaciones, perfiles publicos y administrativos, formularios,
+  denuncias, Historias, modales y estados visibles.
+- El perfil publico aprovecha su superficie, compacta acciones, protege
+  metricas privadas por ownership y usa TanStack como owner del seguimiento
+  confirmado. Crear espacios permite configurar horarios mediante el mismo
+  editor en modo draft y persiste el borrador despues del alta.
+- Las publicaciones incorporan identidad del espacio, enlaces compactos
+  accesibles y denuncia compartida. Feed elimina alturas artificiales; Ranking
+  y Explorar conservan sus grillas compactas y el estado social mantiene orden
+  y cache-first.
+- Historias conserva acciones contextuales por ownership, reconcilia caches al
+  eliminar y trata multimedia ausente sin loops, remounts ni contenido roto.
+- Se preservan las correcciones incidentales de frontera post-commit de
+  embeddings, registro completo de modelos ORM, errores no bloqueantes,
+  invalidaciones estructurales, owner unico del Feed y orden estable.
+- La auditoria de densidad responsive no se incorpora al producto: el
+  experimento fue retirado completamente.
+- `DEC-058` y `docs/28_DYNAMIC_FEED_DESIGN.md` formalizan el futuro Dynamic Feed
+  e Historias. Su implementacion permanece diferida a ETAPAS 106, 119 y 122.
+- Validacion final: ESLint sin errores y con 4 advertencias preexistentes,
+  frontend 440/440, backend 440 correctos con 1 omitido, build productivo/PWA y
+  `git diff --check` correctos.
+- ETAPA 99 - Identidad, Registro y Autenticacion queda como siguiente etapa
+  oficial, pendiente y no iniciada.
+
 ## ETAPA 98 - Checkpoint previo a densidad responsive
 
-**Estado:** Checkpoint aprobado; ETAPA 98 permanece abierta
+**Estado:** Checkpoint historico aprobado; ETAPA 98 cerrada posteriormente
 
 - `InteraccionButton` adapta labels e iconos inactivos mediante texto principal
   semantico: oscuro en light y claro en dark. Los estados activos conservan
@@ -33,11 +66,12 @@ Para detalle histórico extenso previo, ver:
   overlays requieren tratamiento especifico.
 - Validacion: 389/389 tests frontend, 111/111 tests especificos, build
   productivo/PWA y `git diff --check` correctos. Backend permanece sin cambios.
-- Este checkpoint no implementa densidad responsive ni cierra ETAPA 98.
+- Este checkpoint no implemento densidad responsive ni constituyo por si solo
+  el cierre posterior de ETAPA 98.
 
 ## ETAPA 98 - Checkpoint Liquid e interacciones
 
-**Estado:** Checkpoint aprobado; ETAPA 98 permanece abierta
+**Estado:** Checkpoint historico aprobado; ETAPA 98 cerrada posteriormente
 
 - Se consolida `.interactive-bubble--liquid` como owner productivo de la
   superficie compartida de botones y enlaces visuales. `Button` e
@@ -65,8 +99,8 @@ Para detalle histórico extenso previo, ver:
 - Validacion del checkpoint: 379/379 tests frontend, build productivo/PWA,
   438 tests backend correctos con 1 omitido, `compileall app` y
   `git diff --check` correctos.
-- Este checkpoint no cierra ETAPA 98 ni sustituye el gate visual humano y
-  renderizado de las superficies restantes.
+- Este checkpoint no constituyo por si solo el cierre posterior de ETAPA 98 ni
+  sustituyo el gate visual humano y renderizado de las superficies restantes.
 
 ## ETAPA 97 - Administracion Operativa Minima
 

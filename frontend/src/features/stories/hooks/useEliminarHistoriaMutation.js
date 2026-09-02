@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@core/constants/queryKeys";
 import { eliminarHistoria } from "@features/stories/services/historias_service";
+import { reconcileStoriesBarAfterDeletion } from "./storyBarCache";
 
 export function useEliminarHistoriaMutation() {
   const queryClient = useQueryClient();
@@ -17,8 +18,13 @@ export function useEliminarHistoriaMutation() {
             : historias
       );
 
+      queryClient.setQueryData(queryKeys.stories.bar(), (items) =>
+        reconcileStoriesBarAfterDeletion(items, comercioId)
+      );
+
       queryClient.invalidateQueries({
         queryKey: queryKeys.stories.bar(),
+        refetchType: "none",
       });
     },
   });

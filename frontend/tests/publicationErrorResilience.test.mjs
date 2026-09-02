@@ -53,7 +53,8 @@ test("keys, orden, geometria y handlers exitosos permanecen", () => {
   assert.match(feed, /toggleGuardadoMutation\.mutateAsync\(/);
   assert.match(ranking, /toggleLikeMutation\.mutateAsync\(pubId\)/);
   assert.match(profile, /toggleGuardadoMutation\.mutateAsync\(/);
-  assert.match(feed, /min-h-\[72vh\]/);
-  assert.match(ranking, /grid-cols-2/);
-  assert.match(profile, /grid grid-cols-2 gap-1\.5 sm:grid-cols-3/);
+  assert.doesNotMatch(feed, /min-h-\[72vh\]/);
+  assert.match(feed, /scroll-mt-24[\s\S]*rounded-3xl[\s\S]*overflow-hidden[\s\S]*<PublicacionCard/);
+  assert.match(ranking, /grid-cols-3[\s\S]*sm:grid-cols-3[\s\S]*md:grid-cols-4/);
+  assert.match(profile, /grid grid-cols-2 gap-0 sm:grid-cols-3 \[&>\*\]:w-full/);
 });

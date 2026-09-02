@@ -116,6 +116,12 @@ es el documento tecnico propietario de capacidades comerciales transversales,
 Advertising, Payments y Billing. Ninguno reemplaza Producto, Ingenieria,
 Search, Legal, Decisiones ni Roadmap.
 
+`28_DYNAMIC_FEED_DESIGN` es el documento tecnico propietario del diseño futuro
+de Feed e Historias: Candidate Generation, ranking contextual, exposicion,
+snapshots, paginacion y fronteras con PWA, ubicacion, Clasificados y Plataforma
+Comercial. Esta subordinado a Producto, Ingenieria, Search, Decisiones y
+Roadmap; no modifica por si mismo la etapa vigente ni autoriza implementacion.
+
 Los documentos `10+` pueden ser documentos tecnicos especializados o
 documentos transversales incorporados explicitamente al Sistema de Gobierno.
 

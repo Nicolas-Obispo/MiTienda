@@ -29,6 +29,21 @@ test("Explorar y sus owners visuales consumen tokens y primitives", () => {
   assert.match(scheduleBadge, /bg-danger-surface/);
 });
 
+test("publicaciones elimina separacion sin alterar la grilla de espacios", () => {
+  const spacesGrid = explore.slice(
+    explore.indexOf("{/* GRID DE COMERCIOS */}"),
+    explore.indexOf("{/* GRID DE PUBLICACIONES */}")
+  );
+  const publicationsGrid = explore.slice(
+    explore.indexOf("{/* GRID DE PUBLICACIONES */}"),
+    explore.indexOf("{/* SIN RESULTADOS */}")
+  );
+
+  assert.match(spacesGrid, /grid-cols-3[\s\S]*sm:grid-cols-3[\s\S]*md:grid-cols-4[\s\S]*gap-1\.5[\s\S]*sm:gap-3/);
+  assert.match(publicationsGrid, /grid-cols-3[\s\S]*sm:grid-cols-3[\s\S]*md:grid-cols-4[\s\S]*gap-0[\s\S]*\[&>\*\]:w-full/);
+  assert.doesNotMatch(publicationsGrid, /gap-1\.5|sm:gap-3/);
+});
+
 test("la migracion no introduce tema manual ni colores fisicos evitables", () => {
   assert.doesNotMatch(migratedSources, /#[\da-f]{3,8}|\brgb\(|\brgba\(/i);
   assert.doesNotMatch(migratedSources, /(?:bg|text|border|from|via|to)-(?:gray|slate|zinc|neutral|stone|white|black|red|green|emerald|orange|amber|yellow|blue|purple|pink)-?\d*/);

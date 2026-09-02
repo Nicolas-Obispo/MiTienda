@@ -20,6 +20,7 @@ const DIAS_SEMANA = [
 
 const DIAS_HABILES = [0, 1, 2, 3, 4];
 const HORA_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+const FRANJAS_INICIALES_VACIAS = [];
 let siguienteClientId = 0;
 
 function crearClientId() {
@@ -162,8 +163,15 @@ function getMensajeError(error) {
   return "No se pudieron guardar los horarios. Revisa tu conexion e intenta nuevamente.";
 }
 
-export default function HorariosAtencionEditor({ comercio, onClose }) {
+export default function HorariosAtencionEditor({
+  comercio,
+  onClose,
+  mode = "persisted",
+  initialFranjas = FRANJAS_INICIALES_VACIAS,
+  onSaveDraft,
+}) {
   const comercioId = comercio?.id;
+  const isDraft = mode === "draft";
   const cerrarButtonRef = useRef(null);
   const [franjas, setFranjas] = useState([]);
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
@@ -175,7 +183,7 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
   const [horaInputAbiertoId, setHoraInputAbiertoId] = useState(null);
 
   const horariosQuery = useHorariosAtencion(comercioId, {
-    enabled: Boolean(comercioId),
+    enabled: !isDraft && Boolean(comercioId),
   });
   const reemplazarMutation = useReemplazarHorariosAtencionMutation();
 
@@ -189,7 +197,11 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
     queueMicrotask(() => {
       if (!activo) return;
 
-      setFranjas([]);
+      setFranjas(
+        isDraft
+          ? normalizarFranjasRespuesta({ franjas: initialFranjas })
+          : []
+      );
       setDiaSeleccionado(null);
       setDiaOrigenAplicar(null);
       setDiasDestinoSeleccionados([]);
@@ -202,9 +214,10 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
     return () => {
       activo = false;
     };
-  }, [comercioId]);
+  }, [comercioId, initialFranjas, isDraft]);
 
   useEffect(() => {
+    if (isDraft) return;
     if (!respuestaPerteneceAlComercio(horariosQuery.data, comercioId)) return;
 
     let activo = true;
@@ -221,7 +234,7 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
     return () => {
       activo = false;
     };
-  }, [comercioId, horariosQuery.data]);
+  }, [comercioId, horariosQuery.data, isDraft]);
 
   function limpiarFlujoAplicar() {
     setDiaOrigenAplicar(null);
@@ -348,7 +361,9 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
 
   function cancelarEdicion() {
     setFranjas(
-      respuestaPerteneceAlComercio(horariosQuery.data, comercioId)
+      isDraft
+        ? normalizarFranjasRespuesta({ franjas: initialFranjas })
+        : respuestaPerteneceAlComercio(horariosQuery.data, comercioId)
         ? normalizarFranjasRespuesta(horariosQuery.data)
         : []
     );
@@ -373,6 +388,12 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
       hora_cierre: franja.hora_cierre,
     }));
 
+    if (isDraft) {
+      onSaveDraft?.(payloadFranjas);
+      onClose();
+      return;
+    }
+
     try {
       setErrorMessage("");
       await reemplazarMutation.mutateAsync({
@@ -386,8 +407,11 @@ export default function HorariosAtencionEditor({ comercio, onClose }) {
   }
 
   const isLoadingSinCache =
-    horariosQuery.isLoading && !horariosQuery.data && franjas.length === 0;
-  const isSaving = reemplazarMutation.isPending;
+    !isDraft &&
+    horariosQuery.isLoading &&
+    !horariosQuery.data &&
+    franjas.length === 0;
+  const isSaving = !isDraft && reemplazarMutation.isPending;
   const diaActivo = obtenerDia(diaSeleccionado);
   const estaAplicandoHorarios = diaOrigenAplicar !== null;
   const franjasDiaActivo =

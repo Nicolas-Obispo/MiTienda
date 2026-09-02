@@ -9,6 +9,10 @@ const [ranking, rankingHook, card] = await Promise.all([
   readSource("../src/features/posts/hooks/useRankingPublicaciones.js"),
   readSource("../src/features/posts/components/PublicacionCard.jsx"),
 ]);
+const rankingBadge = card.slice(
+  card.indexOf("function RankingBadge"),
+  card.indexOf("function MetricBadge")
+);
 
 test("Ranking migra shell y estados mediante primitives semanticas", () => {
   assert.match(ranking, /bg-canvas text-primary/);
@@ -25,6 +29,21 @@ test("Ranking reutiliza PublicacionCard sin crear una card paralela", () => {
   assert.match(ranking, /compact/);
   assert.match(card, /<InteraccionButton/);
   assert.doesNotMatch(ranking, /<InteraccionButton/);
+});
+
+test("insignia centraliza el ranking circular con Liquid decorativo", () => {
+  assert.match(card, /function RankingBadge\(\{ rankIndex, compact = false \}\)/);
+  assert.match(card, /interactive-bubble interactive-bubble--flush interactive-bubble--liquid/);
+  assert.match(card, /compact \? "h-6 w-6 text-\[11px\]" : "h-7 w-7 text-xs"/);
+  assert.match(card, /pointer-events-none[\s\S]*rounded-full[\s\S]*<InteractiveLiquidLayers \/>/);
+  assert.equal((card.match(/<RankingBadge\b/g) || []).length, 2);
+});
+
+test("insignia conserva cualquier posicion dinamica sin iconos ni interaccion", () => {
+  assert.match(rankingBadge, /const position = rankIndex \+ 1/);
+  assert.match(rankingBadge, /<span>#\{position\}<\/span>/);
+  assert.doesNotMatch(rankingBadge, /Trophy|isPodium|RANKING_BADGE_VARIANTS/);
+  assert.doesNotMatch(rankingBadge, /onClick=|<Button|tabIndex|role=/);
 });
 
 test("Ranking no introduce colores fisicos ni logica manual de tema", () => {

@@ -34,9 +34,12 @@ router = APIRouter(
 )
 
 
-def obtener_nombre_comercio(db: Session, publicacion) -> Optional[str]:
+def obtener_identidad_comercio(
+    db: Session,
+    publicacion,
+) -> tuple[Optional[str], Optional[str]]:
     """
-    Obtiene el nombre real del comercio asociado a la publicación.
+    Obtiene el nombre y la portada del comercio asociado a la publicación.
 
     Primero intenta usar la relación ORM.
     Si no funciona, consulta directo a la tabla comercios por comercio_id.
@@ -45,21 +48,28 @@ def obtener_nombre_comercio(db: Session, publicacion) -> Optional[str]:
     comercio_relacionado = getattr(publicacion, "comercio", None)
 
     if comercio_relacionado is not None:
-        nombre = getattr(comercio_relacionado, "nombre", None)
-        if nombre:
-            return nombre
+        return (
+            getattr(comercio_relacionado, "nombre", None),
+            getattr(comercio_relacionado, "portada_url", None),
+        )
 
     comercio_id = getattr(publicacion, "comercio_id", None)
 
     if comercio_id is None:
-        return None
+        return None, None
 
-    nombre = db.execute(
-        text("SELECT nombre FROM comercios WHERE id = :comercio_id"),
+    fila = db.execute(
+        text(
+            "SELECT nombre, portada_url "
+            "FROM comercios WHERE id = :comercio_id"
+        ),
         {"comercio_id": int(comercio_id)},
-    ).scalar_one_or_none()
+    ).mappings().one_or_none()
 
-    return nombre
+    if fila is None:
+        return None, None
+
+    return fila["nombre"], fila["portada_url"]
 
 
 def construir_publicacion_read(
@@ -74,7 +84,10 @@ def construir_publicacion_read(
     guardados_count = len(guardados)
     interacciones_count = likes_count + guardados_count
 
-    comercio_nombre = obtener_nombre_comercio(db, publicacion)
+    comercio_nombre, comercio_portada_url = obtener_identidad_comercio(
+        db,
+        publicacion,
+    )
 
     liked_by_me = False
     guardada_by_me = False
@@ -94,6 +107,7 @@ def construir_publicacion_read(
         id=publicacion.id,
         comercio_id=publicacion.comercio_id,
         comercio_nombre=comercio_nombre,
+        comercio_portada_url=comercio_portada_url,
         titulo=publicacion.titulo,
         descripcion=publicacion.descripcion,
         seccion_id=publicacion.seccion_id,

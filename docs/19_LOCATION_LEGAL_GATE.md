@@ -127,6 +127,16 @@ La formalizacion de retencion y eliminacion definitivas permanece pendiente
 para los documentos y procedimientos operativos. No se autoriza conservar historial de posiciones, consultas crudas,
 IP completa, user-agent completo ni payloads de geocoding sin justificacion.
 
+El futuro Dynamic Feed puede usar la ubicación actual como señal fuerte y
+efímera, nunca como requisito bloqueante ni filtro territorial rígido. El
+backend gobierna proximidad y expansión progresiva; el cursor y los caches
+frontend no contienen coordenadas precisas. Ante un cambio importante de
+contexto se prepara otro snapshot en background y sólo puede ofrecerse su
+adopción cuando esté completo, sin mezclar páginas ni registrar historial de
+posiciones. El contrato de ranking se define en
+`docs/28_DYNAMIC_FEED_DESIGN.md`; este documento conserva ownership legal y de
+minimización.
+
 ## 6. Matriz Legal y Compliance
 
 | Tema | Regla o riesgo | Control requerido | Responsable segun Gobierno | Estado |

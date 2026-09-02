@@ -11,6 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.auth import obtener_usuario_actual, obtener_usuario_actual_opcional
 from app.core.database import Base, get_db
+from app.core.model_registry import import_all_models
 from app.modules.analytics.models.comercios_metricas_sociales_models import (
     ComercioMetricasSociales,
 )
@@ -27,6 +28,9 @@ from app.modules.stories.models.historias_vistas_models import HistoriaVista
 from app.modules.stories.routes.historias_routers import router as historias_router
 from app.modules.users.models.tokens_models import TokenRevocado
 from app.modules.users.models.usuarios_models import Usuario
+
+
+import_all_models()
 
 
 engine = create_engine(

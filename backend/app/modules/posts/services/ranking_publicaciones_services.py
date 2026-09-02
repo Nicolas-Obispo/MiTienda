@@ -52,6 +52,8 @@ def listar_publicaciones_ranked(db: Session) -> List[Publicacion]:
     query = (
         db.query(
             Publicacion,
+            Comercio.nombre.label("comercio_nombre"),
+            Comercio.portada_url.label("comercio_portada_url"),
             likes_count_expr.label("likes_count"),
             guardados_count_expr.label("guardados_count"),
             score_expr.label("score"),
@@ -71,7 +73,11 @@ def listar_publicaciones_ranked(db: Session) -> List[Publicacion]:
             Comercio.activo.is_(True),
             Comercio.moderation_hidden.is_(False),
         )
-        .group_by(Publicacion.id)
+        .group_by(
+            Publicacion.id,
+            Comercio.nombre,
+            Comercio.portada_url,
+        )
         .order_by(
             func.coalesce(score_expr, 0).desc(),
             Publicacion.created_at.desc(),
@@ -82,7 +88,14 @@ def listar_publicaciones_ranked(db: Session) -> List[Publicacion]:
 
     publicaciones: List[Publicacion] = []
 
-    for publicacion, likes_count, guardados_count, _score in resultados:
+    for (
+        publicacion,
+        comercio_nombre,
+        comercio_portada_url,
+        likes_count,
+        guardados_count,
+        _score,
+    ) in resultados:
         # ✅ Seteamos los campos calculados para que el schema los devuelva
         publicacion.likes_count = int(likes_count or 0)
         publicacion.guardados_count = int(guardados_count or 0)
@@ -92,6 +105,8 @@ def listar_publicaciones_ranked(db: Session) -> List[Publicacion]:
 
         # Ranking no depende de usuario
         publicacion.liked_by_me = False
+        publicacion.comercio_nombre = comercio_nombre
+        publicacion.comercio_portada_url = comercio_portada_url
 
         publicaciones.append(publicacion)
 

@@ -23,13 +23,14 @@ test("like y guardado delegan optimistic update y rollback a los hooks compartid
   assert.doesNotMatch(feed, /optimisticToggleLike|optimisticToggleGuardado/);
 });
 
-test("derivación conserva merge por id, orden, keys y geometría", () => {
+test("derivación conserva merge por id, orden, keys y altura natural", () => {
   assert.match(feed, /feedItems\.map\(\(publicacion\) => \(\{/);
   assert.match(feed, /guardadasSet\.has\(publicacion\.id\)/);
   assert.doesNotMatch(feed, /\.sort\(/);
   assert.match(feed, /publicaciones\.map\(\(p\) => \([\s\S]*key=\{p\.id\}/);
   assert.match(feed, /pub=\{p\}/);
-  assert.match(feed, /min-h-\[72vh\]/);
+  assert.doesNotMatch(feed, /min-h-\[72vh\]/);
+  assert.match(feed, /scroll-mt-24[\s\S]*rounded-3xl[\s\S]*overflow-hidden[\s\S]*<PublicacionCard/);
 });
 
 test("Cache First y errores conservan los estados existentes", () => {

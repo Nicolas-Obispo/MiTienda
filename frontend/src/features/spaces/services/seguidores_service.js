@@ -18,8 +18,12 @@ export async function dejarDeSeguirEspacio(comercioId) {
   return await httpDelete(`/seguidores/espacios/${comercioId}`, getToken());
 }
 
-export async function obtenerEstadoSeguimiento(comercioId) {
-  return await httpGet(`/seguidores/espacios/${comercioId}/estado`, getToken());
+export async function obtenerEstadoSeguimiento(comercioId, { signal } = {}) {
+  return await httpGet(
+    `/seguidores/espacios/${comercioId}/estado`,
+    getToken(),
+    { signal }
+  );
 }
 
 export async function obtenerMisEspaciosSeguidos({

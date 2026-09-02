@@ -55,13 +55,17 @@ test("cards flexibles reservan media y contraen texto", () => {
 });
 
 test("perfil de espacio usa ancho valido y metadata envolvente", () => {
-  assert.match(spaceProfile, /max-w-5xl/);
+  assert.match(spaceProfile, /max-w-7xl/);
   assert.doesNotMatch(spaceProfile, /max-w-5x1|flex-nowrap/);
   assert.match(spaceProfile, /min-w-0 flex-1 text-left/);
   assert.doesNotMatch(spaceProfile, /\{publicacionesCountVisible\} publicaciones|\{seguidoresCountLabel\}/);
-  assert.equal((spaceProfile.match(/rounded-xl px-2 py-1 text-xs/g) || []).length, 7);
+  assert.equal((spaceProfile.match(/rounded-xl px-2 py-1 text-xs/g) || []).length, 6);
+  assert.match(spaceProfile, /min-h-6 rounded-xl px-\[5\.6px\] py-\[2\.8px\] text-\[8\.4px\] leading-\[11\.2px\]/);
   assert.match(spaceProfile, /flex w-full flex-wrap items-end gap-x-4 gap-y-2/);
-  assert.match(spaceProfile, /ml-auto flex max-w-full flex-col items-end gap-1 text-right/);
+  assert.match(spaceProfile, /grid-cols-\[minmax\(0,1fr\)_auto\] items-start gap-x-4/);
+  assert.match(spaceProfile, /flex min-h-9 min-w-0 items-start gap-2 break-words py-1 text-xs leading-4 text-secondary/);
+  assert.match(spaceProfile, /min-w-0 justify-self-end justify-end text-right leading-4/);
+  assert.match(spaceProfile, /grid grid-cols-2 gap-0 sm:grid-cols-3 \[&>\*\]:w-full/);
 });
 
 test("mapa y documentos legales permanecen contenidos", () => {

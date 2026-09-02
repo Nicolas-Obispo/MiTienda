@@ -1089,9 +1089,10 @@ Subetapas:
   no quedaron procesos huerfanos y ambos gates volvieron a `false`.
 
 ETAPA 97 queda formalmente cerrada con sus subetapas 97.1 a 97.6 cerradas.
-ETAPA 98 es la etapa oficial vigente y permanece abierta.
+ETAPA 98 queda formalmente cerrada. ETAPA 99 es la siguiente etapa oficial,
+pendiente y no iniciada.
 
-### ☐ ETAPA 98
+### ☑ ETAPA 98
 
 Correccion y Pulido Visual del Frontend.
 
@@ -1146,7 +1147,7 @@ Gate:
 
 Estado:
 
-Abierta. Checkpoint intermedio aprobado y validado, sin cierre de etapa.
+Cerrada tecnica y documentalmente.
 
 Checkpoint intermedio:
 
@@ -1172,6 +1173,24 @@ Checkpoint intermedio:
 
 Este checkpoint no sustituye el render real y la revision de las superficies
 restantes exigidos por el gate de ETAPA 98.
+
+Cierre formal:
+
+- Liquid queda como owner visual compartido de botones y enlaces visuales, con
+  light/dark, accesibilidad, fallback y reduced motion preservados;
+- perfiles, publicaciones, Feed, Ranking, Explorar, Historias, formularios,
+  navegacion, modales y estados visibles quedaron recorridos y corregidos desde
+  sus owners compartidos;
+- los defectos incidentales demostrados de transaccion, registro ORM, errores
+  sociales, invalidaciones, doble ownership, orden, multimedia de Historias y
+  seguimiento fueron corregidos sin trasladar negocio al frontend;
+- el experimento de densidad responsive fue retirado y no integra el producto;
+- `DEC-058` y `docs/28_DYNAMIC_FEED_DESIGN.md` formalizan el diseño futuro de
+  Feed e Historias sin implementarlo; ETAPAS 106, 119 y 122 conservan sus
+  responsabilidades;
+- validacion final: ESLint sin errores y con cuatro advertencias preexistentes,
+  440 tests frontend, 440 tests backend con 1 omitido, build productivo/PWA y
+  `git diff --check` correctos.
 
 ### ☐ ETAPA 99
 
@@ -1207,7 +1226,20 @@ Alcance inicial sujeto a auditoria:
   aplicarla; la auditoria debe migrar de forma compatible el contrato local
   vigente y definir `dark` como default de cuenta cuando no exista preferencia;
 - aceptacion y trazabilidad de Terminos y Privacidad conforme al owner legal;
-- revision critica de los datos minimos necesarios para crear una cuenta.
+- revision critica de los datos minimos necesarios para crear una cuenta;
+- preservacion en memoria del borrador de Registro al visitar Terminos o
+  Privacidad, sin persistir la contrasena en storage, historial, query strings,
+  IndexedDB, TanStack Query ni caches PWA;
+- `fecha_nacimiento` privada, nullable y no publica, con migracion compatible,
+  API y edicion de perfil; no forma parte inicial del Registro y la edad se
+  calcula en backend sin persistirse;
+- capabilities backend `perfil_completo`, `campos_perfil_faltantes` y
+  `puede_crear_espacio`, sin inferencia frontend de edad o capacidad;
+- coordinacion con el backend de Espacios para aplicar la politica de 18 anos
+  o mas al crear o administrar espacios y publicar contenido asociado, sin
+  trasladar ownership comercial al dominio de identidad;
+- flujo Google ordenado como aceptacion FeedGo, validacion externa, creacion o
+  vinculacion backend sin duplicados, evidencia legal y sesion FeedGo.
 
 Principios y exclusiones:
 
@@ -1219,6 +1251,11 @@ Principios y exclusiones:
   FeedGo; frontend conserva interaccion y UX;
 - no se incorporan secretos OAuth al frontend ni se confian identidades
   declaradas solamente por el cliente;
+- Google no reemplaza la aceptacion FeedGo, no acredita que la persona tenga
+  18 anos o mas y no importa fecha de nacimiento o genero por defecto;
+- una cuenta basica no excluye automaticamente a menores de 18 anos, pero la
+  capacidad para crear o administrar espacios y publicar contenido asociado
+  se gobierna por `DEC-057` y debe ser aplicada por backend;
 - registrarse no crea un espacio. El onboarding comercial/profesional de un
   espacio conserva sus datos, reglas y owners propios;
 - Google Sign-In no es fuente de ubicacion. GPS, ciudad declarada y fallback
@@ -1232,7 +1269,11 @@ Dependencias:
 - antes de implementar correo real debe coordinarse el contrato transversal de
   comunicaciones sin duplicar la futura ETAPA 114;
 - cualquier modelo, tabla, proveedor o tratamiento personal nuevo requiere la
-  auditoria y aprobacion documental aplicable.
+  auditoria y aprobacion documental aplicable;
+- la politica de menores, el tratamiento de `fecha_nacimiento`, el requisito
+  de edad para espacios y publicaciones, el flujo Google y el versionado y
+  reaceptacion legal requieren revision profesional juridica argentina previa
+  al lanzamiento conforme a `docs/15_LEGAL_AND_OPERATIONAL.md`.
 
 Los metodos de acceso externos se integran mediante adapters controlados por
 FeedGo. Usuario FeedGo conserva identidad, autorizacion y sesion; ningun
@@ -1462,6 +1503,14 @@ Bloques maximos aproximados:
 - 106.4 - dominio de campanas y creatividades;
 - 106.5 - superficies, vigencia, moderacion y metricas;
 - 106.6 - administracion, seguridad, tests y gate.
+
+Para Dynamic Feed, ETAPA 106 es owner de la separación entre entitlement
+Premium, política comercial, promoción paga y Advertising. Debe exponer
+contratos trazables para un boost acotado y para composición publicitaria
+separada, con pertinencia, slots, frequency caps e identificación
+`Patrocinado`. Premium no concede elegibilidad ni puede romper los límites
+finales de diversity/fairness definidos por ETAPA 122. Contrato técnico:
+`docs/28_DYNAMIC_FEED_DESIGN.md`.
 
 Gate: Advertising no usa Clasificados falsos; sin campana no existe bloque
 vacio; capacidad construida y politica activa permanecen separadas.
@@ -1783,6 +1832,15 @@ Objetivo:
 Incorporar preferencias, contexto y recomendaciones basadas en uso real,
 privacidad y control del usuario.
 
+Para Dynamic Feed e Historias incluye la política de memoria temporal de
+exposición, su ventana móvil conceptual de tres a cuatro días, first/last
+exposure, conteo, decay, reingreso y controles de privacidad. Debe distinguir
+prefetch/cache de exposición real y no crear un historial permanente de
+ubicaciones. También debe auditar control de personalización, retención,
+minimización y si existe una necesidad real de último snapshot persistente,
+coordinada con ETAPA 122 y sin autorizar IndexedDB por anticipación. Contrato
+técnico: `docs/28_DYNAMIC_FEED_DESIGN.md`.
+
 Estado:
 
 Pendiente.
@@ -1831,6 +1889,21 @@ debe combinar afinidad/seguimiento, relevancia, proximidad, novedad, exposicion
 previa, diversidad y control de repeticion. Historias vistas y publicaciones ya
 consumidas pueden perder prioridad, pero backend conserva el ranking y no se
 autoriza una regla rigida de seguidos primero.
+
+ETAPA 122 es owner de Candidate Generation acotado, elegibilidad, expansión
+territorial progresiva, bulk hydration, scoring, penalización por exposición,
+consumo del boost Premium, reranking final diversity/fairness, snapshots
+estables, cursor opaco, infinite pagination/prefetch y ranking específico de
+Historias. Debe retirar la dependencia de `query.all()` mediante consultas
+indexadas y candidate pools limitados. La geolocalización no bloquea el primer
+render y el scroll normal continúa automáticamente; el aviso manual de un
+snapshot contextual nuevo sólo aparece cuando ese snapshot está completamente
+listo. Contrato técnico: `docs/28_DYNAMIC_FEED_DESIGN.md`.
+
+Debe admitir fuentes tipadas de Publicaciones e Historias y una integración
+futura con Clasificados sin fusionar dominios. La composición de Advertising
+consume los contratos de ETAPA 106 después del ranking orgánico y no vuelve a
+rerankear contenido orgánico y comercial como un único universo.
 
 Estado:
 

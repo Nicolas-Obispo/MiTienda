@@ -43,6 +43,11 @@ import AgendaGeneralModal from "@features/agenda/components/AgendaGeneralModal";
 import AgendaPrivadaModal from "@features/agenda/components/AgendaPrivadaModal";
 import EstadoHorarioBadge from "@features/availability/components/EstadoHorarioBadge";
 import HorariosAtencionEditor from "@features/availability/components/HorariosAtencionEditor";
+import { useReemplazarHorariosAtencionMutation } from "@features/availability/hooks/useHorariosAtencion";
+import {
+  crearComercioConHorariosDraft,
+  reintentarHorariosDeComercio,
+} from "@features/availability/services/horarios_draft_flow";
 import AppearanceSelector from "@features/auth/components/AppearanceSelector";
 
 import {
@@ -359,6 +364,7 @@ export default function ProfilePage() {
   // ==========================================================
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const reemplazarHorariosMutation = useReemplazarHorariosAtencionMutation();
   const navigate = useNavigate();
   const { logout, refrescarUsuario } = useAuth();
   const [comerciosErrorMessage, setComerciosErrorMessage] = useState("");
@@ -384,6 +390,10 @@ export default function ProfilePage() {
   const [isAgendaGeneralOpen, setIsAgendaGeneralOpen] = useState(false);
   const [agendaComercio, setAgendaComercio] = useState(null);
   const [horariosEditorComercio, setHorariosEditorComercio] = useState(null);
+  const [horariosDraft, setHorariosDraft] = useState([]);
+  const [horariosDraftConfigurado, setHorariosDraftConfigurado] = useState(false);
+  const [comercioCreadoPendienteHorarios, setComercioCreadoPendienteHorarios] =
+    useState(null);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showActivarEspacioInfo, setShowActivarEspacioInfo] = useState(false);
@@ -419,6 +429,9 @@ export default function ProfilePage() {
     setCreateErrorMessage("");
     setPortadaErrorMessage("");
     setHorariosEditorComercio(null);
+    setHorariosDraft([]);
+    setHorariosDraftConfigurado(false);
+    setComercioCreadoPendienteHorarios(null);
     setCreateForm({
       nombre: "",
       descripcion: "",
@@ -443,6 +456,9 @@ export default function ProfilePage() {
     setCreateErrorMessage("");
     setPortadaErrorMessage("");
     setHorariosEditorComercio(null);
+    setHorariosDraft([]);
+    setHorariosDraftConfigurado(false);
+    setComercioCreadoPendienteHorarios(null);
     setEditingComercioId(comercio.id);
     setShowCreateForm(true);
 
@@ -466,7 +482,12 @@ export default function ProfilePage() {
   }
 
   function abrirEditorHorariosDesdeFormulario() {
-    if (!editingComercioId) return;
+    if (!editingComercioId) {
+      setHorariosEditorComercio({
+        nombre: createForm.nombre || "Nuevo espacio",
+      });
+      return;
+    }
 
     const comercioEditando = misComercios.find(
       (comercio) => Number(comercio.id) === Number(editingComercioId)
@@ -578,6 +599,24 @@ export default function ProfilePage() {
       setCreateErrorMessage("");
       setIsCreatingComercio(true);
 
+      if (comercioCreadoPendienteHorarios) {
+        try {
+          await reintentarHorariosDeComercio({
+            guardarHorarios: (variables) =>
+              reemplazarHorariosMutation.mutateAsync(variables),
+            comercioId: comercioCreadoPendienteHorarios.id,
+            franjas: horariosDraft,
+          });
+          setShowCreateForm(false);
+          handleResetForm();
+        } catch {
+          setCreateErrorMessage(
+            "El espacio fue creado, pero no se pudieron guardar sus horarios."
+          );
+        }
+        return;
+      }
+
       if (!createForm.nombre.trim()) {
         throw new Error("El nombre es obligatorio.");
       }
@@ -652,12 +691,28 @@ export default function ProfilePage() {
         return;
       }
 
-      await crearComercio(payload);
+      const { comercio: comercioCreado, horariosError } =
+        await crearComercioConHorariosDraft({
+          crear: crearComercio,
+          guardarHorarios: (variables) =>
+            reemplazarHorariosMutation.mutateAsync(variables),
+          payload,
+          horariosConfigurados: horariosDraftConfigurado,
+          franjas: horariosDraft,
+        });
       await queryClient.invalidateQueries({
         queryKey: queryKeys.spaces.mis(),
       });
       await queryClient.invalidateQueries({ queryKey: queryKeys.explore.all });
       await queryClient.invalidateQueries({ queryKey: ["spaces", "seguidos"] });
+
+      if (horariosError) {
+        setComercioCreadoPendienteHorarios(comercioCreado);
+        setCreateErrorMessage(
+          "El espacio fue creado, pero no se pudieron guardar sus horarios."
+        );
+        return;
+      }
 
       setShowCreateForm(false);
       handleResetForm();
@@ -1054,6 +1109,92 @@ export default function ProfilePage() {
                 )}
 
                 <form onSubmit={handleCrearComercioSubmit} className="mt-4 space-y-3">
+                  <div>
+                    <span className="text-xs text-secondary">Portada</span>
+
+                    <div className="mt-2 flex items-center gap-3">
+                      <button
+                        type="button"
+                        aria-label="Seleccionar portada del espacio"
+                        disabled={isUploadingPortada}
+                        onClick={handlePortadaClick}
+                        onDragOver={handlePortadaDragOver}
+                        onDragLeave={handlePortadaDragLeave}
+                        onDrop={handlePortadaDrop}
+                        className={[
+                          "relative h-26 w-26 rounded-2xl border overflow-hidden",
+                          "flex items-center justify-center",
+                          isDragOverPortada ? "border-success-border" : "border-border-strong",
+                          "bg-surface-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                          isUploadingPortada
+                            ? "opacity-70 cursor-not-allowed"
+                            : "cursor-pointer",
+                        ].join(" ")}
+                        title="Click para elegir imagen o arrastrá una foto acá"
+                      >
+                        {createForm.portada_url ? (
+                          <img
+                            src={createForm.portada_url}
+                            alt="Portada del espacio"
+                            className="h-full w-full object-cover"
+                            draggable={false}
+                          />
+                        ) : (
+                          <span className="text-[10px] text-secondary text-center px-1">
+                            Sin portada
+                          </span>
+                        )}
+
+                        {isUploadingPortada && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <span className="text-[10px]">Subiendo...</span>
+                          </div>
+                        )}
+                      </button>
+
+                      <div className="flex-1">
+                        <p className="text-sm text-secondary">
+                          Elegí una imagen que represente claramente este espacio.
+                        </p>
+
+                        <p className="mt-1 text-xs text-muted">
+                          Recomendamos utilizar el logo del negocio, el nombre
+                          del emprendimiento, una imagen de marca o una foto
+                          que ayude a los usuarios a identificar la actividad
+                          de forma rápida.
+                        </p>
+
+                        <Button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handlePortadaClick();
+                          }}
+                          disabled={isUploadingPortada}
+                          variant="secondary"
+                          className="mt-2 px-3 py-2 text-xs"
+                        >
+                          {isUploadingPortada ? "Subiendo..." : "Seleccionar imagen"}
+                        </Button>
+
+                        <input
+                          ref={portadaFileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handlePortadaInputChange}
+                          className="hidden"
+                        />
+
+                        {portadaErrorMessage && (
+                          <p className="mt-2 text-xs text-danger-text break-words" role="alert">
+                            {portadaErrorMessage}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label htmlFor="espacio-nombre" className="text-xs text-secondary">
@@ -1178,29 +1319,6 @@ export default function ProfilePage() {
                       )}
                     </Surface>
 
-                    <div>
-                      <label htmlFor="espacio-provincia" className="text-xs text-secondary">Provincia *</label>
-                      <Input
-                        id="espacio-provincia"
-                        name="provincia"
-                        value={createForm.provincia}
-                        onChange={handleCreateInputChange}
-                        className="mt-1 text-sm"
-                        placeholder="Ej: Santa Fe"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="espacio-ciudad" className="text-xs text-secondary">Ciudad *</label>
-                      <Input
-                        id="espacio-ciudad"
-                        name="ciudad"
-                        value={createForm.ciudad}
-                        onChange={handleCreateInputChange}
-                        className="mt-1 text-sm"
-                        placeholder="Ej: Rafaela"
-                      />
-                    </div>
                   </div>
 
                   <div>
@@ -1216,93 +1334,31 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  <div>
-                    <span className="text-xs text-secondary">Portada</span>
-
-                    <div className="mt-2 flex items-center gap-3">
-                      <button
-                        type="button"
-                        aria-label="Seleccionar portada del espacio"
-                        disabled={isUploadingPortada}
-                        onClick={handlePortadaClick}
-                        onDragOver={handlePortadaDragOver}
-                        onDragLeave={handlePortadaDragLeave}
-                        onDrop={handlePortadaDrop}
-                        className={[
-                          "relative h-26 w-26 rounded-2xl border overflow-hidden",
-                          "flex items-center justify-center",
-                          isDragOverPortada ? "border-success-border" : "border-border-strong",
-                          "bg-surface-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                          isUploadingPortada
-                            ? "opacity-70 cursor-not-allowed"
-                            : "cursor-pointer",
-                        ].join(" ")}
-                        title="Click para elegir imagen o arrastrá una foto acá"
-                      >
-                        {createForm.portada_url ? (
-                          <img
-                            src={createForm.portada_url}
-                            alt="Portada del espacio"
-                            className="h-full w-full object-cover"
-                            draggable={false}
-                          />
-                        ) : (
-                          <span className="text-[10px] text-secondary text-center px-1">
-                            Sin portada
-                          </span>
-                        )}
-
-                        {isUploadingPortada && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <span className="text-[10px]">Subiendo...</span>
-                          </div>
-                        )}
-                      </button>
-
-                      <div
-                        className="flex-1"
-                      >
-                        <p className="text-sm text-secondary">
-                          Elegí una imagen que represente claramente este espacio.
+                  <Surface variant="subtle" className="rounded-xl p-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-secondary">
+                          Horarios de atención
                         </p>
-
                         <p className="mt-1 text-xs text-muted">
-                          Recomendamos utilizar el logo del negocio, el nombre
-                          del emprendimiento, una imagen de marca o una foto
-                          que ayude a los usuarios a identificar la actividad
-                          de forma rápida.
+                          {editingComercioId
+                            ? "Administrá las franjas semanales de este espacio."
+                            : horariosDraftConfigurado
+                              ? `${horariosDraft.length} franjas configuradas.`
+                              : "Configurá las franjas semanales antes de crear el espacio."}
                         </p>
-
-                        <Button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handlePortadaClick();
-                          }}
-                          disabled={isUploadingPortada}
-                          variant="secondary"
-                          className="mt-2 px-3 py-2 text-xs"
-                        >
-                          {isUploadingPortada ? "Subiendo..." : "Seleccionar imagen"}
-                        </Button>
-
-                        <input
-                          ref={portadaFileInputRef}
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          onChange={handlePortadaInputChange}
-                          className="hidden"
-                        />
-
-                        {portadaErrorMessage && (
-                          <p className="mt-2 text-xs text-danger-text break-words" role="alert">
-                            {portadaErrorMessage}
-                          </p>
-                        )}
                       </div>
+
+                      <Button
+                        type="button"
+                        onClick={abrirEditorHorariosDesdeFormulario}
+                        variant="secondary"
+                        className="min-h-10 px-3 py-2 text-sm"
+                      >
+                        Horarios de atención
+                      </Button>
                     </div>
-                  </div>
+                  </Surface>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -1326,6 +1382,32 @@ export default function ProfilePage() {
                         onChange={handleCreateInputChange}
                         className="mt-1 text-sm"
                         placeholder="@tu_espacio"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="espacio-provincia" className="text-xs text-secondary">Provincia *</label>
+                      <Input
+                        id="espacio-provincia"
+                        name="provincia"
+                        value={createForm.provincia}
+                        onChange={handleCreateInputChange}
+                        className="mt-1 text-sm"
+                        placeholder="Ej: Santa Fe"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="espacio-ciudad" className="text-xs text-secondary">Ciudad *</label>
+                      <Input
+                        id="espacio-ciudad"
+                        name="ciudad"
+                        value={createForm.ciudad}
+                        onChange={handleCreateInputChange}
+                        className="mt-1 text-sm"
+                        placeholder="Ej: Rafaela"
                       />
                     </div>
                   </div>
@@ -1397,30 +1479,6 @@ export default function ProfilePage() {
                     </Surface>
                   </div>
 
-                  {editingComercioId ? (
-                    <Surface variant="subtle" className="rounded-xl p-3">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-secondary">
-                            Horarios de atención
-                          </p>
-                          <p className="mt-1 text-xs text-muted">
-                            Administrá las franjas semanales de este espacio.
-                          </p>
-                        </div>
-
-                        <Button
-                          type="button"
-                          onClick={abrirEditorHorariosDesdeFormulario}
-                          variant="secondary"
-                          className="min-h-10 px-3 py-2 text-sm"
-                        >
-                          Horarios de atención
-                        </Button>
-                      </div>
-                    </Surface>
-                  ) : null}
-
                   <div className="flex items-center gap-3 pt-2">
                     <Button
                       type="submit"
@@ -1430,6 +1488,8 @@ export default function ProfilePage() {
                     >
                       {isCreatingComercio
                         ? "Procesando..."
+                        : comercioCreadoPendienteHorarios
+                        ? "Reintentar horarios"
                         : editingComercioId
                         ? "Guardar cambios"
                         : "Crear"}
@@ -1513,7 +1573,7 @@ export default function ProfilePage() {
                           </div>
 
                           {/* BADGE ESTADO */}
-                          <span className="absolute top-2 left-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px]">
+                          <span className="absolute top-2 left-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] text-interactive-on-primary">
                             {c.activo ? "🟢Activo" : "🔴Pausado"}
                           </span>
 
@@ -1567,6 +1627,12 @@ export default function ProfilePage() {
             {horariosEditorComercio ? (
               <HorariosAtencionEditor
                 comercio={horariosEditorComercio}
+                mode={editingComercioId ? "persisted" : "draft"}
+                initialFranjas={horariosDraft}
+                onSaveDraft={(franjas) => {
+                  setHorariosDraft(franjas);
+                  setHorariosDraftConfigurado(true);
+                }}
                 onClose={() => setHorariosEditorComercio(null)}
               />
             ) : null}

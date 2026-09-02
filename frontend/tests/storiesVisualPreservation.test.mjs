@@ -26,7 +26,7 @@ test("escenario, progreso, overlays y texto permanecen invariantes", () => {
   assert.match(viewer, /bg-white\/25 overflow-hidden/);
   assert.match(viewer, /className="h-full bg-white"/);
   assert.match(viewer, /text-sm font-semibold text-white truncate/);
-  assert.match(viewer, /bg-white\/10[\s\S]*hover:bg-white\/20/);
+  assert.match(viewer, /ml-3 flex shrink-0 items-center gap-2/);
   assert.match(viewer, /text-white\/70 text-sm/);
 });
 
@@ -36,7 +36,11 @@ test("viewer no hereda runtime de tema y delega Liquid al Button compartido", ()
     /useTheme|resolvedTheme|setPreference|data-theme=|matchMedia\(|localStorage|dark:/
   );
   assert.doesNotMatch(viewer, /interactive-bubble/);
-  assert.match(viewer, /historiaActual\?\.puede_administrar === false[\s\S]*<Button[\s\S]*aria-label="Denunciar historia"[\s\S]*>\s*\.\.\.\s*<\/span>/);
+  assert.match(viewer, /historiaActual\?\.puede_administrar \? \([\s\S]*aria-label="Eliminar historia"[\s\S]*\) : historiaActual\?\.puede_administrar === false && !mediaError \? \([\s\S]*aria-label="Denunciar historia"[\s\S]*>\s*\.\.\.\s*<\/span>/);
+  assert.match(viewer, /ml-3 flex shrink-0 items-center gap-2/);
+  assert.match(viewer, /const STORY_HEADER_CONTROL_CLASSES =[\s\S]*h-8 min-h-8 w-8 min-w-8 shrink-0 rounded-full p-0/);
+  assert.equal((viewer.match(/className=\{STORY_HEADER_CONTROL_CLASSES\}/g) || []).length, 2);
+  assert.match(viewer, /className=\{`\$\{STORY_HEADER_CONTROL_CLASSES\} text-sm`\}/);
   assert.match(viewer, /<button\b/);
   assert.match(viewer, /<Button\b[\s\S]*variant="danger"/);
 });

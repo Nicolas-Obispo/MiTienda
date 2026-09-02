@@ -130,18 +130,25 @@ export async function httpPost(path, body = null, token = null, options = {}) {
  * @param {string|null} token - JWT opcional
  * @returns {Promise<any>} respuesta vacía o texto
  */
-export async function httpDelete(path, token = null) {
+export async function httpDelete(path, token = null, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "DELETE",
     headers: buildHeaders(token),
+    signal: options.signal,
   });
 
   if (!response.ok) {
     await throwHttpError(response);
   }
 
-  // DELETE suele devolver 204 No Content
-  return null;
+  if (response.status === 204) return null;
+
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  return response.text();
 }
 
 /**

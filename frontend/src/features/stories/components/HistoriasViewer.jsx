@@ -14,9 +14,12 @@ import {
   playStoryVideo,
 } from "./storyMediaLifecycle";
 import { reconcileStoryDeletion } from "./storyDeletionState";
+import { resolveStoryMediaFailure } from "./storyMediaFailureState";
 import "./HistoriasViewer.css";
 
 const DURACION_MS_DEFAULT = 4500;
+const STORY_HEADER_CONTROL_CLASSES =
+  "relative z-[999] h-8 min-h-8 w-8 min-w-8 shrink-0 rounded-full p-0 active:[transform:none]";
 
 export default function HistoriasViewer({
   isOpen,
@@ -36,6 +39,7 @@ export default function HistoriasViewer({
   const [indexActual, setIndexActual] = useState(0);
   const [progreso, setProgreso] = useState(0);
   const [mediaLista, setMediaLista] = useState(false);
+  const [mediaError, setMediaError] = useState(false);
   const [cycleKey, setCycleKey] = useState(0);
 
   const [likedByMe, setLikedByMe] = useState(false);
@@ -50,10 +54,10 @@ export default function HistoriasViewer({
   const rafRef = useRef(null);
   const startTimeRef = useRef(null);
   const runIdRef = useRef(0);
-  const errorAdvanceTimeoutRef = useRef(null);
   const startedVideoRef = useRef(null);
   const advanceLockedRef = useRef(false);
   const deletionTransitionRef = useRef(null);
+  const failedMediaIdsRef = useRef(new Set());
   const eliminarHistoriaMutation = useEliminarHistoriaMutation();
 
   const limpiarRaf = useCallback(() => {
@@ -63,23 +67,15 @@ export default function HistoriasViewer({
     }
   }, []);
 
-  const limpiarErrorAdvanceTimeout = useCallback(() => {
-    if (errorAdvanceTimeoutRef.current !== null) {
-      clearTimeout(errorAdvanceTimeoutRef.current);
-      errorAdvanceTimeoutRef.current = null;
-    }
-  }, []);
-
   const pausarVideoActivo = useCallback(() => {
     pauseStoryVideo(videoRef.current);
   }, []);
 
   const cerrarViewer = useCallback(() => {
     pausarVideoActivo();
-    limpiarErrorAdvanceTimeout();
     limpiarRaf();
     onClose?.();
-  }, [limpiarErrorAdvanceTimeout, limpiarRaf, onClose, pausarVideoActivo]);
+  }, [limpiarRaf, onClose, pausarVideoActivo]);
 
   const finalizarGrupo = useCallback(() => {
     // ✅ Si hay onEnd, delegamos al padre (FeedPage) para pasar al próximo comercio
@@ -99,7 +95,6 @@ export default function HistoriasViewer({
 
     advanceLockedRef.current = true;
     pausarVideoActivo();
-    limpiarErrorAdvanceTimeout();
 
     setIndexActual((prev) => {
       if (prev >= historiasList.length - 1) {
@@ -113,7 +108,6 @@ export default function HistoriasViewer({
     isOpen,
     historiasList.length,
     finalizarGrupo,
-    limpiarErrorAdvanceTimeout,
     pausarVideoActivo,
   ]);
 
@@ -122,7 +116,6 @@ export default function HistoriasViewer({
     if (historiasList.length === 0) return;
 
     pausarVideoActivo();
-    limpiarErrorAdvanceTimeout();
     advanceLockedRef.current = false;
 
     setIndexActual((prev) => {
@@ -140,18 +133,40 @@ export default function HistoriasViewer({
     isOpen,
     historiasList.length,
     onPrevious,
-    limpiarErrorAdvanceTimeout,
     pausarVideoActivo,
   ]);
 
-  const programarAvancePorError = useCallback(() => {
-    limpiarErrorAdvanceTimeout();
-    const expectedRun = runIdRef.current;
-    errorAdvanceTimeoutRef.current = setTimeout(() => {
-      errorAdvanceTimeoutRef.current = null;
-      if (runIdRef.current === expectedRun) irSiguiente();
-    }, 120);
-  }, [irSiguiente, limpiarErrorAdvanceTimeout]);
+  const manejarFalloMultimedia = useCallback((historia, currentIndex) => {
+    limpiarRaf();
+    pausarVideoActivo();
+    setMediaLista(false);
+
+    const failureState = resolveStoryMediaFailure({
+      historias: historiasList,
+      indexActual: currentIndex,
+      failedIds: failedMediaIdsRef.current,
+      puedeAdministrar: Boolean(historia?.puede_administrar),
+    });
+    failedMediaIdsRef.current = failureState.failedIds;
+
+    if (failureState.shouldStay) {
+      setMediaError(true);
+      return;
+    }
+
+    if (failureState.shouldClose) {
+      cerrarViewer();
+      return;
+    }
+
+    setMediaError(false);
+    setIndexActual(failureState.nextIndex);
+  }, [
+    cerrarViewer,
+    historiasList,
+    limpiarRaf,
+    pausarVideoActivo,
+  ]);
 
   // Reset fuerte al abrir
   useEffect(() => {
@@ -170,24 +185,23 @@ export default function HistoriasViewer({
     }
     setProgreso(0);
     setMediaLista(false);
+    setMediaError(false);
+    failedMediaIdsRef.current = new Set();
 
     startTimeRef.current = null;
     runIdRef.current += 1;
     advanceLockedRef.current = false;
     startedVideoRef.current = null;
-    limpiarErrorAdvanceTimeout();
     limpiarRaf();
 
     return () => {
       pausarVideoActivo();
-      limpiarErrorAdvanceTimeout();
       runIdRef.current += 1;
       limpiarRaf();
     };
   }, [
     isOpen,
     historiasList,
-    limpiarErrorAdvanceTimeout,
     limpiarRaf,
     pausarVideoActivo,
   ]);
@@ -208,23 +222,33 @@ export default function HistoriasViewer({
 
     setProgreso(0);
     setMediaLista(false);
+    setMediaError(false);
     startTimeRef.current = null;
     advanceLockedRef.current = false;
     startedVideoRef.current = null;
 
     runIdRef.current += 1;
-    limpiarErrorAdvanceTimeout();
     limpiarRaf();
   }, [
     isOpen,
     indexActual,
     historiasList.length,
-    limpiarErrorAdvanceTimeout,
     limpiarRaf,
   ]);
 
   const historiaActual = historiasList[indexActual];
   const historiaMediaUrl = getMediaUrlFromAny(historiaActual);
+  useEffect(() => {
+    if (!isOpen || !historiaActual?.id || historiaMediaUrl) return;
+    manejarFalloMultimedia(historiaActual, indexActual);
+  }, [
+    historiaActual,
+    historiaMediaUrl,
+    indexActual,
+    isOpen,
+    manejarFalloMultimedia,
+  ]);
+
   useEffect(() => {
     if (!isOpen) return;
     if (!historiaActual?.id) return;
@@ -256,7 +280,6 @@ export default function HistoriasViewer({
   useEffect(() => {
     if (!isOpen) {
       pausarVideoActivo();
-      limpiarErrorAdvanceTimeout();
       return undefined;
     }
 
@@ -276,14 +299,13 @@ export default function HistoriasViewer({
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isOpen, mediaLista, limpiarErrorAdvanceTimeout, pausarVideoActivo]);
+  }, [isOpen, mediaLista, pausarVideoActivo]);
 
   useEffect(
     () => () => {
       pausarVideoActivo();
-      limpiarErrorAdvanceTimeout();
     },
-    [limpiarErrorAdvanceTimeout, pausarVideoActivo]
+    [pausarVideoActivo]
   );
 
   // Timer RAF: solo cuando mediaLista=true
@@ -435,7 +457,6 @@ export default function HistoriasViewer({
       await eliminarHistoriaMutation.mutateAsync({ historiaId, comercioId });
 
       pausarVideoActivo();
-      limpiarErrorAdvanceTimeout();
       limpiarRaf();
 
       setIsDeleteConfirmOpen(false);
@@ -505,56 +526,65 @@ export default function HistoriasViewer({
             </p>
           </div>
 
-          {historiaActual?.puede_administrar === false ? (
+          <div className="ml-3 flex shrink-0 items-center gap-2">
+            {historiaActual?.puede_administrar ? (
+              <Button
+                variant="ghost"
+                aria-label="Eliminar historia"
+                title="Eliminar historia"
+                onClick={handleOpenDeleteConfirmation}
+                className={STORY_HEADER_CONTROL_CLASSES}
+              >
+                <Trash2
+                  aria-hidden="true"
+                  size={17}
+                  className="text-interactive-on-primary"
+                />
+              </Button>
+            ) : historiaActual?.puede_administrar === false && !mediaError ? (
+              <Button
+                variant="ghost"
+                aria-label="Denunciar historia"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDenunciaOpen(true);
+                }}
+                className={STORY_HEADER_CONTROL_CLASSES}
+              >
+                <span
+                  aria-hidden="true"
+                  className="inline-flex h-full w-full items-center justify-center text-lg leading-none text-interactive-on-primary"
+                >
+                  ...
+                </span>
+              </Button>
+            ) : null}
+
             <Button
-              iconOnly
               variant="ghost"
-              aria-label="Denunciar historia"
+              aria-label="Cerrar historias"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setIsDenunciaOpen(true);
+                cerrarViewer();
               }}
-              className="relative z-[999] ml-3 text-primary"
+              className={`${STORY_HEADER_CONTROL_CLASSES} text-sm`}
             >
-              <span
-                aria-hidden="true"
-                className="inline-flex h-full w-full items-center justify-center text-lg leading-none text-primary"
-              >
-                ...
+              <span aria-hidden="true" className="text-interactive-on-primary">
+                ✕
               </span>
             </Button>
-          ) : null}
-
-          {historiaActual?.puede_administrar ? (
-            <button
-              type="button"
-              aria-label="Eliminar historia"
-              title="Eliminar historia"
-              onClick={handleOpenDeleteConfirmation}
-              className="relative z-[999] ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              <Trash2 aria-hidden="true" size={17} />
-            </button>
-          ) : null}
-
-          <button
-            type="button"
-            aria-label="Cerrar historias"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              cerrarViewer();
-            }}
-            className="relative z-[999] ml-2 rounded-full bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            ✕
-          </button>
+          </div>
         </div>
       </div>
 
       <div className="absolute inset-0 z-10 flex items-center justify-center">
-        {historiaMediaUrl ? (
+        {mediaError && historiaActual?.puede_administrar ? (
+          <p className="max-w-sm px-6 text-center text-sm text-interactive-on-primary" role="status">
+            El archivo de esta historia no está disponible
+          </p>
+        ) : historiaMediaUrl ? (
           historiaEsVideo ? (
             <video
               ref={videoRef}
@@ -579,8 +609,7 @@ export default function HistoriasViewer({
                       return;
                     }
 
-                    setMediaLista(false);
-                    programarAvancePorError();
+                    manejarFalloMultimedia(historiaActual, indexActual);
                   });
                 }
               }}
@@ -592,8 +621,7 @@ export default function HistoriasViewer({
               }}
               onEnded={irSiguiente}
               onError={() => {
-                setMediaLista(false);
-                programarAvancePorError();
+                manejarFalloMultimedia(historiaActual, indexActual);
               }}
             />
           ) : (
@@ -607,8 +635,7 @@ export default function HistoriasViewer({
               draggable="false"
               onLoad={() => setMediaLista(true)}
               onError={() => {
-                setMediaLista(false);
-                programarAvancePorError();
+                manejarFalloMultimedia(historiaActual, indexActual);
               }}
             />
           )
@@ -618,7 +645,7 @@ export default function HistoriasViewer({
       </div>
 
       {/* Corazón animado */}
-      {showFlyingHeart ? (
+      {!mediaError && showFlyingHeart ? (
         <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center">
           <div
             className="
@@ -632,7 +659,7 @@ export default function HistoriasViewer({
             ❤️
           </div>
         </div>
-      ) : !likedByMe ? (
+      ) : !mediaError && !likedByMe ? (
         <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
           <button
             type="button"
@@ -665,7 +692,7 @@ export default function HistoriasViewer({
       ) : null}
 
       {/* Like persistente abajo */}
-      {likedByMe ? (
+      {!mediaError && likedByMe ? (
         <div className="absolute bottom-6 left-6 z-40">
           <button
             type="button"
@@ -691,6 +718,7 @@ export default function HistoriasViewer({
 
       <div className="absolute inset-0 z-20 flex"></div>
 
+      {!mediaError ? (
       <div className="absolute inset-x-0 bottom-0 top-20 z-30 flex">
         <button
           type="button"
@@ -714,6 +742,7 @@ export default function HistoriasViewer({
           </span>
         </button>
       </div>
+      ) : null}
       <DenunciaModal
         isOpen={isDenunciaOpen}
         onClose={() => setIsDenunciaOpen(false)}

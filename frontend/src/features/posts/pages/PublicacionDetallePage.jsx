@@ -17,8 +17,7 @@ import {
 } from "@features/social";
 import { httpDelete } from "@core/services/http_service";
 import { ActiveLayer, useProtectedActionRedirect } from "@core";
-import DenunciaModal from "@features/moderation/components/DenunciaModal";
-import { RECURSO_DENUNCIA_PUBLICACION } from "@features/moderation/constants/denuncias";
+import PublicacionReportControl from "@features/moderation/components/PublicacionReportControl";
 import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
 export default function PublicacionDetallePage() {
@@ -47,7 +46,6 @@ export default function PublicacionDetallePage() {
   const [mostrarConfirmacionEliminar, setMostrarConfirmacionEliminar] =
     useState(false);
   const [isDeletingPublicacion, setIsDeletingPublicacion] = useState(false);
-  const [isDenunciaOpen, setIsDenunciaOpen] = useState(false);
 
   function getNombreComercio(pub) {
     return (
@@ -191,9 +189,28 @@ export default function PublicacionDetallePage() {
     comercioOwnershipQuery.data?.es_propietario
   );
 
+  function handleVolver() {
+    if ((window.history.state?.idx ?? 0) > 0) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/feed", { replace: true });
+  }
+
   return (
     <div className="min-h-screen bg-canvas text-primary">
       <main className="mx-auto max-w-3xl px-4 py-6">
+        <div className="mb-4 flex items-center justify-end gap-2">
+          <Button
+            variant="ghost"
+            onClick={handleVolver}
+            className="min-h-6 cursor-pointer px-[7px] py-[4.2px] text-[9.8px] leading-[14px] active:[transform:none]"
+          >
+            <span>← Volver</span>
+          </Button>
+        </div>
+
         {isLoading && !publicacionVisible && (
           <div className="space-y-3">
             <Skeleton className="h-10 rounded-xl" />
@@ -268,7 +285,7 @@ export default function PublicacionDetallePage() {
                 </p>
               )}
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <InteraccionButton
                   type="like"
                   active={liked}
@@ -285,22 +302,8 @@ export default function PublicacionDetallePage() {
                   label={guardada ? "Guardada" : "Guardar"}
                 />
 
-                {!esPropietarioPublicacion ? (
-                  <Button
-                    type="button"
-                    onClick={() => setIsDenunciaOpen(true)}
-                    variant="secondary"
-                    iconOnly
-                    aria-label="Denunciar publicación"
-                    className="text-primary"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="inline-flex h-full w-full items-center justify-center text-lg leading-none text-primary"
-                    >
-                      ...
-                    </span>
-                  </Button>
+                {comercioOwnershipQuery.isSuccess && !esPropietarioPublicacion ? (
+                  <PublicacionReportControl publicacionId={publicacionVisible?.id} />
                 ) : null}
               </div>
 
@@ -376,13 +379,6 @@ export default function PublicacionDetallePage() {
         </ActiveLayer>
       )}
 
-      <DenunciaModal
-        isOpen={isDenunciaOpen}
-        onClose={() => setIsDenunciaOpen(false)}
-        recursoTipo={RECURSO_DENUNCIA_PUBLICACION}
-        recursoId={publicacionVisible?.id}
-        titulo="Denunciar publicacion"
-      />
     </div>
   );
 }

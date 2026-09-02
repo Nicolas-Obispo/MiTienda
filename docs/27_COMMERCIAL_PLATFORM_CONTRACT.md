@@ -40,6 +40,24 @@ mediante Clasificados falsos. Gobierna campanas, creatividades, superficies,
 vigencia, moderacion y metricas. Una superficie se muestra solo cuando tiene
 campanas activas; sin campana no deja un bloque vacio.
 
+## Premium y Dynamic Feed
+
+El Dynamic Feed separa entitlement Premium, señal Premium de ranking,
+promoción paga y Advertising. ETAPA 106 gobierna catálogo, política,
+entitlements, campañas y creatividades; ETAPA 122 consume únicamente contratos
+aprobados.
+
+Premium puede aportar un boost real pero acotado después del scoring orgánico y
+la penalización temporal por exposición. No concede elegibilidad, no garantiza
+posición ni puede monopolizar la composición. Un reranking final consciente de
+Premium conserva diversity/fairness y oportunidades para espacios gratuitos,
+nuevos o subexpuestos.
+
+Advertising se inserta mediante un compositor separado del ranking orgánico,
+con elegibilidad, pertinencia, slots, frequency caps e identificación visible
+`Patrocinado`. No se modela como publicación o Clasificado falso. El pipeline
+completo pertenece a `docs/28_DYNAMIC_FEED_DESIGN.md`.
+
 ## Beneficios promocionales
 
 Beneficios y cupones pueden apoyar adquisicion, registro, publicacion, creacion

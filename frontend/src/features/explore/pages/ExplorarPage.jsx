@@ -510,8 +510,8 @@ export default function ExplorarPage() {
             grid-cols-3 
             sm:grid-cols-3 
             md:grid-cols-4 
-            gap-1.5
-            sm:gap-3
+            gap-0
+            [&>*]:w-full
           "
         >
           {publicacionesFiltradas.map((p) => {

@@ -31,6 +31,7 @@ export const queryKeys = {
   spaces: {
     all: ["spaces"],
     detalle: (espacioId) => ["spaces", "detalle", espacioId],
+    followingStatus: (espacioId) => ["spaces", "following-status", espacioId],
     publicaciones: (espacioId) => ["spaces", "publicaciones", espacioId],
     rubros: () => ["spaces", "rubros"],
     rubroEspecialidades: (rubroId) => [
@@ -45,6 +46,7 @@ export const queryKeys = {
       "seguidos",
       { positionRevision },
     ],
+    seguidosRoot: () => ["spaces", "seguidos"],
   },
 
   stories: {

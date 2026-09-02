@@ -35,7 +35,6 @@ import {
 import {
   optimisticToggleGuardado,
   optimisticToggleLike,
-  toggleSeguimientoEspacio,
   useSocialInteractions,
   useToggleGuardadoPublicacionMutation,
   useToggleLikePublicacionMutation,
@@ -44,7 +43,9 @@ import {
 import {
   crearPublicacionDeComercio,
   useComercioDetalle,
+  useEstadoSeguimientoEspacio,
   usePublicacionesComercio,
+  useToggleSeguimientoEspacioMutation,
 } from "@features/spaces";
 
 import {
@@ -55,10 +56,6 @@ import {
 import {
   usePublicacionesGuardadas,
 } from "@features/posts";
-
-import {
-  obtenerEstadoSeguimiento,
-} from "@features/spaces";
 
 import {
   obtenerMetricasSocialesEspacio,
@@ -75,7 +72,22 @@ import DenunciaModal from "@features/moderation/components/DenunciaModal";
 import { RECURSO_DENUNCIA_COMERCIO } from "@features/moderation/constants/denuncias";
 import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
-const seguimientoPerfilComercioCache = new Map();
+function puedeCargarMetricasPrivadas({
+  comercioId,
+  estaAutenticado,
+  comercioResuelto,
+  esPropietario,
+  isEstadisticasOpen,
+}) {
+  return Boolean(
+    comercioId &&
+    !Number.isNaN(comercioId) &&
+    estaAutenticado &&
+    comercioResuelto &&
+    esPropietario === true &&
+    isEstadisticasOpen
+  );
+}
 
 export default function CommerceProfilePage() {
   const { id } = useParams();
@@ -85,8 +97,6 @@ export default function CommerceProfilePage() {
     estaAutenticado,
     requireAuthentication: usuarioDebeLoguearse,
   } = useProtectedActionRedirect();
-  const seguimientoCacheInicial = seguimientoPerfilComercioCache.get(comercioId);
-
   const [perfilHydratado, setPerfilHydratado] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [noticeMessage, setNoticeMessage] = useState("");
@@ -96,11 +106,6 @@ export default function CommerceProfilePage() {
   const [viewerIsOpen, setViewerIsOpen] = useState(false);
   const [viewerHistorias, setViewerHistorias] = useState([]);
   const ultimaHistoriaVistaMarcadaRef = useRef(null);
-  const seguidoresCountPrevioRef = useRef(
-    typeof seguimientoCacheInicial?.seguidores_count === "number"
-      ? seguimientoCacheInicial.seguidores_count
-      : null
-  );
   const [publicaciones, setPublicaciones] = useState([]);
 
   const redirectAnonymousDetail = useCallback(() => {
@@ -150,15 +155,13 @@ export default function CommerceProfilePage() {
     enabled: Boolean(token),
   });
 
-  const [siguiendo, setSiguiendo] = useState(() =>
-    typeof seguimientoCacheInicial?.siguiendo === "boolean"
-      ? seguimientoCacheInicial.siguiendo
-      : false
-  );
-  const [seguimientoHydratado, setSeguimientoHydratado] = useState(() =>
-    typeof seguimientoCacheInicial?.siguiendo === "boolean"
-  );
-  const [isLoadingFollow, setIsLoadingFollow] = useState(false);
+  const seguimientoQuery = useEstadoSeguimientoEspacio(comercioId, {
+    enabled: estaAutenticado,
+  });
+  const toggleSeguimientoMutation = useToggleSeguimientoEspacioMutation({
+    comercioId,
+    comercio: comercioQuery.data,
+  });
 
   const [metricasSociales, setMetricasSociales] = useState(null);
   const [comparacionMetricas, setComparacionMetricas] = useState(null);
@@ -195,26 +198,7 @@ function esComercioMio(comercioData) {
     }));
   }
 
-  function guardarSeguimientoVisible(estadoSeguimiento) {
-    if (!estadoSeguimiento || !comercioId || Number.isNaN(comercioId)) return;
-
-    const siguienteEstado = {
-      siguiendo: Boolean(estadoSeguimiento.siguiendo),
-      seguidores_count: estadoSeguimiento.seguidores_count,
-    };
-
-    seguimientoPerfilComercioCache.set(comercioId, siguienteEstado);
-    setSiguiendo(siguienteEstado.siguiendo);
-    setSeguimientoHydratado(true);
-
-    if (typeof siguienteEstado.seguidores_count === "number") {
-      seguidoresCountPrevioRef.current = siguienteEstado.seguidores_count;
-    } else if (siguienteEstado.seguidores_count === null) {
-      seguidoresCountPrevioRef.current = null;
-    }
-  }
-
-  async function loadDatosSecundarios() {
+  async function loadDatosSecundarios(isCurrent = () => true) {
     if (!comercioId || Number.isNaN(comercioId)) {
       setErrorMessage("ID de comercio inválido.");
       return;
@@ -233,32 +217,14 @@ function esComercioMio(comercioData) {
           obtenerAnalyticsEspacio(comercioId),
       ]);
 
+      if (!isCurrent()) return;
+
       // ETAPA 62
       setMetricasSociales(metricasData);
       setComparacionMetricas(comparacionData);
       setAnalyticsEspacio(analyticsData);
-
-            // ETAPA 60 — Cargamos estado real de seguimiento solo si hay sesión.
-      try {
-        if (accessToken) {
-          const estadoSeguimiento = await obtenerEstadoSeguimiento(comercioId);
-
-          guardarSeguimientoVisible(estadoSeguimiento);
-
-          setComercio((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  seguidores_count: estadoSeguimiento.seguidores_count,
-                }
-              : prev
-          );
-        }
-      } catch {
-        // No rompemos la pantalla si falla el estado de seguimiento.
-      }
     } catch {
-      // No bloqueamos el perfil si fallan metricas, analytics o seguimiento.
+      // No bloqueamos el perfil si fallan métricas o analytics.
     }
   }
 
@@ -333,37 +299,6 @@ function esComercioMio(comercioData) {
   }, [historiasQuery.data]);
 
   useEffect(() => {
-    const seguimientoCacheado = seguimientoPerfilComercioCache.get(comercioId);
-
-    if (!seguimientoCacheado) {
-      setSiguiendo(false);
-      setSeguimientoHydratado(false);
-      return;
-    }
-
-    setSiguiendo(Boolean(seguimientoCacheado.siguiendo));
-    setSeguimientoHydratado(true);
-
-    if (typeof seguimientoCacheado.seguidores_count === "number") {
-      seguidoresCountPrevioRef.current = seguimientoCacheado.seguidores_count;
-    } else if (seguimientoCacheado.seguidores_count === null) {
-      seguidoresCountPrevioRef.current = null;
-    }
-  }, [comercioId]);
-
-  useEffect(() => {
-    if (typeof comercio?.seguidores_count !== "number") return;
-    if (
-      comercio.seguidores_count === 0 &&
-      seguidoresCountPrevioRef.current !== null
-    ) {
-      return;
-    }
-
-    seguidoresCountPrevioRef.current = comercio.seguidores_count;
-  }, [comercio?.seguidores_count]);
-
-  useEffect(() => {
     const principalError =
       comercioQuery.error || publicacionesQuery.error || historiasQuery.error;
 
@@ -390,9 +325,38 @@ function esComercioMio(comercioData) {
   ]);
 
   useEffect(() => {
-    loadDatosSecundarios();
+    let isCurrent = true;
+
+    const puedeCargar = puedeCargarMetricasPrivadas({
+      comercioId,
+      estaAutenticado,
+      comercioResuelto: comercioQuery.isSuccess,
+      esPropietario: comercioQuery.data?.es_propietario,
+      isEstadisticasOpen,
+    });
+
+    if (!puedeCargar) {
+      setMetricasSociales(null);
+      setComparacionMetricas(null);
+      setAnalyticsEspacio(null);
+      return () => {
+        isCurrent = false;
+      };
+    }
+
+    void loadDatosSecundarios(() => isCurrent);
+
+    return () => {
+      isCurrent = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comercioId]);
+  }, [
+    comercioId,
+    estaAutenticado,
+    comercioQuery.isSuccess,
+    comercioQuery.data?.es_propietario,
+    isEstadisticasOpen,
+  ]);
 
   async function handleToggleLike(pubId) {
     if (usuarioDebeLoguearse()) return;
@@ -424,62 +388,18 @@ function esComercioMio(comercioData) {
   async function handleToggleFollow() {
     if (usuarioDebeLoguearse()) return;
 
-    if (isLoadingFollow) return;
+    const siguiendoActual = seguimientoQuery.data?.siguiendo;
+    if (
+      typeof siguiendoActual !== "boolean" ||
+      toggleSeguimientoMutation.isPending
+    ) {
+      return;
+    }
 
     try {
-      setIsLoadingFollow(true);
-      const siguiendoActual = seguimientoHydratado
-        ? siguiendo
-        : seguimientoPerfilComercioCache.get(comercioId)?.siguiendo ?? siguiendo;
-
-      await toggleSeguimientoEspacio({
-        comercioId,
-        siguiendo: siguiendoActual,
-      });
-
-      setSiguiendo(!siguiendoActual);
-
-      // Refrescamos estado y contador real desde backend.
-      let estadoSeguimiento = null;
-
-      try {
-        estadoSeguimiento = await obtenerEstadoSeguimiento(comercioId);
-      } catch (error) {
-        if (siguiendoActual && error?.status === 404) {
-          guardarSeguimientoVisible({
-            siguiendo: false,
-            seguidores_count: null,
-          });
-
-          setComercio((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  seguidores_count: null,
-                }
-              : prev
-          );
-
-          return;
-        }
-
-        throw error;
-      }
-
-      guardarSeguimientoVisible(estadoSeguimiento);
-
-      setComercio((prev) =>
-        prev
-          ? {
-              ...prev,
-              seguidores_count: estadoSeguimiento.seguidores_count,
-            }
-          : prev
-      );
+      await toggleSeguimientoMutation.mutateAsync({ siguiendoActual });
     } catch (error) {
       setErrorMessage(error.message || "Error al seguir/dejar de seguir.");
-    } finally {
-      setIsLoadingFollow(false);
     }
   }
 
@@ -645,52 +565,36 @@ function esComercioMio(comercioData) {
       publicacionesQuery.isLoading ||
       historiasQuery.isLoading);
 
-  const publicacionesQueryItems = normalizarItems(publicacionesQuery.data);
-
-  const publicacionesCountVisible =
-    publicaciones.length > 0
-      ? publicaciones.length
-      : publicacionesQueryItems.length > 0
-      ? publicacionesQueryItems.length
-      : comercio?.publicaciones_count ?? comercio?.total_publicaciones ?? 0;
-
-  const seguimientoCacheActual =
-    seguimientoPerfilComercioCache.get(comercioId);
-
-  const siguiendoVisible = seguimientoHydratado
-    ? siguiendo
-    : typeof seguimientoCacheActual?.siguiendo === "boolean"
-    ? seguimientoCacheActual.siguiendo
-    : siguiendo;
-
-  const seguidoresCountDesdeComercio =
-    typeof comercio?.seguidores_count === "number"
-      ? comercio.seguidores_count
-      : typeof comercioQuery.data?.seguidores_count === "number"
-      ? comercioQuery.data.seguidores_count
-      : null;
-
-  const seguidoresCountVisible =
-    seguidoresCountPrevioRef.current ??
-    (typeof seguimientoCacheActual?.seguidores_count === "number"
-      ? seguimientoCacheActual.seguidores_count
-      : null) ??
-    seguidoresCountDesdeComercio;
-
-  const seguidoresCountLabel =
-    typeof seguidoresCountVisible === "number"
-      ? `${seguidoresCountVisible} seguidores`
-      : "Seguidores no disponibles";
+  const siguiendoConfirmado = seguimientoQuery.data?.siguiendo;
+  const seguimientoDesconocido =
+    estaAutenticado && typeof siguiendoConfirmado !== "boolean";
+  const siguiendoVisible = siguiendoConfirmado === true;
 
   return (
     <div className="min-h-screen bg-canvas text-primary">
-      <main className="mx-auto max-w-5xl px-0 py-4 sm:px-4 sm:py-6">
+      <main className="mx-auto max-w-7xl px-0 py-4 sm:px-4 sm:py-6">
 
-        <div className="mb-4">
+        <div className="mb-4 flex items-center justify-end gap-2">
+          {!esComercioMio(comercio) && comercio?.id ? (
+            <Button
+              variant="secondary"
+              onClick={() => setIsDenunciaComercioOpen(true)}
+              aria-label="Denunciar espacio"
+              className="h-6 min-h-6 w-6 min-w-6 shrink-0 rounded-full p-0 text-primary active:[transform:none]"
+            >
+              <span
+                aria-hidden="true"
+                className="inline-flex h-full w-full items-center justify-center text-[12.6px] leading-none text-primary"
+              >
+                ...
+              </span>
+            </Button>
+          ) : null}
+
           <Button
             variant="ghost"
             onClick={() => navigate(-1)}
-            className="cursor-pointer text-sm"
+            className="min-h-6 cursor-pointer px-[7px] py-[4.2px] text-[9.8px] leading-[14px] active:[transform:none]"
           >
             <span>
             ← Volver
@@ -727,7 +631,7 @@ function esComercioMio(comercioData) {
 
         {!isInitialLoading && (!errorMessage || hayDatosVisibles) && (
           <>
-            <Surface as="section" className="relative p-4 sm:p-6">
+            <Surface as="section" className="relative p-4 pb-2 sm:p-6 sm:pb-2">
               
         {esComercioMio(comercio) && (
           <div className="absolute right-3 top-1 flex flex-col items-end gap-1">
@@ -861,27 +765,17 @@ function esComercioMio(comercioData) {
                 <Button
                   variant={siguiendoVisible ? "secondary" : "primary"}
                   onClick={handleToggleFollow}
-                  className="rounded-xl px-2 py-1 text-xs"
+                  disabled={
+                    seguimientoDesconocido || toggleSeguimientoMutation.isPending
+                  }
+                  className="min-h-6 rounded-xl px-[5.6px] py-[2.8px] text-[8.4px] leading-[11.2px] active:[transform:none]"
                 >
-                  {siguiendoVisible ? "Siguiendo" : "+Seguir"}
+                  {seguimientoDesconocido
+                    ? "Comprobando..."
+                    : siguiendoVisible
+                    ? "Siguiendo"
+                    : "+Seguir"}
                 </Button>
-
-                {comercio?.id ? (
-                  <Button
-                    iconOnly
-                    variant="secondary"
-                    onClick={() => setIsDenunciaComercioOpen(true)}
-                    aria-label="Denunciar espacio"
-                    className="text-primary"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="inline-flex h-full w-full items-center justify-center text-lg leading-none text-primary"
-                    >
-                      ...
-                    </span>
-                  </Button>
-                ) : null}
               </div>
             )}
           </div>
@@ -941,26 +835,6 @@ function esComercioMio(comercioData) {
                   </a>
                 ) : null}
 
-                <div className="ml-auto flex max-w-full flex-col items-end gap-1 text-right">
-                  {comercio?.ciudad && (
-                    <p className="flex max-w-full items-start justify-end gap-2 break-words text-xs text-secondary">
-                      <MapPin size={14} className="shrink-0" aria-hidden="true" />
-                      {comercio?.direccion
-                        ? `${comercio.direccion}, ${comercio.ciudad}`
-                        : comercio.ciudad}
-                      {comercio?.provincia && comercio?.direccion
-                        ? `, ${comercio.provincia}`
-                        : ""}
-                    </p>
-                  )}
-
-                  <EstadoHorarioBadge
-                    horarioAtencion={comercio?.horario_atencion}
-                    variant="inline"
-                    className="ml-auto justify-end"
-                  />
-                </div>
-
               </div>
 
               {puedoCrearHistoria && (
@@ -1000,6 +874,30 @@ function esComercioMio(comercioData) {
 
                 </div>
               )}
+
+              <div className="mt-2 grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4">
+                <div className="min-w-0">
+                  {comercio?.ciudad && (
+                    <p className="flex min-h-9 min-w-0 items-start gap-2 break-words py-1 text-xs leading-4 text-secondary">
+                      <MapPin size={14} className="mt-1.5 shrink-0" aria-hidden="true" />
+                      <span className="min-w-0 break-words pt-1.5">
+                        {comercio?.direccion
+                          ? `${comercio.direccion}, ${comercio.ciudad}`
+                          : comercio.ciudad}
+                        {comercio?.provincia && comercio?.direccion
+                          ? `, ${comercio.provincia}`
+                          : ""}
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                <EstadoHorarioBadge
+                  horarioAtencion={comercio?.horario_atencion}
+                  variant="inline"
+                  className="min-w-0 justify-self-end justify-end text-right leading-4"
+                />
+              </div>
             </Surface>
 
             <section className="mt-6">
@@ -1020,7 +918,7 @@ function esComercioMio(comercioData) {
                   </p>
                 </Surface>
               ) : (
-                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 md:gap-3">
+                <div className="grid grid-cols-2 gap-0 sm:grid-cols-3 [&>*]:w-full">
                   {publicaciones.map((p) => (
                     <PublicacionCard
                       key={p.id}
@@ -1031,6 +929,7 @@ function esComercioMio(comercioData) {
                       onToggleLike={() => handleToggleLike(p.id)}
                       onToggleSave={() => handleToggleSave(p.id)}
                       compact
+                      compactWholeCardLink
                     />
                   ))}
                 </div>

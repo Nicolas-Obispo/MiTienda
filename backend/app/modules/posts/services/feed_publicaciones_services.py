@@ -89,6 +89,8 @@ def obtener_feed_publicaciones(
     query = (
         db.query(
             Publicacion,
+            Comercio.nombre.label("comercio_nombre"),
+            Comercio.portada_url.label("comercio_portada_url"),
             likes_count_expr.label("likes_count"),
             bonus_recencia.label("bonus_recencia"),
             liked_by_me_expr,
@@ -104,7 +106,11 @@ def obtener_feed_publicaciones(
             Comercio.activo.is_(True),
             Comercio.moderation_hidden.is_(False),
         )
-        .group_by(Publicacion.id)
+        .group_by(
+            Publicacion.id,
+            Comercio.nombre,
+            Comercio.portada_url,
+        )
     )
 
     resultados = query.all()
@@ -115,8 +121,8 @@ def obtener_feed_publicaciones(
     # -------------------------------------
     # IDs base
     # -------------------------------------
-    publicaciones_ids = [p.id for p, _, _, _ in resultados]
-    comercios_ids = [p.comercio_id for p, _, _, _ in resultados]
+    publicaciones_ids = [p.id for p, _, _, _, _, _ in resultados]
+    comercios_ids = [p.comercio_id for p, _, _, _, _, _ in resultados]
 
     # -------------------------------------
     # MAPAS BULK
@@ -125,7 +131,7 @@ def obtener_feed_publicaciones(
     # likes
     likes_count_map = {
         p.id: int(likes_val or 0)
-        for p, likes_val, _, _ in resultados
+        for p, _, _, likes_val, _, _ in resultados
     }
 
     # guardados (1 query)
@@ -155,7 +161,14 @@ def obtener_feed_publicaciones(
     # -------------------------------------
     publicaciones_con_score = []
 
-    for publicacion, likes_val, bonus_val, liked_by_me_val in resultados:
+    for (
+        publicacion,
+        comercio_nombre,
+        comercio_portada_url,
+        likes_val,
+        bonus_val,
+        liked_by_me_val,
+    ) in resultados:
 
         likes_count_val = likes_count_map.get(publicacion.id, 0)
         guardados_count_val = guardados_count_map.get(publicacion.id, 0)
@@ -166,6 +179,8 @@ def obtener_feed_publicaciones(
         publicacion.interacciones_count = interacciones_count_val
         publicacion.likes_count = likes_count_val
         publicacion.liked_by_me = bool(liked_by_me_val)
+        publicacion.comercio_nombre = comercio_nombre
+        publicacion.comercio_portada_url = comercio_portada_url
 
         # Score base
         score_base = (

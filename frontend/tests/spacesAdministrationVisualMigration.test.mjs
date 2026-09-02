@@ -28,7 +28,8 @@ test("alta y edicion comparten formulario tematizado y primitives", () => {
 
 test("submit, payload, validaciones y endpoints funcionales permanecen", () => {
   assert.match(profile, /onSubmit=\{handleCrearComercioSubmit\}/);
-  assert.match(profile, /await crearComercio\(payload\)/);
+  assert.match(profile, /crearComercioConHorariosDraft\(\{/);
+  assert.match(profile, /crear: crearComercio/);
   assert.match(profile, /await actualizarComercio\(editingComercioId, payload\)/);
   assert.match(profile, /const payload = \{\s*\.\.\.createForm/);
   assert.match(administration, /value=\{createForm\.provincia\}/);
@@ -64,6 +65,13 @@ test("administracion conserva query, estados y acciones", () => {
   assert.match(administration, /handleDesactivarComercio\(c\.id\)/);
   assert.match(administration, /handleReactivarComercio\(c\.id\)/);
   assert.match(administration, /<EstadoHorarioBadge/);
+});
+
+test("estado Activo o Pausado conserva su badge y usa texto blanco semantico", () => {
+  assert.match(
+    administration,
+    /<span className="absolute top-2 left-2 rounded-full bg-black\/70 px-2 py-0\.5 text-\[10px\] text-interactive-on-primary">[\s\S]*\{c\.activo \? "🟢Activo" : "🔴Pausado"\}/
+  );
 });
 
 test("acciones migradas reutilizan Button e interactive-bubble", () => {

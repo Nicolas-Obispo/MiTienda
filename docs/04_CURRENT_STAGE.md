@@ -557,11 +557,12 @@ Plan restante oficial de ETAPA 95:
 
 Estado de continuidad:
 
-- Ultima etapa cerrada: ETAPA 97 - Administracion Operativa Minima.
-- Etapa vigente: ETAPA 98 - Correccion y Pulido Visual del Frontend, abierta.
+- Ultima etapa cerrada: ETAPA 98 - Correccion y Pulido Visual del Frontend.
+- Siguiente etapa oficial: ETAPA 99 - Identidad, Registro y Autenticacion,
+  pendiente y no iniciada.
 - Checkpoint intermedio aprobado: sistema visual Liquid consolidado y bloque
   correctivo incidental de publicaciones e interacciones validado. Este
-  checkpoint no cierra ETAPA 98 ni habilita otra etapa.
+  checkpoint no constituyo por si solo el cierre posterior de ETAPA 98.
 - Checkpoint previo a la prueba de densidad responsive: los labels e iconos
   inactivos de `InteraccionButton` adoptan texto principal adaptativo en
   light/dark y los activos conservan los simbolos sociales compartidos. Los
@@ -578,7 +579,27 @@ Estado de continuidad:
   mediante tokens y `clamp()`, complementada por container queries y reflow
   solo cuando sea necesario. Ese owner global no fue implementado; la prueba
   reversible permanece pendiente y debe tratar mapas, historias, multimedia y
-  overlays como casos especificos. ETAPA 98 permanece abierta.
+  overlays como casos especificos. El experimento fue retirado sin integrar
+  densidad global al producto.
+- Decision documental previa aprobada: `DEC-057` distingue cuenta basica de la
+  capacidad para crear o administrar espacios y publicar contenido asociado.
+  La cuenta basica no excluye automaticamente a menores de 18 anos; la politica
+  vigente exige 18 anos o mas para esas capacidades de Espacios. ETAPA 99,
+  futura y no iniciada, absorbe `fecha_nacimiento` privada y nullable, perfil y
+  capabilities backend, borrador seguro de Registro y flujo Google conforme a
+  `DEC-048`; el backend de Espacios conserva el enforcement. No se implemento
+  ninguna de estas funciones en ETAPA 98, los documentos publicos `v1`
+  permanecen intactos y la revision juridica profesional previa al lanzamiento
+  sigue siendo bloqueante para el lanzamiento.
+- Diseño futuro formalizado durante ETAPA 98: `DEC-058` y
+  `docs/28_DYNAMIC_FEED_DESIGN.md` fijan el contrato de Dynamic Feed e Historias,
+  incluido Candidate Generation acotado, contexto territorial no bloqueante,
+  memoria temporal de exposición, Premium limitado por diversity/fairness,
+  Advertising separado, snapshots estables, cursor e infinite pagination. No
+  se modificó el comportamiento actual: ETAPA 106 implementará plataforma
+  comercial y Advertising, ETAPA 119 preferencias/privacidad/exposición y
+  ETAPA 122 candidatos/ranking/ubicación/paginación. Esta formalización no
+  constituye implementación.
 - 97.1 - Contrato administrativo y autorizacion: cerrada. FeedGo dispone de un
   catalogo inicial de cuatro capacidades administrativas persistidas fuera del
   JWT, eventos append-only de otorgamiento/revocacion, bootstrap local
@@ -728,19 +749,26 @@ Estado de continuidad:
 
 ## Ultima etapa cerrada
 
-ETAPA 97 - Administracion Operativa Minima.
+ETAPA 98 - Correccion y Pulido Visual del Frontend.
 
 Estado:
 
-Cerrada tecnica y documentalmente con sus subetapas 97.1 a 97.6 cerradas.
+Cerrada tecnica y documentalmente.
 
 Resultado:
 
-Quedaron integradas y validadas la autorizacion administrativa, la consulta y
-decision trazable de denuncias, la gestion minima de incidentes, el estado
-operativo seguro y el canal operativo automatico. ETAPA 98 - Correccion y
-Pulido Visual del Frontend es la etapa vigente y permanece abierta despues de
-su checkpoint intermedio de Liquid e interacciones.
+FeedGo consolido Liquid como sistema visual compartido; recorrio y corrigio
+superficies, navegacion, publicaciones, perfiles, interacciones, Historias,
+formularios, responsive, light/dark y accesibilidad; estabilizo incidentalmente
+fronteras transaccionales y caches sociales; y formalizo sin implementar el
+futuro Dynamic Feed mediante `DEC-058` y `docs/28_DYNAMIC_FEED_DESIGN.md`.
+
+Validacion final: ESLint sin errores y con cuatro advertencias preexistentes,
+440 tests frontend correctos, 440 tests backend correctos con 1 omitido, build
+productivo/PWA y `git diff --check` correctos.
+
+ETAPA 99 - Identidad, Registro y Autenticacion es la siguiente etapa oficial;
+permanece pendiente y no iniciada.
 
 ## Etapa cerrada historica anterior a ETAPA 95
 
@@ -862,8 +890,8 @@ Resultado:
 El trabajo previo a ETAPA 97 queda formalmente cerrado. ETAPA 96 permanece
 cerrada. ETAPA 97 - Administracion Operativa Minima queda formalmente cerrada
 con 97.1, 97.2, 97.3, 97.4, 97.5 y 97.6 cerradas. ETAPA 98 - Correccion y
-Pulido Visual del Frontend permanece abierta; el checkpoint intermedio de
-sistema Liquid e interacciones no constituye cierre.
+Pulido Visual del Frontend queda formalmente cerrada. ETAPA 99 es la siguiente
+etapa oficial, pendiente y no iniciada.
 
 ## Estado ETAPA 92
 

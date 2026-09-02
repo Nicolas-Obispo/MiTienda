@@ -78,7 +78,7 @@ test("guardia de inactividad delega modal, foco y Escape en ActiveLayer", () => 
 test("bienvenida de Feed conserva estado y delega semantica modal", () => {
   assert.match(feed, /<ActiveLayer/);
   assert.match(feed, /labelledBy="feed-welcome-title"/);
-  assert.match(feed, /describedBy="feed-welcome-description"/);
+  assert.doesNotMatch(feed, /describedBy="feed-welcome-description"/);
   assert.match(feed, /initialFocusRef=\{welcomeActionRef\}/);
   assert.match(feed, /closeOnBackdrop=\{false\}/);
   assert.match(feed, /closeOnEscape=\{false\}/);
@@ -144,7 +144,7 @@ test("HistoriasViewer ofrece activacion nativa sin alterar su contrato fijo", ()
 test("movimiento compartido respeta prefers-reduced-motion", () => {
   assert.match(
     css,
-    /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.animate-logo,[\s\S]*\.animate-like,[\s\S]*\.animate-save[\s\S]*animation: none/
+    /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.animate-logo,[\s\S]*\.animate-like,[\s\S]*\.animate-save,[\s\S]*\.feed-welcome-logo-heartbeat,[\s\S]*\.feed-welcome-action-heartbeat,[\s\S]*\.feed-welcome-action-waves::before,[\s\S]*\.feed-welcome-action-waves::after[\s\S]*animation: none/
   );
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.interactive-bubble:active[\s\S]*transform: none/);
 });

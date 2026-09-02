@@ -21,9 +21,25 @@ test("detalle migra shell, estados y acciones a owners semanticos", async () => 
   assert.match(detail, /<Alert variant="danger" role="alert"/);
   assert.match(detail, /<InteraccionButton[\s\S]*type="like"/);
   assert.match(detail, /<InteraccionButton[\s\S]*type="guardar"/);
-  assert.match(detail, /<Button[\s\S]*aria-label="Denunciar publicación"[\s\S]*>\s*\.\.\.\s*<\/span>[\s\S]*<\/Button>/);
+  assert.match(detail, /<PublicacionReportControl publicacionId=\{publicacionVisible\?\.id\} \/>/);
   assert.doesNotMatch(detail, physicalUiColors);
   assert.doesNotMatch(detail, manualTheme);
+});
+
+test("Volver replica el control del perfil y conserva fallback para entrada directa", async () => {
+  const [detail, profile] = await Promise.all([
+    source("../src/features/posts/pages/PublicacionDetallePage.jsx"),
+    source("../src/features/spaces/pages/PerfilComercioPage.jsx"),
+  ]);
+  const sharedClasses =
+    "min-h-6 cursor-pointer px-[7px] py-[4.2px] text-[9.8px] leading-[14px] active:[transform:none]";
+
+  assert.match(detail, /<main className="mx-auto max-w-3xl px-4 py-6">\s*<div className="mb-4 flex items-center justify-end gap-2">/);
+  assert.match(detail, /<Button[\s\S]*variant="ghost"[\s\S]*onClick=\{handleVolver\}[\s\S]*← Volver/);
+  assert.ok(detail.includes(sharedClasses));
+  assert.ok(profile.includes(sharedClasses));
+  assert.match(detail, /if \(\(window\.history\.state\?\.idx \?\? 0\) > 0\) \{\s*navigate\(-1\);\s*return;/);
+  assert.match(detail, /navigate\("\/feed", \{ replace: true \}\);/);
 });
 
 test("media conserva solo el escenario negro documentado", async () => {

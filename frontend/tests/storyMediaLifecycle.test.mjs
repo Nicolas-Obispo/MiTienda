@@ -78,11 +78,11 @@ test("metadata inicia play sin esperar loadeddata y loadeddata no lo repite", ()
   assert.doesNotMatch(viewer, /onLoadedData=[\s\S]{0,350}playStoryVideo/);
 });
 
-test("fallo real de play programa una unica salida segura", () => {
+test("fallo real de play delega una unica reconciliacion segura", () => {
   assert.match(viewer, /playStoryVideo\(video, document\)\.then\(\(started\)/);
   assert.match(viewer, /if \(started\)[\s\S]*setMediaLista\(true\)/);
-  assert.match(viewer, /setMediaLista\(false\)[\s\S]*programarAvancePorError\(\)/);
-  assert.match(viewer, /const programarAvancePorError = useCallback/);
+  assert.match(viewer, /manejarFalloMultimedia\(historiaActual, indexActual\)/);
+  assert.match(viewer, /const manejarFalloMultimedia = useCallback/);
 });
 
 test("viewer conserva un medio activo y elimina autoplay indiscriminado", () => {
@@ -117,11 +117,14 @@ test("avance queda bloqueado contra carrera entre RAF y onEnded", () => {
   assert.match(viewer, /const DURACION_MS_DEFAULT = 4500/);
 });
 
-test("timeout de error tiene identidad, validacion y cleanup", () => {
-  assert.match(viewer, /errorAdvanceTimeoutRef/);
-  assert.match(viewer, /clearTimeout\(errorAdvanceTimeoutRef\.current\)/);
-  assert.match(viewer, /runIdRef\.current === expectedRun/);
-  assert.ok((viewer.match(/limpiarErrorAdvanceTimeout\(\)/g) || []).length >= 5);
+test("fallo multimedia no deja timeout pendiente y conserva cleanup RAF", () => {
+  const failureHandler = viewer.slice(
+    viewer.indexOf("const manejarFalloMultimedia"),
+    viewer.indexOf("// Reset fuerte al abrir")
+  );
+  assert.doesNotMatch(viewer, /errorAdvanceTimeoutRef|programarAvancePorError/);
+  assert.doesNotMatch(failureHandler, /setTimeout/);
+  assert.match(failureHandler, /limpiarRaf\(\)/);
 });
 
 test("backend de vistas y runtime PWA permanecen fuera del lifecycle", () => {

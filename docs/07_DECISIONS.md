@@ -464,6 +464,12 @@ No reemplaza la documentación oficial existente.
   sesion funcional FeedGo. Backend conserva validacion, vinculacion,
   autorizacion y emision de sesion; proveedores externos se integran mediante
   contratos desacoplados.
+- Secuencia legal de Google: la persona acepta Terminos y Privacidad FeedGo,
+  continua con Google, backend valida la identidad externa, crea o vincula una
+  unica identidad FeedGo, registra la evidencia de las versiones legales
+  aceptadas y finalmente emite la sesion FeedGo. Google no reemplaza la
+  aceptacion FeedGo, no acredita mayoria de edad y no autoriza importar fecha
+  de nacimiento o genero por defecto.
 - Regla de producto: registrarse crea una cuenta personal y no crea un espacio.
   Los datos comerciales, profesionales, de disponibilidad, agenda, catalogo o
   facturacion permanecen en sus dominios y no se vuelven requisitos del
@@ -684,3 +690,86 @@ No reemplaza la documentación oficial existente.
   duplicadas y helpers manuales dentro de consumidores de `Button`.
 - Impacto: el alias experimental fue retirado. El checkpoint no cierra ETAPA
   98; la evidencia visual humana/renderizada restante continua obligatoria.
+
+## DEC-057
+
+- ID: DEC-057
+- Titulo: Cuenta basica, edad y capacidad para administrar espacios
+- Estado: Aprobada documentalmente; implementacion futura en ETAPA 99.
+- Decision de cuenta basica: una persona menor de 18 anos no queda excluida
+  automaticamente de crear una cuenta basica FeedGo. La cuenta basica permite
+  explorar e interactuar dentro de las funcionalidades que FeedGo habilite,
+  conforme a capacidad progresiva, edad y grado de madurez y con intervencion,
+  asistencia o representacion cuando legalmente corresponda.
+- Decision sobre espacios y publicaciones: FeedGo exige como politica de
+  producto tener 18 anos o mas para crear o administrar un espacio, publicar
+  contenido asociado a un espacio y acceder a futuras funciones comerciales
+  dependientes de esa capacidad, salvo excepcion legal y de producto posterior
+  expresamente documentada. La revision juridica profesional obligatoria
+  previa al lanzamiento debe confirmar o ajustar esta politica.
+- Datos de identidad: `fecha_nacimiento` se aprueba conceptualmente como dato
+  privado, nullable y no publico. No forma parte inicialmente del Registro;
+  usuarios existentes conservan compatibilidad mediante `null`. La edad se
+  calcula en backend y nunca se persiste. FeedGo no recolecta sexo o genero
+  mientras no exista una finalidad funcional suficiente y aprobada.
+- Capabilities: ETAPA 99 debe definir con backend como owner
+  `perfil_completo`, `campos_perfil_faltantes` y `puede_crear_espacio`.
+  `puede_crear_espacio` debe contemplar la politica de edad y los campos de
+  perfil finalmente aprobados. Frontend no infiere edad ni capacidad; el
+  backend de Espacios realiza el enforcement efectivo al crear, administrar o
+  publicar para un espacio.
+- Registro: ETAPA 99 debe preservar en memoria el borrador al navegar desde
+  Registro hacia Terminos o Privacidad y volver. La contrasena no se persiste
+  en localStorage, sessionStorage, history, query strings, IndexedDB, TanStack
+  Query ni caches PWA.
+- Impacto: ETAPA 98 no implementa estas funciones y permanece abierta. ETAPA
+  99 absorbe modelo, migracion, API privada, perfil, capabilities, UX de
+  Registro y coordinacion del enforcement con el dominio de Espacios, sin
+  crear ni renumerar etapas. `docs/15_LEGAL_AND_OPERATIONAL.md` conserva el
+  gate juridico y el borrador conceptual para menores.
+
+## DEC-058
+
+- ID: DEC-058
+- Título: Dynamic Feed mixto, estable, contextual y extensible
+- Estado: Aprobada documentalmente durante ETAPA 98; implementación diferida a
+  ETAPAS 106, 119 y 122.
+- Decisión: Feed e Historias evolucionarán mediante Candidate Generation
+  acotado, elegibilidad, expansión territorial progresiva, hidratación bulk,
+  scoring orgánico, penalización temporal por exposición, boost Premium
+  acotado, reranking final diversity/fairness, composición Advertising
+  separada, snapshot estable, cursor opaco e infinite pagination/prefetch.
+- Pregunta rectora: el Feed debe elegir el siguiente conjunto de contenido
+  local probablemente útil, interesante o novedoso para la persona, aquí y
+  ahora, sin mostrar siempre lo mismo.
+- Producto: seguimiento y ubicación son señales fuertes pero no exclusivas. El
+  Feed conserva descubrimiento local, afinidad, recencia, diversidad,
+  popularidad normalizada y oportunidades para espacios gratuitos, nuevos y
+  subexpuestos. La ubicación precisa es efímera y no bloquea el arranque.
+- Estabilidad: un snapshot visible no se reemplaza mientras el usuario lee. El
+  aviso manual `Actualizar` sólo puede aparecer en arranque, reentrada o cambio
+  importante de contexto cuando el snapshot mejorado está completamente listo;
+  adoptarlo vuelve al inicio y nunca mezcla páginas. La paginación normal usa
+  prefetch N+1 y continuidad automática, sin aviso.
+- Exposición: descargado, cacheado, snapshot, renderizado, expuesto y consumido
+  son estados diferentes. Sólo exposición real alimenta una memoria temporal
+  con decay y reingreso; prefetch no cuenta como exposición.
+- Comercial: ETAPA 106 gobierna entitlement Premium, promociones y Advertising.
+  Premium no cambia elegibilidad ni rompe diversity/fairness. Advertising se
+  compone separado, pertinente, limitado por frecuencia e identificado como
+  `Patrocinado`.
+- Ownership: ETAPA 119 gobierna preferencias, privacidad e historial/memoria de
+  exposición. ETAPA 122 gobierna candidatos, ranking backend, ubicación,
+  snapshots, cursor, infinite Feed y ranking de Historias. Clasificados se
+  integra en el futuro mediante fuentes tipadas sin perder ownership de dominio.
+- Backend y escala: backend conserva contexto, elegibilidad, ranking,
+  proximidad, exposición, snapshots y cursores dentro del monolito modular. El
+  frontend observa exposición y pagina/cachea; no decide negocio ni ranking.
+- Cache/PWA: TanStack conserva cache remoto de sesión; las APIs privadas siguen
+  network-only, JWT y Feed privado quedan fuera de Cache Storage y no se
+  autoriza IndexedDB funcional sin decisión futura explícita. El diseño no
+  depende de background sostenido, GPS continuo ni Background Sync móvil.
+- Brecha: el `query.all()` actual debe reemplazarse en ETAPA 122 por sources
+  limitados, consultas indexadas, pools acotados, hidratación bulk y cursor.
+- Documento técnico owner: `docs/28_DYNAMIC_FEED_DESIGN.md`.
+- Impacto: esta formalización no modifica comportamiento ni cierra ETAPA 98.

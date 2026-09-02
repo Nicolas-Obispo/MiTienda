@@ -57,6 +57,7 @@ class PublicacionRead(PublicacionBase):
 
     # 👇 CORREGIDO: ahora lo toma directo del router
     comercio_nombre: Optional[str] = None
+    comercio_portada_url: Optional[str] = None
 
     # Métricas
     guardados_count: int = 0

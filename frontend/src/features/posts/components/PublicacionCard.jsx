@@ -5,6 +5,22 @@ import { InteraccionButton, PublicationVideo } from "@shared";
 import { getMediaUrlFromAny } from "@shared";
 import { SOCIAL_ICONS } from "@shared/constants/socialIcons";
 import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
+import PublicacionReportControl from "@features/moderation/components/PublicacionReportControl";
+
+function RankingBadge({ rankIndex, compact = false }) {
+  const position = rankIndex + 1;
+
+  return (
+    <span
+      className={`interactive-bubble interactive-bubble--flush interactive-bubble--liquid pointer-events-none inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-primary ${
+        compact ? "h-6 w-6 text-[11px]" : "h-7 w-7 text-xs"
+      }`}
+    >
+      <span>#{position}</span>
+      <InteractiveLiquidLayers />
+    </span>
+  );
+}
 
 function MetricBadge({ label, value, icon }) {
   return (
@@ -29,6 +45,10 @@ function getMediaUrl(pub) {
   return getMediaUrlFromAny(pub);
 }
 
+function getInicialesComercio(nombre) {
+  return String(nombre || "Perfil").slice(0, 2).toUpperCase();
+}
+
 function esVideo(url) {
   if (!url || typeof url !== "string") return false;
   return [".mp4", ".webm", ".ogg", ".mov"].some((ext) =>
@@ -46,6 +66,8 @@ export default function PublicacionCard({
   headerRightBadgeText = null,
   compact = false,
   compactActions = false,
+  compactWholeCardLink = false,
+  showReportTrigger = false,
 }) {
   const navigate = useNavigate();
 
@@ -78,12 +100,15 @@ export default function PublicacionCard({
   }
 
   if (compact) {
-    return (
-      <article
-        onClick={irADetallePublicacion}
-        className="cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface"
-        title="Ver publicación"
-      >
+    const wholeCardLinkEnabled = compactWholeCardLink && !compactActions;
+    const compactCardClassName = wholeCardLinkEnabled
+      ? "group block w-full cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface transition-[border-color,box-shadow] duration-200 ease-out hover:border-border-strong hover:shadow-[inset_0_0_0_1px_var(--fg-color-border-strong)] focus-visible:border-border-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring focus-visible:shadow-[inset_0_0_0_1px_var(--fg-color-border-strong)] active:shadow-[inset_0_0_0_1px_var(--fg-color-border-strong)] motion-reduce:transition-none"
+      : "cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface";
+    const accessiblePublicationName =
+      pub?.titulo || pub?.descripcion || "Publicación";
+
+    const compactContent = (
+      <>
         <div className="relative aspect-square bg-black">
           {mediaUrl ? (
             mediaEsVideo ? (
@@ -98,7 +123,11 @@ export default function PublicacionCard({
                 alt={pub?.titulo || pub?.descripcion || "Publicación"}
                 loading="lazy"
                 decoding="async"
-                className="h-full w-full object-cover"
+                className={
+                  wholeCardLinkEnabled
+                    ? "h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.015] group-focus-visible:scale-[1.015] group-active:scale-[1.005] motion-reduce:transform-none motion-reduce:transition-none"
+                    : "h-full w-full object-cover"
+                }
               />
             )
           ) : (
@@ -109,9 +138,7 @@ export default function PublicacionCard({
 
           {showRank ? (
             <div className="pointer-events-none absolute left-2 top-2">
-              <span className="rounded-full border border-black/30 bg-black/60 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-                #{rankIndex + 1}
-              </span>
+              <RankingBadge rankIndex={rankIndex} compact />
             </div>
           ) : null}
 
@@ -159,63 +186,107 @@ export default function PublicacionCard({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 px-3 py-2">
+        <div
+          className={
+            wholeCardLinkEnabled
+              ? "flex items-center px-3 py-2"
+              : "flex items-center justify-between gap-2 px-3 py-2"
+          }
+        >
           <div className="flex items-center gap-2 text-[11px] text-secondary">
             <span>❤️ {pub?.likes_count ?? 0}</span>
             <span>⭐ {pub?.guardados_count ?? 0}</span>
           </div>
 
-          <Link
-            to={`/publicaciones/${pub.id}`}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded-sm text-[11px] text-interactive-primary underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-          >
-            Ver publicación
-          </Link>
+          {!wholeCardLinkEnabled ? (
+            <Link
+              to={`/publicaciones/${pub.id}`}
+              onClick={(event) => event.stopPropagation()}
+              className="rounded-sm text-[11px] text-interactive-primary underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            >
+              Ver publicación
+            </Link>
+          ) : null}
         </div>
+      </>
+    );
+
+    if (wholeCardLinkEnabled) {
+      return (
+        <Link
+          to={`/publicaciones/${pub.id}`}
+          aria-label={`Ver publicación: ${accessiblePublicationName}`}
+          className={compactCardClassName}
+        >
+          {compactContent}
+        </Link>
+      );
+    }
+
+    return (
+      <article
+        onClick={irADetallePublicacion}
+        className={compactCardClassName}
+        title="Ver publicación"
+      >
+        {compactContent}
       </article>
     );
   }
 
   return (
     <article className="overflow-hidden rounded-3xl border border-border bg-surface">
-      <header className="flex items-start justify-between gap-3 p-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            {showRank ? (
-              <span className="inline-flex items-center justify-center rounded-xl border border-border bg-surface-subtle px-2 py-1 text-xs font-semibold text-primary">
-                #{rankIndex + 1}
+      <header className="space-y-2 p-4">
+        <div className="flex min-w-0 items-center gap-2">
+          {showRank ? <RankingBadge rankIndex={rankIndex} /> : null}
+
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-subtle text-xs font-semibold text-muted">
+            {pub?.comercio_portada_url ? (
+              <img
+                src={pub.comercio_portada_url}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span aria-hidden="true">
+                {getInicialesComercio(nombreComercio)}
               </span>
+            )}
+          </div>
+
+          <span className="min-w-0 truncate text-sm font-medium text-secondary">
+            {nombreComercio}
+          </span>
+
+          <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
+            {comercioId ? (
+              <Link
+                to={`/comercios/${comercioId}`}
+                className="interactive-bubble interactive-bubble--liquid interactive-bubble--secondary text-xs shrink-0"
+              >
+                <span>Ver espacio</span>
+                <InteractiveLiquidLayers />
+              </Link>
             ) : null}
 
-            <h2 className="truncate text-base font-semibold sm:text-lg">
-              <Link
-                to={`/publicaciones/${pub.id}`}
-                className="rounded-sm text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-              >
-                {pub?.titulo || nombreComercio}
-              </Link>
-            </h2>
+            {headerRightBadgeText ? (
+              <div className="max-w-32 truncate rounded-full border border-border bg-surface-subtle px-3 py-1 text-xs font-semibold text-secondary sm:max-w-48">
+                {headerRightBadgeText}
+              </div>
+            ) : null}
           </div>
         </div>
 
-        <div className="flex min-w-0 shrink-0 items-center gap-2">
-          {comercioId ? (
-            <Link
-              to={`/comercios/${comercioId}`}
-              className="interactive-bubble interactive-bubble--liquid interactive-bubble--secondary text-xs"
-            >
-              <span>Ver espacio</span>
-              <InteractiveLiquidLayers />
-            </Link>
-          ) : null}
-
-          {headerRightBadgeText ? (
-            <div className="max-w-32 truncate rounded-full border border-border bg-surface-subtle px-3 py-1 text-xs font-semibold text-secondary sm:max-w-48">
-              {headerRightBadgeText}
-            </div>
-          ) : null}
-        </div>
+        <h2 className="truncate text-lg font-semibold sm:text-xl">
+          <Link
+            to={`/publicaciones/${pub.id}`}
+            className="rounded-sm text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          >
+            {pub?.titulo || nombreComercio}
+          </Link>
+        </h2>
       </header>
 
       <div
@@ -277,8 +348,12 @@ export default function PublicacionCard({
               pub?.guardada_by_me
                 ? "Guardada"
                 : "Guardar"
-            }
+              }
           />
+
+          {showReportTrigger ? (
+            <PublicacionReportControl publicacionId={pub?.id} />
+          ) : null}
         </div>
 
         <footer className="mt-4 flex flex-wrap items-center gap-2">

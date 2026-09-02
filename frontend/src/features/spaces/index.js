@@ -15,6 +15,7 @@ export * from "@features/spaces/hooks/useComercioDetalle";
 export * from "@features/spaces/hooks/usePublicacionesComercio";
 export * from "@features/spaces/hooks/useMisComercios";
 export * from "@features/spaces/hooks/useMisEspaciosSeguidos";
+export * from "@features/spaces/hooks/useSeguimientoEspacio";
 export * from "@features/spaces/hooks/useRubros";
 export * from "@features/spaces/hooks/useRubroEspecialidades";
 

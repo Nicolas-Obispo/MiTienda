@@ -4,9 +4,10 @@ import test from "node:test";
 
 const readSource = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-const [feed, card, publicationVideo, storiesBar, storiesViewer, interactionButton, feedHook] =
+const [feed, css, card, publicationVideo, storiesBar, storiesViewer, interactionButton, feedHook] =
   await Promise.all([
     readSource("../src/features/feed/pages/FeedPage.jsx"),
+    readSource("../src/index.css"),
     readSource("../src/features/posts/components/PublicacionCard.jsx"),
     readSource("../src/shared/media/PublicationVideo.jsx"),
     readSource("../src/features/stories/components/HistoriasBar.jsx"),
@@ -14,6 +15,37 @@ const [feed, card, publicationVideo, storiesBar, storiesViewer, interactionButto
     readSource("../src/shared/components/InteraccionButton.jsx"),
     readSource("../src/features/feed/hooks/useFeedPublicaciones.js"),
   ]);
+
+test("bienvenida conserva su contenido esencial y elimina textos residuales", () => {
+  for (const content of ["¡Bienvenido!", "FeedGo", "Tu vidriera digital", "Empezar a explorar"]) {
+    assert.match(feed, new RegExp(content));
+  }
+  for (const removed of [
+    "Descubrí comercios, servicios profesionales y espacios cerca tuyo.",
+    "Explorá publicaciones, mirá historias, guardá lo que te interesa",
+    "FeedGo no solo conecta personas, negocios y oportunidades en un solo lugar.",
+  ]) {
+    assert.doesNotMatch(feed, new RegExp(removed));
+  }
+});
+
+test("logo y CTA comparten pulso suave sin alterar Liquid ni reduced motion", () => {
+  assert.match(feed, /feed-welcome-logo-heartbeat[\s\S]*src="\/logo_Feedgo\.png"/);
+  assert.match(feed, /feed-welcome-action-waves[\s\S]*<Button[\s\S]*variant="primary"[\s\S]*feed-welcome-action-heartbeat[\s\S]*Empezar a explorar/);
+  assert.match(css, /@keyframes feedWelcomeLogoHeartbeat[\s\S]*box-shadow:[\s\S]*var\(--fg-shadow-elevation\)[\s\S]*var\(--fg-color-brand\) 48%[\s\S]*transform: scale\(1\.05\)/);
+  assert.match(css, /\.feed-welcome-logo-heartbeat[\s\S]*feedWelcomeLogoHeartbeat 2\.5s ease-in-out infinite/);
+  assert.match(css, /\.feed-welcome-action-heartbeat[\s\S]*2\.5s ease-in-out 0\.3s infinite/);
+  assert.match(css, /\.feed-welcome-action-waves::before,[\s\S]*\.feed-welcome-action-waves::after[\s\S]*border: 2px solid var\(--fg-color-brand\)[\s\S]*pointer-events: none[\s\S]*feedWelcomeWave 2\.5s/);
+  assert.match(css, /\.feed-welcome-action-waves::after[\s\S]*animation-delay: 1\.25s/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.feed-welcome-logo-heartbeat,[\s\S]*\.feed-welcome-action-heartbeat,[\s\S]*\.feed-welcome-action-waves::before,[\s\S]*\.feed-welcome-action-waves::after[\s\S]*animation: none/);
+});
+
+test("bienvenida usa una superficie clara completa y texto oscuro semantico", () => {
+  assert.match(feed, /<Surface variant="elevated" className="feed-welcome-light-surface/);
+  assert.doesNotMatch(feed, /bg-interactive-primary px-6 py-8 text-center/);
+  assert.match(css, /\.feed-welcome-light-surface \{[\s\S]*background: var\(--fg-color-interactive-on-primary\)[\s\S]*color: var\(--feed-welcome-text-color\)/);
+  assert.match(css, /html\[data-theme="dark"\] \.feed-welcome-light-surface[\s\S]*var\(--fg-color-text-inverse\)/);
+});
 
 test("Feed migra canvas, estados y cards mediante primitives", () => {
   for (const primitive of ["Alert", "Button", "Skeleton", "Surface"]) {
@@ -88,6 +120,16 @@ test("Cache-First y carga no bloquean datos utilizables", () => {
   assert.match(feed, /const isLoading = isFeedLoading && publicaciones\.length === 0/);
   assert.match(feed, /const feedHydratado = !isFeedLoading/);
   assert.match(feed, /isLoading && publicaciones\.length === 0/);
+});
+
+test("publicaciones reales usan altura natural y skeleton conserva su reserva", () => {
+  const publicationList = feed.match(
+    /<section className="space-y-6">[\s\S]*?<\/section>/
+  )?.[0] || "";
+
+  assert.doesNotMatch(publicationList, /min-h-\[72vh\]/);
+  assert.match(publicationList, /scroll-mt-24[\s\S]*rounded-3xl[\s\S]*overflow-hidden[\s\S]*<PublicacionCard/);
+  assert.equal((feed.match(/<Skeleton className="h-\[70vh\] rounded-3xl border border-border" \/>/g) || []).length, 2);
 });
 
 test("Feed conserva optimistic updates, guardados y contratos de historias", () => {

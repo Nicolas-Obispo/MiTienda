@@ -80,6 +80,14 @@ Una cuenta personal FeedGo permite explorar, interactuar, guardar, seguir y
 usar capacidades personales presentes o futuras sin exigir que la persona cree
 un espacio.
 
+La cuenta basica no excluye automaticamente a personas menores de 18 anos. En
+cambio, crear o administrar espacios, publicar contenido asociado a ellos y
+usar futuras capacidades comerciales dependientes exige, como politica de
+producto vigente, tener 18 anos o mas, salvo excepcion legal y de producto
+posterior expresamente documentada. La decision permanente y su revision
+juridica obligatoria se registran en `DEC-057` y
+`docs/15_LEGAL_AND_OPERATIONAL.md`.
+
 El registro general debe tender a minima friccion y solicitar solamente datos
 necesarios para identidad y funcionamiento de la cuenta. Crear o administrar un
 espacio es un proceso separado, con sus propios datos comerciales,
@@ -90,6 +98,11 @@ futuros, incluidos email/password, email verificado o Google, se vinculan a esa
 identidad y no crean por si mismos cuentas funcionales paralelas. La decision
 arquitectonica y su etapa futura se registran en `DEC-048` y
 `docs/05_SEARCH_ROADMAP.md`.
+
+La identidad privada podra incorporar `fecha_nacimiento` nullable en ETAPA 99
+para que backend calcule elegibilidad y exponga capabilities de perfil sin que
+frontend infiera edad. El dato no sera publico ni parte inicial del Registro.
+No se recolectara sexo o genero sin finalidad funcional aprobada.
 
 ## Principios de Producto
 
@@ -251,6 +264,11 @@ apertura publica. No se anticipa infraestructura especulativa para esa capacidad
   aporta afinidad, pero no elimina contenido local relevante. Novedad,
   exposicion previa, diversidad, cercania y relevancia deben poder intervenir
   en el ranking backend para evitar repeticion constante.
+- El diseño futuro aprobado se gobierna por
+  `docs/28_DYNAMIC_FEED_DESIGN.md`: ubicación y seguimiento son señales fuertes
+  pero no filtros absolutos; el orden se mantiene estable por snapshot y el
+  descubrimiento preserva oportunidades para espacios gratuitos, nuevos y
+  subexpuestos. Su implementación pertenece a ETAPAS 119 y 122.
 - La monetizacion futura debe expresarse mediante politicas de capacidades y no
   mediante condiciones dispersas en pantallas o dominios. La cantidad de
   espacios administrables puede ser una capacidad futura, no un limite vigente

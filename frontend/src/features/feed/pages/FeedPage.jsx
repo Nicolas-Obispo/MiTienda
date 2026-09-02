@@ -11,7 +11,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ActiveLayer } from "@core";
 
+import { useAuth } from "@features/auth";
 import { PublicacionCard } from "@features/posts";
+import { useMisComercios } from "@features/spaces";
 import { HistoriasBar } from "@features/stories";
 import { HistoriasViewer } from "@features/stories";
 import { Alert, Button, getMediaUrlFromAny, Skeleton, Surface } from "@shared";
@@ -35,6 +37,15 @@ import {
 export default function FeedPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { estaAutenticado } = useAuth();
+  const {
+    data: misComercios = [],
+    isSuccess: misComerciosLoaded,
+  } = useMisComercios({ enabled: estaAutenticado });
+  const misComerciosIds = useMemo(
+    () => new Set(misComercios.map((comercio) => Number(comercio.id))),
+    [misComercios]
+  );
 
   const {
     data: feedData = [],
@@ -436,7 +447,6 @@ export default function FeedPage() {
                 key={p.id}
                 variant="elevated"
                 className="
-                  min-h-[72vh]
                   scroll-mt-24
                   rounded-3xl
                   overflow-hidden
@@ -449,6 +459,11 @@ export default function FeedPage() {
                   onToggleLike={() => handleToggleLike(p.id)}
                   onToggleSave={() => handleToggleSave(p.id)}
                   compactActions={true}
+                  showReportTrigger={
+                    !estaAutenticado ||
+                    (misComerciosLoaded &&
+                      !misComerciosIds.has(Number(p.comercio_id)))
+                  }
                 />
               </Surface>
             ))}
@@ -460,7 +475,6 @@ export default function FeedPage() {
     <ActiveLayer
       onClose={() => setShowWelcomeModal(false)}
       labelledBy="feed-welcome-title"
-      describedBy="feed-welcome-description"
       initialFocusRef={welcomeActionRef}
       closeOnBackdrop={false}
       closeOnEscape={false}
@@ -469,10 +483,10 @@ export default function FeedPage() {
       contentClassName="w-full max-w-md"
       zIndex={200}
     >
-      <Surface variant="elevated" className="max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl">
+      <Surface variant="elevated" className="feed-welcome-light-surface max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl">
         
     {/* Header visual */}
-    <div className="relative overflow-hidden bg-interactive-primary px-6 py-8 text-center text-interactive-on-primary">
+    <div className="relative overflow-hidden px-6 py-8 text-center">
 
       <h2
         id="feed-welcome-title"
@@ -492,7 +506,7 @@ export default function FeedPage() {
         ¡Bienvenido!
       </h2>
 
-      <div className="relative mx-auto mt-4 flex h-58 w-58 items-center justify-center overflow-hidden rounded-full bg-canvas ring-4 ring-interactive-on-primary shadow-2xl">
+      <div className="feed-welcome-logo-heartbeat relative mx-auto mt-4 flex h-58 w-58 items-center justify-center overflow-hidden rounded-full bg-canvas ring-4 ring-interactive-on-primary shadow-2xl">
         <img
           src="/logo_Feedgo.png"
           alt="FeedGo"
@@ -521,30 +535,17 @@ export default function FeedPage() {
           Tu vidriera digital
         </p>
 
-          <p id="feed-welcome-description" className="mt-2 text-sm leading-7 text-secondary">
-            Descubrí comercios, servicios profesionales y espacios cerca tuyo.
-          </p>
-
-          <p className="mt-3 text-sm leading-7 text-muted">
-            Explorá publicaciones, mirá historias, guardá lo que te interesa,
-            seguí espacios y encontrá nuevas oportunidades en tu ciudad.
-          </p>
-
-          <Surface variant="subtle" className="mt-6 p-4">
-            <p className="text-sm text-brand">
-              FeedGo no solo conecta personas, negocios y oportunidades en un solo lugar.
-            </p>
-          </Surface>
-
-          <Button
-            ref={welcomeActionRef}
-            type="button"
-            onClick={() => setShowWelcomeModal(false)}
-            variant="primary"
-            className="mt-7 text-sm font-black leading-5"
-          >
-            Empezar a explorar
-          </Button>
+          <span className="feed-welcome-action-waves relative mt-7 inline-flex rounded-full">
+            <Button
+              ref={welcomeActionRef}
+              type="button"
+              onClick={() => setShowWelcomeModal(false)}
+              variant="primary"
+              className="feed-welcome-action-heartbeat relative z-10 text-sm font-black leading-5"
+            >
+              Empezar a explorar
+            </Button>
+          </span>
         </div>
       </Surface>
     </ActiveLayer>
@@ -563,10 +564,5 @@ export default function FeedPage() {
     </div>
   );
 }
-
-
-
-
-
 
 
