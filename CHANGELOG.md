@@ -9,6 +9,15 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## Limpieza documental post-cierre de ETAPA 98
+
+- Se sincronizan referencias vigentes que todavia presentaban ETAPA 98 como
+  abierta o futura y se completan categorias documentales faltantes.
+- ETAPA 98 permanece cerrada. ETAPA 99 - Identidad, Registro y Autenticacion
+  permanece como siguiente etapa oficial, pendiente y no iniciada.
+- No se modifica codigo, no se inicia ETAPA 99 y Dynamic Feed conserva su
+  implementacion diferida a las etapas owner aprobadas.
+
 ## ETAPA 98 - Correccion y Pulido Visual del Frontend
 
 **Estado:** Cerrada

@@ -2,6 +2,7 @@
 
 Estado: completado. Este documento registra evidencia de ownership; no ejecuta
 la auditoria integral de residuos de 95.7-B ni autoriza refactors masivos.
+Categoría: Documento Técnico.
 
 ## 1. Owners confirmados
 

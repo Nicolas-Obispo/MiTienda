@@ -668,7 +668,7 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-056
 - Titulo: Superficie Liquid como owner visual compartido de controles FeedGo
-- Estado: Aprobada e implementada parcialmente durante ETAPA 98; etapa abierta.
+- Estado: Aprobada e implementada durante ETAPA 98; etapa cerrada.
 - Problema: La aplicacion mantenia un efecto burbuja compartido, pero botones y
   enlaces visuales podian recibir capas, reflejos y borde de forma manual o
   localizada, con riesgo de divergencia y duplicacion.
@@ -722,7 +722,7 @@ No reemplaza la documentación oficial existente.
   Registro hacia Terminos o Privacidad y volver. La contrasena no se persiste
   en localStorage, sessionStorage, history, query strings, IndexedDB, TanStack
   Query ni caches PWA.
-- Impacto: ETAPA 98 no implementa estas funciones y permanece abierta. ETAPA
+- Impacto: ETAPA 98 no implemento estas funciones y esta cerrada. ETAPA
   99 absorbe modelo, migracion, API privada, perfil, capabilities, UX de
   Registro y coordinacion del enforcement con el dominio de Espacios, sin
   crear ni renumerar etapas. `docs/15_LEGAL_AND_OPERATIONAL.md` conserva el

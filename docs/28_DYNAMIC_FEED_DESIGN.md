@@ -20,7 +20,8 @@ cache, exposición, ubicación, Premium o Advertising de Feed e Historias.
 
 Este documento formaliza durante ETAPA 98 el diseño futuro del Dynamic Feed.
 No describe comportamiento ya implementado ni autoriza adelantar ETAPAS 106,
-119 o 122. ETAPA 98 permanece abierta.
+119 o 122. ETAPA 98 está cerrada. ETAPA 99 - Identidad, Registro y
+Autenticación es la siguiente etapa oficial; permanece pendiente y no iniciada.
 
 El backend es owner de elegibilidad, Candidate Generation, proximidad, ranking,
 diversidad, exposición, snapshots y cursores. El frontend renderiza, pagina,

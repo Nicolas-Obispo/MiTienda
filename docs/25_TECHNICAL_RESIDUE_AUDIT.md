@@ -2,6 +2,7 @@
 
 Estado: completada. Este documento registra el gate de residuos de ETAPA 95;
 no autoriza refactors generales ni cierra la etapa.
+Categoria: Documento tecnico de auditoria.
 
 ## 1. Alcance y evidencia
 
@@ -112,5 +113,5 @@ El gate de residuos de 95.7-B queda satisfecho: evidencia completa, residuos D
 limpiados, compatibilidad preservada y deuda trazada. 95.7-C confronto esta
 evidencia y confirmo cero residuos categoria D pendientes para el cierre de
 ETAPA 95, sin convertir las deudas de riesgo en refactors automaticos. La
-Correccion y Pulido Visual del Frontend queda como ETAPA 98 futura, posterior a
-PWA.
+Correccion y Pulido Visual del Frontend fue ejecutada y cerrada posteriormente
+como ETAPA 98, despues de PWA.

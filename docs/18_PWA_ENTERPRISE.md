@@ -688,8 +688,8 @@ subdominio multimedia en las plataformas afectadas.
   navegacion, overlays, estados de interfaz, mapa y geolocalizacion.
 - ETAPA 97 - Administracion Operativa Minima recibira senales, procedimientos
   de actualizacion, recuperacion, rollback y runbooks PWA.
-- ETAPA 98 - Correccion y Pulido Visual del Frontend ejecutara la pasada final
-  de calidad visible despues de PWA y operacion minima.
+- ETAPA 98 - Correccion y Pulido Visual del Frontend ejecuto y cerro la pasada
+  final de calidad visible despues de PWA y operacion minima.
 - la futura auditoria de lanzamiento materializara HTTPS,
   configuracion productiva, fallback de rutas, despliegue y rollback sobre la
   PWA ya cerrada.

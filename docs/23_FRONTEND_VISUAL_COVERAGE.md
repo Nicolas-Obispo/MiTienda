@@ -1,5 +1,7 @@
 # Cobertura visual de frontend — ETAPA 95.5
 
+Categoría: Documento Técnico.
+
 ## 1. Ownership y alcance
 
 Este documento es la matriz trazable exigida por el gate de cobertura de
@@ -59,7 +61,8 @@ movil, Leaflet, Historias, multimedia y Liquid. Se recomienda una estrategia
 hibrida con tokens globales de densidad moderada, `clamp()` y container queries,
 manteniendo reflow en las excepciones inevitables. No existen todavia tokens
 de densidad, container queries ni owner implementado; la prueba reversible
-permanece pendiente y ETAPA 98 sigue abierta.
+permanece pendiente. ETAPA 98 está cerrada; ETAPA 99 - Identidad, Registro y
+Autenticación es la siguiente etapa oficial, pendiente y no iniciada.
 
 ## 2. Matriz acumulada
 
