@@ -3,9 +3,11 @@ import { useState } from "react";
 import DenunciaModal from "@features/moderation/components/DenunciaModal";
 import { RECURSO_DENUNCIA_PUBLICACION } from "@features/moderation/constants/denuncias";
 import { Button } from "@shared";
+import { useProtectedAction } from "@core";
 
 export default function PublicacionReportControl({ publicacionId }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { requireAuthentication } = useProtectedAction();
 
   if (!publicacionId) return null;
 
@@ -13,7 +15,10 @@ export default function PublicacionReportControl({ publicacionId }) {
     <>
       <Button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          if (requireAuthentication()) return;
+          setIsOpen(true);
+        }}
         variant="secondary"
         iconOnly
         aria-label="Denunciar publicación"

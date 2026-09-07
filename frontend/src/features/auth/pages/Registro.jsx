@@ -1,7 +1,18 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { registrarUsuario, loginUsuario, useAuth } from "@features/auth";
-import { Alert, Button, FormControl, Input, Surface } from "@shared";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { getInternalReturnTo } from "@core/navigation/internalReturnTo";
+import {
+  REGISTRATION_EMAIL_UNAVAILABLE,
+  comprobarDisponibilidadEmail,
+  registrarUsuario,
+  loginUsuario,
+  useAuth,
+} from "@features/auth";
+import { Alert, Button, FormControl, Input, PasswordInput, Surface } from "@shared";
+import {
+  evaluarPasswordRegistro,
+  passwordRegistroValida,
+} from "@features/auth/services/registrationValidation";
 
 
 /**
@@ -17,27 +28,81 @@ import { Alert, Button, FormControl, Input, Surface } from "@shared";
  * - Redirigir al feed
  */
 export default function Registro() {
+  const location = useLocation();
+  const mensajeContextual = location.state?.message || "";
+  const returnTo = getInternalReturnTo(location.state?.returnTo, "/feed");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmarPassword, setConfirmarPassword] = useState("");
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [aceptaPrivacidad, setAceptaPrivacidad] = useState(false);
-  const [mostrarPassword, setMostrarPassword] = useState(false);
-  const [mostrarConfirmarPassword, setMostrarConfirmarPassword] =
-    useState(false);
+  const [passwordTocado, setPasswordTocado] = useState(false);
+  const [confirmacionTocada, setConfirmacionTocada] = useState(false);
+  const [emailTocado, setEmailTocado] = useState(false);
+  const [emailFormatoValido, setEmailFormatoValido] = useState(true);
+  const [estadoDisponibilidad, setEstadoDisponibilidad] = useState("idle");
 
   const [errorMensaje, setErrorMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
+  const emailRef = useRef(null);
+  const solicitudEmailRef = useRef(0);
 
   const { login } = useAuth();
-  const navigate = useNavigate();
+  const requisitosPassword = evaluarPasswordRegistro(password);
+  const passwordValida = passwordRegistroValida(password);
+
+  useEffect(() => {
+    const solicitudId = solicitudEmailRef.current + 1;
+    solicitudEmailRef.current = solicitudId;
+    setEstadoDisponibilidad("idle");
+
+    if (!email || !emailRef.current?.checkValidity()) return undefined;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setEstadoDisponibilidad("checking");
+      try {
+        const resultado = await comprobarDisponibilidadEmail(email, {
+          signal: controller.signal,
+        });
+        if (solicitudEmailRef.current !== solicitudId) return;
+        const siguienteEstado = resultado.disponible ? "available" : "unavailable";
+        setEstadoDisponibilidad(siguienteEstado);
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+        if (solicitudEmailRef.current === solicitudId) {
+          setEstadoDisponibilidad("error");
+        }
+      }
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [email]);
 
   async function manejarSubmitRegistro(event) {
     event.preventDefault();
     setErrorMensaje("");
+    setEmailTocado(true);
+    setPasswordTocado(true);
+    setConfirmacionTocada(true);
+
+    if (estadoDisponibilidad === "unavailable") {
+      return;
+    }
+
+    if (!passwordValida) {
+      return;
+    }
 
     if (password !== confirmarPassword) {
-      setErrorMensaje("Las contraseñas no coinciden.");
+      return;
+    }
+
+    if (!emailRef.current?.checkValidity()) {
+      setEmailFormatoValido(false);
       return;
     }
 
@@ -52,7 +117,7 @@ export default function Registro() {
 
     try {
       // 1. Registramos el usuario en backend.
-      await registrarUsuario({
+      const registro = await registrarUsuario({
         email,
         password,
         aceptaTerminos,
@@ -62,16 +127,26 @@ export default function Registro() {
       // 2. Iniciamos sesión automáticamente.
       const token = await loginUsuario({ email, password });
 
-      // 3. Guardamos token globalmente.
-      login(token);
+      // 3. Publicamos la sesion junto con su destino post-auth. El guard de
+      // rutas publicas resuelve asi un unico destino deterministico.
+      login(token, {
+        postAuthDestination: {
+          pathname: "/verificar-email",
+          state: {
+            registrationEmailStatus: registro.email_verification_status,
+            returnTo,
+          },
+        },
+      });
 
       // 4. Activamos onboarding.
       sessionStorage.setItem("show_miplaza_welcome", "true");
-
-      // 5. Redirigimos al feed.
-      navigate("/feed");
     } catch (error) {
-      setErrorMensaje(error.message || "Error al registrar usuario.");
+      if (error.code === REGISTRATION_EMAIL_UNAVAILABLE) {
+        setEstadoDisponibilidad("unavailable");
+      } else {
+        setErrorMensaje(error.message || "Error al registrar usuario.");
+      }
     } finally {
       setCargando(false);
     }
@@ -104,86 +179,158 @@ export default function Registro() {
         <form
           onSubmit={manejarSubmitRegistro}
           autoComplete="off"
+          noValidate
           className="space-y-4"
         >
           {/* Email */}
-          <FormControl label="Email" labelFor="registro-email">
+          <FormControl label="Usuario" labelFor="registro-email">
             <Input
               id="registro-email"
+              ref={emailRef}
               type="email"
               autoComplete="new-email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailFormatoValido(e.target.validity.valid);
+                setEstadoDisponibilidad("idle");
+              }}
+              onBlur={(e) => {
+                setEmailTocado(true);
+                setEmailFormatoValido(e.target.validity.valid);
+              }}
               required
-              placeholder="tuemail@dominio.com"
+              invalid={
+                estadoDisponibilidad === "unavailable" ||
+                (emailTocado && !emailFormatoValido)
+              }
+              aria-describedby="registro-email-disponibilidad"
+              placeholder="nombre@correo.com"
               className="text-sm"
             />
+            <div id="registro-email-disponibilidad" aria-live="polite">
+              {emailTocado && email && !emailFormatoValido && (
+                <p className="mt-2 text-sm text-danger-text" role="alert">
+                  Ingresá un correo electrónico válido.
+                </p>
+              )}
+
+              {estadoDisponibilidad === "unavailable" && (
+                <p className="mt-2 text-sm text-danger-text" role="status">
+                  Este usuario ya está registrado. Ingresá otro.
+                </p>
+              )}
+
+              {estadoDisponibilidad === "checking" && (
+                <p className="mt-2 text-sm text-secondary" role="status">
+                  Comprobando correo...
+                </p>
+              )}
+
+              {estadoDisponibilidad === "available" && (
+                <p className="mt-2 text-sm text-success-text" role="status">
+                  Usuario disponible.
+                </p>
+              )}
+
+              {estadoDisponibilidad === "error" && (
+                <p className="mt-2 text-sm text-warning-text" role="status">
+                  No pudimos comprobarlo ahora. Se verificará al crear la cuenta.
+                </p>
+              )}
+            </div>
           </FormControl>
 
           {/* Password */}
-          <FormControl labelFor="registro-password" label="Contraseña">
-            <Input
+          <FormControl
+            labelFor="registro-password"
+            label="Contraseña"
+          >
+            <PasswordInput
               id="registro-password"
-              type={mostrarPassword ? "text" : "password"}
               autoComplete="new-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPasswordTocado(true);
+              }}
+              onBlur={() => setPasswordTocado(true)}
               required
-              minLength={6}
-              placeholder="Mínimo 6 caracteres"
+              invalid={passwordTocado && !passwordValida}
+              aria-describedby="registro-password-requisitos"
+              placeholder="Creá una contraseña segura"
               className="text-sm"
-              trailingAction={
-                <Button
-                  type="button"
-                  onClick={() => setMostrarPassword(!mostrarPassword)}
-                  variant="ghost"
-                  iconOnly
-                  aria-label={
-                    mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+            />
+            <div
+              id="registro-password-requisitos"
+              className="mt-2 space-y-1 text-xs text-secondary"
+              aria-live="polite"
+            >
+              <p className="font-medium">La contraseña debe tener:</p>
+              {[
+                ["longitud", "Al menos 8 caracteres"],
+                ["mayuscula", "Una mayúscula"],
+                ["minuscula", "Una minúscula"],
+                ["numero", "Un número"],
+                ["sinEspacios", "Sin espacios"],
+              ].map(([requisito, texto]) => (
+                <p
+                  key={requisito}
+                  className={
+                    requisitosPassword[requisito]
+                      ? "text-success-text"
+                      : passwordTocado
+                        ? "text-danger-text"
+                        : undefined
                   }
                 >
                   <span aria-hidden="true">
-                    {mostrarPassword ? "🙉" : "🙈"}
-                  </span>
-                </Button>
-              }
-            />
+                    {requisitosPassword[requisito] ? "✓" : "○"}
+                  </span>{" "}
+                  {texto}
+                </p>
+              ))}
+              {password.length > 0 && !requisitosPassword.limiteBcrypt && (
+                <p className="text-danger-text" role="alert">
+                  La contraseña es demasiado larga.
+                </p>
+              )}
+            </div>
           </FormControl>
 
           {/* Confirmar Password */}
           <FormControl
             labelFor="registro-confirmar-password"
             label="Confirmar contraseña"
+            error={
+              confirmacionTocada && confirmarPassword !== password
+                ? "Las contraseñas no coinciden."
+                : null
+            }
+            errorId="registro-confirmar-password-error"
           >
-            <Input
+            <PasswordInput
               id="registro-confirmar-password"
-              type={mostrarConfirmarPassword ? "text" : "password"}
               autoComplete="new-password"
               value={confirmarPassword}
-              onChange={(e) => setConfirmarPassword(e.target.value)}
+              onChange={(e) => {
+                setConfirmarPassword(e.target.value);
+                setConfirmacionTocada(true);
+              }}
+              onBlur={() => setConfirmacionTocada(true)}
               required
-              minLength={6}
+              invalid={
+                confirmacionTocada && confirmarPassword !== password
+              }
+              aria-describedby={
+                confirmacionTocada && confirmarPassword !== password
+                  ? "registro-confirmar-password-error"
+                  : undefined
+              }
               placeholder="Repetí tu contraseña"
               className="text-sm"
-              trailingAction={
-                <Button
-                  type="button"
-                  onClick={() =>
-                    setMostrarConfirmarPassword(!mostrarConfirmarPassword)
-                  }
-                  variant="ghost"
-                  iconOnly
-                  aria-label={
-                    mostrarConfirmarPassword
-                      ? "Ocultar confirmación de contraseña"
-                      : "Mostrar confirmación de contraseña"
-                  }
-                >
-                  <span aria-hidden="true">
-                    {mostrarConfirmarPassword ? "🙉" : "🙈"}
-                  </span>
-                </Button>
-              }
+              showLabel="Mostrar confirmación de contraseña"
+              hideLabel="Ocultar confirmación de contraseña"
             />
           </FormControl>
 
@@ -244,7 +391,7 @@ export default function Registro() {
           {/* Botón */}
           <Button
             type="submit"
-            disabled={cargando}
+            disabled={cargando || estadoDisponibilidad === "unavailable"}
             variant="primary"
             className="w-full px-4 py-2 text-sm font-bold"
           >
@@ -257,6 +404,7 @@ export default function Registro() {
 
           <Link
             to="/login"
+            state={{ message: mensajeContextual, returnTo }}
             className="font-medium text-brand underline decoration-current underline-offset-2 hover:text-brand-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
             Iniciá sesión

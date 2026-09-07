@@ -29,7 +29,7 @@ test("Editar perfil mantiene ocultas inicialmente las preferencias aprobadas", (
   assert.match(selectorSource, /value: "system"/);
   assert.match(selectorSource, /label: "Usar configuración del sistema"/);
   assert.match(profileSource, /const \[showAppearanceOptions, setShowAppearanceOptions\] = useState\(false\)/);
-  assert.match(profileSource, />\s*Color de fondo\s*<\/Button>/);
+  assert.match(profileSource, />\s*Cambiar fondo\s*<\/Button>/);
   assert.match(profileSource, /aria-expanded=\{showAppearanceOptions\}/);
   assert.match(profileSource, /aria-controls="perfil-apariencia-options"/);
   assert.match(profileSource, /\{showAppearanceOptions && \([\s\S]*<AppearanceSelector \/>/);
@@ -107,7 +107,7 @@ test("selector existe solo en Editar perfil", () => {
 test("tema no forma parte del payload persistido del perfil", () => {
   assert.match(
     profileSource,
-    /const payload = \{\s*provincia: perfilForm\.provincia\.trim\(\),\s*ciudad: perfilForm\.ciudad\.trim\(\),\s*\}/
+    /const payload = \{\s*provincia: perfilForm\.provincia\.trim\(\),\s*ciudad: perfilForm\.ciudad\.trim\(\),\s*fecha_nacimiento: perfilForm\.fecha_nacimiento \|\| null,\s*telefono_e164: perfilForm\.telefono_e164\.trim\(\) \|\| null,\s*\}/
   );
   assert.doesNotMatch(
     profileSource.slice(

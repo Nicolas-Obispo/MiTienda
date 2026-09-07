@@ -36,7 +36,12 @@ import {
   Textarea,
 } from "@shared";
 import { invalidateLocationAfterAddressEdit } from "@shared/components/locationPickerState";
-import { actualizarPerfilUsuario, getMe, useAuth } from "@features/auth";
+import {
+  actualizarPerfilUsuario,
+  confirmarVerificacionTelefono,
+  solicitarVerificacionTelefono,
+  useAuth,
+} from "@features/auth";
 import { cambiarModoUsuario } from "@features/auth/services/usuarioService";
 import { useQueryClient } from "@tanstack/react-query";
 import AgendaGeneralModal from "@features/agenda/components/AgendaGeneralModal";
@@ -49,6 +54,7 @@ import {
   reintentarHorariosDeComercio,
 } from "@features/availability/services/horarios_draft_flow";
 import AppearanceSelector from "@features/auth/components/AppearanceSelector";
+import CambiarPasswordForm from "@features/auth/components/CambiarPasswordForm";
 
 import {
   crearComercio,
@@ -60,34 +66,47 @@ import {
   useRubros,
 } from "@features/spaces";
 
+const CAMPOS_PERFIL_FALTANTES = {
+  provincia: "Agregá tu provincia.",
+  ciudad: "Agregá tu ciudad.",
+  fecha_nacimiento: "Agregá tu fecha de nacimiento.",
+  email_verificado: "Verificá tu correo electrónico.",
+  telefono: "Agregá tu teléfono.",
+  telefono_verificado: "Verificá tu teléfono.",
+};
+
+const PENDIENTES_COMERCIALES = {
+  perfil_incompleto: "Completá los datos de tu perfil.",
+  aceptaciones_legales_pendientes: "Revisá las aceptaciones requeridas.",
+  mayoria_edad_requerida: "Necesitás ser mayor de edad para esta función.",
+};
+
 export default function ProfilePage() {
-  // =====================================================
-  // Helpers generales (token + base URL)
-  // =====================================================
-  function getToken() {
-    return (
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("token") ||
-      ""
-    );
-  }
-
-
   // =====================================================
   // Estado: Mi cuenta del usuario
   // =====================================================
-  const [usuarioMe, setUsuarioMe] = useState(null);
-  const [isLoadingMe, setIsLoadingMe] = useState(true);
   const [avatarErrorMessage, setAvatarErrorMessage] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showPerfilForm, setShowPerfilForm] = useState(false);
   const [showAppearanceOptions, setShowAppearanceOptions] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [isSavingPerfil, setIsSavingPerfil] = useState(false);
   const [perfilErrorMessage, setPerfilErrorMessage] = useState("");
   const [perfilSuccessMessage, setPerfilSuccessMessage] = useState("");
+  const [remediationTarget, setRemediationTarget] = useState(null);
+  const [phoneVerification, setPhoneVerification] = useState({
+    challengeId: "",
+    code: "",
+    isSending: false,
+    isConfirming: false,
+    error: "",
+    message: "",
+  });
   const [perfilForm, setPerfilForm] = useState({
     provincia: "",
     ciudad: "",
+    fecha_nacimiento: "",
+    telefono_e164: "",
   });
 
   const fileInputRef = useRef(null);
@@ -101,47 +120,17 @@ export default function ProfilePage() {
 
   const portadaFileInputRef = useRef(null);
 
-  async function loadUsuarioMe() {
-    try {
-      setIsLoadingMe(true);
-      setAvatarErrorMessage("");
-
-      const token = getToken();
-
-      if (!token) {
-        setUsuarioMe(null);
-        return;
-      }
-
-      const data = await getMe(token);
-
-      setUsuarioMe(data);
-      setPerfilForm({
-        provincia: data?.provincia || "",
-        ciudad: data?.ciudad || "",
-      });
-    } catch (error) {
-      setUsuarioMe(null);
-      setAvatarErrorMessage(
-        error.message || "Error desconocido cargando tu perfil."
-      );
-    } finally {
-      setIsLoadingMe(false);
-    }
-  }
-
   async function activarModoPublicador() {
     try {
-      const token = getToken();
+      const token = accessToken;
 
       if (!token) {
         throw new Error("No hay sesión activa.");
       }
 
-      const usuarioActualizado =
-        await cambiarModoUsuario(token, "publicador");
+      await cambiarModoUsuario(token, "publicador");
 
-      setUsuarioMe(usuarioActualizado);
+      await refrescarUsuario();
     } catch (error) {
       alert(
         error?.message ||
@@ -150,26 +139,54 @@ export default function ProfilePage() {
     }
   }
 
-  function abrirEdicionPerfil() {
+  function abrirEdicionPerfil(target = null) {
     setPerfilErrorMessage("");
     setPerfilSuccessMessage("");
     setShowAppearanceOptions(false);
+    setShowPasswordForm(false);
+    setPhoneVerification({
+      challengeId: "",
+      code: "",
+      isSending: false,
+      isConfirming: false,
+      error: "",
+      message: "",
+    });
     setPerfilForm({
-      provincia: usuarioMe?.provincia || "",
-      ciudad: usuarioMe?.ciudad || "",
+      provincia: usuario?.provincia || "",
+      ciudad: usuario?.ciudad || "",
+      fecha_nacimiento: usuario?.fecha_nacimiento || "",
+      telefono_e164: usuario?.telefono_e164 || "",
     });
     setShowPerfilForm(true);
+    setRemediationTarget(target);
   }
 
   function cancelarEdicionPerfil() {
     setPerfilErrorMessage("");
     setPerfilSuccessMessage("");
     setShowAppearanceOptions(false);
+    setPhoneVerification({
+      challengeId: "",
+      code: "",
+      isSending: false,
+      isConfirming: false,
+      error: "",
+      message: "",
+    });
     setPerfilForm({
-      provincia: usuarioMe?.provincia || "",
-      ciudad: usuarioMe?.ciudad || "",
+      provincia: usuario?.provincia || "",
+      ciudad: usuario?.ciudad || "",
+      fecha_nacimiento: usuario?.fecha_nacimiento || "",
+      telefono_e164: usuario?.telefono_e164 || "",
     });
     setShowPerfilForm(false);
+    setRemediationTarget(null);
+  }
+
+  function completarCambioPassword() {
+    setShowPasswordForm(false);
+    setPerfilSuccessMessage("Listo, tu contraseña fue actualizada.");
   }
 
   function handlePerfilFormChange(e) {
@@ -189,7 +206,7 @@ export default function ProfilePage() {
       setPerfilErrorMessage("");
       setPerfilSuccessMessage("");
 
-      const token = getToken();
+      const token = accessToken;
 
       if (!token) {
         throw new Error("No hay sesion activa.");
@@ -198,23 +215,38 @@ export default function ProfilePage() {
       const payload = {
         provincia: perfilForm.provincia.trim(),
         ciudad: perfilForm.ciudad.trim(),
+        fecha_nacimiento: perfilForm.fecha_nacimiento || null,
+        telefono_e164: perfilForm.telefono_e164.trim() || null,
       };
 
-      const usuarioActualizado = await actualizarPerfilUsuario(token, payload);
+      await actualizarPerfilUsuario(token, payload);
 
-      setUsuarioMe(usuarioActualizado);
-      await refrescarUsuario?.();
+      const usuarioRefrescado = await refrescarUsuario();
+      setPhoneVerification({
+        challengeId: "",
+        code: "",
+        isSending: false,
+        isConfirming: false,
+        error: "",
+        message: "",
+      });
       setPerfilForm({
-        provincia: usuarioActualizado?.provincia || "",
-        ciudad: usuarioActualizado?.ciudad || "",
+        provincia: usuarioRefrescado?.provincia || "",
+        ciudad: usuarioRefrescado?.ciudad || "",
+        fecha_nacimiento: usuarioRefrescado?.fecha_nacimiento || "",
+        telefono_e164: usuarioRefrescado?.telefono_e164 || "",
       });
       setShowAppearanceOptions(false);
       setShowPerfilForm(false);
       setPerfilSuccessMessage("Perfil actualizado");
     } catch (error) {
-      setPerfilErrorMessage(
-        error.message || "No se pudo actualizar el perfil."
-      );
+      const mensaje =
+        error?.status === 409
+          ? "Este teléfono ya está registrado. Probá con otro."
+          : error?.status === 422
+            ? "Revisá los datos ingresados e intentá nuevamente."
+            : "No pudimos actualizar tus datos ahora. Intentá nuevamente.";
+      setPerfilErrorMessage(mensaje);
       setPerfilSuccessMessage("");
     } finally {
       setIsSavingPerfil(false);
@@ -222,7 +254,7 @@ export default function ProfilePage() {
   }
 
   async function uploadMedia(file) {
-    const token = getToken();
+    const token = accessToken;
 
     if (!token) {
       throw new Error("No hay sesión activa (token).");
@@ -238,7 +270,7 @@ export default function ProfilePage() {
   }
 
   async function updateUsuarioAvatar(avatarUrl) {
-    const token = getToken();
+    const token = accessToken;
 
     if (!token) {
       throw new Error("No hay sesión activa (token).");
@@ -271,9 +303,9 @@ export default function ProfilePage() {
       setIsUploadingAvatar(true);
 
       const url = await uploadMedia(file);
-      const updatedUser = await updateUsuarioAvatar(url);
+      await updateUsuarioAvatar(url);
 
-      setUsuarioMe(updatedUser);
+      await refrescarUsuario();
     } catch (error) {
       setAvatarErrorMessage(
         error.message || "Error desconocido actualizando el avatar."
@@ -366,14 +398,20 @@ export default function ProfilePage() {
   const queryClient = useQueryClient();
   const reemplazarHorariosMutation = useReemplazarHorariosAtencionMutation();
   const navigate = useNavigate();
-  const { logout, refrescarUsuario } = useAuth();
+  const {
+    accessToken,
+    isCargandoUsuario: isLoadingMe,
+    logout,
+    refrescarUsuario,
+    usuario,
+  } = useAuth();
   const [comerciosErrorMessage, setComerciosErrorMessage] = useState("");
   const {
     data: misComercios = [],
     isLoading: isLoadingComercios,
     error: misComerciosError,
   } = useMisComercios({
-    enabled: Boolean(getToken()),
+    enabled: Boolean(accessToken),
   });
   const comerciosQueryErrorMessage = misComerciosError
     ? misComerciosError.message || "Error desconocido cargando tus espacios."
@@ -481,6 +519,68 @@ export default function ProfilePage() {
     });
   }
 
+  async function solicitarCodigoTelefono() {
+    try {
+      setPhoneVerification((prev) => ({
+        ...prev,
+        isSending: true,
+        error: "",
+        message: "",
+      }));
+
+      const result = await solicitarVerificacionTelefono(accessToken);
+      setPhoneVerification((prev) => ({
+        ...prev,
+        challengeId: result.challenge_id,
+        code: "",
+        isSending: false,
+        message: "Te enviamos un código para verificar tu teléfono.",
+      }));
+    } catch (error) {
+      setPhoneVerification((prev) => ({
+        ...prev,
+        isSending: false,
+        error:
+          error?.code === "phone_verification_rate_limited"
+            ? "Esperá un momento antes de pedir otro código."
+            : "No pudimos enviar el código ahora. Intentá nuevamente en un momento.",
+      }));
+    }
+  }
+
+  async function confirmarCodigoTelefono() {
+    try {
+      setPhoneVerification((prev) => ({
+        ...prev,
+        isConfirming: true,
+        error: "",
+      }));
+
+      await confirmarVerificacionTelefono(accessToken, {
+        challengeId: phoneVerification.challengeId,
+        code: phoneVerification.code,
+      });
+      await refrescarUsuario();
+      setPhoneVerification({
+        challengeId: "",
+        code: "",
+        isSending: false,
+        isConfirming: false,
+        error: "",
+        message: "Listo, tu teléfono ya está verificado.",
+      });
+    } catch (error) {
+      setPhoneVerification((prev) => ({
+        ...prev,
+        isConfirming: false,
+        error:
+          error?.code === "phone_verification_invalid"
+            ? "Este código no es válido o venció. Pedí uno nuevo para continuar."
+            : "No pudimos verificar el código ahora. Intentá nuevamente en un momento.",
+      }));
+    }
+  }
+
   function abrirEditorHorariosDesdeFormulario() {
     if (!editingComercioId) {
       setHorariosEditorComercio({
@@ -503,9 +603,14 @@ export default function ProfilePage() {
     navigate("/login");
   }
 
-  useEffect(() => {
-    loadUsuarioMe();
-  }, []);
+  function iniciarRemediationPerfil(campo) {
+    if (campo === "email_verificado") {
+      navigate("/verificar-email", { state: { returnTo: "/perfil" } });
+      return;
+    }
+
+    abrirEdicionPerfil(campo);
+  }
 
   useEffect(() => {
     if (!perfilSuccessMessage) return undefined;
@@ -516,6 +621,29 @@ export default function ProfilePage() {
 
     return () => window.clearTimeout(timeoutId);
   }, [perfilSuccessMessage]);
+
+  useEffect(() => {
+    if (!showPerfilForm || showPasswordForm || !remediationTarget) return;
+
+    const inputByTarget = {
+      provincia: "perfil-provincia",
+      ciudad: "perfil-ciudad",
+      fecha_nacimiento: "perfil-fecha-nacimiento",
+      telefono: "perfil-telefono",
+      telefono_verificado: "perfil-telefono",
+    };
+    const inputId = inputByTarget[remediationTarget];
+    if (inputId) {
+      document.getElementById(inputId)?.focus();
+    }
+    if (remediationTarget === "telefono_verificado") {
+      setPhoneVerification((prev) => ({
+        ...prev,
+        message: "Pedí un código para verificar tu teléfono.",
+      }));
+    }
+    setRemediationTarget(null);
+  }, [remediationTarget, showPasswordForm, showPerfilForm]);
 
   useEffect(() => {
     const editarEspacioId = Number(searchParams.get("editarEspacioId"));
@@ -781,8 +909,18 @@ export default function ProfilePage() {
     }
   }
 
-  const avatarUrl = usuarioMe?.avatar_url || "";
-  const esModoPublicador = usuarioMe?.modo_activo === "publicador";
+  const avatarUrl = usuario?.avatar_url || "";
+  const esModoPublicador = usuario?.modo_activo === "publicador";
+  const perfilCompleto = usuario?.perfil_completo === true;
+  const camposPerfilFaltantes = Array.isArray(usuario?.campos_perfil_faltantes)
+    ? usuario.campos_perfil_faltantes
+    : [];
+  const capacidadesComerciales = usuario?.capabilities || {};
+  const pendientesComerciales = Array.isArray(usuario?.pendientes_comerciales)
+    ? usuario.pendientes_comerciales
+    : [];
+  const telefonoPendienteDeGuardar =
+    perfilForm.telefono_e164.trim() !== (usuario?.telefono_e164 || "");
   return (
     <div className="min-h-screen bg-canvas text-primary">
       <main className="mx-auto max-w-3xl px-4 py-8">
@@ -844,7 +982,7 @@ export default function ProfilePage() {
                   <Button
                     type="button"
                     onClick={abrirEdicionPerfil}
-                    disabled={isLoadingMe || !usuarioMe || showPerfilForm}
+                    disabled={isLoadingMe || !usuario || showPerfilForm}
                     variant="secondary"
                     className="px-3 py-2 text-xs leading-4"
                   >
@@ -879,8 +1017,8 @@ export default function ProfilePage() {
                 <p className="mt-2 break-all text-xs text-muted">
                   {isLoadingMe
                     ? "Cargando usuario..."
-                    : usuarioMe?.email
-                    ? `Sesión: ${usuarioMe.email}`
+                    : usuario?.email
+                    ? `Sesión: ${usuario.email}`
                     : "No se pudo cargar el usuario."}
                 </p>
 
@@ -904,10 +1042,75 @@ export default function ProfilePage() {
             </div>
           </Surface>
           )}
+
+          {!showPerfilForm && usuario && (
+            <Surface as="section" className="mt-4 space-y-4 p-4" aria-labelledby="estado-perfil-title">
+              <div>
+                <h2 id="estado-perfil-title" className="font-semibold text-primary">
+                  Estado del perfil
+                </h2>
+                <p className="mt-1 text-sm text-secondary" role="status">
+                  {perfilCompleto ? "Perfil completo" : "Perfil incompleto"}
+                </p>
+              </div>
+
+              {!perfilCompleto && (
+                <div className="space-y-2">
+                  <p className="text-sm text-secondary">
+                    Completá estos datos para preparar tu perfil.
+                  </p>
+                  <ul className="space-y-2" aria-label="Datos pendientes del perfil">
+                    {camposPerfilFaltantes.map((campo) => (
+                      <li
+                        key={campo}
+                        className="flex flex-wrap items-center justify-between gap-2 text-sm text-secondary"
+                      >
+                        <span>{CAMPOS_PERFIL_FALTANTES[campo]}</span>
+                        <Button
+                          type="button"
+                          onClick={() => iniciarRemediationPerfil(campo)}
+                          variant="secondary"
+                          className="px-3 py-2 text-xs"
+                        >
+                          {campo === "email_verificado" ? "Verificar" : "Completar"}
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-primary">
+                  Funciones comerciales
+                </h3>
+                <ul className="space-y-1 text-sm text-secondary">
+                  <li>
+                    Crear espacios: {capacidadesComerciales.puede_crear_espacio ? "disponible" : "todavía no disponible"}
+                  </li>
+                  <li>
+                    Administrar espacios: {capacidadesComerciales.puede_administrar_espacios ? "disponible" : "todavía no disponible"}
+                  </li>
+                  <li>
+                    Publicar en espacios: {capacidadesComerciales.puede_publicar_en_espacios ? "disponible" : "todavía no disponible"}
+                  </li>
+                </ul>
+              </div>
+
+              {pendientesComerciales.length > 0 && (
+                <ul className="space-y-1 text-sm text-secondary" aria-label="Pendientes comerciales">
+                  {pendientesComerciales.map((pendiente) => (
+                    <li key={pendiente}>{PENDIENTES_COMERCIALES[pendiente]}</li>
+                  ))}
+                </ul>
+              )}
+            </Surface>
+          )}
         </section>
 
         {showPerfilForm && (
           <Surface as="section" variant="elevated" className="mb-8 p-4">
+            {!showPasswordForm ? (
             <form onSubmit={handlePerfilSubmit} className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full border border-border bg-surface-subtle">
@@ -926,11 +1129,143 @@ export default function ProfilePage() {
                 </div>
 
                 <p className="min-w-0 flex-1 truncate text-sm text-secondary">
-                  {usuarioMe?.email || "Usuario sin correo"}
+                  {usuario?.email || "Usuario sin correo"}
                 </p>
               </div>
 
-              <div>
+              <section
+                className="space-y-3 rounded-xl border border-border p-3"
+                aria-labelledby="datos-personales-title"
+              >
+                <div>
+                  <h2
+                    id="datos-personales-title"
+                    className="text-base font-semibold text-primary"
+                  >
+                    Datos personales
+                  </h2>
+                  <p className="mt-1 text-xs text-secondary">
+                    Estos datos son privados y sólo se usan para tu cuenta.
+                  </p>
+                </div>
+
+                <FormControl
+                  label="Fecha de nacimiento"
+                  labelFor="perfil-fecha-nacimiento"
+                >
+                  <Input
+                    id="perfil-fecha-nacimiento"
+                    type="date"
+                    name="fecha_nacimiento"
+                    value={perfilForm.fecha_nacimiento}
+                    onChange={handlePerfilFormChange}
+                    disabled={isSavingPerfil}
+                    className="text-sm"
+                  />
+                </FormControl>
+
+                <FormControl label="Teléfono" labelFor="perfil-telefono">
+                  <Input
+                    id="perfil-telefono"
+                    type="tel"
+                    name="telefono_e164"
+                    value={perfilForm.telefono_e164}
+                    onChange={handlePerfilFormChange}
+                    disabled={isSavingPerfil || Boolean(usuario?.telefono_verified_at)}
+                    className="text-sm"
+                    placeholder="Ingresá tu teléfono"
+                    autoComplete="tel"
+                  />
+                </FormControl>
+                <p className="text-xs text-secondary" role="status">
+                  {usuario?.telefono_verified_at
+                    ? "Teléfono verificado."
+                    : usuario?.telefono_e164
+                      ? "Teléfono pendiente de verificación."
+                      : "Todavía no agregaste un teléfono."}
+                </p>
+
+                {!usuario?.telefono_verified_at && usuario?.telefono_e164 && (
+                  <div className="space-y-3">
+                    {telefonoPendienteDeGuardar ? (
+                      <p className="text-xs text-secondary">
+                        Guardá el teléfono antes de verificarlo.
+                      </p>
+                    ) : (
+                      <Button
+                        type="button"
+                        onClick={solicitarCodigoTelefono}
+                        disabled={
+                          isSavingPerfil ||
+                          phoneVerification.isSending ||
+                          phoneVerification.isConfirming
+                        }
+                        variant="secondary"
+                        className="px-3 py-2 text-xs"
+                      >
+                        {phoneVerification.challengeId
+                          ? "Enviar otro código"
+                          : "Enviar código"}
+                      </Button>
+                    )}
+
+                    {phoneVerification.challengeId && !telefonoPendienteDeGuardar && (
+                      <div className="space-y-2">
+                        <FormControl
+                          label="Código de verificación"
+                          labelFor="perfil-telefono-otp"
+                        >
+                          <Input
+                            id="perfil-telefono-otp"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            maxLength={6}
+                            value={phoneVerification.code}
+                            onChange={(event) =>
+                              setPhoneVerification((prev) => ({
+                                ...prev,
+                                code: event.target.value,
+                                error: "",
+                              }))
+                            }
+                            disabled={phoneVerification.isConfirming}
+                            className="text-sm"
+                            placeholder="Ingresá el código de 6 dígitos"
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          onClick={confirmarCodigoTelefono}
+                          disabled={
+                            phoneVerification.isConfirming ||
+                            phoneVerification.code.length !== 6
+                          }
+                          variant="secondary"
+                          className="px-3 py-2 text-xs"
+                        >
+                          {phoneVerification.isConfirming
+                            ? "Verificando..."
+                            : "Verificar teléfono"}
+                        </Button>
+                      </div>
+                    )}
+
+                    {phoneVerification.message && (
+                      <p className="text-xs text-secondary" role="status">
+                        {phoneVerification.message}
+                      </p>
+                    )}
+                    {phoneVerification.error && (
+                      <p className="text-xs text-secondary" role="alert">
+                        {phoneVerification.error}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </section>
+
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
                   onClick={handleAvatarClick}
@@ -948,9 +1283,15 @@ export default function ProfilePage() {
                   onChange={handleAvatarInputChange}
                   className="hidden"
                 />
-              </div>
-
-              <div>
+                <Button
+                  type="button"
+                  onClick={() => setShowPasswordForm(true)}
+                  disabled={isSavingPerfil}
+                  variant="secondary"
+                  className="px-3 py-2 text-xs"
+                >
+                  Cambiar contraseña
+                </Button>
                 <Button
                   type="button"
                   onClick={() =>
@@ -962,19 +1303,19 @@ export default function ProfilePage() {
                   aria-expanded={showAppearanceOptions}
                   aria-controls="perfil-apariencia-options"
                 >
-                  Color de fondo
+                  Cambiar fondo
                 </Button>
-
-                {showAppearanceOptions && (
-                  <Surface
-                    id="perfil-apariencia-options"
-                    variant="subtle"
-                    className="mt-2 p-3"
-                  >
-                    <AppearanceSelector />
-                  </Surface>
-                )}
               </div>
+
+              {showAppearanceOptions && (
+                <Surface
+                  id="perfil-apariencia-options"
+                  variant="subtle"
+                  className="p-3"
+                >
+                  <AppearanceSelector />
+                </Surface>
+              )}
 
               <FormControl label="Provincia" labelFor="perfil-provincia">
                 <Input
@@ -1023,6 +1364,21 @@ export default function ProfilePage() {
                 </Button>
               </div>
             </form>
+            ) : (
+            <section
+              className="space-y-4"
+              aria-labelledby="perfil-password-title"
+            >
+              <h2 id="perfil-password-title" className="text-lg font-semibold">
+                Seguridad
+              </h2>
+              <h3 className="text-base font-semibold">Cambiar contraseña</h3>
+              <CambiarPasswordForm
+                onCancel={() => setShowPasswordForm(false)}
+                onSuccess={completarCambioPassword}
+              />
+            </section>
+            )}
 
             {perfilErrorMessage && (
               <Alert role="alert" variant="danger" className="mt-3 text-xs">

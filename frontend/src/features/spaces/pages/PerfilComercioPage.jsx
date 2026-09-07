@@ -108,17 +108,16 @@ export default function CommerceProfilePage() {
   const ultimaHistoriaVistaMarcadaRef = useRef(null);
   const [publicaciones, setPublicaciones] = useState([]);
 
-  const redirectAnonymousDetail = useCallback(() => {
-    navigate("/registro", {
-      replace: true,
-      state: { message: "Registrate para seguir explorando este espacio." },
-    });
-  }, [navigate]);
+  const openAnonymousDetailGate = useCallback(() => {
+    usuarioDebeLoguearse(
+      "Creá tu cuenta o iniciá sesión para seguir explorando este espacio."
+    );
+  }, [usuarioDebeLoguearse]);
 
   useAnonymousDetailGate({
     enabled: !estaAutenticado,
     ready: Boolean(comercio),
-    onExpire: redirectAnonymousDetail,
+    onExpire: openAnonymousDetailGate,
   });
 
   const [isCrearHistoriaOpen, setIsCrearHistoriaOpen] = useState(false);
@@ -474,6 +473,11 @@ function esComercioMio(comercioData) {
     setViewerIsOpen(true);
   }
 
+  function handleOpenDenunciaComercio() {
+    if (usuarioDebeLoguearse()) return;
+    setIsDenunciaComercioOpen(true);
+  }
+
   async function handleHistoriaCreated() {
     await refreshHistorias();
   }
@@ -578,7 +582,7 @@ function esComercioMio(comercioData) {
           {!esComercioMio(comercio) && comercio?.id ? (
             <Button
               variant="secondary"
-              onClick={() => setIsDenunciaComercioOpen(true)}
+              onClick={handleOpenDenunciaComercio}
               aria-label="Denunciar espacio"
               className="h-6 min-h-6 w-6 min-w-6 shrink-0 rounded-full p-0 text-primary active:[transform:none]"
             >
@@ -787,6 +791,9 @@ function esComercioMio(comercioData) {
                 {comercio?.whatsapp && (
                   <a
                     href={`https://wa.me/${String(comercio.whatsapp).replace(/\D/g, "")}?text=Hola%2C%20te%20encontré%20en%20FeedGo%20y%20quiero%20consultarte`}
+                    onClick={(event) => {
+                      if (usuarioDebeLoguearse()) event.preventDefault();
+                    }}
                     target="_blank"
                     rel="noreferrer"
                     className="interactive-bubble interactive-bubble--liquid group cursor-pointer rounded-xl px-2 py-1 text-xs font-semibold"
@@ -803,6 +810,9 @@ function esComercioMio(comercioData) {
                 {comercio?.instagram && (
                   <a
                     href={`https://instagram.com/${String(comercio.instagram).replace("@", "")}`}
+                    onClick={(event) => {
+                      if (usuarioDebeLoguearse()) event.preventDefault();
+                    }}
                     target="_blank"
                     rel="noreferrer"
                     className="interactive-bubble interactive-bubble--liquid group cursor-pointer rounded-xl px-2 py-1 text-xs font-semibold"
@@ -823,6 +833,9 @@ function esComercioMio(comercioData) {
                         ? `https://www.google.com/maps?q=${comercio.latitud},${comercio.longitud}`
                         : comercio.maps_url
                     }
+                    onClick={(event) => {
+                      if (usuarioDebeLoguearse()) event.preventDefault();
+                    }}
                     target="_blank"
                     rel="noreferrer"
                     className="interactive-bubble interactive-bubble--liquid group cursor-pointer rounded-xl px-2 py-1 text-xs font-semibold"

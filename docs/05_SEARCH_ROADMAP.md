@@ -1089,8 +1089,10 @@ Subetapas:
   no quedaron procesos huerfanos y ambos gates volvieron a `false`.
 
 ETAPA 97 queda formalmente cerrada con sus subetapas 97.1 a 97.6 cerradas.
-ETAPA 98 queda formalmente cerrada. ETAPA 99 es la siguiente etapa oficial,
-pendiente y no iniciada.
+ETAPA 98 queda formalmente cerrada. ETAPA 99 es la etapa oficial vigente y
+continua con 99.1 - Fundacion aditiva de identidad cerrado. 99.2 - Transicion
+de Registro y Login por contrasena es el siguiente sprint oficial, pendiente y
+no iniciado.
 
 ### ☑ ETAPA 98
 
@@ -1192,7 +1194,7 @@ Cierre formal:
   440 tests frontend, 440 tests backend con 1 omitido, build productivo/PWA y
   `git diff --check` correctos.
 
-### ☐ ETAPA 99
+### ◐ ETAPA 99
 
 Identidad, Registro y Autenticacion.
 
@@ -1266,8 +1268,9 @@ Principios y exclusiones:
 Dependencias:
 
 - ETAPA 96 debe cerrar sin incorporar esta reforma de Auth;
-- antes de implementar correo real debe coordinarse el contrato transversal de
-  comunicaciones sin duplicar la futura ETAPA 114;
+- antes de implementar entrega real de identidad por correo, SMS o WhatsApp
+  debe respetarse la excepcion minima de `DEC-063`, coordinarse el contrato
+  transversal de comunicaciones y no duplicar la futura ETAPA 114;
 - cualquier modelo, tabla, proveedor o tratamiento personal nuevo requiere la
   auditoria y aprobacion documental aplicable;
 - la politica de menores, el tratamiento de `fecha_nacimiento`, el requisito
@@ -1283,9 +1286,219 @@ La etapa debe cerrar progresivamente pruebas de Auth, verificacion,
 recuperacion/cambio de credenciales, abuso y rate limiting aplicable, sin
 postergar esos controles a ETAPA 109.
 
+Sprints oficiales y orden obligatorio:
+
+Esta descomposicion queda formalizada por `DEC-060`. Sus nueve sprints responden
+a fronteras verificables dentro de una unica transicion compatible de identidad
+y no crean ni renumeran etapas.
+
+- 99.1 - Fundacion aditiva de identidad. Agrega de forma compatible los campos
+  de identidad aprobados en Usuario, `PasswordCredential`, `ExternalIdentity`,
+  `FeedGoSession`, canonicalizacion backend, preflight y backfill, sin cambiar
+  todavia Login, Registro, JWT, logout ni comportamiento frontend. Depende de
+  `DEC-059` y de cero colisiones canonicas. Su gate exige coherencia entre
+  implementacion, migracion, tests, decision, documentacion y roadmap, schema y
+  metadata coincidentes, backfill idempotente y comportamiento legacy intacto.
+  Rollback: conservar estructuras aditivas sin consumidores y mantener los
+  owners legacy. Estado: cerrado; auditoria integral aprobada.
+- 99.2 - Transicion de Registro y Login por contrasena. Convierte
+  `email_canonical` y `PasswordCredential` en owners efectivos de altas y login,
+  cierra la ventana de nuevas filas incompletas y aplica una politica backend
+  unica de contrasena y antienumeracion. Conserva la aceptacion y evidencia de
+  Terminos y Privacidad del owner legal y el borrador de Registro al navegar a
+  esos documentos, siempre en memoria y sin persistir password. Depende del
+  cierre de 99.1. Conserva dual-read y dual-write controlados,
+  `usuarios.hashed_password NOT NULL`, JWT, logout y revocacion legacy. Gate:
+  ninguna alta queda sin email canonico, credencial o evidencia aplicable, el
+  fallback legacy llega a cero luego de la reparacion y el draft no filtra
+  secretos. Rollback: volver temporalmente a lectura legacy conservando las
+  estructuras nuevas. Estado: cerrado; implementacion y validacion manual
+  aprobadas.
+- 99.3 - Verificacion de email y ciclo de contrasena. Estado: cerrada tecnica,
+  funcional y documentalmente. Implementa verificacion y
+  reenvio controlado, tokens o codigos de un uso con expiracion, recuperacion y
+  cambio autenticado de contrasena, invalidacion, rate limiting, antiabuso,
+  antienumeracion y observabilidad minimizada. Depende de 99.2 y del contrato
+  transversal de comunicaciones, sin duplicar ETAPA 114 ni acoplar Auth a un
+  proveedor. Gate: flujo extremo a extremo verificable, sin secretos en claro
+  persistidos o logueados. Rollback: desactivar emision sin borrar evidencia ni
+  tokens consumidos; la obligatoriedad productiva no se activa sin canal real
+  aprobado. Diseno aprobado: un unico `AccountActionToken` con propositos
+  cerrados `email_verification` y `password_reset`, secreto de alta entropia y
+  solo digest persistido; verificacion por enlace de 24 horas, reset de 30
+  minutos, cooldown de reenvio de 60 segundos y reemplazo del token anterior del
+  mismo proposito. Los limites iniciales son 5/h y 10/dia por usuario para
+  verificacion, 5/h por destino para recuperacion, defensa local publica de
+  20/h por cliente y 5 fallos de contrasena actual cada 15 minutos por usuario.
+  La recuperacion publica responde uniformemente; reset no inicia sesion y el
+  cambio autenticado exige la contrasena actual. El canal transaccional de
+  identidad reutiliza `EmailProvider` y comienza validado con
+  `FakeEmailProvider`, independiente de `ADMIN_EMAIL_ENABLED`; Resend permanece
+  deshabilitado hasta rotar la credencial expuesta y validar configuracion
+  segura. Si falla el primer correo se conservan Usuario, credencial y evidencia
+  legal y se habilita reenvio sin repetir Registro. No se activa enforcement de
+  email verificado ni cambio de email.
+
+  Transicion JWT aprobada: 99.3 no agrega `credential_version`,
+  `credentials_changed_at`, claims JWT, `FeedGoSession` ni otro mecanismo
+  temporal de revocacion global. La sesion actual se mantiene despues del cambio
+  autenticado y los JWT legacy emitidos pueden sobrevivir hasta su expiracion
+  maxima actual de 60 minutos, sin afirmaciones visibles de revocacion global.
+  99.4 es owner de la invalidacion definitiva y debe integrar los eventos de
+  reset/cambio con `FeedGoSession`.
+- 99.4 - `FeedGoSession` y transicion de JWT. Todo login nuevo crea una sesion
+  FeedGo y emite un JWT versionado asociado a ella; logout, expiracion y
+  revocacion se resuelven server-side. Depende de 99.2 y coordina eventos
+  sensibles con 99.3. JWT y revocacion legacy siguen aceptados durante una
+  ventana acotada. Gate: toda sesion nueva es trazable, revocable y distinguible
+  de legacy. Rollback: dejar de emitir el formato nuevo y conservar aceptacion
+  temporal del anterior.
+- 99.5 - Perfil privado y capabilities derivadas. Consolida `GET/PATCH
+  /usuarios/me`, `fecha_nacimiento` y telefono privados, normalizacion E.164,
+  verificacion telefonica mediante OTP, disponibilidad backend de canales y un
+  unico motor de recuperacion multicanal; calcula edad, `perfil_completo`,
+  `campos_perfil_faltantes` y capabilities comerciales conforme a `DEC-059` y
+  `DEC-063`, y la preferencia de apariencia privada con
+  backend como owner persistente segun `DEC-051`. Depende de estados confiables
+  de email y del contrato legal aplicable. No activa todavia enforcement en
+  mutaciones. Gate: un unico owner backend produce faltantes y capabilities
+  consistentes, con privacidad, limites de edad y telefono verificado probados,
+  sin confundir telefono verificado con disponibilidad SMS o WhatsApp, y la
+  preferencia no altera la formula de perfil. Rollback: mantener las capabilities como
+  informacion no aplicada y conservar el fallback local de apariencia. Estado:
+  cerrada tecnica, funcional y documentalmente; backend y migraciones
+  aprobados, sin enforcement ni UX de 99.6 adelantados.
+- 99.6 - Frontend de perfil, Datos personales y remediation. Cerrada tecnica y
+  funcionalmente: centraliza `/usuarios/me` en `useCurrentUser`/TanStack Query
+  en memoria, incorpora Datos personales con fecha de nacimiento y telefono
+  privado, integra la UX OTP y consume perfil, faltantes, capabilities y
+  pendientes derivados por backend sin recalcularlos. El telefono verificado es
+  de solo lectura; el harness OTP es exclusivamente local/dev/test, opt-in y
+  loopback, sin providers SMS/WhatsApp reales. `ProtectedActionProvider` es el
+  owner central de DEC-061, con Auth Wall `ActiveLayer`, default-deny para
+  interacciones no pasivas, gate temporal integrado y `returnTo` interno
+  saneado. No activa enforcement comercial ni implementa recovery multicanal
+  frontend. Gate satisfecho: frontend focal 61/61, backend focal 27/27, build
+  produccion/PWA, arquitectura por capas y privacidad validados. El canal real
+  de email aun requiere activacion operativa; ET99.7 debe verificar esta
+  dependencia antes de activar enforcement que exija email verificado. Rollback:
+  ocultar las superficies frontend y el Auth Wall sin alterar contratos backend.
+- 99.7 - Enforcement en Spaces y Publicaciones. Aplica en backend y sin
+  grandfathering la capability requerida para crear y administrar espacios y
+  publicar contenido asociado, combinada con ownership y permisos existentes;
+  email y telefono deben estar realmente verificados y la cuenta basica sigue
+  disponible aun con perfil incompleto. Depende del cierre de 99.5 y 99.6. Gate:
+  inventario completo de mutaciones, pruebas de bypass directo y remediation
+  manual validada. Antes de activarlo debe verificarse que el canal real de
+  email este operativo: `FakeEmailProvider` es solo desarrollo/test y no puede
+  convertir un requisito obligatorio en una barrera operativamente imposible.
+  Rollback: desactivar centralmente el enforcement, nunca parchear excepciones
+  por endpoint.
+- 99.8 - Google, linking y cuentas Google-only. Integra Google con scopes
+  `openid email`, validacion OAuth/OIDC backend, linking y unlinking explicitos,
+  resolucion segura de colisiones y creacion posterior de contrasena. Depende de
+  `FeedGoSession`, runtime sin dependencia obligatoria de password legacy y
+  capabilities uniformes. No admite auto-link por email, passwords ficticios ni
+  uso de Google como sesion o autorizacion. Solo aqui puede hacerse nullable el
+  hash legacy, sin eliminarlo. Gate: ninguna operacion deja una cuenta sin
+  metodo de acceso y Google-only funciona mediante sesion FeedGo. Rollback:
+  deshabilitar nuevas altas y vinculaciones conservando identidades existentes
+  y sus metodos alternativos.
+- 99.9 - Contract, limpieza legacy y cierre. Desactiva dual-read y dual-write,
+  retira la dependencia funcional de `usuarios.hashed_password`, JWT y
+  revocacion legacy y, solo con evidencia de cero consumidores y sesiones
+  vigentes, ejecuta eliminaciones fisicas separadas. Incluye auditoria final de
+  APIs privadas, PWA/cache, seguridad, migracion, restore, suite integral y
+  cierre documental. Depende de 99.2 a 99.8 cerrados. Rollback: cada contract es
+  independiente, respaldado y posterior a dejar de usar el elemento; ningun
+  retiro se fuerza por calendario.
+
+Reglas transversales de ejecucion:
+
+- el orden es `expand -> backfill -> transicion -> contract`; no se habilita
+  Google-only antes de tolerar Usuario sin password legacy, no se retiran hash
+  ni JWT legacy antes de sus gates y no se activa enforcement antes de que
+  `/usuarios/me` y remediation esten preparados;
+- backend es owner de identidad, seguridad, sesion y capabilities; frontend se
+  limita a interaccion, render y consumo de contratos;
+- el backend conserva codigos estructurados y el frontend traduce presentacion,
+  ubicacion y lenguaje conforme al criterio permanente de comunicacion visible
+  de `docs/02_PRODUCT.md` y `DEC-062`, sin debilitar seguridad, privacidad,
+  antienumeracion, autorizacion ni rate limiting;
+- ningun paso puede dejar a un Usuario sin al menos un metodo de acceso valido;
+- todo sprint debe preservar un rollback explicito y cerrar tests automaticos,
+  seguridad, privacidad, compatibilidad y owners de los dominios afectados;
+- cuando un sprint produzca comportamiento visible o un flujo interactivo, la
+  validacion automatica de Codex no reemplaza la validacion manual del usuario;
+- finalizar implementacion y tests no autoriza cerrar ni publicar el sprint. El
+  flujo obligatorio es: implementar, ejecutar tests, informar resultados,
+  realizar validacion manual cuando corresponda, recibir aprobacion y solo
+  entonces cerrar o documentar y hacer commit o push cuando exista una orden
+  expresa. No se realiza commit ni push automaticamente al terminar un sprint.
+
+Evidencia de cierre de 99.1:
+
+- implementacion, migracion, tests, `DEC-059`, `DEC-060`, documentacion y
+  roadmap auditados conjuntamente y consistentes;
+- preflight real de 15 usuarios sin colisiones ni emails invalidos, backfill
+  completo e idempotente, hashes copiados literalmente y schema fisico igual a
+  metadata en 35 tablas;
+- 446 tests backend correctos con 1 omitido; Registro, Login, JWT, logout,
+  revocacion y superficies frontend mantienen comportamiento legacy;
+- rollback aditivo practicable. La ventana transitoria de nuevas altas queda
+  identificada y debe ser cerrada obligatoriamente por 99.2.
+
+Evidencia de cierre de 99.2:
+
+- Registro y Login usan `email_canonical` y `PasswordCredential` como owners
+  efectivos; la escritura legacy, JWT, logout y revocacion permanecen para
+  compatibilidad y rollback;
+- reparacion transitoria completada sin colisiones, filas incompletas ni hashes
+  divergentes; atomicidad, constraint canonica, evidencia legal y fallback
+  acotado quedaron probados;
+- politica backend unica de contrasena, disponibilidad anticipada rate-limited y
+  UX de Registro quedaron cubiertas por tests y aprobadas manualmente;
+- schema, suite relevante, frontend, build/PWA, lint y diff quedaron validados.
+
+Siguiente sprint:
+
+99.7 - Enforcement en Spaces y Publicaciones. Pendiente y no iniciado; requiere
+orden expresa para comenzar.
+
 Estado:
 
-Pendiente. No iniciada.
+En curso. 99.1 a 99.6 cerrados; 99.7 pendiente y no iniciado.
+
+Evidencia de cierre de 99.4:
+
+- `FeedGoSession` es owner de todo JWT nuevo y Login solo emite el contrato
+  versionado `sub`, `sid`, `iat`, `exp`, `issuer`, `audience`, `version`; el
+  frontend mantiene el bearer opaco y la base no persiste el JWT completo;
+- logout nuevo revoca exclusivamente su sesion FeedGo, mientras JWT legacy
+  conserva temporalmente `tokens_revocados`; reset revoca todas las sesiones
+  FeedGo sin auto-login y cambio autenticado conserva solo la sesion actual
+  cuando el JWT es nuevo;
+- el cambio con JWT legacy revoca las sesiones FeedGo existentes, pero ese JWT
+  puede sobrevivir hasta su TTL maximo actual de 60 minutos. No se incorporo
+  `credential_version`; las 656 revocaciones legacy permanecen sin cleanup y
+  su retirada corresponde a la transicion/99.9;
+- Google Auth no fue implementado; solo se preparo el contrato de sesion para
+  el metodo `google`;
+- validacion final: backend 568 OK/6 skips, MySQL aislado ET99.4 7/7, E2E
+  MySQL 1/1, frontend/PWA contractual 20/20, schema 37/37 y
+  `git diff --check` correcto.
+
+Evidencia de cierre de 99.5:
+
+- telefono privado E.164, OTP, perfil, faltantes, evaluacion legal y
+  capabilities derivadas quedaron implementados bajo owners backend;
+- un unico `PasswordRecoveryService` mantiene email operativo y SMS/WhatsApp
+  preparados pero deshabilitados, sin provider real ni filtraciones de canal;
+- las capabilities no se persisten, no integran JWT y no aplican enforcement;
+- la DB local `mitienda` y metadata coinciden en 38/38 tablas, incluida
+  `phone_verification_challenges`, con reejecucion idempotente aprobada;
+- validacion final: backend 603 OK/9 skips, focales 99.5 78/78, MySQL 10/10,
+  PWA 25/25 y `git diff --check` correcto.
 
 ### ☐ ETAPA 100
 

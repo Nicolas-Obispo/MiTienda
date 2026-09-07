@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { loginUsuario, useAuth } from "@features/auth";
-import { Alert, Button, FormControl, Input, Surface } from "@shared";
+import { Alert, Button, FormControl, Input, PasswordInput, Surface } from "@shared";
+import { getInternalReturnTo } from "@core/navigation/internalReturnTo";
 
 
 
@@ -23,7 +24,6 @@ export default function Login() {
   // Estados del formulario
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mostrarPassword, setMostrarPassword] = useState(false);
 
   // Estados UI
   const [errorMensaje, setErrorMensaje] = useState("");
@@ -36,6 +36,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const mensajeContextual = location.state?.message || "";
+  const returnTo = getInternalReturnTo(location.state?.returnTo, "/feed");
 
   /**
    * manejarSubmitLogin
@@ -55,7 +56,7 @@ export default function Login() {
       login(token);
 
       // Redirigimos al feed
-      navigate("/feed");
+      navigate(returnTo, { replace: true });
     } catch (error) {
       setErrorMensaje(error.message || "Error al iniciar sesión.");
     } finally {
@@ -107,29 +108,13 @@ export default function Login() {
 
           {/* Password */}
           <FormControl label="Contraseña" labelFor="login-password">
-            <Input
+            <PasswordInput
               id="login-password"
-              type={mostrarPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
               className="text-sm"
-              trailingAction={
-                <Button
-                  type="button"
-                  onClick={() => setMostrarPassword(!mostrarPassword)}
-                  variant="ghost"
-                  iconOnly
-                  aria-label={
-                    mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-                  }
-                >
-                  <span aria-hidden="true">
-                    {mostrarPassword ? "🙉" : "🙈"}
-                  </span>
-                </Button>
-              }
             />
           </FormControl>
 
@@ -149,6 +134,12 @@ export default function Login() {
           >
             {cargando ? "Ingresando..." : "Ingresar"}
           </Button>
+          <Link
+            to="/recuperar-password"
+            className="block text-center text-sm font-medium text-brand underline decoration-current underline-offset-2"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
         </form>
 
         <div className="mt-4 space-y-2">
@@ -156,6 +147,7 @@ export default function Login() {
             ¿No tenés cuenta?{" "}
             <Link
               to="/registro"
+              state={{ message: mensajeContextual, returnTo }}
               className="font-medium text-brand underline decoration-current underline-offset-2 hover:text-brand-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
             >
               Crear cuenta

@@ -9,6 +9,148 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 99.6 - Frontend de perfil, Datos personales y remediation
+
+**Estado:** Cerrada técnica y funcionalmente
+
+- `useCurrentUser` sobre TanStack Query en memoria queda como owner único de
+  `/usuarios/me`; AuthContext lo consume y ProfilePage no mantiene copias
+  paralelas ni persiste datos privados.
+- Editar perfil incorpora Datos personales con fecha de nacimiento y teléfono
+  privado; el teléfono verificado permanece de solo lectura y el backend sigue
+  siendo la autoridad.
+- La UX OTP conserva challenge y código sólo en memoria, refresca `/me`, usa
+  respuestas `private, no-store` y un harness fake limitado a local/dev/test,
+  opt-in y loopback. No se activaron providers reales SMS/WhatsApp.
+- Perfil, campos faltantes, capabilities y pendientes comerciales se presentan
+  desde derivados backend. La remediation reutiliza flujos existentes y las
+  capabilities siguen siendo informativas; el enforcement queda para 99.7.
+- `ProtectedActionProvider` centraliza el Auth Wall de `ActiveLayer` y la regla
+  `default-deny` de DEC-061. Navegación, búsqueda, filtros, paginación, detalles
+  y lectura permanecen pasivos; likes, guardados, seguimiento, historias,
+  denuncias, WhatsApp, Instagram y Maps requieren autenticación.
+- El gate temporal de cinco segundos usa el mismo owner y Login/Registro
+  restauran un `returnTo` interno saneado sin persistir secretos ni datos
+  sensibles.
+- Hardening: frontend focal 61/61, backend focal 27/27, build producción/PWA,
+  arquitectura por capas, privacidad y `git diff --check` validados. ESLint
+  focal no tuvo errores; permanece un warning preexistente en
+  `PerfilComercioPage`.
+- ET99.7 - Enforcement en Spaces y Publicaciones queda como siguiente sprint
+  oficial, pendiente y no iniciado. Antes de activarlo debe verificarse que el
+  canal real de email esté operativo; Fake Email es sólo desarrollo/test.
+- Permanecen diferidos Google (99.8), recovery multicanal frontend, providers
+  reales SMS/WhatsApp, reemplazo seguro de teléfono verificado, sincronización
+  de apariencia y cleanup legacy/general (99.9).
+
+## ETAPA 99.5 - Perfil privado y capabilities derivadas
+
+**Estado:** Cerrada
+
+- Se incorporan telefono privado normalizado a E.164 y verificacion mediante
+  `PhoneVerificationChallenge`: OTP de 6 digitos, TTL de 10 minutos, hasta 5
+  intentos, cooldown de 60 segundos y limites de 5/h y 10/dia, con snapshot,
+  HMAC y orden de locks Usuario -> challenge.
+- Backend deriva `perfil_completo` desde provincia, ciudad, fecha de nacimiento,
+  email verificado y telefono valido y verificado. Expone de forma determinista
+  `provincia`, `ciudad`, `fecha_nacimiento`, `email_verificado`, `telefono` y
+  `telefono_verificado` como posibles campos faltantes.
+- Las capabilities `puede_crear_espacio`, `puede_administrar_espacios` y
+  `puede_publicar_en_espacios` dependen de cuenta autenticable, perfil completo,
+  aceptacion legal vigente y mayoria de edad calculada por backend. No se
+  persisten, no integran JWT y su enforcement queda diferido a 99.7.
+- Un unico `PasswordRecoveryService` conserva `AccountActionToken` para reset:
+  email queda operativo y SMS/WhatsApp preparados pero deshabilitados, con
+  disponibilidad derivada y antienumeracion preservada. La activacion externa
+  real de email continua sujeta a configuracion y provider aprobados.
+- Privacidad y PWA permanecen protegidas. La DB local `mitienda` queda alineada
+  en 38/38 tablas, con `phone_verification_challenges` presente e idempotencia
+  local confirmada.
+- Validacion final: backend 603 OK/9 skips, focales 99.5 78/78, MySQL 10/10,
+  PWA 25/25 y `git diff --check` correcto.
+- ET99.6 - Frontend de perfil, Datos personales y remediation queda como
+  siguiente sprint oficial, pendiente y no iniciado. SMS/WhatsApp reales,
+  enforcement, Google y cleanup legacy permanecen diferidos a sus owners.
+
+## ETAPA 99.4 - FeedGoSession y transicion de JWT
+
+**Estado:** Cerrada
+
+- `FeedGoSession` pasa a ser owner de los JWT nuevos, con contrato `sub`, `sid`,
+  `iat`, `exp`, `issuer`, `audience`, `version`; Login deja de emitir JWT
+  legacy y el frontend conserva el bearer opaco.
+- Logout nuevo revoca la sesion FeedGo sin persistir el bearer completo. JWT
+  legacy conserva temporalmente `tokens_revocados`.
+- Reset revoca todas las sesiones FeedGo sin auto-login. Cambio autenticado
+  con JWT nuevo conserva la sesion actual y revoca las demas; con JWT legacy
+  revoca las sesiones FeedGo, aunque el token anterior puede sobrevivir hasta
+  su TTL maximo actual de 60 minutos.
+- No se introdujo `credential_version`. Las 656 revocaciones legacy permanecen
+  intactas; retirada y cleanup corresponden a la transicion/99.9.
+- Google Auth no fue implementado; solo se preparo el contrato de sesiones para
+  el metodo `google`.
+- Validacion final: backend 568 OK/6 skips, MySQL aislado ET99.4 7/7, E2E MySQL
+  1/1, frontend/PWA contractual 20/20, schema 37/37 y `git diff --check`
+  correcto.
+- ET99.5 - Perfil privado y capabilities derivadas queda como siguiente sprint
+  oficial, pendiente y no iniciado.
+
+## ETAPA 99.3 - Verificacion de email y ciclo de contrasena
+
+**Estado:** Cerrada
+
+- Se implementaron verificacion y reenvio de email, recuperacion y
+  restablecimiento, cambio autenticado de contrasena, tokens de accion de un
+  uso, rate limiting persistente y antienumeracion con owners backend.
+- El canal transaccional de identidad reutiliza `EmailProvider`; el harness
+  `FakeEmailProvider` queda restringido a local y Resend permanece bloqueado
+  hasta rotar y validar su credencial.
+- Frontend incorpora los flujos y mensajes FeedGo, manejo seguro de secretos en
+  fragmento, `PasswordInput` compartido y cambio de contrasena aislado del
+  formulario general de Perfil.
+- Auditoria por capas, concurrencia MySQL real, seguridad, PWA/cache, suites,
+  build/lint, diff y validacion manual quedaron aprobados.
+- Riesgo transitorio aceptado: un JWT legacy puede sobrevivir hasta 60 minutos
+  despues de un cambio o reset. ET99.4 es owner de la invalidacion definitiva.
+- `DEC-063` permanece aprobada y disenada, pero no implementada.
+- ET99.4 - `FeedGoSession` y transicion de JWT queda como siguiente sprint
+  oficial, pendiente y no iniciado.
+
+## ETAPA 99.2 - Transicion de Registro y Login por contrasena
+
+**Estado:** Cerrada
+
+- `email_canonical` y `PasswordCredential` pasan a ser owners efectivos de
+  Registro y Login, con reparacion transitoria completa y dual-write/fallback
+  legacy preservados para rollback.
+- Registro crea atomicamente identidad, credencial y evidencia legal; la
+  constraint canonica conserva autoridad final ante carreras.
+- Se centraliza la politica backend de contrasena y se incorpora comprobacion
+  anticipada minima y rate-limited de disponibilidad con UX inline validada.
+- JWT, logout y revocacion legacy permanecen vigentes. Google, `FeedGoSession`,
+  perfil y capabilities no fueron adelantados.
+- Tests, schema, build/PWA, lint, diff y validacion manual quedaron aprobados.
+  99.3 queda como siguiente sprint oficial, pendiente y no iniciado.
+- `DEC-061` formaliza `default-deny` para interacciones anonimas y difiere el
+  Auth Wall contextual con owner central a 99.6.
+
+## ETAPA 99.1 - Fundacion aditiva de identidad
+
+**Estado:** Cerrada
+
+- Se incorporaron a `usuarios` los campos nullable `email_canonical`,
+  `email_verified_at`, `email_verification_source` y `fecha_nacimiento`.
+- Se agregaron los modelos `PasswordCredential`, `ExternalIdentity` y
+  `FeedGoSession` sin activar Google, sesiones nuevas ni capabilities.
+- El preflight read-only valido 15 emails unicos sin colisiones ni valores
+  invalidos. El backfill completo `email_canonical` y copio exactamente 15
+  hashes legacy, sin rehash, identidades externas ni sesiones.
+- La migracion expand-first es opt-in e idempotente. Registro, Login, JWT y
+  revocacion legacy permanecen sin cambios.
+- La auditoria final confirmo schema fisico y metadata coincidentes en 35
+  tablas, 446 tests backend correctos con 1 omitido y rollback aditivo
+  practicable. 99.2 queda como siguiente sprint pendiente y no iniciado.
+
 ## Limpieza documental post-cierre de ETAPA 98
 
 - Se sincronizan referencias vigentes que todavia presentaban ETAPA 98 como

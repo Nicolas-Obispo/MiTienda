@@ -5,7 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // Páginas
 import { Home } from "@features/home";
 import { Login } from "@features/auth";
-import { Registro } from "@features/auth";
+import { RecuperarPassword, Registro, RestablecerPassword, VerificarEmail } from "@features/auth";
 import { FeedPage } from "@features/feed";
 import { RankingPage } from "@features/posts";
 import { ProfilePage } from "@features/auth";
@@ -24,6 +24,7 @@ import { MainLayout, Skeleton } from "@shared";
 
 // Auth
 import { useAuth } from "@features/auth";
+import { ProtectedActionProvider } from "@core/access/ProtectedActionProvider";
 
 function getStoredToken() {
   const keys = [
@@ -83,7 +84,14 @@ function PublicOnlyRoute({ children }) {
   const isAuthenticated = getIsAuthenticated(auth);
 
   if (isAuthenticated) {
-    return <Navigate to="/feed" replace />;
+    const destination = auth?.postAuthDestination;
+    return (
+      <Navigate
+        to={destination?.pathname || "/feed"}
+        replace
+        state={destination?.state}
+      />
+    );
   }
 
   return children;
@@ -102,7 +110,8 @@ function GuestExploreRoute({ children }) {
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      <Routes>
+      <ProtectedActionProvider>
+        <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/terminos-y-condiciones" element={<TermsPage />} />
@@ -170,6 +179,10 @@ export default function AppRouter() {
               </ProtectedRoute>
             }
           />
+
+          <Route path="/verificar-email" element={<VerificarEmail />} />
+          <Route path="/recuperar-password" element={<RecuperarPassword />} />
+          <Route path="/restablecer-password" element={<RestablecerPassword />} />
 
           <Route
             path="/administracion"
@@ -250,7 +263,8 @@ export default function AppRouter() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
-      </Routes>
+        </Routes>
+      </ProtectedActionProvider>
     </BrowserRouter>
   );
 }

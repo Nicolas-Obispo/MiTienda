@@ -33,7 +33,8 @@ test("el detalle de espacio usa el owner central solo cuando el comercio ya exis
   assert.match(detail, /useAnonymousDetailGate/);
   assert.match(detail, /enabled: !estaAutenticado/);
   assert.match(detail, /ready: Boolean\(comercio\)/);
-  assert.match(detail, /navigate\("\/registro"/);
+  assert.match(detail, /onExpire: openAnonymousDetailGate/);
+  assert.doesNotMatch(detail, /navigate\("\/registro"/);
   assert.match(detail, /requireAuthentication: usuarioDebeLoguearse/);
 });
 
@@ -44,15 +45,18 @@ test("Explorar anonimo queda en lectura sin el redirect global historico", async
   assert.doesNotMatch(guestRoute, /setTimeout|navigate\(|5 \* 60/);
 });
 
-test("las acciones protegidas reutilizan una redireccion central y no sustituyen al backend", async () => {
-  const [guard, commerce, post] = await Promise.all([
+test("las acciones protegidas reutilizan el Auth Wall central y no sustituyen al backend", async () => {
+  const [guard, provider, commerce, post] = await Promise.all([
     readFile(new URL("src/core/access/useProtectedActionRedirect.js", frontendRoot), "utf8"),
+    readFile(new URL("src/core/access/ProtectedActionProvider.jsx", frontendRoot), "utf8"),
     readFile(new URL("src/features/spaces/pages/PerfilComercioPage.jsx", frontendRoot), "utf8"),
     readFile(new URL("src/features/posts/pages/PublicacionDetallePage.jsx", frontendRoot), "utf8"),
   ]);
-  assert.match(guard, /if \(estaAutenticado\) return false/);
-  assert.match(guard, /navigate\("\/registro"/);
+  assert.match(guard, /return useProtectedAction\(\)/);
+  assert.match(provider, /if \(estaAutenticado\) return false/);
+  assert.match(provider, /setWall\(/);
+  assert.doesNotMatch(guard, /navigate\(|useNavigate/);
   assert.match(commerce, /useProtectedActionRedirect/);
   assert.match(post, /useProtectedActionRedirect/);
-  assert.doesNotMatch(guard, /fetch|httpPost|permission|ranking|Search|Discovery/);
+  assert.doesNotMatch(provider, /fetch|httpPost|permission|ranking|Search|Discovery/);
 });

@@ -538,7 +538,8 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-051
 - Titulo: Preferencia de apariencia por identidad con fallback local
-- Estado: Aprobada para auditoria e implementacion futura en ETAPA 99.
+- Estado: Aprobada para auditoria e implementacion en ETAPA 99; implementacion
+  no iniciada durante el bloque documental 99.1.
 - Decision: Para usuarios autenticados, backend sera owner persistente de la
   preferencia de apariencia entre dispositivos y frontend sera owner de
   aplicarla y representarla. El runtime local y anti-flash se conserva para
@@ -695,7 +696,8 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-057
 - Titulo: Cuenta basica, edad y capacidad para administrar espacios
-- Estado: Aprobada documentalmente; implementacion futura en ETAPA 99.
+- Estado: Aprobada documentalmente; incorporada al diseno vigente de ETAPA
+  99.1, con implementacion no iniciada.
 - Decision de cuenta basica: una persona menor de 18 anos no queda excluida
   automaticamente de crear una cuenta basica FeedGo. La cuenta basica permite
   explorar e interactuar dentro de las funcionalidades que FeedGo habilite,
@@ -773,3 +775,250 @@ No reemplaza la documentación oficial existente.
   limitados, consultas indexadas, pools acotados, hidratación bulk y cursor.
 - Documento técnico owner: `docs/28_DYNAMIC_FEED_DESIGN.md`.
 - Impacto: esta formalización no modifica comportamiento ni cierra ETAPA 98.
+
+## DEC-059
+
+- ID: DEC-059
+- Titulo: Identidad, perfil y capabilities base de ETAPA 99
+- Estado: Aprobada e implementada hasta ETAPA 99.5; 99.1, 99.2, 99.3, 99.4 y
+  99.5 cerradas. Google, UX de perfil y enforcement permanecen pendientes.
+- Identidad: `Usuario FeedGo` es la unica identidad funcional interna y
+  conserva su `id` estable y el email principal. `PasswordCredential` es una
+  credencial opcional uno a uno; `ExternalIdentity` representa Google mediante
+  `(provider, provider_subject)` unico; `FeedGoSession` es siempre emitida y
+  controlada por FeedGo. Una cuenta puede usar password, Google o ambos. Una
+  cuenta Google-only no recibe password ficticio.
+- Email: backend posee una unica canonicalizacion usada por Registro, Login,
+  alta externa y linking. El email canonico es unico. Google puede aportar
+  evidencia de email verificado para una cuenta nueva bajo validacion backend,
+  pero la coincidencia de email nunca autoriza auto-link ni reemplaza prueba de
+  control de una cuenta FeedGo existente.
+- Google: se integra como adapter backend con scopes minimos `openid` y
+  `email`. Backend valida code, firma, issuer, audience, expiracion, `state`,
+  `nonce`, PKCE y `subject` segun el flujo aprobado. No confia identidad
+  declarada por frontend ni entrega a Google codigo, DB, sesion FeedGo o
+  capabilities. No persiste tokens o claims externos no necesarios.
+- Sesion: password o Google terminan en la misma sesion FeedGo. El contrato
+  nuevo referencia Usuario y sesion, conserva version explicita y no congela
+  perfil, edad ni autorizacion en JWT. La transicion acepta JWT legados durante
+  una ventana acotada y deja de persistir bearers completos para sesiones
+  nuevas cuando el modelo nuevo sea owner.
+- Implementacion de sesion: desde 99.4, todo Login nuevo por password crea una
+  `FeedGoSession` y emite el contrato JWT exacto `sub`, `sid`, `iat`, `exp`,
+  `issuer`, `audience`, `version`; el frontend mantiene el bearer opaco. Logout
+  nuevo revoca la sesion sin persistir el bearer. Reset revoca todas las
+  sesiones FeedGo sin auto-login y cambio autenticado con JWT nuevo conserva la
+  actual y revoca las demas. JWT legacy conserva temporalmente su blacklist y
+  puede sobrevivir hasta 60 minutos tras reset/cambio; no se incorporo
+  `credential_version`. La retirada de legacy y sus 656 revocaciones actuales
+  pertenece a la transicion/99.9. Google Auth no esta implementado.
+- Perfil: `perfil_completo` y `campos_perfil_faltantes` son derivados por un
+  unico owner backend. La formula vigente pertenece a `DEC-063` e incorpora
+  Provincia, Ciudad, `fecha_nacimiento`, email verificado y telefono privado
+  valido y verificado. Avatar, apariencia, `modo_activo` y metodo de acceso no
+  integran esa formula. `GET/PATCH /usuarios/me` permanece como
+  contrato privado owner; frontend consume faltantes y capabilities sin
+  calcularlos.
+- Datos personales: `Datos personales` es una superficie privada extensible de
+  `Perfil -> Editar perfil`, al mismo nivel visual que `Cambiar foto` y `Color
+  de fondo`. ETAPA 99 incorpora alli `fecha_nacimiento` y telefono privado
+  conforme a `DEC-063`. Provincia y
+  Ciudad permanecen fuera visualmente para edicion territorial directa, aunque
+  son requisitos iniciales de `perfil_completo`. Pertenecer a esa superficie no
+  vuelve obligatorio un dato futuro: cada campo se clasifica expresamente como
+  obligatorio para perfil, opcional o requisito de una capability, sin tabla
+  generica, JSON de atributos ni formulario dinamico anticipado.
+- Ubicacion: Provincia y Ciudad del perfil representan preferencia territorial
+  persistente y fallback, nunca posicion fisica actual. Geolocalizacion runtime
+  y territorio de sesion no sobrescriben automaticamente el perfil ni la
+  ubicacion propia de un espacio.
+- Edad y privacidad: `fecha_nacimiento` es privada, nullable, no publica, no
+  forma parte inicial del Registro y no se importa desde Google. La edad se
+  calcula solo en backend y no se persiste. `null` no equivale a 18 anos o mas.
+- Autenticacion y autorizacion: una sesion valida habilita cuenta basica, no
+  perfil completo ni operaciones comerciales. Las capabilities para crear,
+  administrar y publicar en espacios exigen cuenta habilitada, email
+  verificado, aceptaciones aplicables, perfil completo y edad calculable de 18
+  anos o mas. Password y Google producen exactamente las mismas reglas.
+- Enforcement: el owner central de perfil calcula faltantes, edad y readiness
+  personal; Spaces y Publicaciones aplican el enforcement final en cada
+  mutacion junto con ownership, permisos y estado del recurso. Un rechazo de
+  capability para una identidad autenticada usa `403` y un codigo estable que
+  permite al frontend explicar y dirigir al completado. No existe enforcement
+  exclusivamente frontend.
+- Uniformidad: los datos existentes son de desarrollo. No existe
+  grandfathering, periodo de gracia, excepcion por ownership previo ni bypass
+  cuando falta `fecha_nacimiento`; la cuenta basica sigue disponible y la
+  capability se recupera al completar todos los requisitos.
+- Migracion: se aplica `expand -> backfill -> transicion -> contract`. Primero
+  se auditan colisiones y se agregan estructuras compatibles; luego cada hash
+  legado se copia a `PasswordCredential` sin inventar verificacion, con lectura
+  dual y escritura transitoria controlada. Solo despues de validar backfill,
+  Login, backup, restore y rollback puede cambiar el owner, hacerse nullable y
+  retirarse posteriormente `usuarios.hashed_password`. Google-only se habilita
+  cuando el runtime ya tolera ausencia de password. Sesiones nuevas y legadas
+  conviven de forma versionada hasta la expiracion o retiro controlado del
+  contrato anterior.
+- Implementacion inicial: `usuarios` incorpora las cuatro columnas nullable
+  aprobadas y se crean las tres entidades subordinadas. El preflight y backfill
+  canonico no encontraron colisiones, copiaron los hashes legacy sin rehash y
+  no crearon identidades externas ni sesiones. Login, Registro, JWT y revocacion
+  legacy permanecieron owners activos hasta la transicion controlada de 99.2.
+- Gates: el tratamiento de fecha de nacimiento, menores, Google, documentos
+  publicos, versionado y reaceptacion conserva la revision juridica profesional
+  previa al lanzamiento de `docs/15_LEGAL_AND_OPERATIONAL.md`. Esta decision no
+  autoriza por si sola activar Google, perfil, capabilities o los contratos
+  nuevos de Login, Registro y sesion.
+
+## DEC-060
+
+- ID: DEC-060
+- Titulo: Descomposicion ejecutable de ETAPA 99
+- Estado: Aprobada documentalmente; 99.1, 99.2, 99.3, 99.4, 99.5 y 99.6
+  cerradas; 99.7 pendiente/no iniciada.
+- Decision: ETAPA 99 se ejecuta mediante los nueve sprints oficiales 99.1 a
+  99.9 definidos por `docs/05_SEARCH_ROADMAP.md`, en orden obligatorio
+  `expand -> backfill -> transicion -> contract`. La cantidad excede la guia
+  aproximada general de seis porque identidad, credenciales, sesiones, perfil,
+  capabilities, enforcement y Google comparten una unica transicion compatible
+  y una misma eliminacion contract final; convertir sus estados intermedios en
+  fronteras entre etapas dejaria owners legacy deliberadamente activos al
+  cierre de una etapa y fragmentaria el rollback. Cada sprint conserva objetivo,
+  dependencia, gate y rollback propios, sin ampliar el alcance de ETAPA 99.
+- Validacion y cierre: los tests automaticos no reemplazan validacion manual del
+  usuario cuando exista comportamiento visible o flujo interactivo. Completar
+  implementacion y tests solo habilita informar resultados; validacion manual,
+  aprobacion, cierre documental, commit y push son pasos posteriores y commit o
+  push requieren siempre orden expresa.
+- Gate inmediato cumplido: 99.2 cerro luego de convertir
+  `email_canonical` y `PasswordCredential` en owners efectivos de Registro y
+  Login, reparar filas transitorias, preservar rollback legacy y aprobar tests y
+  validacion manual. 99.3, 99.4, 99.5 y 99.6 cumplieron sus gates y quedan
+  cerradas; 99.7 permanece pendiente y requiere orden expresa.
+
+## DEC-061
+
+- ID: DEC-061
+- Titulo: Default-deny para interacciones anonimas y Auth Wall contextual
+- Estado: Aprobada; implementada en ETAPA 99.6.
+- Decision: FeedGo permite a una persona no autenticada navegar y visualizar
+  contenido publico, pero exige autenticacion para toda accion o interaccion no
+  puramente pasiva. La politica es `default-deny`, transversal y aplicable por
+  omision a toda funcionalidad actual o futura. La ausencia de una accion en
+  ejemplos documentados nunca constituye excepcion; una excepcion futura exige
+  justificacion, aprobacion y documentacion explicitas.
+- Ejemplos no exhaustivos: WhatsApp, Instagram, Como llegar/Maps, likes,
+  guardados, seguir, denunciar e interacciones con Historias. Esta enumeracion
+  ilustra la regla y no la reemplaza con una allowlist o denylist.
+- Owner de implementacion: ETAPA 99.6 creo `ProtectedActionProvider` como owner
+  frontend central para proteger interacciones y auditar las superficies
+  actuales. Las funcionalidades futuras deben reutilizarlo; no se admite
+  implementar gates dispersos boton por boton como politica principal. El gate
+  temporal de exploracion anonima quedo integrado al mismo owner.
+- Experiencia: ante una interaccion protegida o gate de autenticacion se conserva
+  la pantalla, ruta, parametros y contexto seguro; el contenido permanece visible
+  detras, desenfocado e inerte, y `ActiveLayer` presenta un Auth Wall con
+  identidad FeedGo y accesos a Registro y Login. Tras autenticacion confirmada
+  por backend se restaura exactamente el contexto anterior.
+- Seguridad y privacidad: `returnTo` acepta solo destinos internos validados,
+  impide open redirects y nunca persiste passwords, tokens ni informacion
+  sensible. El Auth Wall no cambia el ownership backend de autenticacion o
+  autorizacion ni habilita cache privado.
+
+## DEC-062
+
+- ID: DEC-062
+- Titulo: Ciclo seguro de cuenta ET99.3 y comunicacion visible FeedGo
+- Estado: Aprobada e implementada en ET99.3, cerrada tecnica, funcional y
+  documentalmente.
+- Tokens de accion: ET99.3 incorpora un unico `AccountActionToken` con
+  propositos cerrados `email_verification` y `password_reset`. Cada secreto es
+  de alta entropia, de un uso y nunca se persiste en claro; solo se conserva su
+  digest. La verificacion vence a las 24 horas, el reset a los 30 minutos, el
+  reenvio tiene cooldown de 60 segundos y cada nueva emision invalida la anterior
+  del mismo proposito.
+- Flujos: la recuperacion publica conserva respuesta uniforme
+  antienumeracion; reset no inicia sesion y retorna a Login; cambio autenticado
+  exige contrasena actual; la politica vigente se aplica solo a contrasenas
+  nuevas. Cambio de email y enforcement obligatorio de email verificado quedan
+  fuera de 99.3.
+- Antiabuso: los limites iniciales son 5/h y 10/dia por usuario para
+  verificacion, 5/h por destino para recuperacion, defensa local publica de
+  20/h por cliente y 5 contrasenas actuales incorrectas cada 15 minutos por
+  usuario. Los limites persistentes son backend-owned y la defensa local no los
+  reemplaza.
+- Comunicaciones: Auth consume el contrato `EmailProvider` sin acoplarse al
+  proveedor. El canal transaccional de identidad es independiente de
+  `ADMIN_EMAIL_ENABLED`, comienza validado con `FakeEmailProvider` y mantiene
+  Resend deshabilitado hasta rotar la credencial expuesta y aprobar su
+  configuracion segura. Un fallo del primer correo no revierte Usuario,
+  `PasswordCredential` ni evidencia legal y permite reenvio sin repetir
+  Registro.
+- Transicion JWT: 99.3 no incorpora `credential_version`,
+  `credentials_changed_at`, nuevos claims, `FeedGoSession` ni revocacion global
+  temporal. La sesion actual se mantiene tras el cambio y los JWT legacy ya
+  emitidos pueden sobrevivir hasta su expiracion maxima actual de 60 minutos.
+  No se afirma al usuario que sus sesiones fueron revocadas. ET99.4 es owner de
+  la invalidacion definitiva y debe integrar reset/cambio con `FeedGoSession`.
+- Comunicacion visible: `docs/02_PRODUCT.md` es owner de la regla transversal
+  permanente. Backend conserva codigos estructurados; frontend decide lenguaje,
+  ubicacion y presentacion con prioridad inline y humana, sin exponer detalles
+  tecnicos ni debilitar seguridad, privacidad, antienumeracion, autorizacion o
+  rate limiting. Los textos FeedGo aprobados para 99.3 aplican ese criterio y no
+  reemplazan los contratos backend.
+
+## DEC-063
+
+- ID: DEC-063
+- Titulo: Telefono privado verificado y recuperacion multicanal de ETAPA 99
+- Estado: Aprobada; implementada en su alcance backend de ETAPA 99.5. La UX de
+  99.6, el enforcement de 99.7 y los providers reales SMS/WhatsApp permanecen
+  pendientes.
+- Prevalencia: esta decision reemplaza el conjunto obligatorio inicial de
+  perfil y el contenido inicial de `Datos personales` definidos por `DEC-059`;
+  el resto de `DEC-059` permanece vigente.
+- Identidad y perfil: `Usuario FeedGo` incorpora un unico telefono privado por
+  cuenta, globalmente unico cuando exista y normalizado por un unico owner
+  backend al formato E.164. Email y telefono deben estar realmente verificados;
+  escribir un valor no constituye prueba de control. `perfil_completo` exige
+  provincia, ciudad y fecha de nacimiento validas, email verificado y telefono
+  valido y verificado. La cuenta basica continua disponible con perfil
+  incompleto y las capabilities comerciales permanecen bloqueadas hasta
+  cumplir todos los requisitos, sin grandfathering.
+- Verificacion telefonica: se usa un `PhoneVerificationChallenge` separado de
+  `AccountActionToken`, con OTP de seis digitos, TTL de diez minutos, maximo
+  cinco intentos, reenvio no antes de sesenta segundos y limites iniciales de
+  cinco emisiones por hora y diez por dia. Solo se persiste un digest protegido
+  mediante HMAC y secreto dedicado. Backend posee normalizacion, emision,
+  intentos, expiracion, invalidacion, concurrencia, rate limiting y estado; el
+  frontend solo presenta e interactua. El email conserva verificacion mediante
+  enlace y su motor vigente.
+- Recuperacion: existe un unico `PasswordRecoveryService` backend para reglas,
+  autorizacion, tokens, expiracion, reset, antienumeracion, seguridad e
+  invalidacion. Email, SMS y WhatsApp son canales futuros de entrega del mismo
+  motor y nunca crean recuperaciones paralelas. Los providers solo ejecutan
+  entrega y no poseen identidad, recuperacion ni capabilities.
+- Disponibilidad de canales: telefono verificado, capacidad SMS y capacidad
+  WhatsApp son estados diferentes. WhatsApp es opcional, nunca se infiere por
+  disponer de telefono y ningun provider comercial queda elegido. El WhatsApp
+  publico de un espacio no se reutiliza automaticamente como telefono privado
+  de Usuario.
+- Cambios de destino: cambiar email o telefono exige autenticacion reciente; el
+  valor nuevo no hereda verificacion y debe verificarse antes de reemplazar el
+  anterior. La integracion definitiva de estos cambios con revocacion y
+  sesiones pertenece a ETAPA 99.4.
+- UX publica: la seleccion exacta de canal permanece pendiente despues del
+  cierre de 99.6 por la tension entre usabilidad y antienumeracion. Hasta
+  aprobar ese contrato no se muestran hints publicos que revelen correo,
+  telefono o canales reales asociados a una cuenta.
+- Roadmap: no se reabren 99.3-A a 99.3-G y 99.3 completa solamente sus gates
+  vigentes. 99.5 es owner backend de telefono privado, E.164, OTP, canales,
+  recuperacion multicanal, perfil y capabilities; 99.6 cerro como owner
+  frontend de Datos personales, verificacion, OTP y remediation. La UX de
+  recovery multicanal queda deliberadamente pendiente; 99.7 aplica enforcement
+  uniforme en Spaces y Publicaciones.
+- Frontera ETAPA 114: la infraestructura general de comunicaciones permanece en
+  ETAPA 114. ETAPA 99 recibe una excepcion minima solo para comunicaciones de
+  identidad y seguridad indispensables para autenticacion y recuperacion. SMS
+  y WhatsApp reales no pueden activarse sin revision legal, privacidad,
+  consentimiento, provider y seguridad.

@@ -12,6 +12,10 @@
 */
 
 export const queryKeys = {
+  users: {
+    me: () => ["users", "me"],
+  },
+
   feed: {
     all: ["feed"],
     publicaciones: () => ["feed", "publicaciones"],

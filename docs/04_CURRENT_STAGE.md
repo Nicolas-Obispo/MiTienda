@@ -558,8 +558,10 @@ Plan restante oficial de ETAPA 95:
 Estado de continuidad:
 
 - Ultima etapa cerrada: ETAPA 98 - Correccion y Pulido Visual del Frontend.
-- Siguiente etapa oficial: ETAPA 99 - Identidad, Registro y Autenticacion,
-  pendiente y no iniciada.
+- Etapa vigente: ETAPA 99 - Identidad, Registro y Autenticacion. Sus bloques
+  99.1, 99.2, 99.3, 99.4, 99.5 y 99.6 quedan formalmente cerrados. El
+  siguiente sprint oficial es 99.7 - Enforcement en Spaces y Publicaciones,
+  pendiente y no iniciado.
 - Checkpoint intermedio aprobado: sistema visual Liquid consolidado y bloque
   correctivo incidental de publicaciones e interacciones validado. Este
   checkpoint no constituyo por si solo el cierre posterior de ETAPA 98.
@@ -585,7 +587,8 @@ Estado de continuidad:
   capacidad para crear o administrar espacios y publicar contenido asociado.
   La cuenta basica no excluye automaticamente a menores de 18 anos; la politica
   vigente exige 18 anos o mas para esas capacidades de Espacios. ETAPA 99,
-  futura y no iniciada, absorbe `fecha_nacimiento` privada y nullable, perfil y
+  ahora vigente con 99.1 a 99.6 cerrados y 99.7 pendiente, absorbe
+  `fecha_nacimiento` privada y nullable, perfil y
   capabilities backend, borrador seguro de Registro y flujo Google conforme a
   `DEC-048`; el backend de Espacios conserva el enforcement. No se implemento
   ninguna de estas funciones en ETAPA 98, los documentos publicos `v1`
@@ -739,13 +742,180 @@ Estado de continuidad:
   iPhone/Safari/PWA. No se declara resuelto ni validado. Caso B queda preservado
   en `frontend/.pwa-fixtures/story-video-case-b.html` y la investigacion pasa a
   ETAPA 124 - Compatibilidad Multimedia iOS/Safari/PWA.
-- ETAPA 99 - Identidad, Registro y Autenticacion permanece futura y no iniciada.
+- ETAPA 99 - Identidad, Registro y Autenticacion se encuentra en curso con 99.1,
+  99.2, 99.3, 99.4 y 99.5 cerrados. El sprint 99.6 es el siguiente oficial,
+  pendiente y no iniciado; la compatibilidad JWT legacy permanece hasta su
+  retiro gobernado.
 - FeedGo Clasificados queda incorporado documentalmente como vertical futura
   de primer nivel en ETAPAS 101 a 105; ETAPAS 106 y 107 preparan Plataforma
   Comercial, Advertising, Payments y Billing transversal. Ninguna fue iniciada.
 - Documentos tecnicos propietarios: `docs/26_CLASSIFIEDS_CONTRACT.md` y
   `docs/27_COMMERCIAL_PLATFORM_CONTRACT.md`.
 - Documento tecnico propietario: `docs/18_PWA_ENTERPRISE.md`.
+
+## Etapa vigente
+
+ETAPA 99 - Identidad, Registro y Autenticacion.
+
+Estado:
+
+En curso.
+
+Bloque vigente:
+
+99.7 - Enforcement en Spaces y Publicaciones. Pendiente y no iniciado.
+
+Objetivo inmediato:
+
+ET99.6 queda cerrada tecnica y funcionalmente. El siguiente trabajo es ET99.7:
+enforcement backend uniforme en Spaces y Publicaciones, sin iniciar Google ni
+cleanup legacy.
+
+Restricciones:
+
+- no iniciar ET99.8 ni ET99.9;
+- no convertir Google en owner de identidad, sesion o autorizacion;
+- no aplicar auto-link por coincidencia de email;
+- no persistir edad ni inferir capabilities en frontend;
+- no aplicar grandfathering, periodo de gracia o excepciones comerciales a
+  datos existentes;
+- preservar los owners de Spaces, Publicaciones, Ubicacion, Legal, PWA y
+  Observabilidad.
+
+Decisiones permanentes propietarias: `DEC-059` para arquitectura de identidad,
+perfil y capabilities, `DEC-060` para descomposicion y ejecucion de ETAPA 99 y
+`DEC-061` para acceso anonimo e interacciones protegidas. `DEC-062` registra el
+diseno aprobado de 99.3 y remite al criterio transversal de comunicacion visible
+propiedad de `docs/02_PRODUCT.md`. `DEC-063` aprueba telefono privado
+verificado y un unico motor de recuperacion multicanal, implementados en su
+  alcance backend de 99.5; 99.6 es owner de UX y remediation y 99.7 owner del
+  enforcement. La UX publica exacta de seleccion de canal de recovery
+  multicanal permanece deliberadamente pendiente y no puede mostrar hints de
+  cuenta por anticipado.
+
+Estado de cierre de 99.3:
+
+Cerrado tecnica, funcional y documentalmente tras auditoria final, gates
+automaticos y validacion manual aprobados. La implementacion adopta tokens de
+accion de un uso con digest persistido, expiraciones de
+24 horas para verificacion y 30 minutos para reset, reenvio con cooldown de 60
+segundos, limites persistentes y defensa local, canal transaccional de identidad
+independiente del correo administrativo, `FakeEmailProvider` para la primera
+validacion y Resend deshabilitado hasta rotar la credencial y validar la
+configuracion segura. La obligatoriedad de email verificado no se activa.
+
+Riesgo transitorio aprobado: reset y cambio actualizan la credencial e
+invalidan tokens de accion y sesiones FeedGo segun el contrato de 99.4, sin
+agregar `credential_version`. Los JWT legacy ya emitidos pueden sobrevivir
+hasta su expiracion maxima actual de 60 minutos y continúan dependiendo de
+`tokens_revocados` hasta su retirada controlada en la transicion/99.9.
+
+Estado de cierre de 99.4:
+
+Cerrado tecnica, funcional y documentalmente. `FeedGoSession` es owner de los
+JWT nuevos con claims exactos `sub`, `sid`, `iat`, `exp`, `issuer`, `audience`
+y `version`; el frontend conserva el bearer opaco y Login deja de emitir JWT
+legacy. Logout revoca la sesion nueva sin persistir el bearer completo. Reset
+revoca todas las sesiones FeedGo sin auto-login; el cambio autenticado con JWT
+nuevo conserva la sesion actual y revoca las demas, mientras el cambio con JWT
+legacy revoca las sesiones FeedGo existentes sin migrar el token en caliente.
+Google Auth no fue implementado: solo queda preparado el contrato de sesion
+para el metodo `google`.
+
+La validacion final registro backend completo 568 OK y 6 skips, MySQL aislado
+ET99.4 7/7, E2E MySQL 1/1, frontend/PWA contractual 20/20, schema 37/37 y
+`git diff --check` correcto. Permanecen 656 revocaciones legacy sin limpiar;
+la retirada del contrato JWT anterior, su blacklist y ese cleanup corresponde
+a la transicion/99.9.
+
+Estado de cierre de 99.5:
+
+Cerrado tecnica, funcional y documentalmente. Backend incorpora telefono
+privado E.164 y verificacion mediante OTP, deriva `perfil_completo`,
+`campos_perfil_faltantes`, aceptaciones legales vigentes y las capabilities
+comerciales, y conserva un unico `PasswordRecoveryService` multicanal. Email
+es el unico canal operativo; SMS y WhatsApp permanecen preparados pero
+deshabilitados y sin provider real. La activacion externa real de email sigue
+sujeta a configuracion y provider aprobados. Las capabilities no se persisten,
+no integran JWT y todavia no aplican enforcement.
+
+La validacion final registro backend completo 603 OK y 9 skips, focales 99.5
+78/78, MySQL 10/10, PWA 25/25 y `git diff --check` correcto. La DB local
+`mitienda` coincide con metadata en 38/38 tablas; la migracion de
+`phone_verification_challenges` y su segunda ejecucion idempotente quedaron
+aprobadas.
+
+Estado de cierre de 99.6:
+
+Cerrado tecnica y funcionalmente. El frontend centraliza `GET /usuarios/me` en
+`useCurrentUser` sobre TanStack Query en memoria; AuthContext consume ese owner
+y ProfilePage no mantiene copias paralelas. `Datos personales` incorpora fecha
+de nacimiento y telefono privado, con telefono verificado en solo lectura y
+backend como autoridad. La UX OTP mantiene challenge y codigo en memoria,
+refresca `/usuarios/me`, usa respuestas `private, no-store` y un harness fake
+restringido a local/dev/test, opt-in y loopback. Perfil, faltantes,
+capabilities y pendientes comerciales se presentan desde derivados backend, sin
+recalculo ni enforcement.
+
+`ProtectedActionProvider` es el owner central de DEC-061: el Auth Wall usa
+`ActiveLayer`, el gate temporal de cinco segundos se integra al mismo owner y
+las interacciones no pasivas quedan protegidas por default-deny. `returnTo`
+acepta solo contexto interno saneado; Login y Registro restauran ese contexto
+sin persistir tokens ni datos sensibles.
+
+Hardening final aprobado: frontend focal 61/61, backend focal 27/27, build
+produccion/PWA correcto, ESLint focal sin errores (un warning preexistente en
+`PerfilComercioPage`), arquitectura por capas y privacidad/PWA validadas.
+El canal real de email aun requiere activacion operativa; Fake Email es solo
+desarrollo/test. ET99.7 debe verificar esta dependencia antes de activar
+enforcement que requiera email verificado.
+
+Resultado de la primera implementacion:
+
+- `usuarios` incorpora de forma nullable `email_canonical`,
+  `email_verified_at`, `email_verification_source` y `fecha_nacimiento`;
+- se incorporan `password_credentials`, `external_identities` y
+  `feedgo_sessions`, registradas en metadata pero todavia sin consumo funcional;
+- el preflight de 15 usuarios encontro 15 emails canonicos unicos, sin
+  colisiones ni emails invalidos;
+- el backfill copio exactamente los 15 hashes legacy y completo los 15 emails
+  canonicos; no creo identidades externas ni sesiones y mantuvo verificacion y
+  fecha de nacimiento en `null`;
+- la migracion es opt-in, idempotente y compatible; una segunda ejecucion no
+  produjo cambios;
+- schema fisico y metadata coinciden en 35 tablas, sin diferencias de columnas,
+  foreign keys, indices o restricciones unicas;
+- 99.2 convirtio `email_canonical` y `PasswordCredential` en owners efectivos
+  de Registro y Login, preservando dual-write, fallback controlado, JWT,
+  revocacion y evidencia legal para compatibilidad y rollback.
+
+Estado de cierre de 99.1:
+
+Cerrado. La auditoria integral confirmo coherencia entre implementacion,
+migracion, tests, schema fisico, `DEC-059`, `DEC-060`, documentacion y roadmap.
+La secuencia oficial 99.1 a 99.9, sus dependencias, gates, rollback y reglas de
+ejecucion pertenecen a `docs/05_SEARCH_ROADMAP.md`.
+
+Estado de cierre de 99.2:
+
+Cerrado tecnica, funcional y documentalmente tras validacion manual aprobada.
+Registro canonicaliza y crea atomicamente Usuario, `PasswordCredential` y
+evidencia legal, con dual-write legacy compatible; Login resuelve por email
+canonico y verifica la credencial nueva, conservando fallback acotado para
+rollback. La politica backend unica exige ocho caracteres, mayuscula, minuscula,
+numero, ausencia de whitespace y limite tecnico bcrypt. Registro consume una
+comprobacion anticipada minima y rate-limited sin reemplazar la constraint final,
+y presenta feedback FeedGo inline. La base reparada no conserva filas sin email
+canonico o credencial ni divergencias de hash. JWT, logout y revocacion legacy
+permanecen vigentes hasta sus sprints owner. Tests backend y frontend, schema,
+build/PWA, lint, `git diff --check` y validacion manual quedaron aprobados.
+
+Cuando un sprint produzca comportamiento visible o flujo interactivo, la
+validacion automatica de Codex no reemplaza la validacion manual del usuario.
+Tras implementar y ejecutar tests deben informarse resultados, realizarse esa
+validacion cuando corresponda y recibirse aprobacion. El cierre documental,
+commit y push requieren orden expresa posterior; nunca son automaticos por
+finalizar un sprint.
 
 ## Ultima etapa cerrada
 
@@ -767,8 +937,9 @@ Validacion final: ESLint sin errores y con cuatro advertencias preexistentes,
 440 tests frontend correctos, 440 tests backend correctos con 1 omitido, build
 productivo/PWA y `git diff --check` correctos.
 
-ETAPA 99 - Identidad, Registro y Autenticacion es la siguiente etapa oficial;
-permanece pendiente y no iniciada.
+ETAPA 99 - Identidad, Registro y Autenticacion es la etapa vigente; sus bloques
+99.1, 99.2, 99.3 y 99.4 quedan cerrados y 99.5 es el siguiente sprint oficial,
+pendiente y no iniciado.
 
 ## Etapa cerrada historica anterior a ETAPA 95
 
@@ -850,7 +1021,8 @@ Pendientes derivados:
   operacion manual que no forman parte de observabilidad base.
 - ETAPA 98: correccion y pulido visual completo del frontend, posterior a PWA
   y operacion minima y previo al lanzamiento controlado.
-- ETAPA 99: identidad, registro y autenticacion, futura y no iniciada.
+- ETAPA 99: identidad, registro y autenticacion, vigente con 99.1 a 99.5
+  cerrados y 99.6 pendiente/no iniciado.
 - ETAPA 100: fundacion de validacion y staging aislado.
 - ETAPAS 101 a 105: FeedGo Clasificados, desde dominio y experiencia hasta
   Search, IA multimodal, Historias, promocion y beneficios.
@@ -890,8 +1062,8 @@ Resultado:
 El trabajo previo a ETAPA 97 queda formalmente cerrado. ETAPA 96 permanece
 cerrada. ETAPA 97 - Administracion Operativa Minima queda formalmente cerrada
 con 97.1, 97.2, 97.3, 97.4, 97.5 y 97.6 cerradas. ETAPA 98 - Correccion y
-Pulido Visual del Frontend queda formalmente cerrada. ETAPA 99 es la siguiente
-etapa oficial, pendiente y no iniciada.
+Pulido Visual del Frontend queda formalmente cerrada. ETAPA 99 es la etapa
+oficial vigente con 99.1 a 99.5 cerrados y 99.6 pendiente/no iniciado.
 
 ## Estado ETAPA 92
 
