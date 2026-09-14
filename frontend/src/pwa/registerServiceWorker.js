@@ -206,6 +206,64 @@ export function createServiceWorkerRuntime({
   };
 }
 
+export function createProductiveUpdateCoordinator({
+  serviceWorkerRuntime,
+  windowObject,
+  documentObject,
+}) {
+  let started = false;
+  let activationAttempted = false;
+  let activationInFlight = false;
+
+  const requestAvailableUpdate = async () => {
+    if (
+      activationAttempted ||
+      activationInFlight ||
+      serviceWorkerRuntime.getState() !== PWA_RUNTIME_STATE.UPDATE_AVAILABLE
+    ) {
+      return false;
+    }
+
+    activationAttempted = true;
+    activationInFlight = true;
+    try {
+      return await serviceWorkerRuntime.requestActivation();
+    } finally {
+      activationInFlight = false;
+    }
+  };
+
+  const handleRuntimeState = (nextState) => {
+    if (nextState === PWA_RUNTIME_STATE.UPDATE_AVAILABLE) {
+      void requestAvailableUpdate();
+      return;
+    }
+
+    if (nextState !== PWA_RUNTIME_STATE.ACTIVATING) {
+      activationAttempted = false;
+    }
+  };
+
+  const retryAfterClientTransition = () => {
+    if (documentObject?.visibilityState === "hidden") return;
+    if (serviceWorkerRuntime.getState() !== PWA_RUNTIME_STATE.UPDATE_AVAILABLE) return;
+
+    // Si el worker bloqueo el primer intento por multiples ventanas, un foco
+    // posterior permite comprobar de nuevo cuando ya queda un solo cliente.
+    activationAttempted = false;
+    void requestAvailableUpdate();
+  };
+
+  return {
+    start() {
+      if (started) return;
+      started = true;
+      serviceWorkerRuntime.subscribe(handleRuntimeState);
+      windowObject?.addEventListener("focus", retryAfterClientTransition);
+    },
+  };
+}
+
 export const serviceWorkerRuntime = createServiceWorkerRuntime({
   navigatorObject: globalThis.navigator,
   windowObject: globalThis.window,
@@ -215,8 +273,15 @@ export const serviceWorkerRuntime = createServiceWorkerRuntime({
   cacheStorageObject: globalThis.caches,
 });
 
+export const productiveUpdateCoordinator = createProductiveUpdateCoordinator({
+  serviceWorkerRuntime,
+  windowObject: globalThis.window,
+  documentObject: globalThis.document,
+});
+
 export function registerServiceWorker() {
   serviceWorkerRuntime.start();
+  productiveUpdateCoordinator.start();
   return serviceWorkerRuntime;
 }
 

@@ -21,11 +21,16 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 export class HttpError extends Error {
-  constructor(status, message) {
+  constructor(status, message, { detail = null, code = null } = {}) {
     super(`HTTP ${status} - ${message}`);
     this.name = "HttpError";
     this.status = status;
     this.publicMessage = message;
+    // Metadatos estructurados y acotados para que los services puedan tomar
+    // decisiones de flujo. La presentacion visible sigue siendo responsabilidad
+    // de cada feature; nunca exponemos el payload crudo del backend.
+    this.detail = detail;
+    this.code = code;
   }
 }
 
@@ -44,13 +49,37 @@ function safeErrorMessage(status) {
 }
 
 async function throwHttpError(response) {
+  let detail = null;
+  let code = null;
+
   try {
-    await response.text();
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const payload = await response.json();
+      if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+        // Solamente se preserva el contrato publico y pequeno de errores.
+        // No se propagan campos arbitrarios, objetos, ni detalles de validacion.
+        if (typeof payload.detail === "string" && payload.detail.length <= 240) {
+          detail = payload.detail;
+        }
+        if (
+          typeof payload.code === "string" &&
+          /^[a-z0-9_]{1,64}$/.test(payload.code)
+        ) {
+          code = payload.code;
+        }
+      }
+    } else {
+      await response.text();
+    }
   } catch {
     // El cuerpo del error no se muestra al usuario ni se propaga.
   }
 
-  throw new HttpError(response.status, safeErrorMessage(response.status));
+  throw new HttpError(response.status, safeErrorMessage(response.status), {
+    detail,
+    code,
+  });
 }
 
 /**

@@ -17,6 +17,7 @@ import {
 } from "@features/social";
 import { httpDelete } from "@core/services/http_service";
 import { ActiveLayer, useProtectedActionRedirect } from "@core";
+import { useAuth, useCommercialCapabilityRemediation } from "@features/auth";
 import PublicacionReportControl from "@features/moderation/components/PublicacionReportControl";
 import InteractiveLiquidLayers from "@shared/components/InteractiveLiquidLayers";
 
@@ -24,6 +25,9 @@ export default function PublicacionDetallePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { requireAuthentication: usuarioDebeLoguearse } = useProtectedActionRedirect();
+  const { accessToken } = useAuth();
+  const { intentarAccionComercial, manejarErrorCapability } =
+    useCommercialCapabilityRemediation();
 
   const {
     data: publicacionQuery,
@@ -154,13 +158,15 @@ export default function PublicacionDetallePage() {
 
   async function handleConfirmarEliminarPublicacion() {
     if (!publicacion || isDeletingPublicacion) return;
+    if (!(await intentarAccionComercial("puede_administrar_espacios"))) {
+      setMostrarConfirmacionEliminar(false);
+      return;
+    }
 
     try {
       setIsDeletingPublicacion(true);
 
-      const token = localStorage.getItem("access_token");
-
-      await httpDelete(`/publicaciones/${publicacion.id}`, token);
+      await httpDelete(`/publicaciones/${publicacion.id}`, accessToken);
 
       if (comercioId) {
         navigate(`/comercios/${comercioId}`, { replace: true });
@@ -168,6 +174,10 @@ export default function PublicacionDetallePage() {
         navigate("/feed", { replace: true });
       }
     } catch (error) {
+      if (await manejarErrorCapability(error)) {
+        setMostrarConfirmacionEliminar(false);
+        return;
+      }
       setErrorMessage(error.message || "Error eliminando la publicación.");
       setMostrarConfirmacionEliminar(false);
     } finally {

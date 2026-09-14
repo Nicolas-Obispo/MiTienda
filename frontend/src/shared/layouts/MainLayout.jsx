@@ -67,7 +67,7 @@ export default function MainLayout() {
               to={estaAutenticado ? "/perfil" : "/registro"}
               state={
                 estaAutenticado
-                  ? undefined
+                  ? { resetProfileEditor: true }
                   : {
                       message:
                         "Creá tu cuenta FeedGo para guardar publicaciones y administrar espacios.",

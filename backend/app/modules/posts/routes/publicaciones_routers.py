@@ -27,6 +27,10 @@ from app.modules.posts.services.publicaciones_services import (
     desactivar_publicacion,
 )
 from app.modules.spaces.services.comercios_services import ComercioNoVisibleError
+from app.modules.users.services.commercial_capabilities_services import (
+    CommercialCapabilityRequiredError,
+    commercial_capability_http_detail,
+)
 
 router = APIRouter(
     prefix="/publicaciones",
@@ -180,6 +184,11 @@ def crear_publicacion_endpoint(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ComercioUsuarioNoPropietarioError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except CommercialCapabilityRequiredError as exc:
+        raise HTTPException(
+            status_code=403,
+            detail=commercial_capability_http_detail(),
+        ) from exc
 
     return construir_publicacion_read(
         db=db,
@@ -270,5 +279,10 @@ def eliminar_publicacion_endpoint(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ComercioUsuarioNoPropietarioError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except CommercialCapabilityRequiredError as exc:
+        raise HTTPException(
+            status_code=403,
+            detail=commercial_capability_http_detail(),
+        ) from exc
 
     return None

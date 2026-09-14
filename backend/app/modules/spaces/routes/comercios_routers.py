@@ -43,8 +43,13 @@ from app.modules.spaces.services.comercios_services import (
     obtener_comercio_por_id,
     actualizar_comercio,
     desactivar_comercio,
+    reactivar_comercio,
     adjuntar_horario_atencion_comercios,
     RubroInvalidoError,
+)
+from app.modules.users.services.commercial_capabilities_services import (
+    CommercialCapabilityRequiredError,
+    commercial_capability_http_detail,
 )
 from app.modules.discovery.services.taxonomy_assignment_services import (
     adjuntar_especialidad_ids_comercios,
@@ -80,6 +85,11 @@ def crear_comercio_endpoint(
 ):
     try:
         return crear_comercio(db, usuario_actual, payload)
+    except CommercialCapabilityRequiredError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=commercial_capability_http_detail(),
+        ) from e
     except RubroInvalidoError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -286,6 +296,11 @@ def actualizar_comercio_endpoint(
 
     try:
         return actualizar_comercio(db, usuario_actual, comercio, payload)
+    except CommercialCapabilityRequiredError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=commercial_capability_http_detail(),
+        ) from e
     except PermissionError as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -318,6 +333,11 @@ def desactivar_comercio_endpoint(
 
     try:
         return desactivar_comercio(db, usuario_actual, comercio)
+    except CommercialCapabilityRequiredError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=commercial_capability_http_detail(),
+        ) from e
     except PermissionError as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -350,16 +370,15 @@ def reactivar_comercio_endpoint(
             detail="Comercio no encontrado"
         )
 
-    # Solo el dueño puede reactivar
-    if comercio.usuario_id != usuario_actual.id:
+    try:
+        return reactivar_comercio(db, usuario_actual, comercio)
+    except CommercialCapabilityRequiredError as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tenés permisos para reactivar este comercio"
-        )
-
-    comercio.activo = True
-    db.add(comercio)
-    db.commit()
-    db.refresh(comercio)
-
-    return comercio
+            detail=commercial_capability_http_detail(),
+        ) from e
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        ) from e

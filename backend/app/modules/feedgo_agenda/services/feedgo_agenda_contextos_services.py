@@ -23,6 +23,9 @@ from app.modules.feedgo_agenda.repositories import (
 )
 from app.modules.spaces.models.comercios_models import Comercio
 from app.modules.users.models.usuarios_models import Usuario
+from app.modules.users.services.commercial_capabilities_services import (
+    require_commercial_capability,
+)
 
 
 UNIQUE_COMERCIO_ID = "uq_feedgo_agenda_contextos_comercio_id"
@@ -64,12 +67,19 @@ def obtener_contexto_agenda_para_comercio(
     *,
     comercio_id: int,
     usuario_autenticado: Usuario,
+    require_administration: bool = False,
 ) -> FeedGoAgendaContextoResultado | None:
     _obtener_comercio_propio_o_error(
         db,
         comercio_id=comercio_id,
         usuario_autenticado=usuario_autenticado,
     )
+    if require_administration:
+        require_commercial_capability(
+            db,
+            usuario_autenticado,
+            "puede_administrar_espacios",
+        )
     vinculo = feedgo_agenda_repo.obtener_vinculo_por_comercio_id(db, comercio_id)
     if vinculo is None:
         return None
@@ -87,6 +97,11 @@ def obtener_o_crear_contexto_agenda_para_comercio(
         db,
         comercio_id=comercio_id,
         usuario_autenticado=usuario_autenticado,
+    )
+    require_commercial_capability(
+        db,
+        usuario_autenticado,
+        "puede_administrar_espacios",
     )
     vinculo = feedgo_agenda_repo.obtener_vinculo_por_comercio_id(db, comercio_id)
     if vinculo is not None:

@@ -13,7 +13,11 @@
 
 export const queryKeys = {
   users: {
-    me: () => ["users", "me"],
+    me: (sessionGeneration) => [
+      "users",
+      "me",
+      ...(sessionGeneration === undefined ? [] : [sessionGeneration]),
+    ],
   },
 
   feed: {

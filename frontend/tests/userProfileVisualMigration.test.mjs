@@ -4,10 +4,11 @@ import test from "node:test";
 
 const readSource = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-const [profile, authService, router] = await Promise.all([
+const [profile, authService, router, passwordForm] = await Promise.all([
   readSource("../src/features/auth/pages/ProfilePage.jsx"),
   readSource("../src/features/auth/services/authService.js"),
   readSource("../src/core/router/AppRouter.jsx"),
+  readSource("../src/features/auth/components/CambiarPasswordForm.jsx"),
 ]);
 
 const avatarDeclaration = profile.indexOf("const avatarUrl =");
@@ -25,7 +26,7 @@ test("la superficie real de identidad de usuario usa shell y owners semanticos",
 });
 
 test("avatar permanece contenido y su shell es tematico", () => {
-  assert.match(profile, /const avatarUrl = usuarioMe\?\.avatar_url \|\| ""/);
+  assert.match(profile, /const avatarUrl = usuario\?\.avatar_url \|\| ""/);
   assert.match(identitySurface, /src=\{avatarUrl\}/);
   assert.match(identitySurface, /alt="Foto de perfil"/);
   assert.match(identitySurface, /h-full w-full object-cover/);
@@ -33,13 +34,28 @@ test("avatar permanece contenido y su shell es tematico", () => {
 });
 
 test("acciones directas usan Button y heredan una sola interactive-bubble", () => {
-  assert.equal((identitySurface.match(/<Button\b/g) || []).length, 4);
+  assert.ok((identitySurface.match(/<Button\b/g) || []).length >= 6);
   assert.match(identitySurface, /variant="primary"/);
   assert.match(identitySurface, /variant="secondary"/);
   assert.match(identitySurface, /variant="danger"/);
   assert.doesNotMatch(identitySurface, /<button\b|interactive-bubble/);
-  assert.match(identitySurface, /onClick=\{abrirEdicionPerfil\}/);
+  assert.match(identitySurface, /onClick=\{\(\) => abrirEdicionPerfil\(\)\}/);
   assert.match(identitySurface, /onClick=\{manejarLogout\}/);
+});
+
+test("Datos personales reutiliza el asterisco pendiente y el tamaño del menú", () => {
+  assert.match(profile, /function PendingAsterisk\(\)/);
+  assert.match(profile, /PERSONAL_PENDING_FIELDS\.some\(esCampoPerfilFaltante\) && <PendingAsterisk \/>/);
+  assert.match(profile, /Datos personales\s*\{PERSONAL_PENDING_FIELDS\.some\(esCampoPerfilFaltante\) && <PendingAsterisk \/>\}/);
+  assert.match(passwordForm, /className="px-3 py-2 text-xs"[\s\S]*Actualizar contraseña/);
+  assert.ok((profile.match(/className="px-3 py-2 text-xs"/g) || []).length >= 10);
+});
+
+test("la fecha de nacimiento conserva el date nativo sin exceder su contenedor", () => {
+  assert.match(
+    profile,
+    /id="perfil-fecha-nacimiento"[\s\S]*type="date"[\s\S]*className="box-border min-w-0 max-w-full text-sm"/
+  );
 });
 
 test("success y error usan Alert sin alterar sus estados", () => {
@@ -50,9 +66,9 @@ test("success y error usan Alert sin alterar sus estados", () => {
 });
 
 test("perfil conserva carga, endpoint y navegacion existentes", () => {
-  assert.match(profile, /const data = await getMe\(token\)/);
-  assert.match(profile, /useEffect\(\(\) => \{\s*loadUsuarioMe\(\)/);
-  assert.match(authService, /return httpGet\("\/usuarios\/me", tokenJWT\)/);
+  assert.match(profile, /\} = useAuth\(\)/);
+  assert.doesNotMatch(profile, /getMe\(|loadUsuarioMe|usuarioMe/);
+  assert.match(authService, /return httpGet\("\/usuarios\/me", tokenJWT/);
   assert.match(router, /path="\/perfil"[\s\S]*<ProtectedRoute>[\s\S]*<ProfilePage \/>/);
 });
 

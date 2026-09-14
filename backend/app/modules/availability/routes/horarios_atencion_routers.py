@@ -22,6 +22,10 @@ from app.modules.availability.services.horarios_atencion_services import (
     reemplazar_horarios_atencion,
 )
 from app.modules.spaces.models.comercios_models import Comercio
+from app.modules.users.services.commercial_capabilities_services import (
+    CommercialCapabilityRequiredError,
+    commercial_capability_http_detail,
+)
 from app.modules.users.models.usuarios_models import Usuario
 
 
@@ -115,6 +119,11 @@ def reemplazar_horarios_atencion_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Comercio no encontrado",
         )
+    except CommercialCapabilityRequiredError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=commercial_capability_http_detail(),
+        ) from exc
     except PermissionError as exc:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

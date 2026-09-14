@@ -59,12 +59,12 @@ export async function logoutUsuario(tokenJWT) {
  * Endpoint real: GET /usuarios/me
  * Devuelve el usuario logueado.
  */
-export async function getMe(tokenJWT) {
+export async function getMe(tokenJWT, options = {}) {
   if (!tokenJWT) {
     throw new Error("Falta token para getMe");
   }
 
-  return httpGet("/usuarios/me", tokenJWT);
+  return httpGet("/usuarios/me", tokenJWT, { signal: options.signal });
 }
 
 /**

@@ -19,7 +19,9 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Bell } from "lucide-react";
+import { ActiveLayer } from "@core";
 import { httpPut } from "@core";
 import { queryKeys } from "@core/constants/queryKeys";
 import {
@@ -38,10 +40,10 @@ import {
 import { invalidateLocationAfterAddressEdit } from "@shared/components/locationPickerState";
 import {
   actualizarPerfilUsuario,
-  confirmarVerificacionTelefono,
-  solicitarVerificacionTelefono,
   useAuth,
+  useCommercialCapabilityRemediation,
 } from "@features/auth";
+import { getInternalReturnTo } from "@core/navigation/internalReturnTo";
 import { cambiarModoUsuario } from "@features/auth/services/usuarioService";
 import { useQueryClient } from "@tanstack/react-query";
 import AgendaGeneralModal from "@features/agenda/components/AgendaGeneralModal";
@@ -70,9 +72,8 @@ const CAMPOS_PERFIL_FALTANTES = {
   provincia: "Agregá tu provincia.",
   ciudad: "Agregá tu ciudad.",
   fecha_nacimiento: "Agregá tu fecha de nacimiento.",
-  email_verificado: "Verificá tu correo electrónico.",
   telefono: "Agregá tu teléfono.",
-  telefono_verificado: "Verificá tu teléfono.",
+  email_verificado: "Verificá tu correo electrónico.",
 };
 
 const PENDIENTES_COMERCIALES = {
@@ -81,6 +82,19 @@ const PENDIENTES_COMERCIALES = {
   mayoria_edad_requerida: "Necesitás ser mayor de edad para esta función.",
 };
 
+const PENDING_ASTERISK_CLASS = "ml-1 text-[1.1em] font-bold text-danger-text";
+const PERSONAL_PENDING_FIELDS = [
+  "email_verificado",
+  "fecha_nacimiento",
+  "telefono",
+  "provincia",
+  "ciudad",
+];
+
+function PendingAsterisk() {
+  return <span aria-hidden="true" className={PENDING_ASTERISK_CLASS}>*</span>;
+}
+
 export default function ProfilePage() {
   // =====================================================
   // Estado: Mi cuenta del usuario
@@ -88,20 +102,13 @@ export default function ProfilePage() {
   const [avatarErrorMessage, setAvatarErrorMessage] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showPerfilForm, setShowPerfilForm] = useState(false);
-  const [showAppearanceOptions, setShowAppearanceOptions] = useState(false);
+  const [perfilSection, setPerfilSection] = useState(null);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showAccountPendingPanel, setShowAccountPendingPanel] = useState(false);
   const [isSavingPerfil, setIsSavingPerfil] = useState(false);
   const [perfilErrorMessage, setPerfilErrorMessage] = useState("");
   const [perfilSuccessMessage, setPerfilSuccessMessage] = useState("");
   const [remediationTarget, setRemediationTarget] = useState(null);
-  const [phoneVerification, setPhoneVerification] = useState({
-    challengeId: "",
-    code: "",
-    isSending: false,
-    isConfirming: false,
-    error: "",
-    message: "",
-  });
   const [perfilForm, setPerfilForm] = useState({
     provincia: "",
     ciudad: "",
@@ -110,6 +117,7 @@ export default function ProfilePage() {
   });
 
   const fileInputRef = useRef(null);
+  const accountPendingPanelCloseRef = useRef(null);
 
   // =====================================================
   // Estado: Portada de espacio
@@ -140,18 +148,11 @@ export default function ProfilePage() {
   }
 
   function abrirEdicionPerfil(target = null) {
+    setShowAccountPendingPanel(false);
     setPerfilErrorMessage("");
     setPerfilSuccessMessage("");
-    setShowAppearanceOptions(false);
     setShowPasswordForm(false);
-    setPhoneVerification({
-      challengeId: "",
-      code: "",
-      isSending: false,
-      isConfirming: false,
-      error: "",
-      message: "",
-    });
+    setPerfilSection(target ? "datos" : "menu");
     setPerfilForm({
       provincia: usuario?.provincia || "",
       ciudad: usuario?.ciudad || "",
@@ -165,15 +166,6 @@ export default function ProfilePage() {
   function cancelarEdicionPerfil() {
     setPerfilErrorMessage("");
     setPerfilSuccessMessage("");
-    setShowAppearanceOptions(false);
-    setPhoneVerification({
-      challengeId: "",
-      code: "",
-      isSending: false,
-      isConfirming: false,
-      error: "",
-      message: "",
-    });
     setPerfilForm({
       provincia: usuario?.provincia || "",
       ciudad: usuario?.ciudad || "",
@@ -181,11 +173,30 @@ export default function ProfilePage() {
       telefono_e164: usuario?.telefono_e164 || "",
     });
     setShowPerfilForm(false);
+    setPerfilSection(null);
     setRemediationTarget(null);
+  }
+
+  function volverAlMenuEdicion() {
+    setPerfilErrorMessage("");
+    setShowPasswordForm(false);
+    setPerfilForm({
+      provincia: usuario?.provincia || "",
+      ciudad: usuario?.ciudad || "",
+      fecha_nacimiento: usuario?.fecha_nacimiento || "",
+      telefono_e164: usuario?.telefono_e164 || "",
+    });
+    setPerfilSection("menu");
+    setRemediationTarget(null);
+  }
+
+  function cerrarPanelPendientesCuenta() {
+    setShowAccountPendingPanel(false);
   }
 
   function completarCambioPassword() {
     setShowPasswordForm(false);
+    setPerfilSection("menu");
     setPerfilSuccessMessage("Listo, tu contraseña fue actualizada.");
   }
 
@@ -222,22 +233,13 @@ export default function ProfilePage() {
       await actualizarPerfilUsuario(token, payload);
 
       const usuarioRefrescado = await refrescarUsuario();
-      setPhoneVerification({
-        challengeId: "",
-        code: "",
-        isSending: false,
-        isConfirming: false,
-        error: "",
-        message: "",
-      });
       setPerfilForm({
         provincia: usuarioRefrescado?.provincia || "",
         ciudad: usuarioRefrescado?.ciudad || "",
         fecha_nacimiento: usuarioRefrescado?.fecha_nacimiento || "",
         telefono_e164: usuarioRefrescado?.telefono_e164 || "",
       });
-      setShowAppearanceOptions(false);
-      setShowPerfilForm(false);
+      setPerfilSection("menu");
       setPerfilSuccessMessage("Perfil actualizado");
     } catch (error) {
       const mensaje =
@@ -395,6 +397,7 @@ export default function ProfilePage() {
   // Estado: Espacios administrados
   // ==========================================================
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const reemplazarHorariosMutation = useReemplazarHorariosAtencionMutation();
   const navigate = useNavigate();
@@ -405,6 +408,16 @@ export default function ProfilePage() {
     refrescarUsuario,
     usuario,
   } = useAuth();
+  const camposPerfilFaltantes = Array.isArray(usuario?.campos_perfil_faltantes)
+    ? usuario.campos_perfil_faltantes
+    : [];
+  const pendientesComerciales = Array.isArray(usuario?.pendientes_comerciales)
+    ? usuario.pendientes_comerciales
+    : [];
+  const {
+    intentarAccionComercial,
+    manejarErrorCapability,
+  } = useCommercialCapabilityRemediation();
   const [comerciosErrorMessage, setComerciosErrorMessage] = useState("");
   const {
     data: misComercios = [],
@@ -488,8 +501,9 @@ export default function ProfilePage() {
     });
   }
 
-  function handleEditarComercio(comercio) {
+  async function handleEditarComercio(comercio) {
     if (!comercio?.id) return;
+    if (!(await intentarAccionComercial("puede_administrar_espacios"))) return;
 
     setCreateErrorMessage("");
     setPortadaErrorMessage("");
@@ -519,69 +533,10 @@ export default function ProfilePage() {
     });
   }
 
-  async function solicitarCodigoTelefono() {
-    try {
-      setPhoneVerification((prev) => ({
-        ...prev,
-        isSending: true,
-        error: "",
-        message: "",
-      }));
-
-      const result = await solicitarVerificacionTelefono(accessToken);
-      setPhoneVerification((prev) => ({
-        ...prev,
-        challengeId: result.challenge_id,
-        code: "",
-        isSending: false,
-        message: "Te enviamos un código para verificar tu teléfono.",
-      }));
-    } catch (error) {
-      setPhoneVerification((prev) => ({
-        ...prev,
-        isSending: false,
-        error:
-          error?.code === "phone_verification_rate_limited"
-            ? "Esperá un momento antes de pedir otro código."
-            : "No pudimos enviar el código ahora. Intentá nuevamente en un momento.",
-      }));
+  async function abrirEditorHorariosDesdeFormulario() {
+    if (editingComercioId && !(await intentarAccionComercial("puede_administrar_espacios"))) {
+      return;
     }
-  }
-
-  async function confirmarCodigoTelefono() {
-    try {
-      setPhoneVerification((prev) => ({
-        ...prev,
-        isConfirming: true,
-        error: "",
-      }));
-
-      await confirmarVerificacionTelefono(accessToken, {
-        challengeId: phoneVerification.challengeId,
-        code: phoneVerification.code,
-      });
-      await refrescarUsuario();
-      setPhoneVerification({
-        challengeId: "",
-        code: "",
-        isSending: false,
-        isConfirming: false,
-        error: "",
-        message: "Listo, tu teléfono ya está verificado.",
-      });
-    } catch (error) {
-      setPhoneVerification((prev) => ({
-        ...prev,
-        isConfirming: false,
-        error:
-          error?.code === "phone_verification_invalid"
-            ? "Este código no es válido o venció. Pedí uno nuevo para continuar."
-            : "No pudimos verificar el código ahora. Intentá nuevamente en un momento.",
-      }));
-    }
-  }
-
-  function abrirEditorHorariosDesdeFormulario() {
     if (!editingComercioId) {
       setHorariosEditorComercio({
         nombre: createForm.nombre || "Nuevo espacio",
@@ -604,13 +559,24 @@ export default function ProfilePage() {
   }
 
   function iniciarRemediationPerfil(campo) {
+    const returnTo = getInternalReturnTo(searchParams.get("returnTo"), "/perfil");
     if (campo === "email_verificado") {
-      navigate("/verificar-email", { state: { returnTo: "/perfil" } });
+      navigate("/verificar-email", { state: { returnTo } });
       return;
     }
 
     abrirEdicionPerfil(campo);
   }
+
+  useEffect(() => {
+    if (!location.state?.resetProfileEditor) return;
+    setPerfilErrorMessage("");
+    setPerfilSuccessMessage("");
+    setShowPasswordForm(false);
+    setShowPerfilForm(false);
+    setPerfilSection(null);
+    setRemediationTarget(null);
+  }, [location.key, location.state?.resetProfileEditor]);
 
   useEffect(() => {
     if (!perfilSuccessMessage) return undefined;
@@ -630,20 +596,36 @@ export default function ProfilePage() {
       ciudad: "perfil-ciudad",
       fecha_nacimiento: "perfil-fecha-nacimiento",
       telefono: "perfil-telefono",
-      telefono_verificado: "perfil-telefono",
     };
     const inputId = inputByTarget[remediationTarget];
     if (inputId) {
       document.getElementById(inputId)?.focus();
     }
-    if (remediationTarget === "telefono_verificado") {
-      setPhoneVerification((prev) => ({
-        ...prev,
-        message: "Pedí un código para verificar tu teléfono.",
-      }));
-    }
     setRemediationTarget(null);
   }, [remediationTarget, showPasswordForm, showPerfilForm]);
+
+  useEffect(() => {
+    if (searchParams.get("remediation") !== "commercial" || !usuario) return;
+
+    const campo = camposPerfilFaltantes[0];
+    const returnTo = getInternalReturnTo(searchParams.get("returnTo"), "/perfil");
+    navigate("/perfil", { replace: true });
+
+    if (campo) {
+      if (campo === "email_verificado") {
+        navigate("/verificar-email", { state: { returnTo } });
+      } else {
+        abrirEdicionPerfil(campo);
+      }
+      return;
+    }
+
+    if (pendientesComerciales.includes("aceptaciones_legales_pendientes")) {
+      setPerfilSuccessMessage("Todavía no hay una pantalla para revisar estas aceptaciones.");
+    } else if (pendientesComerciales.includes("mayoria_edad_requerida")) {
+      setPerfilSuccessMessage("Necesitás ser mayor de edad para usar esta función.");
+    }
+  }, [camposPerfilFaltantes, navigate, pendientesComerciales, searchParams, usuario]);
 
   useEffect(() => {
     const editarEspacioId = Number(searchParams.get("editarEspacioId"));
@@ -722,6 +704,11 @@ export default function ProfilePage() {
 
   async function handleCrearComercioSubmit(e) {
     e.preventDefault();
+
+    const capability = editingComercioId
+      ? "puede_administrar_espacios"
+      : "puede_crear_espacio";
+    if (!(await intentarAccionComercial(capability))) return;
 
     try {
       setCreateErrorMessage("");
@@ -845,6 +832,7 @@ export default function ProfilePage() {
       setShowCreateForm(false);
       handleResetForm();
     } catch (error) {
+      if (await manejarErrorCapability(error)) return;
       setCreateErrorMessage(error.message || "Error procesando el espacio.");
     } finally {
       setIsCreatingComercio(false);
@@ -854,6 +842,7 @@ export default function ProfilePage() {
   async function handleDesactivarComercio(comercioId) {
     if (!comercioId) return;
     if (isActingComercioById[comercioId]) return;
+    if (!(await intentarAccionComercial("puede_administrar_espacios"))) return;
 
     const ok = window.confirm(
       "¿Seguro que querés desactivar este espacio? Podrás reactivarlo más adelante."
@@ -873,6 +862,7 @@ export default function ProfilePage() {
         queryKey: queryKeys.spaces.detalle(comercioId),
       });
     } catch (error) {
+      if (await manejarErrorCapability(error)) return;
       setComerciosErrorMessage(
         error.message || "Error desactivando el espacio."
       );
@@ -884,6 +874,7 @@ export default function ProfilePage() {
   async function handleReactivarComercio(comercioId) {
     if (!comercioId) return;
     if (isActingComercioById[comercioId]) return;
+    if (!(await intentarAccionComercial("puede_administrar_espacios"))) return;
 
     const ok = window.confirm("¿Querés reactivar este espacio?");
     if (!ok) return;
@@ -901,6 +892,7 @@ export default function ProfilePage() {
         queryKey: queryKeys.spaces.detalle(comercioId),
       });
     } catch (error) {
+      if (await manejarErrorCapability(error)) return;
       setComerciosErrorMessage(
         error.message || "Error reactivando el espacio."
       );
@@ -909,18 +901,28 @@ export default function ProfilePage() {
     }
   }
 
+  async function abrirAgendaComercio(comercio) {
+    if (!(await intentarAccionComercial("puede_administrar_espacios"))) return;
+    setAgendaComercio(comercio);
+  }
+
+  async function abrirAgendaGeneral() {
+    if (!(await intentarAccionComercial("puede_administrar_espacios"))) return;
+    setIsAgendaGeneralOpen(true);
+  }
+
   const avatarUrl = usuario?.avatar_url || "";
   const esModoPublicador = usuario?.modo_activo === "publicador";
   const perfilCompleto = usuario?.perfil_completo === true;
-  const camposPerfilFaltantes = Array.isArray(usuario?.campos_perfil_faltantes)
-    ? usuario.campos_perfil_faltantes
-    : [];
   const capacidadesComerciales = usuario?.capabilities || {};
-  const pendientesComerciales = Array.isArray(usuario?.pendientes_comerciales)
-    ? usuario.pendientes_comerciales
-    : [];
-  const telefonoPendienteDeGuardar =
-    perfilForm.telefono_e164.trim() !== (usuario?.telefono_e164 || "");
+  const tienePendientesCuenta = Boolean(
+    usuario &&
+      (!perfilCompleto ||
+        camposPerfilFaltantes.length > 0 ||
+        pendientesComerciales.length > 0 ||
+        Object.values(capacidadesComerciales).some((capability) => capability === false))
+  );
+  const esCampoPerfilFaltante = (campo) => camposPerfilFaltantes.includes(campo);
   return (
     <div className="min-h-screen bg-canvas text-primary">
       <main className="mx-auto max-w-3xl px-4 py-8">
@@ -947,7 +949,28 @@ export default function ProfilePage() {
 
           {/* Mi cuenta */}
           {!showPerfilForm && (
-          <Surface as="section" className="mt-4 p-4" aria-labelledby="mi-cuenta-title">
+          <Surface as="section" className="relative mt-4 p-4" aria-labelledby="mi-cuenta-title">
+            <Button
+              type="button"
+              iconOnly
+              aria-label={
+                tienePendientesCuenta
+                  ? "Ver pendientes de la cuenta: tenés pendientes"
+                  : "Ver pendientes de la cuenta"
+              }
+              aria-expanded={showAccountPendingPanel}
+              aria-controls="perfil-pendientes-panel"
+              onClick={() => setShowAccountPendingPanel(true)}
+              variant="secondary"
+              className="absolute right-3 top-3 !h-8 !min-h-8 !w-8 !bg-transparent hover:!bg-surface-subtle"
+            >
+              <span aria-hidden="true" className="relative flex h-6 w-6 items-center justify-center">
+                <Bell size={13} strokeWidth={2.25} />
+                {tienePendientesCuenta && (
+                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-danger-text ring-2 ring-surface" />
+                )}
+              </span>
+            </Button>
             <div className="flex items-center gap-4">
               <div
                 className={[
@@ -970,7 +993,12 @@ export default function ProfilePage() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <h2 id="mi-cuenta-title" className="font-semibold text-primary">Mi cuenta</h2>
+                <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 pr-10">
+                  <h2 id="mi-cuenta-title" className="font-semibold text-primary">Mi cuenta</h2>
+                  {usuario?.email && (
+                    <span className="min-w-0 break-all text-sm text-secondary">{usuario.email}</span>
+                  )}
+                </div>
 
                 <p className="mt-1 text-sm text-secondary">
                   Esta cuenta puede explorar, guardar publicaciones, seguir
@@ -981,17 +1009,26 @@ export default function ProfilePage() {
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Button
                     type="button"
-                    onClick={abrirEdicionPerfil}
+                    onClick={() => abrirEdicionPerfil()}
                     disabled={isLoadingMe || !usuario || showPerfilForm}
                     variant="secondary"
                     className="px-3 py-2 text-xs leading-4"
                   >
-                    <span>Editar perfil</span>
+                    <span>
+                      Editar perfil
+                      {!perfilCompleto && (
+                        <>
+                          <PendingAsterisk />
+                          <span className="sr-only">: tenés datos pendientes</span>
+                        </>
+                      )}
+                    </span>
                   </Button>
 
                   <Button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
+                      if (!(await intentarAccionComercial("puede_crear_espacio"))) return;
                       setCreateErrorMessage("");
                       handleResetForm();
                       setShowActivarEspacioInfo(misComercios.length === 0);
@@ -1005,7 +1042,7 @@ export default function ProfilePage() {
 
                   <Button
                     type="button"
-                    onClick={() => setIsAgendaGeneralOpen(true)}
+                    onClick={abrirAgendaGeneral}
                     disabled={misComercios.length === 0}
                     variant="secondary"
                     className="px-3 py-2 text-xs leading-4"
@@ -1014,13 +1051,7 @@ export default function ProfilePage() {
                   </Button>
                 </div>
 
-                <p className="mt-2 break-all text-xs text-muted">
-                  {isLoadingMe
-                    ? "Cargando usuario..."
-                    : usuario?.email
-                    ? `Sesión: ${usuario.email}`
-                    : "No se pudo cargar el usuario."}
-                </p>
+                {isLoadingMe && <p className="mt-2 text-xs text-muted">Cargando usuario...</p>}
 
                 <Button
                   type="button"
@@ -1043,74 +1074,157 @@ export default function ProfilePage() {
           </Surface>
           )}
 
-          {!showPerfilForm && usuario && (
-            <Surface as="section" className="mt-4 space-y-4 p-4" aria-labelledby="estado-perfil-title">
-              <div>
-                <h2 id="estado-perfil-title" className="font-semibold text-primary">
-                  Estado del perfil
-                </h2>
-                <p className="mt-1 text-sm text-secondary" role="status">
-                  {perfilCompleto ? "Perfil completo" : "Perfil incompleto"}
-                </p>
-              </div>
+          {!showPerfilForm && showAccountPendingPanel && usuario && (
+            <ActiveLayer
+              onClose={cerrarPanelPendientesCuenta}
+              labelledBy="perfil-pendientes-title"
+              describedBy="perfil-pendientes-description"
+              initialFocusRef={accountPendingPanelCloseRef}
+              contentClassName="w-full max-w-md px-4 py-6"
+            >
+              <Surface
+                id="perfil-pendientes-panel"
+                className="space-y-4 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 id="perfil-pendientes-title" className="font-semibold text-primary">
+                      Estado del perfil
+                    </h2>
+                    <p id="perfil-pendientes-description" className="mt-1 text-sm text-secondary" role="status">
+                      {perfilCompleto ? "Perfil completo" : "Perfil incompleto"}
+                    </p>
+                  </div>
+                  <Button
+                    ref={accountPendingPanelCloseRef}
+                    type="button"
+                    onClick={cerrarPanelPendientesCuenta}
+                    variant="secondary"
+                    className="px-3 py-2 text-xs"
+                  >
+                    Cerrar
+                  </Button>
+                </div>
 
-              {!perfilCompleto && (
-                <div className="space-y-2">
-                  <p className="text-sm text-secondary">
-                    Completá estos datos para preparar tu perfil.
-                  </p>
-                  <ul className="space-y-2" aria-label="Datos pendientes del perfil">
-                    {camposPerfilFaltantes.map((campo) => (
-                      <li
-                        key={campo}
-                        className="flex flex-wrap items-center justify-between gap-2 text-sm text-secondary"
-                      >
-                        <span>{CAMPOS_PERFIL_FALTANTES[campo]}</span>
-                        <Button
-                          type="button"
-                          onClick={() => iniciarRemediationPerfil(campo)}
-                          variant="secondary"
-                          className="px-3 py-2 text-xs"
+                {!perfilCompleto && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-secondary">
+                      Completá estos datos para preparar tu perfil.
+                    </p>
+                    <ul className="space-y-2" aria-label="Datos pendientes del perfil">
+                      {camposPerfilFaltantes.map((campo) => (
+                        <li
+                          key={campo}
+                          className="flex flex-wrap items-center justify-between gap-2 text-sm text-secondary"
                         >
-                          {campo === "email_verificado" ? "Verificar" : "Completar"}
-                        </Button>
-                      </li>
-                    ))}
+                          <span>{CAMPOS_PERFIL_FALTANTES[campo]}</span>
+                          <Button
+                            type="button"
+                            onClick={() => iniciarRemediationPerfil(campo)}
+                            variant="secondary"
+                            className="px-3 py-2 text-xs"
+                          >
+                            {campo === "email_verificado" ? "Verificar" : "Completar"}
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-primary">
+                    Funciones comerciales
+                  </h3>
+                  <ul className="space-y-1 text-sm text-secondary">
+                    <li>
+                      Crear espacios: {capacidadesComerciales.puede_crear_espacio ? "disponible" : "todavía no disponible"}
+                    </li>
+                    <li>
+                      Administrar espacios: {capacidadesComerciales.puede_administrar_espacios ? "disponible" : "todavía no disponible"}
+                    </li>
+                    <li>
+                      Publicar en espacios: {capacidadesComerciales.puede_publicar_en_espacios ? "disponible" : "todavía no disponible"}
+                    </li>
                   </ul>
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-primary">
-                  Funciones comerciales
-                </h3>
-                <ul className="space-y-1 text-sm text-secondary">
-                  <li>
-                    Crear espacios: {capacidadesComerciales.puede_crear_espacio ? "disponible" : "todavía no disponible"}
-                  </li>
-                  <li>
-                    Administrar espacios: {capacidadesComerciales.puede_administrar_espacios ? "disponible" : "todavía no disponible"}
-                  </li>
-                  <li>
-                    Publicar en espacios: {capacidadesComerciales.puede_publicar_en_espacios ? "disponible" : "todavía no disponible"}
-                  </li>
-                </ul>
-              </div>
-
-              {pendientesComerciales.length > 0 && (
-                <ul className="space-y-1 text-sm text-secondary" aria-label="Pendientes comerciales">
-                  {pendientesComerciales.map((pendiente) => (
-                    <li key={pendiente}>{PENDIENTES_COMERCIALES[pendiente]}</li>
-                  ))}
-                </ul>
-              )}
-            </Surface>
+                {pendientesComerciales.length > 0 && (
+                  <ul className="space-y-1 text-sm text-secondary" aria-label="Pendientes comerciales">
+                    {pendientesComerciales.map((pendiente) => (
+                      <li key={pendiente}>{PENDIENTES_COMERCIALES[pendiente]}</li>
+                    ))}
+                  </ul>
+                )}
+              </Surface>
+            </ActiveLayer>
           )}
         </section>
 
         {showPerfilForm && (
           <Surface as="section" variant="elevated" className="mb-8 p-4">
-            {!showPasswordForm ? (
+            {perfilSection === "menu" ? (
+              <section className="space-y-3" aria-labelledby="editar-perfil-menu-title">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 id="editar-perfil-menu-title" className="text-lg font-semibold text-primary">
+                    Editar perfil
+                  </h2>
+                  <Button type="button" onClick={cancelarEdicionPerfil} variant="secondary" className="px-3 py-2 text-xs">
+                    Volver
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" onClick={() => setPerfilSection("datos")} variant="secondary" className="px-3 py-2 text-xs">
+                    Datos personales
+                    {PERSONAL_PENDING_FIELDS.some(esCampoPerfilFaltante) && <PendingAsterisk />}
+                  </Button>
+                  <Button type="button" onClick={() => setPerfilSection("foto")} variant="secondary" className="px-3 py-2 text-xs">
+                    Cambiar foto
+                  </Button>
+                  <Button type="button" onClick={() => { setShowPasswordForm(true); setPerfilSection("password"); }} variant="secondary" className="px-3 py-2 text-xs">
+                    Cambiar contraseña
+                  </Button>
+                  <Button type="button" onClick={() => setPerfilSection("fondo")} variant="secondary" className="px-3 py-2 text-xs">
+                    Cambiar fondo
+                  </Button>
+                </div>
+              </section>
+            ) : perfilSection === "foto" ? (
+              <section className="space-y-4" aria-labelledby="perfil-foto-title">
+                <h2 id="perfil-foto-title" className="text-lg font-semibold text-primary">Cambiar foto</h2>
+                <div className="flex items-center gap-3">
+                  <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full border border-border bg-surface-subtle">
+                    {avatarUrl ? <img src={avatarUrl} alt="Foto de perfil" className="h-full w-full object-cover" draggable={false} /> : <span className="flex h-full w-full items-center justify-center text-xs text-secondary">Sin foto</span>}
+                  </div>
+                  <div>
+                    <Button type="button" onClick={handleAvatarClick} disabled={isUploadingAvatar} variant="secondary" className="px-3 py-2 text-xs">
+                      {isUploadingAvatar ? "Subiendo..." : "Seleccionar imagen"}
+                    </Button>
+                    <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarInputChange} className="hidden" />
+                  </div>
+                </div>
+                {avatarErrorMessage && <Alert variant="danger" role="alert">{avatarErrorMessage}</Alert>}
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" onClick={volverAlMenuEdicion} variant="secondary" className="px-3 py-2 text-xs">Aplicar</Button>
+                  <Button type="button" onClick={volverAlMenuEdicion} variant="secondary" className="px-3 py-2 text-xs">Cancelar</Button>
+                </div>
+              </section>
+            ) : perfilSection === "fondo" ? (
+              <section className="space-y-4" aria-labelledby="perfil-fondo-title">
+                <h2 id="perfil-fondo-title" className="text-lg font-semibold text-primary">Cambiar fondo</h2>
+                <AppearanceSelector />
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" onClick={volverAlMenuEdicion} variant="secondary" className="px-3 py-2 text-xs">Aplicar</Button>
+                  <Button type="button" onClick={volverAlMenuEdicion} variant="secondary" className="px-3 py-2 text-xs">Cancelar</Button>
+                </div>
+              </section>
+            ) : perfilSection === "password" ? (
+              <section className="space-y-4" aria-labelledby="perfil-password-title">
+                <h2 id="perfil-password-title" className="text-lg font-semibold">Seguridad</h2>
+                <h3 className="text-base font-semibold">Cambiar contraseña</h3>
+                <CambiarPasswordForm onCancel={volverAlMenuEdicion} onSuccess={completarCambioPassword} />
+              </section>
+            ) : (
             <form onSubmit={handlePerfilSubmit} className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full border border-border bg-surface-subtle">
@@ -1149,8 +1263,39 @@ export default function ProfilePage() {
                   </p>
                 </div>
 
+                <div className="space-y-1.5">
+                  <p className="text-sm font-medium text-secondary">
+                    Correo electrónico
+                    {esCampoPerfilFaltante("email_verificado") && (
+                      <PendingAsterisk />
+                    )}
+                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-surface-subtle px-3 py-2 text-sm text-primary">
+                    <span className="min-w-0 break-all">{usuario?.email || "Correo no disponible"}</span>
+                    {esCampoPerfilFaltante("email_verificado") ? (
+                      <Button
+                        type="button"
+                        onClick={() => iniciarRemediationPerfil("email_verificado")}
+                        variant="secondary"
+                        className="px-3 py-2 text-xs"
+                      >
+                        Verificar
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-success-text">Verificado</span>
+                    )}
+                  </div>
+                </div>
+
                 <FormControl
-                  label="Fecha de nacimiento"
+                  label={
+                    <>
+                      Fecha de nacimiento
+                      {esCampoPerfilFaltante("fecha_nacimiento") && (
+                        <PendingAsterisk />
+                      )}
+                    </>
+                  }
                   labelFor="perfil-fecha-nacimiento"
                 >
                   <Input
@@ -1160,11 +1305,21 @@ export default function ProfilePage() {
                     value={perfilForm.fecha_nacimiento}
                     onChange={handlePerfilFormChange}
                     disabled={isSavingPerfil}
-                    className="text-sm"
+                    className="box-border min-w-0 max-w-full text-sm"
                   />
                 </FormControl>
 
-                <FormControl label="Teléfono" labelFor="perfil-telefono">
+                <FormControl
+                  label={
+                    <>
+                      Teléfono
+                      {esCampoPerfilFaltante("telefono") && (
+                        <PendingAsterisk />
+                      )}
+                    </>
+                  }
+                  labelFor="perfil-telefono"
+                >
                   <Input
                     id="perfil-telefono"
                     type="tel"
@@ -1178,170 +1333,57 @@ export default function ProfilePage() {
                   />
                 </FormControl>
                 <p className="text-xs text-secondary" role="status">
-                  {usuario?.telefono_verified_at
-                    ? "Teléfono verificado."
-                    : usuario?.telefono_e164
-                      ? "Teléfono pendiente de verificación."
-                      : "Todavía no agregaste un teléfono."}
+                  {usuario?.telefono_e164 && !usuario?.telefono_verified_at
+                    ? "Este teléfono todavía no está verificado."
+                    : "El teléfono es un dato requerido del perfil."}
                 </p>
 
-                {!usuario?.telefono_verified_at && usuario?.telefono_e164 && (
-                  <div className="space-y-3">
-                    {telefonoPendienteDeGuardar ? (
-                      <p className="text-xs text-secondary">
-                        Guardá el teléfono antes de verificarlo.
-                      </p>
-                    ) : (
-                      <Button
-                        type="button"
-                        onClick={solicitarCodigoTelefono}
-                        disabled={
-                          isSavingPerfil ||
-                          phoneVerification.isSending ||
-                          phoneVerification.isConfirming
-                        }
-                        variant="secondary"
-                        className="px-3 py-2 text-xs"
-                      >
-                        {phoneVerification.challengeId
-                          ? "Enviar otro código"
-                          : "Enviar código"}
-                      </Button>
-                    )}
-
-                    {phoneVerification.challengeId && !telefonoPendienteDeGuardar && (
-                      <div className="space-y-2">
-                        <FormControl
-                          label="Código de verificación"
-                          labelFor="perfil-telefono-otp"
-                        >
-                          <Input
-                            id="perfil-telefono-otp"
-                            type="text"
-                            inputMode="numeric"
-                            autoComplete="one-time-code"
-                            maxLength={6}
-                            value={phoneVerification.code}
-                            onChange={(event) =>
-                              setPhoneVerification((prev) => ({
-                                ...prev,
-                                code: event.target.value,
-                                error: "",
-                              }))
-                            }
-                            disabled={phoneVerification.isConfirming}
-                            className="text-sm"
-                            placeholder="Ingresá el código de 6 dígitos"
-                          />
-                        </FormControl>
-                        <Button
-                          type="button"
-                          onClick={confirmarCodigoTelefono}
-                          disabled={
-                            phoneVerification.isConfirming ||
-                            phoneVerification.code.length !== 6
-                          }
-                          variant="secondary"
-                          className="px-3 py-2 text-xs"
-                        >
-                          {phoneVerification.isConfirming
-                            ? "Verificando..."
-                            : "Verificar teléfono"}
-                        </Button>
-                      </div>
-                    )}
-
-                    {phoneVerification.message && (
-                      <p className="text-xs text-secondary" role="status">
-                        {phoneVerification.message}
-                      </p>
-                    )}
-                    {phoneVerification.error && (
-                      <p className="text-xs text-secondary" role="alert">
-                        {phoneVerification.error}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </section>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  onClick={handleAvatarClick}
-                  disabled={isUploadingAvatar || isSavingPerfil}
-                  variant="secondary"
-                  className="px-3 py-2 text-xs"
-                >
-                  {isUploadingAvatar ? "Subiendo..." : "Cambiar foto"}
-                </Button>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleAvatarInputChange}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  onClick={() => setShowPasswordForm(true)}
-                  disabled={isSavingPerfil}
-                  variant="secondary"
-                  className="px-3 py-2 text-xs"
-                >
-                  Cambiar contraseña
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() =>
-                    setShowAppearanceOptions((isOpen) => !isOpen)
+                <FormControl
+                  label={
+                    <>
+                      Provincia
+                      {esCampoPerfilFaltante("provincia") && (
+                        <PendingAsterisk />
+                      )}
+                    </>
                   }
-                  disabled={isSavingPerfil}
-                  variant="secondary"
-                  className="px-3 py-2 text-xs"
-                  aria-expanded={showAppearanceOptions}
-                  aria-controls="perfil-apariencia-options"
+                  labelFor="perfil-provincia"
                 >
-                  Cambiar fondo
-                </Button>
-              </div>
+                  <Input
+                    id="perfil-provincia"
+                    type="text"
+                    name="provincia"
+                    value={perfilForm.provincia}
+                    onChange={handlePerfilFormChange}
+                    disabled={isSavingPerfil}
+                    className="text-sm"
+                    placeholder="Provincia"
+                  />
+                </FormControl>
 
-              {showAppearanceOptions && (
-                <Surface
-                  id="perfil-apariencia-options"
-                  variant="subtle"
-                  className="p-3"
+                <FormControl
+                  label={
+                    <>
+                      Ciudad
+                      {esCampoPerfilFaltante("ciudad") && (
+                        <PendingAsterisk />
+                      )}
+                    </>
+                  }
+                  labelFor="perfil-ciudad"
                 >
-                  <AppearanceSelector />
-                </Surface>
-              )}
-
-              <FormControl label="Provincia" labelFor="perfil-provincia">
-                <Input
-                  id="perfil-provincia"
-                  type="text"
-                  name="provincia"
-                  value={perfilForm.provincia}
-                  onChange={handlePerfilFormChange}
-                  disabled={isSavingPerfil}
-                  className="text-sm"
-                  placeholder="Provincia"
-                />
-              </FormControl>
-
-              <FormControl label="Ciudad" labelFor="perfil-ciudad">
-                <Input
-                  id="perfil-ciudad"
-                  type="text"
-                  name="ciudad"
-                  value={perfilForm.ciudad}
-                  onChange={handlePerfilFormChange}
-                  disabled={isSavingPerfil}
-                  className="text-sm"
-                  placeholder="Ciudad"
-                />
-              </FormControl>
+                  <Input
+                    id="perfil-ciudad"
+                    type="text"
+                    name="ciudad"
+                    value={perfilForm.ciudad}
+                    onChange={handlePerfilFormChange}
+                    disabled={isSavingPerfil}
+                    className="text-sm"
+                    placeholder="Ciudad"
+                  />
+                </FormControl>
+              </section>
 
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -1355,7 +1397,7 @@ export default function ProfilePage() {
 
                 <Button
                   type="button"
-                  onClick={cancelarEdicionPerfil}
+                  onClick={volverAlMenuEdicion}
                   disabled={isSavingPerfil}
                   variant="secondary"
                   className="px-3 py-2 text-xs"
@@ -1364,20 +1406,6 @@ export default function ProfilePage() {
                 </Button>
               </div>
             </form>
-            ) : (
-            <section
-              className="space-y-4"
-              aria-labelledby="perfil-password-title"
-            >
-              <h2 id="perfil-password-title" className="text-lg font-semibold">
-                Seguridad
-              </h2>
-              <h3 className="text-base font-semibold">Cambiar contraseña</h3>
-              <CambiarPasswordForm
-                onCancel={() => setShowPasswordForm(false)}
-                onSuccess={completarCambioPassword}
-              />
-            </section>
             )}
 
             {perfilErrorMessage && (
@@ -1430,19 +1458,17 @@ export default function ProfilePage() {
         {/* ===================================================== */}
         {/* Sección: Mis espacios */}
         {/* ===================================================== */}
-        {!showPerfilForm && (esModoPublicador || showCreateForm) && (
+        {!showPerfilForm && (
           <section className="mb-8">
-            {misComercios.length > 0 && (
-              <div className="flex items-end justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold">Mis espacios</h2>
-                  <p className="mt-1 text-sm text-secondary">
-                    Estos son los espacios públicos que administrás desde esta
-                    cuenta.
-                  </p>
-                </div>
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">Mis espacios</h2>
+                <p className="mt-1 text-sm text-secondary">
+                  Estos son los espacios públicos que administrás desde esta
+                  cuenta.
+                </p>
               </div>
-            )}
+            </div>
 
             {showCreateForm && (
               <Surface as="section" variant="elevated" className="mt-4 p-5">
@@ -1946,7 +1972,7 @@ export default function ProfilePage() {
 
                             <Button
                               type="button"
-                              onClick={() => setAgendaComercio(c)}
+                              onClick={() => abrirAgendaComercio(c)}
                               disabled={isActing}
                               variant="secondary"
                               className="px-2 py-1 text-[10px]"

@@ -8,10 +8,10 @@ import { getMe } from "@features/auth/services/authService";
  * El bearer sigue siendo opaco y pertenece a AuthContext; este hook no lo
  * persiste ni interpreta.
  */
-export function useCurrentUser(accessToken) {
+export function useCurrentUser(accessToken, sessionGeneration = 0) {
   return useQuery({
-    queryKey: queryKeys.users.me(),
-    queryFn: () => getMe(accessToken),
+    queryKey: queryKeys.users.me(sessionGeneration),
+    queryFn: ({ signal }) => getMe(accessToken, { signal }),
     enabled: Boolean(accessToken),
   });
 }

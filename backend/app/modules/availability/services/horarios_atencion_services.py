@@ -23,6 +23,9 @@ from app.modules.availability.schemas.horarios_atencion_schemas import (
 )
 from app.modules.spaces.models.comercios_models import Comercio
 from app.modules.users.models.usuarios_models import Usuario
+from app.modules.users.services.commercial_capabilities_services import (
+    require_commercial_capability,
+)
 
 
 ZONA_HORARIA_DISPONIBILIDAD = "America/Argentina/Buenos_Aires"
@@ -143,6 +146,8 @@ def reemplazar_horarios_atencion(
 
     if comercio.usuario_id != usuario.id:
         raise PermissionError("No tenes permiso para modificar este comercio")
+
+    require_commercial_capability(db, usuario, "puede_administrar_espacios")
 
     comercio_id = comercio.id
     validar_franjas_sin_solapamientos(franjas)

@@ -27,6 +27,9 @@ from app.modules.spaces.models.comercios_models import Comercio
 from app.modules.spaces.services.comercios_ownership_services import (
     obtener_comercio_propio_o_error,
 )
+from app.modules.users.services.commercial_capabilities_services import (
+    require_commercial_capability,
+)
 from app.modules.social.models.publicaciones_guardadas_models import PublicacionGuardada
 from app.modules.social.models.likes_publicaciones_models import LikePublicacion
 
@@ -128,6 +131,11 @@ def crear_publicacion(
         db,
         comercio_id=comercio_id,
         usuario_autenticado=usuario_autenticado,
+    )
+    require_commercial_capability(
+        db,
+        usuario_autenticado,
+        "puede_publicar_en_espacios",
     )
 
     nueva_publicacion = Publicacion(
@@ -492,6 +500,11 @@ def desactivar_publicacion(
         db,
         comercio_id=publicacion.comercio_id,
         usuario_autenticado=usuario_autenticado,
+    )
+    require_commercial_capability(
+        db,
+        usuario_autenticado,
+        "puede_administrar_espacios",
     )
 
     publicacion.is_activa = False

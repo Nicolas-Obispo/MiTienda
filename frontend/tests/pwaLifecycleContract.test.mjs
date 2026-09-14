@@ -11,7 +11,10 @@ import {
   PWA_RELOAD_GUARD_KEY,
   PWA_RUNTIME_STATE,
 } from "../src/pwa/lifecycleContract.js";
-import { createServiceWorkerRuntime } from "../src/pwa/registerServiceWorker.js";
+import {
+  createProductiveUpdateCoordinator,
+  createServiceWorkerRuntime,
+} from "../src/pwa/registerServiceWorker.js";
 import { handleActivationRequest } from "../src/pwa/workerLifecycle.js";
 
 const frontendRoot = new URL("../", import.meta.url);
@@ -208,6 +211,127 @@ test("una pestaña permite activacion explicita y recarga como maximo una vez", 
   harness.serviceWorker.emit("controllerchange");
   harness.serviceWorker.emit("controllerchange");
   assert.equal(harness.getReloads(), 1);
+});
+
+test("coordinador productivo activa un worker waiting y adopta la version sin loop", async () => {
+  let activationRequests = 0;
+  const waiting = {
+    postMessage(message, [responsePort]) {
+      activationRequests += 1;
+      responsePort.postMessage({
+        type: PWA_MESSAGE.ACTIVATION_ACCEPTED,
+        activationId: message.activationId,
+      });
+    },
+  };
+  const harness = createHarness({ registration: createRegistration({ waiting }) });
+  const coordinator = createProductiveUpdateCoordinator({
+    serviceWorkerRuntime: harness.runtime,
+    windowObject: harness.serviceWorker,
+    documentObject: { visibilityState: "visible" },
+  });
+
+  harness.runtime.start();
+  coordinator.start();
+  coordinator.start();
+  await flush();
+
+  assert.equal(activationRequests, 1);
+  assert.equal(harness.runtime.getState(), PWA_RUNTIME_STATE.ACTIVATING);
+  harness.serviceWorker.emit("controllerchange");
+  harness.serviceWorker.emit("controllerchange");
+  assert.equal(harness.runtime.getState(), PWA_RUNTIME_STATE.ACTIVE);
+  assert.equal(harness.getReloads(), 1);
+});
+
+test("dos clientes difieren la activacion y solo uno reintenta tras la transicion", async () => {
+  let activeClients = 2;
+  let activationRequests = 0;
+  let skipWaitingCalls = 0;
+  const waiting = {
+    postMessage(message, [responsePort]) {
+      activationRequests += 1;
+      void handleActivationRequest({
+        data: message,
+        responsePort,
+        clientsObject: {
+          matchAll: async () => Array.from(
+            { length: activeClients },
+            (_, index) => ({ id: `client-${index}` }),
+          ),
+        },
+        skipWaiting: async () => { skipWaitingCalls += 1; },
+      });
+    },
+  };
+
+  const first = createHarness({ registration: createRegistration({ waiting }) });
+  const second = createHarness({ registration: createRegistration({ waiting }) });
+  const firstCoordinator = createProductiveUpdateCoordinator({
+    serviceWorkerRuntime: first.runtime,
+    windowObject: first.serviceWorker,
+    documentObject: { visibilityState: "visible" },
+  });
+  const secondCoordinator = createProductiveUpdateCoordinator({
+    serviceWorkerRuntime: second.runtime,
+    windowObject: second.serviceWorker,
+    documentObject: { visibilityState: "visible" },
+  });
+
+  first.runtime.start();
+  second.runtime.start();
+  firstCoordinator.start();
+  secondCoordinator.start();
+  await flush();
+  await flush();
+
+  assert.equal(activationRequests, 2);
+  assert.equal(skipWaitingCalls, 0);
+  assert.equal(first.getReloads(), 0);
+  assert.equal(second.getReloads(), 0);
+
+  activeClients = 1;
+  first.serviceWorker.emit("focus");
+  await flush();
+  await flush();
+  assert.equal(activationRequests, 3);
+  assert.equal(skipWaitingCalls, 1);
+
+  first.serviceWorker.emit("controllerchange");
+  first.serviceWorker.emit("controllerchange");
+  assert.equal(first.getReloads(), 1);
+  assert.equal(second.getReloads(), 0);
+});
+
+test("actualizacion productiva no lee, borra ni reemplaza access_token", async () => {
+  const accessTokenStorage = createStorage();
+  accessTokenStorage.setItem("access_token", "opaque-existing-session");
+  const waiting = {
+    postMessage(message, [responsePort]) {
+      responsePort.postMessage({
+        type: PWA_MESSAGE.ACTIVATION_ACCEPTED,
+        activationId: message.activationId,
+      });
+    },
+  };
+  const harness = createHarness({ registration: createRegistration({ waiting }) });
+  const coordinator = createProductiveUpdateCoordinator({
+    serviceWorkerRuntime: harness.runtime,
+    windowObject: harness.serviceWorker,
+    documentObject: { visibilityState: "visible" },
+  });
+
+  harness.runtime.start();
+  coordinator.start();
+  await flush();
+  harness.serviceWorker.emit("controllerchange");
+
+  assert.equal(accessTokenStorage.getItem("access_token"), "opaque-existing-session");
+  const owner = await readFile(
+    new URL("src/pwa/registerServiceWorker.js", frontendRoot),
+    "utf8",
+  );
+  assert.doesNotMatch(owner, /localStorage|access_token/);
 });
 
 test("varias pestañas bloquean activacion inmediata", async () => {

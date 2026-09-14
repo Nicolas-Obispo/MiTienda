@@ -30,6 +30,12 @@ _DEFAULT_MESSAGES = {
     422: "Payload invalido",
 }
 
+# Solo contratos que declaran explicitamente `public_code` pueden ampliar la
+# respuesta HTTP. Los `detail={"code": ...}` existentes permanecen intactos.
+_PUBLIC_ERROR_CODES_BY_STATUS = {
+    403: frozenset({"commercial_capability_required"}),
+}
+
 
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(HTTPException, http_exception_handler)
@@ -40,6 +46,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     status_code = exc.status_code
     detail = _safe_public_detail(status_code, exc.detail)
+    public_code = _safe_public_error_code(status_code, exc.detail)
     log_level = "warning" if status_code < 500 else "error"
     getattr(logger, log_level)(
         "http_exception request_id=%s correlation_id=%s status=%s method=%s path=%s detail=%s",
@@ -54,11 +61,10 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         status_code,
         tags={"method": request.method, "route": _safe_request_path(request)},
     )
-    response = JSONResponse(
-        status_code=status_code,
-        content={"detail": detail},
-        headers=exc.headers,
-    )
+    content = {"detail": detail}
+    if public_code is not None:
+        content["code"] = public_code
+    response = JSONResponse(status_code=status_code, content=content, headers=exc.headers)
     return _with_context_headers(response)
 
 
@@ -116,6 +122,17 @@ def _safe_public_detail(status_code: int, detail: Any) -> str:
             return public_message
 
     return _DEFAULT_MESSAGES.get(status_code, "Error de solicitud")
+
+
+def _safe_public_error_code(status_code: int, detail: Any) -> str | None:
+    if not isinstance(detail, Mapping) or _contains_sensitive_data(detail):
+        return None
+
+    code = detail.get("public_code")
+    allowed_codes = _PUBLIC_ERROR_CODES_BY_STATUS.get(status_code, frozenset())
+    if isinstance(code, str) and code in allowed_codes:
+        return code
+    return None
 
 
 def _contains_sensitive_data(value: Any) -> bool:

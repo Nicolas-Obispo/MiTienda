@@ -5,6 +5,11 @@ export { AuthProvider } from "@features/auth/context/AuthContext";
 
 // Hook oficial para consumir autenticación.
 export { useAuth } from "@features/auth/hooks/useAuth";
+export {
+  COMMERCIAL_CAPABILITY_REQUIRED,
+  isCommercialCapabilityError,
+  useCommercialCapabilityRemediation,
+} from "@features/auth/hooks/useCommercialCapabilityRemediation";
 
 // Servicios de autenticación.
 export {

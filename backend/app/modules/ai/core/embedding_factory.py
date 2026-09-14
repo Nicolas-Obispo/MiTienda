@@ -11,7 +11,6 @@ Factory para obtener el EmbeddingProvider activo según configuración.
 from app.core.config import settings
 from app.modules.ai.core.embedding_provider import EmbeddingProvider
 from app.modules.ai.providers.simulated_provider import SimulatedEmbeddingProvider
-from app.modules.ai.providers.local_provider import LocalEmbeddingProvider
 
 
 _PROVIDERS_CACHE: dict[str, EmbeddingProvider] = {}
@@ -39,9 +38,16 @@ def get_embedding_provider() -> EmbeddingProvider:
 
     if provider_name == "local":
         try:
-            provider = LocalEmbeddingProvider()
-        except Exception:
-            provider = SimulatedEmbeddingProvider()
+            from app.modules.ai.providers.local_provider import LocalEmbeddingProvider
+        except ModuleNotFoundError as exc:
+            if exc.name == "sentence_transformers":
+                raise RuntimeError(
+                    "EMBEDDINGS_PROVIDER=local requiere la dependencia "
+                    "sentence-transformers instalada"
+                ) from exc
+            raise
+
+        provider = LocalEmbeddingProvider()
         _PROVIDERS_CACHE[provider_name] = provider
         return provider
 

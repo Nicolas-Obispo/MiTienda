@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Trash2 } from "lucide-react";
 import { ActiveLayer } from "@core";
+import { useCommercialCapabilityRemediation } from "@features/auth";
 import { Button, Surface, getMediaUrlFromAny } from "@shared";
 import {
   toggleLikeHistoria,
@@ -48,6 +49,8 @@ export default function HistoriasViewer({
   const [isDenunciaOpen, setIsDenunciaOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const { intentarAccionComercial, manejarErrorCapability } =
+    useCommercialCapabilityRemediation();
 
   const imgRef = useRef(null);
   const videoRef = useRef(null);
@@ -439,6 +442,10 @@ export default function HistoriasViewer({
     const historiaId = historiaActual?.id;
     const comercioId = historiaActual?.comercio_id;
     if (!historiaId || !comercioId || eliminarHistoriaMutation.isPending) return;
+    if (!(await intentarAccionComercial("puede_administrar_espacios"))) {
+      setIsDeleteConfirmOpen(false);
+      return;
+    }
 
     const deletionState = reconcileStoryDeletion(
       historiasList,
@@ -466,6 +473,11 @@ export default function HistoriasViewer({
         cerrarViewer();
       }
     } catch (error) {
+      if (await manejarErrorCapability(error)) {
+        deletionTransitionRef.current = null;
+        setIsDeleteConfirmOpen(false);
+        return;
+      }
       deletionTransitionRef.current = null;
       setDeleteError(
         error?.publicMessage || error?.message || "No se pudo eliminar la historia."

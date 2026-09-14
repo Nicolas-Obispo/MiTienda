@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { ActiveLayer } from "@core";
+import { useCommercialCapabilityRemediation } from "@features/auth";
 import {
   Alert,
   Button,
@@ -249,6 +250,7 @@ export default function AgendaPrivadaModal({
   const crearMutation = useCrearElementoAgendaMutation();
   const actualizarMutation = useActualizarElementoAgendaMutation();
   const cambiarEstadoMutation = useCambiarEstadoElementoAgendaMutation();
+  const { manejarErrorCapability } = useCommercialCapabilityRemediation();
 
   const elementos = useMemo(
     () => ordenarElementos(elementosQuery.data || []),
@@ -363,6 +365,10 @@ export default function AgendaPrivadaModal({
       setForm(formGuardado);
       setFormInicial(formGuardado);
     } catch (error) {
+      if (await manejarErrorCapability(error)) {
+        onClose?.();
+        return;
+      }
       const conflictoVersion =
         modoFormulario === "editar" && obtenerHttpStatus(error) === 409;
       setMensajeError(mensajeErrorAmigable(error, { conflictoVersion }));
@@ -386,6 +392,10 @@ export default function AgendaPrivadaModal({
         estado,
       });
     } catch (error) {
+      if (await manejarErrorCapability(error)) {
+        onClose?.();
+        return;
+      }
       const conflictoVersion = obtenerHttpStatus(error) === 409;
       setMensajeError(mensajeErrorAmigable(error, { conflictoVersion }));
 

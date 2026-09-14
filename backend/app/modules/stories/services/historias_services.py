@@ -26,6 +26,9 @@ from app.modules.spaces.models.comercios_models import Comercio
 from app.modules.spaces.services.comercios_ownership_services import (
     obtener_comercio_propio_o_error,
 )
+from app.modules.users.services.commercial_capabilities_services import (
+    require_commercial_capability,
+)
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.spaces.services.comercios_services import obtener_comercio_activo_o_error
 
@@ -139,6 +142,11 @@ def crear_historia(
         comercio_id=comercio_id,
         usuario_autenticado=usuario_autenticado,
     )
+    require_commercial_capability(
+        db,
+        usuario_autenticado,
+        "puede_publicar_en_espacios",
+    )
 
     nueva_historia = Historia(
         comercio_id=comercio_id,
@@ -172,6 +180,11 @@ def desactivar_historia(
         db,
         comercio_id=historia.comercio_id,
         usuario_autenticado=usuario_autenticado,
+    )
+    require_commercial_capability(
+        db,
+        usuario_autenticado,
+        "puede_administrar_espacios",
     )
 
     historia.is_activa = False

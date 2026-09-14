@@ -44,6 +44,10 @@ from app.modules.stories.services.historias_services import (
 from app.modules.spaces.services.comercios_services import ComercioNoVisibleError
 from app.modules.stories.services.historias_vistas_services import marcar_historia_como_vista
 from app.modules.stories.services.historias_likes_services import toggle_like_historia
+from app.modules.users.services.commercial_capabilities_services import (
+    CommercialCapabilityRequiredError,
+    commercial_capability_http_detail,
+)
 
 router = APIRouter(
     prefix="/historias",
@@ -76,6 +80,11 @@ def crear_historia_endpoint(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ComercioUsuarioNoPropietarioError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except CommercialCapabilityRequiredError as exc:
+        raise HTTPException(
+            status_code=403,
+            detail=commercial_capability_http_detail(),
+        ) from exc
 
 
 @router.delete(
@@ -99,6 +108,11 @@ def eliminar_historia_endpoint(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ComercioUsuarioNoPropietarioError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except CommercialCapabilityRequiredError as exc:
+        raise HTTPException(
+            status_code=403,
+            detail=commercial_capability_http_detail(),
+        ) from exc
 
     return None
 

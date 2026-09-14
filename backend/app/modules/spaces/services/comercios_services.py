@@ -36,6 +36,9 @@ from app.modules.discovery.services.taxonomy_assignment_services import (
     sincronizar_especialidades_comercio,
 )
 from app.modules.spaces.models.comercios_models import Comercio
+from app.modules.users.services.commercial_capabilities_services import (
+    require_commercial_capability,
+)
 from app.modules.stories.models.historias_models import Historia
 from app.modules.posts.models.publicaciones_models import Publicacion
 from app.modules.users.models.usuarios_models import Usuario
@@ -713,12 +716,11 @@ def crear_comercio(
     """
     Crea un comercio asociado al usuario autenticado.
 
-    Reglas:
-    - El usuario debe estar en modo 'publicador'
+    La autorización comercial se deriva en el owner de capabilities. El modo
+    activo permanece como dato legado/de presentación y no autoriza el alta.
     """
 
-    if usuario.modo_activo != "publicador":
-        raise ValueError("El usuario no está en modo publicador")
+    require_commercial_capability(db, usuario, "puede_crear_espacio")
 
     _validar_rubro_activo(db, data.rubro_id)
     _validar_ubicacion_completa(
@@ -1522,6 +1524,8 @@ def actualizar_comercio(
     if comercio.usuario_id != usuario.id:
         raise PermissionError("No tenés permiso para modificar este comercio")
 
+    require_commercial_capability(db, usuario, "puede_administrar_espacios")
+
     payload = data.model_dump(exclude_unset=True)
     if _CAMPOS_UBICACION.intersection(payload):
         ubicacion_resultante = {
@@ -1590,9 +1594,33 @@ def desactivar_comercio(
     if comercio.usuario_id != usuario.id:
         raise PermissionError("No tenés permiso para desactivar este comercio")
 
+    require_commercial_capability(db, usuario, "puede_administrar_espacios")
+
     comercio.activo = False
 
     db.commit()
     db.refresh(comercio)
 
+    return comercio
+
+
+# ============================================================
+# Reactivar comercio
+# ============================================================
+
+def reactivar_comercio(
+    db: Session,
+    usuario: Usuario,
+    comercio: Comercio,
+) -> Comercio:
+    """Reactiva un comercio propio después del gate comercial."""
+    if comercio.usuario_id != usuario.id:
+        raise PermissionError("No tenés permisos para reactivar este comercio")
+
+    require_commercial_capability(db, usuario, "puede_administrar_espacios")
+
+    comercio.activo = True
+    db.add(comercio)
+    db.commit()
+    db.refresh(comercio)
     return comercio

@@ -1,9 +1,16 @@
 // frontend/src/context/AuthContext.jsx
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { queryKeys } from "@core/constants/queryKeys";
 import { queryClient } from "@core/query/queryClient";
 import { logoutUsuario } from "@features/auth/services/authService";
 import { AuthContext } from "@features/auth/context/AuthContextCore";
+import {
+  AUTH_TOKEN_STORAGE_KEY,
+  getTokenFromStorageEvent,
+  normalizeAuthToken,
+  removeStoredAuthTokenIfCurrent,
+  shouldClearAuthSession,
+} from "@features/auth/context/authSessionTransition";
 import { useCurrentUser } from "@features/auth/hooks/useCurrentUser";
 
 /**
@@ -18,17 +25,18 @@ import { useCurrentUser } from "@features/auth/hooks/useCurrentUser";
  */
 export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(() => {
-    const token = localStorage.getItem("access_token");
-    return token && token !== "null" && token !== "undefined" ? token : null;
+    return normalizeAuthToken(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY));
   });
 
   const [estaAutenticado, setEstaAutenticado] = useState(() => {
-    const token = localStorage.getItem("access_token");
-    return Boolean(token && token !== "null" && token !== "undefined");
+    return Boolean(normalizeAuthToken(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)));
   });
 
   const [postAuthDestination, setPostAuthDestination] = useState(null);
-  const currentUserQuery = useCurrentUser(accessToken);
+  const [sessionGeneration, setSessionGeneration] = useState(0);
+  const activeAccessTokenRef = useRef(accessToken);
+  const sessionGenerationRef = useRef(0);
+  const currentUserQuery = useCurrentUser(accessToken, sessionGeneration);
   const {
     data: currentUser,
     error: currentUserError,
@@ -40,9 +48,36 @@ export function AuthProvider({ children }) {
     []
   );
 
-  const limpiarSesionLocal = useCallback(() => {
+  const advanceSessionGeneration = useCallback(() => {
+    const nextGeneration = sessionGenerationRef.current + 1;
+    sessionGenerationRef.current = nextGeneration;
+    setSessionGeneration(nextGeneration);
+  }, []);
+
+  const limpiarSesionLocal = useCallback((
+    failedToken = null,
+    failedGeneration = null,
+  ) => {
+    // Una respuesta tardía de una sesión anterior nunca puede invalidar la
+    // sesión que se instaló después de iniciar sesión nuevamente.
+    if (!shouldClearAuthSession(
+      activeAccessTokenRef.current,
+      failedToken,
+      sessionGenerationRef.current,
+      failedGeneration
+    )) {
+      return false;
+    }
+
+    // Compare-and-remove: otro cliente puede haber instalado una sesión nueva
+    // en el storage compartido aunque este cliente todavía conserve la vieja.
+    if (!removeStoredAuthTokenIfCurrent(localStorage, failedToken)) {
+      return false;
+    }
+
     // Centralizamos limpieza para evitar estados inconsistentes.
-    localStorage.removeItem("access_token");
+    activeAccessTokenRef.current = null;
+    advanceSessionGeneration();
     setAccessToken(null);
     setEstaAutenticado(false);
     setPostAuthDestination(null);
@@ -51,7 +86,8 @@ export function AuthProvider({ children }) {
     // Evita que el modo exploración herede liked_by_me / guardada_by_me
     // de un usuario anterior.
     queryClient.clear();
-  }, []);
+    return true;
+  }, [advanceSessionGeneration]);
 
   const login = useCallback((token, options = {}) => {
     if (!token || typeof token !== "string") return;
@@ -60,14 +96,20 @@ export function AuthProvider({ children }) {
     // Evita mezclar datos personales entre usuarios distintos.
     queryClient.clear();
 
-    localStorage.setItem("access_token", token);
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+    // La referencia activa y su generación se actualizan antes de habilitar
+    // cualquier query de la nueva sesión.
+    activeAccessTokenRef.current = token;
+    advanceSessionGeneration();
     setAccessToken(token);
     setEstaAutenticado(true);
     setPostAuthDestination(options.postAuthDestination || null);
     // La query habilitada por accessToken carga /usuarios/me.
-  }, []);
+  }, [advanceSessionGeneration]);
 
   const logout = useCallback(async () => {
+    const tokenBeingLoggedOut = accessToken;
+    const generationBeingLoggedOut = sessionGeneration;
     try {
       // Logout real en backend (revoca token) si hay token
       if (accessToken) {
@@ -77,15 +119,18 @@ export function AuthProvider({ children }) {
       // Si falla el logout remoto, igual limpiamos local (no bloquea al usuario)
       console.warn("Logout remoto falló (se limpia sesión local igual):", error);
     } finally {
-      limpiarSesionLocal();
+      limpiarSesionLocal(tokenBeingLoggedOut, generationBeingLoggedOut);
     }
-  }, [accessToken, limpiarSesionLocal]);
+  }, [accessToken, limpiarSesionLocal, sessionGeneration]);
 
   const refrescarUsuario = useCallback(async () => {
     if (!accessToken) {
       queryClient.removeQueries({ queryKey: queryKeys.users.me() });
       return null;
     }
+
+    const requestToken = accessToken;
+    const requestGeneration = sessionGeneration;
 
     try {
       const result = await refetchCurrentUser({ throwOnError: false });
@@ -105,7 +150,7 @@ export function AuthProvider({ children }) {
 
       if (is401) {
         // 401 no es “error”: es sesión vencida/revocada -> limpieza silenciosa
-        limpiarSesionLocal();
+        limpiarSesionLocal(requestToken, requestGeneration);
         return null;
       }
 
@@ -113,7 +158,26 @@ export function AuthProvider({ children }) {
       console.error("Error obteniendo /usuarios/me:", error);
       return null;
     }
-  }, [accessToken, limpiarSesionLocal, refetchCurrentUser]);
+  }, [accessToken, limpiarSesionLocal, refetchCurrentUser, sessionGeneration]);
+
+  useEffect(() => {
+    function handleStorage(event) {
+      const nextToken = getTokenFromStorageEvent(event, localStorage);
+      if (nextToken === undefined || nextToken === activeAccessTokenRef.current) return;
+
+      // El evento storage no escribe nuevamente: adopta el estado compartido
+      // y por eso no puede generar un loop entre clientes.
+      queryClient.clear();
+      activeAccessTokenRef.current = nextToken;
+      advanceSessionGeneration();
+      setAccessToken(nextToken);
+      setEstaAutenticado(Boolean(nextToken));
+      setPostAuthDestination(null);
+    }
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [advanceSessionGeneration]);
 
   useEffect(() => {
     if (!accessToken || !currentUserError) return;
@@ -128,12 +192,12 @@ export function AuthProvider({ children }) {
       msg.toLowerCase().includes("unauthorized");
 
     if (is401) {
-      limpiarSesionLocal();
+      limpiarSesionLocal(accessToken, sessionGeneration);
       return;
     }
 
     console.error("Error obteniendo /usuarios/me:", currentUserError);
-  }, [accessToken, currentUserError, limpiarSesionLocal]);
+  }, [accessToken, currentUserError, limpiarSesionLocal, sessionGeneration]);
 
   const value = useMemo(
     () => ({

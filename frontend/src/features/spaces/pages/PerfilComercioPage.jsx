@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ActiveLayer, useAnonymousDetailGate, useProtectedActionRedirect } from "@core";
+import { useCommercialCapabilityRemediation } from "@features/auth";
 
 import { PublicacionCard } from "@features/posts";
 import { CrearHistoriaModal } from "@features/stories";
@@ -97,6 +98,8 @@ export default function CommerceProfilePage() {
     estaAutenticado,
     requireAuthentication: usuarioDebeLoguearse,
   } = useProtectedActionRedirect();
+  const { intentarAccionComercial, manejarErrorCapability } =
+    useCommercialCapabilityRemediation();
   const [perfilHydratado, setPerfilHydratado] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [noticeMessage, setNoticeMessage] = useState("");
@@ -510,6 +513,7 @@ function esComercioMio(comercioData) {
   }
 
   async function handleSubmitCrearPublicacion() {
+    if (!(await intentarAccionComercial("puede_publicar_en_espacios"))) return;
     if (!publicacionForm.titulo.trim()) {
       setErrorMessage("El título de la publicación es obligatorio.");
       return;
@@ -549,10 +553,34 @@ function esComercioMio(comercioData) {
       handleCloseCrearPublicacion();
       await refreshPublicaciones();
     } catch (error) {
+      if (await manejarErrorCapability(error)) {
+        handleCloseCrearPublicacion();
+        return;
+      }
       setErrorMessage(error.message || "Error al crear la publicación.");
     } finally {
       setIsCreatingPublicacion(false);
     }
+  }
+
+  async function abrirCrearHistoria() {
+    if (!(await intentarAccionComercial("puede_publicar_en_espacios"))) return;
+    setIsCrearHistoriaOpen(true);
+  }
+
+  async function abrirCrearPublicacion() {
+    if (!(await intentarAccionComercial("puede_publicar_en_espacios"))) return;
+    setIsCrearPublicacionOpen(true);
+  }
+
+  async function abrirAgendaPrivada() {
+    if (!(await intentarAccionComercial("puede_administrar_espacios"))) return;
+    setAgendaComercio(comercio);
+  }
+
+  async function editarEspacio() {
+    if (!(await intentarAccionComercial("puede_administrar_espacios"))) return;
+    navigate(`/perfil?editarEspacioId=${comercio.id}`);
   }
 
   const tieneHistoriasPendientes = historias.some(
@@ -658,7 +686,7 @@ function esComercioMio(comercioData) {
         iconOnly
         aria-label="Editar espacio"
         variant="ghost"
-        onClick={() => navigate(`/perfil?editarEspacioId=${comercio.id}`)}
+        onClick={editarEspacio}
         className="text-lg text-brand"
       >
         <span className="text-brand">
@@ -675,7 +703,7 @@ function esComercioMio(comercioData) {
               <Button
                 iconOnly
                 variant="ghost"
-                onClick={() => setAgendaComercio(comercio)}
+                onClick={abrirAgendaPrivada}
                 aria-label="Abrir agenda"
               >
                 <span className="relative inline-flex h-6 w-5 flex-col overflow-hidden rounded-sm border border-border-strong bg-surface-elevated">
@@ -855,7 +883,7 @@ function esComercioMio(comercioData) {
                   <Button
                     variant="ghost"
                     className="group cursor-pointer rounded-xl px-2 py-1 text-xs"
-                    onClick={() => setIsCrearHistoriaOpen(true)}
+                    onClick={abrirCrearHistoria}
                   >
                     <span className="inline-flex items-center gap-1 text-secondary group-hover:text-primary">
                       <PlusCircle size={14} aria-hidden="true" />
@@ -866,7 +894,7 @@ function esComercioMio(comercioData) {
                   <Button
                     variant="ghost"
                     className="group cursor-pointer rounded-xl px-2 py-1 text-xs"
-                    onClick={() => setIsCrearPublicacionOpen(true)}
+                    onClick={abrirCrearPublicacion}
                   >
                     <span className="inline-flex items-center gap-1 text-secondary group-hover:text-primary">
                       <PlusCircle size={14} aria-hidden="true" />

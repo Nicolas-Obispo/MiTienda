@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { ActiveLayer } from "@core";
+import { useCommercialCapabilityRemediation } from "@features/auth";
 import { Alert, Button, Skeleton, Surface } from "@shared";
 import {
   useHorariosAtencion,
@@ -186,6 +187,7 @@ export default function HorariosAtencionEditor({
     enabled: !isDraft && Boolean(comercioId),
   });
   const reemplazarMutation = useReemplazarHorariosAtencionMutation();
+  const { manejarErrorCapability } = useCommercialCapabilityRemediation();
 
   useEffect(() => {
     cerrarButtonRef.current?.focus();
@@ -402,6 +404,10 @@ export default function HorariosAtencionEditor({
       });
       onClose();
     } catch (error) {
+      if (await manejarErrorCapability(error)) {
+        onClose?.();
+        return;
+      }
       setErrorMessage(getMensajeError(error));
     }
   }

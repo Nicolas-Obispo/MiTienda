@@ -47,6 +47,10 @@ from app.modules.feedgo_agenda.services.feedgo_agenda_contextos_services import 
     obtener_o_crear_contexto_agenda_para_comercio,
 )
 from app.modules.users.models.usuarios_models import Usuario
+from app.modules.users.services.commercial_capabilities_services import (
+    CommercialCapabilityRequiredError,
+    commercial_capability_http_detail,
+)
 
 
 router = APIRouter(
@@ -151,6 +155,11 @@ def _traducir_error_contexto(exc: Exception) -> HTTPException:
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(exc),
         )
+    if isinstance(exc, CommercialCapabilityRequiredError):
+        return HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=commercial_capability_http_detail(),
+        )
     if isinstance(exc, FeedGoAgendaConcurrenciaNoRecuperableError):
         return HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -206,16 +215,19 @@ def _obtener_contexto_existente_o_404(
     *,
     comercio_id: int,
     usuario_actual: Usuario,
+    require_administration: bool = False,
 ) -> FeedGoAgendaContextoResultado:
     try:
         resultado = obtener_contexto_agenda_para_comercio(
             db,
             comercio_id=comercio_id,
             usuario_autenticado=usuario_actual,
+            require_administration=require_administration,
         )
     except (
         FeedGoAgendaComercioNoEncontradoError,
         FeedGoAgendaUsuarioNoPropietarioError,
+        CommercialCapabilityRequiredError,
         FeedGoAgendaConcurrenciaNoRecuperableError,
         FeedGoAgendaContextoInconsistenteError,
     ) as exc:
@@ -325,6 +337,7 @@ def obtener_o_crear_contexto_endpoint(
     except (
         FeedGoAgendaComercioNoEncontradoError,
         FeedGoAgendaUsuarioNoPropietarioError,
+        CommercialCapabilityRequiredError,
         FeedGoAgendaConcurrenciaNoRecuperableError,
         FeedGoAgendaContextoInconsistenteError,
     ) as exc:
@@ -404,6 +417,7 @@ def crear_elemento_endpoint(
         db,
         comercio_id=comercio_id,
         usuario_actual=usuario_actual,
+        require_administration=True,
     )
 
     try:
@@ -454,6 +468,7 @@ def actualizar_elemento_endpoint(
         db,
         comercio_id=comercio_id,
         usuario_actual=usuario_actual,
+        require_administration=True,
     )
 
     try:
@@ -505,6 +520,7 @@ def cambiar_estado_elemento_endpoint(
         db,
         comercio_id=comercio_id,
         usuario_actual=usuario_actual,
+        require_administration=True,
     )
 
     try:

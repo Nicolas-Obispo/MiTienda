@@ -2,6 +2,12 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { getInternalReturnTo } from "../src/core/navigation/internalReturnTo.js";
+import {
+  AUTH_TOKEN_STORAGE_KEY,
+  getTokenFromStorageEvent,
+  removeStoredAuthTokenIfCurrent,
+  shouldClearAuthSession,
+} from "../src/features/auth/context/authSessionTransition.js";
 
 const root = new URL("../", import.meta.url);
 const readText = (path) => readFile(new URL(path, root), "utf8");
@@ -10,18 +16,118 @@ test("ET99.6-A centraliza GET /usuarios/me en una query TanStack en memoria", as
   const hook = await readText("src/features/auth/hooks/useCurrentUser.js");
   const keys = await readText("src/core/constants/queryKeys.js");
 
-  assert.match(keys, /users:\s*\{\s*me:\s*\(\)\s*=>\s*\["users", "me"\]/s);
+  assert.match(keys, /me:\s*\(sessionGeneration\)\s*=>/);
+  assert.match(keys, /"users",\s*"me"/);
   assert.match(hook, /useQuery\(/);
-  assert.match(hook, /queryKey:\s*queryKeys\.users\.me\(\)/);
-  assert.match(hook, /queryFn:\s*\(\)\s*=>\s*getMe\(accessToken\)/);
+  assert.match(hook, /queryKey:\s*queryKeys\.users\.me\(sessionGeneration\)/);
+  assert.match(hook, /queryFn:\s*\(\{ signal \}\)\s*=>\s*getMe\(accessToken, \{ signal \}\)/);
   assert.match(hook, /enabled:\s*Boolean\(accessToken\)/);
   assert.doesNotMatch(hook, /localStorage|sessionStorage|indexedDB/i);
+});
+
+test("dos clientes coordinan token nuevo frente a un 401 tardío del token viejo", async () => {
+  const context = await readText("src/features/auth/context/AuthContext.jsx");
+  const service = await readText("src/features/auth/services/authService.js");
+
+  const oldToken = "old-invalid-token";
+  const newToken = "new-valid-token";
+  let storedToken = oldToken;
+  let storageWrites = 0;
+  const sharedStorage = {
+    getItem(key) {
+      return key === AUTH_TOKEN_STORAGE_KEY ? storedToken : null;
+    },
+    setItem(key, value) {
+      if (key === AUTH_TOKEN_STORAGE_KEY) storedToken = value;
+      storageWrites += 1;
+    },
+    removeItem(key) {
+      if (key === AUTH_TOKEN_STORAGE_KEY) storedToken = null;
+      storageWrites += 1;
+    },
+  };
+
+  const clientA = { token: oldToken, generation: 0 };
+  const clientB = { token: oldToken, generation: 0 };
+  let loginCount = 0;
+
+  // B completa login y publica la nueva sesión en el storage compartido.
+  loginCount += 1;
+  sharedStorage.setItem(AUTH_TOKEN_STORAGE_KEY, newToken);
+  clientB.token = newToken;
+  clientB.generation += 1;
+
+  // La request pendiente de A todavía pertenece a su generación/token viejo.
+  assert.equal(
+    shouldClearAuthSession(clientA.token, oldToken, clientA.generation, 0),
+    true
+  );
+  assert.equal(removeStoredAuthTokenIfCurrent(sharedStorage, oldToken), false);
+  assert.equal(sharedStorage.getItem(AUTH_TOKEN_STORAGE_KEY), newToken);
+
+  // El evento storage adopta la sesión de B sin volver a escribirla (sin loop).
+  const writesBeforeStorageEvent = storageWrites;
+  const adoptedToken = getTokenFromStorageEvent(
+    {
+      key: AUTH_TOKEN_STORAGE_KEY,
+      oldValue: oldToken,
+      newValue: newToken,
+      storageArea: sharedStorage,
+    },
+    sharedStorage
+  );
+  clientA.token = adoptedToken;
+  clientA.generation += 1;
+  assert.equal(storageWrites, writesBeforeStorageEvent);
+
+  const privateRequest = (token) => ({ status: token === newToken ? 200 : 401 });
+  assert.equal(privateRequest(clientB.token).status, 200);
+  assert.equal(privateRequest(sharedStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).status, 200);
+  assert.equal(loginCount, 1);
+
+  assert.match(context, /removeStoredAuthTokenIfCurrent\(localStorage, failedToken\)/);
+  assert.match(context, /window\.addEventListener\("storage", handleStorage\)/);
+  assert.match(context, /activeAccessTokenRef\.current = nextToken/);
+  assert.match(context, /advanceSessionGeneration\(\)/);
+  assert.doesNotMatch(context, /BroadcastChannel/);
+  assert.match(service, /httpGet\("\/usuarios\/me", tokenJWT, \{ signal: options\.signal \}\)/);
+});
+
+test("un 401 activo limpia y un logout compartido se propaga sin loops", () => {
+  const activeToken = "active-token";
+  let storedToken = activeToken;
+  let storageWrites = 0;
+  const sharedStorage = {
+    getItem: () => storedToken,
+    removeItem() {
+      storedToken = null;
+      storageWrites += 1;
+    },
+  };
+
+  assert.equal(shouldClearAuthSession(activeToken, activeToken, 4, 4), true);
+  assert.equal(removeStoredAuthTokenIfCurrent(sharedStorage, activeToken), true);
+  assert.equal(storedToken, null);
+
+  const writesBeforeStorageEvent = storageWrites;
+  const propagatedLogout = getTokenFromStorageEvent(
+    {
+      key: AUTH_TOKEN_STORAGE_KEY,
+      oldValue: activeToken,
+      newValue: null,
+      storageArea: sharedStorage,
+    },
+    sharedStorage
+  );
+  assert.equal(propagatedLogout, null);
+  assert.equal(storageWrites, writesBeforeStorageEvent);
+  assert.equal(shouldClearAuthSession("newer-token", activeToken, 5, 4), false);
 });
 
 test("AuthContext expone la query como fuente única y limpia cache al cambiar sesión", async () => {
   const context = await readText("src/features/auth/context/AuthContext.jsx");
 
-  assert.match(context, /useCurrentUser\(accessToken\)/);
+  assert.match(context, /useCurrentUser\(accessToken, sessionGeneration\)/);
   assert.match(context, /usuario:\s*currentUser\s*\|\|\s*null/);
   assert.doesNotMatch(context, /const\s*\[usuario\s*,\s*setUsuario\]/);
   assert.doesNotMatch(context, /getMe\(/);
@@ -54,20 +160,33 @@ test("ET99.6-B mantiene Datos personales dentro de /me y deja el teléfono verif
   assert.doesNotMatch(page, /localStorage|sessionStorage|indexedDB|Cache Storage|URLSearchParams/i);
 });
 
-test("ET99.6-C delega OTP al backend y no persiste challenge ni código", async () => {
+test("el teléfono es requerido y el lanzamiento no expone OTP", async () => {
   const page = await readText("src/features/auth/pages/ProfilePage.jsx");
   const service = await readText("src/features/auth/services/authService.js");
 
-  assert.match(page, /solicitarVerificacionTelefono\(accessToken\)/);
-  assert.match(page, /confirmarVerificacionTelefono\(accessToken/);
-  assert.match(page, /challengeId: ""/);
-  assert.match(page, /code: ""/);
-  assert.match(page, /Enviar código|Enviar otro código/);
-  assert.match(page, /Verificar teléfono/);
-  assert.match(page, /await\s+refrescarUsuario\(\)/);
-  assert.doesNotMatch(page, /localStorage|sessionStorage|indexedDB|URLSearchParams/i);
+  assert.match(page, /Teléfono/);
+  assert.doesNotMatch(page, /Teléfono \(opcional\)/);
+  assert.match(page, /Este teléfono todavía no está verificado\.|El teléfono es un dato requerido del perfil/i);
+  assert.match(page, /telefono: "Agregá tu teléfono\."/);
+  assert.doesNotMatch(page, /Enviar código|Enviar otro código|Verificar teléfono|phoneVerification/);
   assert.match(service, /\/usuarios\/me\/telefono-verificacion\/reenvio/);
   assert.match(service, /\/usuarios\/me\/telefono-verificacion\/confirmar/);
+});
+
+test("Editar perfil presenta datos personales y asteriscos sólo desde los faltantes backend", async () => {
+  const page = await readText("src/features/auth/pages/ProfilePage.jsx");
+
+  assert.match(page, /Correo electrónico/);
+  assert.match(page, /usuario\?\.email \|\| "Correo no disponible"/);
+  assert.match(page, /iniciarRemediationPerfil\("email_verificado"\)/);
+  assert.match(page, /Verificado/);
+  assert.match(page, /const esCampoPerfilFaltante = \(campo\) => camposPerfilFaltantes\.includes\(campo\)/);
+  for (const field of ["provincia", "ciudad", "fecha_nacimiento", "telefono", "email_verificado"]) {
+    assert.match(page, new RegExp(`esCampoPerfilFaltante\\("${field}"\\)`));
+  }
+  assert.doesNotMatch(page, /esCampoPerfilFaltante\("telefono_verificado"\)/);
+  assert.match(page, /Este teléfono todavía no está verificado\./);
+  assert.match(page, /editar-perfil-menu-title/);
 });
 
 test("ET99.6-D renderiza derivados backend y los traduce sin recalcularlos", async () => {
@@ -81,9 +200,8 @@ test("ET99.6-D renderiza derivados backend y los traduce sin recalcularlos", asy
     "provincia",
     "ciudad",
     "fecha_nacimiento",
-    "email_verificado",
     "telefono",
-    "telefono_verificado",
+    "email_verificado",
   ]) {
     assert.match(page, new RegExp(`${field}:`));
   }

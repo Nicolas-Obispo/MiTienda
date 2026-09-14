@@ -17,7 +17,7 @@
 
 import { useEffect, useState } from "react";
 import { ActiveLayer } from "@core";
-import { useAuth } from "@features/auth";
+import { useAuth, useCommercialCapabilityRemediation } from "@features/auth";
 import { crearHistoria } from "@features/stories";
 import { Alert, Button, Input, Surface, uploadImagen } from "@shared";
 
@@ -29,6 +29,8 @@ export default function CrearHistoriaModal({
 }) {
   // ✅ Token real desde AuthContext (backend manda)
   const { accessToken } = useAuth();
+  const { intentarAccionComercial, manejarErrorCapability } =
+    useCommercialCapabilityRemediation();
 
   // UI state
   const [mediaUrl, setMediaUrl] = useState(""); // fallback opcional (URL manual)
@@ -102,6 +104,11 @@ export default function CrearHistoriaModal({
   async function handleSubmit(e) {
     e.preventDefault();
 
+    if (!(await intentarAccionComercial("puede_publicar_en_espacios"))) {
+      onClose();
+      return;
+    }
+
     const validationError = validarFormulario();
     if (validationError) {
       setErrorMsg(validationError);
@@ -126,6 +133,10 @@ export default function CrearHistoriaModal({
       if (onCreated) onCreated(nuevaHistoria);
       onClose();
     } catch (err) {
+      if (await manejarErrorCapability(err)) {
+        onClose();
+        return;
+      }
       // Con fetch, el error viene en err.message (ej: "HTTP 401 - ...")
       setErrorMsg(err?.message || "No se pudo crear la historia.");
     } finally {
