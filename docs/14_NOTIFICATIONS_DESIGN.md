@@ -37,6 +37,18 @@ Roadmap vigente:
   global, preferencias, integraciones locales e inteligencia futura de
   notificaciones.
 
+Excepcion minima aprobada por `DEC-063`: ETAPA 99 puede construir las
+comunicaciones estrictamente necesarias para identidad, verificacion y
+recuperacion de cuenta, con providers reemplazables y backend como owner. Esta
+excepcion no incorpora mensajeria general, notificaciones, comunicaciones
+comerciales ni infraestructura transversal de ETAPA 114. La activacion real de
+SMS o WhatsApp continua sujeta a revision legal, privacidad, consentimiento,
+provider y seguridad. Conforme a `DEC-064`, email es la unica verificacion
+obligatoria del lanzamiento y Resend su adapter reemplazable; la integracion
+identity permanece apagada y fail-closed hasta completar configuracion y prueba
+operativa. La verificacion telefonica no bloquea readiness y sus providers
+reales quedan futuros.
+
 Fuera del canal operativo administrativo acotado de ETAPA 97.6, este documento
 no implementa todavía:
 
@@ -242,11 +254,9 @@ pantalla ni agregarse una campana especifica de Agenda.
 
 ### Autenticacion y Perfil
 
-Autenticacion es duena de identidad de usuario, login, password, JWT y tokens
-revocados.
-
-No existe evidencia de que `usuarios.email` este verificado para
-notificaciones externas.
+Autenticacion es duena de identidad de usuario, login, password, JWT, sesiones,
+tokens de accion y estado de verificacion del email de identidad. Ese estado no
+habilita por si solo el destino para notificaciones generales o comerciales.
 
 Perfil puede exponer datos del usuario, pero no debe absorber preferencias de
 notificacion, entregas externas, proveedores ni colas.
@@ -278,8 +288,9 @@ obligatoria del modelo de datos definida por el gobierno del proyecto.
 
 Tablas existentes relacionadas:
 
-- `usuarios`: fuente de verdad de identidad de usuario y email de login. No
-  registra verificacion para notificaciones externas.
+- `usuarios`: fuente de verdad de identidad, email de login y verificacion de
+  identidad. No registra por ello habilitacion para notificaciones externas
+  generales o comerciales.
 - `tokens_revocados`: autenticacion y sesiones revocadas. No corresponde
   reutilizarla para verificaciones ni notificaciones.
 - `comercios`: fuente de verdad del espacio y datos publicos/de contacto.
@@ -350,6 +361,11 @@ Quedan fuera de la implementacion de ETAPA 88 y asignados a ETAPA 114:
 - intentos y resultados de entrega externa;
 - capacidades comerciales para canales externos.
 
+La lista anterior conserva ownership sobre la infraestructura general de
+comunicaciones. No incluye la excepcion acotada de identidad y seguridad de
+ETAPA 99 definida por `DEC-063`; esa excepcion no autoriza elegir o activar un
+provider comercial de SMS o WhatsApp sin sus gates legales y operativos.
+
 Durante ETAPA 88 no se implementaran codigos reales enviados por correo o
 WhatsApp ni proveedores externos.
 
@@ -369,7 +385,9 @@ modelo de datos vigente.
 ## Verificacion de destinos futura
 
 La verificacion de correo o telefono no pertenece al futuro MVP local de
-notificaciones.
+notificaciones. La verificacion de identidad y recuperacion de cuenta pertenece
+a ETAPA 99 conforme a `DEC-063`; ETAPA 114 conserva los destinos verificables
+para comunicaciones externas generales.
 
 Cuando se disene en ETAPA 114 debera contemplar:
 
@@ -638,5 +656,7 @@ ETAPA 114 - Mensajeria y Cotizaciones:
 Justificacion:
 
 ETAPA 114 existe como etapa futura de Mensajeria y es el dueno natural mas
-cercano para comunicaciones externas. Crear una etapa nueva antes de activar
-ETAPA 114 aumentaria la fragmentacion del roadmap sin evidencia suficiente.
+cercano para comunicaciones externas generales. La excepcion minima de
+identidad y seguridad de `DEC-063` se ejecuta dentro de ETAPA 99 porque verifica
+la identidad y recupera el acceso a la cuenta; no crea una etapa nueva, no
+absorbe el mapa anterior y no habilita mensajeria general o comercial.

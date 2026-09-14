@@ -395,11 +395,16 @@ No se recolectaran salvo decision especifica:
 - identificadores publicitarios persistentes;
 - datos sensibles inferidos.
 
-Excepcion aprobada y todavia no implementada: `DEC-057` autoriza que ETAPA 99
-incorpore `fecha_nacimiento` como dato privado, nullable y no publico para
-evaluar en backend elegibilidad y capacidad por funcionalidad. No se incorpora
-inicialmente al Registro, la edad debe calcularse sin persistirse y los
-usuarios existentes permanecen compatibles mediante `null`. Sexo o genero no
+Excepcion aprobada con fundacion de schema implementada: `DEC-057` autoriza que
+ETAPA 99 incorpore `fecha_nacimiento` como dato privado, nullable y no publico
+para evaluar en backend elegibilidad y capacidad por funcionalidad. Su edicion
+y uso funcional permanecen no activados; no se incorpora inicialmente al
+Registro, la edad debe calcularse sin persistirse y los
+usuarios existentes permanecen compatibles mediante `null`. Esa compatibilidad
+no acredita mayoria de edad ni concede capabilities comerciales: la politica
+se aplica uniformemente y `null` impide crear o administrar espacios y publicar
+contenido asociado hasta completar el dato y satisfacer los demas requisitos.
+Sexo o genero no
 se recolectan mientras no exista una finalidad funcional suficiente,
 documentada y aprobada. Antes de implementar este tratamiento deben definirse
 finalidad, base aplicable, acceso, retencion, rectificacion, supresion y
@@ -809,6 +814,26 @@ Controles:
 
 `[BLOQUEANTE]` No puede integrarse correo, WhatsApp o push comercial sin
 proveedor auditado, consentimiento o fundamento aplicable, baja y trazabilidad.
+
+`DEC-063` autoriza dentro de ETAPA 99 solamente el diseno y la infraestructura
+minima de comunicaciones de identidad y seguridad para verificar destinos y
+recuperar cuentas. No elige ni habilita providers comerciales. Todo envio real
+por SMS o WhatsApp exige previamente revisar finalidad, base aplicable u opt-in,
+datos tratados, retencion, templates, seguridad, transferencias, subencargados y
+plan de salida. Un telefono privado de Usuario nunca se reutiliza como destino
+comercial, y el WhatsApp publico de un espacio nunca se adopta automaticamente
+como telefono privado de identidad.
+
+`DEC-064` fija email como unica verificacion obligatoria del lanzamiento y
+Resend como adapter reemplazable, sin transferirle ownership de identidad ni
+reglas FeedGo. Identity email y enforcement permanecen apagados. Antes de su
+activacion operativa deben revocarse o rotarse credenciales anteriores, usarse
+una clave dedicada `IDENTITY_RESEND_API_KEY`, autorizarse sender/dominio,
+completarse SPF/DKIM y DMARC
+recomendado, configurarse una URL publica HTTPS y probarse verificacion y
+recovery reales. La verificacion telefonica, Twilio, SMS y WhatsApp no integran
+el gate inicial; cualquier activacion futura conserva la revision legal y de
+privacidad aplicable.
 
 ## 17. Cookies, SDKs, analytics y tracking
 

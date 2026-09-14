@@ -780,8 +780,8 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-059
 - Titulo: Identidad, perfil y capabilities base de ETAPA 99
-- Estado: Aprobada e implementada hasta ETAPA 99.5; 99.1, 99.2, 99.3, 99.4 y
-  99.5 cerradas. Google, UX de perfil y enforcement permanecen pendientes.
+- Estado: Aprobada e implementada hasta ETAPA 99.7; 99.1 a 99.7 cerradas.
+  Google permanece pendiente para 99.8.
 - Identidad: `Usuario FeedGo` es la unica identidad funcional interna y
   conserva su `id` estable y el email principal. `PasswordCredential` es una
   credencial opcional uno a uno; `ExternalIdentity` representa Google mediante
@@ -815,16 +815,15 @@ No reemplaza la documentación oficial existente.
 - Perfil: `perfil_completo` y `campos_perfil_faltantes` son derivados por un
   unico owner backend. La formula vigente pertenece a `DEC-063` e incorpora
   Provincia, Ciudad, `fecha_nacimiento`, email verificado y telefono privado
-  valido y verificado. Avatar, apariencia, `modo_activo` y metodo de acceso no
+  valido. `telefono_verified_at` no integra la formula de lanzamiento conforme
+  a `DEC-064`. Avatar, apariencia, `modo_activo` y metodo de acceso no
   integran esa formula. `GET/PATCH /usuarios/me` permanece como
   contrato privado owner; frontend consume faltantes y capabilities sin
   calcularlos.
 - Datos personales: `Datos personales` es una superficie privada extensible de
-  `Perfil -> Editar perfil`, al mismo nivel visual que `Cambiar foto` y `Color
-  de fondo`. ETAPA 99 incorpora alli `fecha_nacimiento` y telefono privado
-  conforme a `DEC-063`. Provincia y
-  Ciudad permanecen fuera visualmente para edicion territorial directa, aunque
-  son requisitos iniciales de `perfil_completo`. Pertenecer a esa superficie no
+  `Perfil -> Editar perfil`, al mismo nivel visual que `Cambiar foto`, `Cambiar
+  contrasena` y `Cambiar fondo`. ETAPA 99 incorpora alli correo,
+  `fecha_nacimiento`, telefono privado, Provincia y Ciudad. Pertenecer a esa superficie no
   vuelve obligatorio un dato futuro: cada campo se clasifica expresamente como
   obligatorio para perfil, opcional o requisito de una capability, sin tabla
   generica, JSON de atributos ni formulario dinamico anticipado.
@@ -837,14 +836,15 @@ No reemplaza la documentación oficial existente.
   calcula solo en backend y no se persiste. `null` no equivale a 18 anos o mas.
 - Autenticacion y autorizacion: una sesion valida habilita cuenta basica, no
   perfil completo ni operaciones comerciales. Las capabilities para crear,
-  administrar y publicar en espacios exigen cuenta habilitada, email
-  verificado, aceptaciones aplicables, perfil completo y edad calculable de 18
+  administrar y publicar en espacios exigen cuenta habilitada, aceptaciones
+  aplicables, perfil completo y edad calculable de 18
   anos o mas. Password y Google producen exactamente las mismas reglas.
 - Enforcement: el owner central de perfil calcula faltantes, edad y readiness
-  personal; Spaces y Publicaciones aplican el enforcement final en cada
-  mutacion junto con ownership, permisos y estado del recurso. Un rechazo de
-  capability para una identidad autenticada usa `403` y un codigo estable que
-  permite al frontend explicar y dirigir al completado. No existe enforcement
+  personal; Spaces, Agenda asociada, Publicaciones e Historias aplican el guard
+  reutilizable junto con ownership, permisos y estado del recurso. Un rechazo
+  usa `403` y `commercial_capability_required`; frontend explica y dirige al
+  completado desde `/usuarios/me`. El flag backend permanece `False` por
+  defecto hasta validar email real productivo. No existe enforcement
   exclusivamente frontend.
 - Uniformidad: los datos existentes son de desarrollo. No existe
   grandfathering, periodo de gracia, excepcion por ownership previo ni bypass
@@ -874,8 +874,8 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-060
 - Titulo: Descomposicion ejecutable de ETAPA 99
-- Estado: Aprobada documentalmente; 99.1, 99.2, 99.3, 99.4, 99.5 y 99.6
-  cerradas; 99.7 pendiente/no iniciada.
+- Estado: Aprobada documentalmente; 99.1 a 99.7 cerradas; 99.8 pendiente/no
+  iniciada.
 - Decision: ETAPA 99 se ejecuta mediante los nueve sprints oficiales 99.1 a
   99.9 definidos por `docs/05_SEARCH_ROADMAP.md`, en orden obligatorio
   `expand -> backfill -> transicion -> contract`. La cantidad excede la guia
@@ -893,8 +893,8 @@ No reemplaza la documentación oficial existente.
 - Gate inmediato cumplido: 99.2 cerro luego de convertir
   `email_canonical` y `PasswordCredential` en owners efectivos de Registro y
   Login, reparar filas transitorias, preservar rollback legacy y aprobar tests y
-  validacion manual. 99.3, 99.4, 99.5 y 99.6 cumplieron sus gates y quedan
-  cerradas; 99.7 permanece pendiente y requiere orden expresa.
+  validacion manual. 99.3 a 99.7 cumplieron sus gates y quedan cerradas; 99.8
+  permanece pendiente y requiere orden expresa.
 
 ## DEC-061
 
@@ -971,13 +971,14 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-063
 - Titulo: Telefono privado verificado y recuperacion multicanal de ETAPA 99
-- Estado: Aprobada; implementada en su alcance backend de ETAPA 99.5. La UX de
-  99.6, el enforcement de 99.7 y los providers reales SMS/WhatsApp permanecen
-  pendientes.
+- Estado: Aprobada e implementada en sus alcances backend 99.5 y frontend 99.6.
+  Su requisito inicial de telefono verificado para readiness fue reemplazado
+  por `DEC-064`; providers reales SMS/WhatsApp permanecen pendientes.
 - Prevalencia: esta decision reemplaza el conjunto obligatorio inicial de
   perfil y el contenido inicial de `Datos personales` definidos por `DEC-059`;
   el resto de `DEC-059` permanece vigente.
-- Identidad y perfil: `Usuario FeedGo` incorpora un unico telefono privado por
+- Decision historica reemplazada en su formula de readiness por `DEC-064`:
+  `Usuario FeedGo` incorpora un unico telefono privado por
   cuenta, globalmente unico cuando exista y normalizado por un unico owner
   backend al formato E.164. Email y telefono deben estar realmente verificados;
   escribir un valor no constituye prueba de control. `perfil_completo` exige
@@ -1022,3 +1023,45 @@ No reemplaza la documentación oficial existente.
   identidad y seguridad indispensables para autenticacion y recuperacion. SMS
   y WhatsApp reales no pueden activarse sin revision legal, privacidad,
   consentimiento, provider y seguridad.
+
+## DEC-064
+
+- ID: DEC-064
+- Titulo: Contrato de lanzamiento para perfil, enforcement y canales de
+  verificacion
+- Estado: Aprobada e implementada en ETAPA 99.7; activacion productiva de email
+  y enforcement pendiente de gates operativos.
+- Prevalencia: reemplaza exclusivamente en `DEC-059` y `DEC-063` la formula de
+  readiness que exigia telefono verificado. El resto de ambas decisiones,
+  incluida la infraestructura OTP future-ready, permanece vigente.
+- Perfil: `perfil_completo` exige provincia, ciudad y fecha de nacimiento
+  validas, telefono E.164 valido y email verificado. Los codigos faltantes son
+  exactamente `provincia`, `ciudad`, `fecha_nacimiento`, `telefono` y
+  `email_verificado`; nunca `telefono_verificado`. Un telefono valido no
+  verificado puede completar perfil y solo produce aviso informativo.
+- Capabilities: `puede_crear_espacio`, `puede_administrar_espacios` y
+  `puede_publicar_en_espacios` son derivadas por backend desde cuenta
+  autenticable, perfil completo, aceptaciones legales vigentes y edad
+  calculable de 18 anos o mas. No se persisten, no integran JWT y frontend no
+  decide autorizacion. `modo_activo` y `onboarding_completo` no autorizan.
+- Enforcement: ET99.7 implementa un guard central para Spaces, Agenda asociada,
+  Publicaciones e Historias, preservando el orden autenticacion, recurso,
+  ownership, capability y dominio. El flag
+  `COMMERCIAL_CAPABILITIES_ENFORCEMENT_ENABLED` queda `False` por defecto. La
+  ruta de snapshot social se clasifica como infraestructura analitica derivada
+  y permanece fuera del guard.
+- Canal de lanzamiento: email es la unica verificacion obligatoria inicial y
+  Resend el adapter reemplazable elegido. La integracion es fail-closed, pero
+  identity email no esta activo. Fake queda restringido a desarrollo/test y no
+  existe fallback productivo. Activar enforcement requiere antes credencial
+  dedicada rotada en `IDENTITY_RESEND_API_KEY`, sender/dominio autorizado,
+  SPF/DKIM, DMARC recomendado, URL publica HTTPS y pruebas reales de
+  verificacion y recovery.
+- Telefono: sigue siendo dato requerido, pero su verificacion no bloquea perfil
+  ni capabilities. `PhoneVerificationChallenge`, OTP, rate limits y adapters
+  permanecen future-ready. Twilio, SMS y WhatsApp reales no estan contratados ni
+  activados y no son blocker de lanzamiento. Ningun provider externo posee
+  identidad, sesiones, OTP, recovery o autorizacion FeedGo.
+- Continuidad: ET99.7 queda cerrada tecnica y funcionalmente; ETAPA 99 global
+  continua abierta. ET99.8 es el siguiente sprint oficial, pendiente y no
+  iniciado.

@@ -311,6 +311,9 @@ la Ley 25.326 requiere revision profesional.
 - territorio inicial: ciudad, provincia y pais;
 - perfil del usuario: `profile_fallback` automatico ante permiso denegado,
   siempre diferenciado de GPS y sin coordenadas ni distancia exacta;
+- provincia y ciudad del perfil representan preferencia territorial persistente
+  y fallback manual, no ubicacion fisica actual; GPS, reverse geocoding y un
+  cambio de territorio runtime nunca sobrescriben esos campos automaticamente;
 - ampliacion fuera de ciudad: accion explicita, primero 50 km y luego hasta
   100 km;
 - frescura territorial propuesta: cinco minutos con precision de hasta 1.000 m;

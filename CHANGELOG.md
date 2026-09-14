@@ -9,6 +9,42 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 99.7 - Enforcement comercial y readiness de lanzamiento
+
+**Estado:** Cerrada tecnica y funcionalmente
+
+- Se incorpora un guard backend central para las capabilities
+  `puede_crear_espacio`, `puede_administrar_espacios` y
+  `puede_publicar_en_espacios`, aplicado a Spaces, Agenda asociada,
+  Publicaciones e Historias sin sustituir autenticacion, ownership ni reglas de
+  dominio. El snapshot social permanece fuera por ser infraestructura analitica
+  derivada.
+- El contrato final de lanzamiento exige provincia, ciudad, fecha de nacimiento
+  y telefono E.164 validos, mas email verificado. `telefono_verified_at` no
+  bloquea perfil ni capabilities; los faltantes son `provincia`, `ciudad`,
+  `fecha_nacimiento`, `telefono` y `email_verificado`.
+- Frontend anticipa UX y remediation exclusivamente desde `/usuarios/me`; las
+  capabilities siguen derivadas por backend, no persistidas y fuera del JWT.
+- `COMMERCIAL_CAPABILITIES_ENFORCEMENT_ENABLED` permanece `False`. Resend queda
+  preparado con configuracion fail-closed, pero identity email sigue apagado
+  hasta rotar credencial, configurar una clave dedicada
+  `IDENTITY_RESEND_API_KEY`, sender/dominio, DNS y URL publica HTTPS, y validar
+  envio real de verificacion y recovery. Fake Email permanece limitado
+  a desarrollo/test.
+- Telefono sigue requerido como dato, pero su verificacion, Twilio, SMS y
+  WhatsApp reales quedan futuros y no bloquean el lanzamiento inicial. La
+  infraestructura OTP existente permanece future-ready.
+- Se corrigio el login intermitente causado por microsegundos en
+  `FeedGoSession`: JWT NumericDate truncaba mientras MySQL `DATETIME(0)` podia
+  redondear al segundo siguiente. Creacion y persistencia usan ahora un unico
+  instante UTC naive con `microsecond=0`; `iat/exp` se emiten como epoch seconds
+  y la igualdad exacta se conserva, sin tolerancias, migracion ni backfill.
+- La correccion se valido con tests focales, round-trip MySQL,
+  login/logout/relogin y cinco ciclos manuales consecutivos en PWA movil sin
+  401 ni `session_timestamp_mismatch`.
+- ETAPA 99 global continua abierta. ET99.8 - Google, linking y cuentas
+  Google-only queda como siguiente sprint oficial, pendiente y no iniciado.
+
 ## ETAPA 99.6 - Frontend de perfil, Datos personales y remediation
 
 **Estado:** Cerrada técnica y funcionalmente

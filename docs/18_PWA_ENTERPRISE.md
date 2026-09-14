@@ -706,6 +706,17 @@ subdominio multimedia en las plataformas afectadas.
 - dependencia de ejecución sostenida con la app cerrada, GPS continuo o
   Background Sync móvil para que el Dynamic Feed funcione correctamente;
 
+## Auth Wall contextual y cache
+
+La politica permanente de acceso anonimo pertenece a `DEC-061` y Producto; este
+documento solo gobierna su frontera PWA. ETAPA 99.6 debe conservar el contexto
+de retorno exclusivamente como ruta, parametros y estado interno seguro
+validado. Passwords, tokens, datos privados y destinos externos no pueden formar
+parte de `returnTo`, Cache Storage, precache, IndexedDB ni colas offline. El Auth
+Wall no modifica el firewall network-only de APIs privadas y no puede depender
+de mutaciones offline o Background Sync. `ActiveLayer` conserva el ownership de
+backdrop, foco, inertness, scroll lock y restauracion de foco.
+
 ## Criterio final de aprobacion
 
 ETAPA 96 queda aprobada con sus tres sprints cerrados, arquitectura por capas,

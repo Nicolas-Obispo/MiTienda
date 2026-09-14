@@ -99,10 +99,41 @@ identidad y no crean por si mismos cuentas funcionales paralelas. La decision
 arquitectonica y su etapa futura se registran en `DEC-048` y
 `docs/05_SEARCH_ROADMAP.md`.
 
-La identidad privada podra incorporar `fecha_nacimiento` nullable en ETAPA 99
-para que backend calcule elegibilidad y exponga capabilities de perfil sin que
-frontend infiera edad. El dato no sera publico ni parte inicial del Registro.
+La identidad privada incorpora `fecha_nacimiento` nullable y telefono E.164 en
+ETAPA 99. Backend calcula elegibilidad y expone capabilities sin que frontend
+infiera edad. Estos datos no son publicos ni forman parte inicial del Registro.
 No se recolectara sexo o genero sin finalidad funcional aprobada.
+
+ETAPA 99 adopta una cuenta basica utilizable aun con perfil incompleto. Las
+operaciones comerciales permanecen condicionadas por capabilities calculadas
+por backend: crear o administrar espacios y publicar contenido asociado exige
+perfil completo, aceptaciones legales aplicables y edad calculable de 18 anos
+o mas. La politica se aplica uniformemente, sin
+grandfathering, periodo de gracia ni excepciones por datos de desarrollo
+existentes. Autenticarse por password o Google no modifica perfil ni
+autorizacion.
+
+En `Perfil -> Editar perfil`, `Datos personales` es una superficie privada y
+extensible, al mismo nivel visual que `Cambiar foto`, `Cambiar contrasena` y
+`Cambiar fondo`. Contiene correo, `fecha_nacimiento`, telefono privado,
+Provincia y Ciudad.
+
+El perfil completo exige provincia, ciudad y fecha de nacimiento validas,
+telefono privado valido en E.164 y email realmente verificado. La verificacion
+telefonica no es requisito de lanzamiento: un telefono valido no verificado
+puede completar perfil y habilitar capabilities, con aviso informativo no
+bloqueante. `campos_perfil_faltantes` utiliza exclusivamente `provincia`,
+`ciudad`, `fecha_nacimiento`, `telefono` y `email_verificado`; nunca
+`telefono_verificado`. La cuenta basica permanece utilizable con perfil
+incompleto y no existe grandfathering.
+
+La provincia y ciudad del perfil representan una preferencia territorial
+persistente y un fallback manual; no declaran ubicacion fisica actual. La
+geolocalizacion runtime es efimera, conserva su owner y nunca sobrescribe el
+perfil automaticamente. Pertenecer a `Datos personales` no vuelve obligatorio
+un campo: cada dato futuro debera aprobarse e incorporarse explicitamente como
+obligatorio para `perfil_completo`, opcional o requisito de una capability
+especifica, sin atributos genericos ni formularios dinamicos anticipados.
 
 ## Principios de Producto
 
@@ -115,6 +146,33 @@ No se recolectara sexo o genero sin finalidad funcional aprobada.
 - La experiencia instalada debe comportarse como una aplicacion, con
   navegacion, carga, teclado, safe areas, overlays, actualizacion y recuperacion
   coherentes con una aplicacion movil.
+
+## Comunicacion visible y feedback FeedGo
+
+FeedGo debe comunicarse con las personas de forma simple, humana, breve,
+agradable y clara. El backend conserva codigos estructurados para sostener
+contratos estables, seguridad y diagnostico; el frontend es owner de traducirlos
+a lenguaje FeedGo y de decidir su presentacion y ubicacion.
+
+La jerarquia por defecto es:
+
+1. feedback inline junto al campo;
+2. feedback junto a la accion que lo origino;
+3. estado simple dentro de la pantalla;
+4. modal, banner o card solo cuando sean realmente necesarios para comprender
+   o resolver la situacion.
+
+La interfaz no debe exponer codigos HTTP, codigos backend, nombres tecnicos,
+errores redactados como respuestas de API, cards rojas invasivas, modales
+innecesarios ni acciones redundantes. Debe conservar el contenido ingresado
+cuando sea seguro y mostrar una accion solo cuando ayude realmente a comprender
+que ocurrio o que hacer a continuacion.
+
+La humanizacion nunca puede debilitar seguridad, antienumeracion, privacidad,
+autorizacion, rate limiting ni contratos backend. Ante una duda real de mensaje,
+ubicacion, jerarquia o recuperacion, deben investigarse primero convenciones
+vigentes de productos y sistemas de diseno reconocidos, utilizandolas como
+referencia sin copiar branding ni diseno propietario.
 
 ## Design System
 
@@ -219,6 +277,23 @@ apertura publica. No se anticipa infraestructura especulativa para esa capacidad
 - Los horarios de atención pertenecen al Sistema de Disponibilidad.
 - El estado horario visible usa exclusivamente `Abierto`, `Cerrado` y `No hay horarios declarados`.
 - Un espacio `Activo` continúa siendo público aunque esté `Cerrado` por horario.
+
+## Acceso anonimo e interacciones
+
+FeedGo aplica `default-deny` a toda interaccion anonima. Una persona no
+autenticada puede navegar y visualizar contenido publico; cualquier accion que
+exceda esa observacion pasiva requiere autenticacion. La regla es transversal a
+funcionalidades actuales y futuras: una capacidad nueva nunca admite
+interaccion anonima por omision.
+
+WhatsApp, Instagram, Como llegar/Maps, likes, guardados, seguir, denunciar e
+interacciones con Historias son ejemplos alcanzados, no una lista exhaustiva.
+La ausencia de una accion en los ejemplos no constituye permiso. Toda excepcion
+futura debe ser explicita, justificada, aprobada y documentada.
+
+La experiencia de autenticacion contextual se implementara en 99.6 mediante un
+owner frontend central conforme a `DEC-061`; no corresponde dispersar gates
+boton por boton.
 
 ## Agenda y Reservas
 

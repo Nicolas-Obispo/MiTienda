@@ -559,9 +559,8 @@ Estado de continuidad:
 
 - Ultima etapa cerrada: ETAPA 98 - Correccion y Pulido Visual del Frontend.
 - Etapa vigente: ETAPA 99 - Identidad, Registro y Autenticacion. Sus bloques
-  99.1, 99.2, 99.3, 99.4, 99.5 y 99.6 quedan formalmente cerrados. El
-  siguiente sprint oficial es 99.7 - Enforcement en Spaces y Publicaciones,
-  pendiente y no iniciado.
+  99.1 a 99.7 quedan formalmente cerrados. El siguiente sprint oficial es
+  99.8 - Google, linking y cuentas Google-only, pendiente y no iniciado.
 - Checkpoint intermedio aprobado: sistema visual Liquid consolidado y bloque
   correctivo incidental de publicaciones e interacciones validado. Este
   checkpoint no constituyo por si solo el cierre posterior de ETAPA 98.
@@ -587,7 +586,7 @@ Estado de continuidad:
   capacidad para crear o administrar espacios y publicar contenido asociado.
   La cuenta basica no excluye automaticamente a menores de 18 anos; la politica
   vigente exige 18 anos o mas para esas capacidades de Espacios. ETAPA 99,
-  ahora vigente con 99.1 a 99.6 cerrados y 99.7 pendiente, absorbe
+  ahora vigente con 99.1 a 99.7 cerrados y 99.8 pendiente, absorbe
   `fecha_nacimiento` privada y nullable, perfil y
   capabilities backend, borrador seguro de Registro y flujo Google conforme a
   `DEC-048`; el backend de Espacios conserva el enforcement. No se implemento
@@ -742,10 +741,9 @@ Estado de continuidad:
   iPhone/Safari/PWA. No se declara resuelto ni validado. Caso B queda preservado
   en `frontend/.pwa-fixtures/story-video-case-b.html` y la investigacion pasa a
   ETAPA 124 - Compatibilidad Multimedia iOS/Safari/PWA.
-- ETAPA 99 - Identidad, Registro y Autenticacion se encuentra en curso con 99.1,
-  99.2, 99.3, 99.4 y 99.5 cerrados. El sprint 99.6 es el siguiente oficial,
-  pendiente y no iniciado; la compatibilidad JWT legacy permanece hasta su
-  retiro gobernado.
+- ETAPA 99 - Identidad, Registro y Autenticacion se encuentra en curso con 99.1
+  a 99.7 cerrados. El sprint 99.8 es el siguiente oficial, pendiente y no
+  iniciado; la compatibilidad JWT legacy permanece hasta su retiro gobernado.
 - FeedGo Clasificados queda incorporado documentalmente como vertical futura
   de primer nivel en ETAPAS 101 a 105; ETAPAS 106 y 107 preparan Plataforma
   Comercial, Advertising, Payments y Billing transversal. Ninguna fue iniciada.
@@ -763,17 +761,16 @@ En curso.
 
 Bloque vigente:
 
-99.7 - Enforcement en Spaces y Publicaciones. Pendiente y no iniciado.
+99.8 - Google, linking y cuentas Google-only. Pendiente y no iniciado.
 
 Objetivo inmediato:
 
-ET99.6 queda cerrada tecnica y funcionalmente. El siguiente trabajo es ET99.7:
-enforcement backend uniforme en Spaces y Publicaciones, sin iniciar Google ni
-cleanup legacy.
+ET99.7 queda cerrada tecnica y funcionalmente. El siguiente trabajo es ET99.8:
+Google, linking y cuentas Google-only, sin iniciar cleanup legacy.
 
 Restricciones:
 
-- no iniciar ET99.8 ni ET99.9;
+- no iniciar ET99.9;
 - no convertir Google en owner de identidad, sesion o autorizacion;
 - no aplicar auto-link por coincidencia de email;
 - no persistir edad ni inferir capabilities en frontend;
@@ -786,12 +783,14 @@ Decisiones permanentes propietarias: `DEC-059` para arquitectura de identidad,
 perfil y capabilities, `DEC-060` para descomposicion y ejecucion de ETAPA 99 y
 `DEC-061` para acceso anonimo e interacciones protegidas. `DEC-062` registra el
 diseno aprobado de 99.3 y remite al criterio transversal de comunicacion visible
-propiedad de `docs/02_PRODUCT.md`. `DEC-063` aprueba telefono privado
-verificado y un unico motor de recuperacion multicanal, implementados en su
-  alcance backend de 99.5; 99.6 es owner de UX y remediation y 99.7 owner del
-  enforcement. La UX publica exacta de seleccion de canal de recovery
-  multicanal permanece deliberadamente pendiente y no puede mostrar hints de
-  cuenta por anticipado.
+propiedad de `docs/02_PRODUCT.md`. `DEC-063` aprueba telefono privado, su
+infraestructura de verificacion y un unico motor de recuperacion multicanal,
+implementados en su alcance backend de 99.5. `DEC-064` reemplaza solamente su
+formula inicial de readiness: telefono valido sigue requerido, pero
+`telefono_verified_at` no bloquea perfil ni capabilities en lanzamiento. 99.6
+es owner de UX y remediation y 99.7 cerro el enforcement. La UX publica exacta
+de seleccion de canal de recovery multicanal permanece deliberadamente
+pendiente y no puede mostrar hints de cuenta por anticipado.
 
 Estado de cierre de 99.3:
 
@@ -869,6 +868,34 @@ produccion/PWA correcto, ESLint focal sin errores (un warning preexistente en
 El canal real de email aun requiere activacion operativa; Fake Email es solo
 desarrollo/test. ET99.7 debe verificar esta dependencia antes de activar
 enforcement que requiera email verificado.
+
+Estado de cierre de 99.7:
+
+Cerrado tecnica y funcionalmente. El backend aplica un guard comercial central
+a las mutaciones de Spaces, Agenda asociada, Publicaciones e Historias, siempre
+despues de autenticacion, resolucion de recurso y ownership cuando corresponda.
+Las capabilities oficiales son `puede_crear_espacio`,
+`puede_administrar_espacios` y `puede_publicar_en_espacios`; son derivadas, no
+persistidas, no integran JWT y frontend solo anticipa UX y remediation desde
+`/usuarios/me`. La ruta de snapshot social permanece fuera del guard por ser
+infraestructura analitica derivada.
+
+`COMMERCIAL_CAPABILITIES_ENFORCEMENT_ENABLED` permanece `False` por defecto.
+El enforcement esta implementado pero no se activa productivamente hasta que
+el canal real de identidad por email quede configurado y validado. Resend es el
+adapter elegido y reemplazable para lanzamiento, con configuracion fail-closed;
+identity email permanece apagado. Deben rotarse las credenciales anteriores,
+configurarse una clave dedicada `IDENTITY_RESEND_API_KEY`, sender/dominio,
+SPF/DKIM, DMARC recomendado y URL
+publica HTTPS, y probarse verificacion y recovery reales antes de evaluar el
+flag en `True`.
+
+El contrato de lanzamiento exige provincia, ciudad, fecha de nacimiento y
+telefono E.164 validos, mas email verificado. `telefono_verified_at` no bloquea
+perfil ni capabilities; la infraestructura OTP queda future-ready y Twilio no
+es requisito ni provider activo. La cuenta basica continua disponible con
+perfil incompleto, sin grandfathering. ETAPA 99 global sigue abierta y 99.8 es
+el siguiente sprint oficial, pendiente y no iniciado.
 
 Resultado de la primera implementacion:
 
@@ -1021,8 +1048,8 @@ Pendientes derivados:
   operacion manual que no forman parte de observabilidad base.
 - ETAPA 98: correccion y pulido visual completo del frontend, posterior a PWA
   y operacion minima y previo al lanzamiento controlado.
-- ETAPA 99: identidad, registro y autenticacion, vigente con 99.1 a 99.5
-  cerrados y 99.6 pendiente/no iniciado.
+- ETAPA 99: identidad, registro y autenticacion, vigente con 99.1 a 99.7
+  cerrados y 99.8 pendiente/no iniciado.
 - ETAPA 100: fundacion de validacion y staging aislado.
 - ETAPAS 101 a 105: FeedGo Clasificados, desde dominio y experiencia hasta
   Search, IA multimodal, Historias, promocion y beneficios.
@@ -1063,7 +1090,7 @@ El trabajo previo a ETAPA 97 queda formalmente cerrado. ETAPA 96 permanece
 cerrada. ETAPA 97 - Administracion Operativa Minima queda formalmente cerrada
 con 97.1, 97.2, 97.3, 97.4, 97.5 y 97.6 cerradas. ETAPA 98 - Correccion y
 Pulido Visual del Frontend queda formalmente cerrada. ETAPA 99 es la etapa
-oficial vigente con 99.1 a 99.5 cerrados y 99.6 pendiente/no iniciado.
+oficial vigente con 99.1 a 99.7 cerrados y 99.8 pendiente/no iniciado.
 
 ## Estado ETAPA 92
 

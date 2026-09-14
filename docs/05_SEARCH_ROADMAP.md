@@ -1362,8 +1362,9 @@ y no crean ni renumeran etapas.
   backend como owner persistente segun `DEC-051`. Depende de estados confiables
   de email y del contrato legal aplicable. No activa todavia enforcement en
   mutaciones. Gate: un unico owner backend produce faltantes y capabilities
-  consistentes, con privacidad, limites de edad y telefono verificado probados,
-  sin confundir telefono verificado con disponibilidad SMS o WhatsApp, y la
+  consistentes, con privacidad, limites de edad y verificacion telefonica
+  probados, sin confundir telefono verificado con disponibilidad SMS o WhatsApp,
+  y la
   preferencia no altera la formula de perfil. Rollback: mantener las capabilities como
   informacion no aplicada y conservar el fallback local de apariencia. Estado:
   cerrada tecnica, funcional y documentalmente; backend y migraciones
@@ -1383,17 +1384,21 @@ y no crean ni renumeran etapas.
   de email aun requiere activacion operativa; ET99.7 debe verificar esta
   dependencia antes de activar enforcement que exija email verificado. Rollback:
   ocultar las superficies frontend y el Auth Wall sin alterar contratos backend.
-- 99.7 - Enforcement en Spaces y Publicaciones. Aplica en backend y sin
-  grandfathering la capability requerida para crear y administrar espacios y
-  publicar contenido asociado, combinada con ownership y permisos existentes;
-  email y telefono deben estar realmente verificados y la cuenta basica sigue
-  disponible aun con perfil incompleto. Depende del cierre de 99.5 y 99.6. Gate:
-  inventario completo de mutaciones, pruebas de bypass directo y remediation
-  manual validada. Antes de activarlo debe verificarse que el canal real de
-  email este operativo: `FakeEmailProvider` es solo desarrollo/test y no puede
-  convertir un requisito obligatorio en una barrera operativamente imposible.
-  Rollback: desactivar centralmente el enforcement, nunca parchear excepciones
-  por endpoint.
+- 99.7 - Enforcement en Spaces y Publicaciones. Cerrada tecnica y
+  funcionalmente. El guard backend central cubre crear, administrar y publicar
+  contenido asociado, combinado con ownership y reglas de dominio. El contrato
+  de lanzamiento exige provincia, ciudad, fecha de nacimiento y telefono E.164
+  validos, email verificado, aceptaciones legales vigentes y edad calculable de
+  18 anos o mas; la verificacion telefonica no es requisito. La cuenta basica
+  sigue disponible con perfil incompleto y no existe grandfathering. El flag
+  `COMMERCIAL_CAPABILITIES_ENFORCEMENT_ENABLED` permanece `False` por defecto:
+  implementacion tecnica y activacion productiva son gates separados. Resend
+  queda preparado fail-closed pero identity email continua apagado hasta rotar
+  credencial, configurar una clave dedicada `IDENTITY_RESEND_API_KEY`,
+  sender/dominio, DNS y URL publica HTTPS, y probar
+  verificacion y recovery reales. La ruta de snapshot social queda fuera del
+  guard como infraestructura analitica derivada. Rollback: desactivar
+  centralmente el enforcement, nunca parchear excepciones por endpoint.
 - 99.8 - Google, linking y cuentas Google-only. Integra Google con scopes
   `openid email`, validacion OAuth/OIDC backend, linking y unlinking explicitos,
   resolucion segura de colisiones y creacion posterior de contrasena. Depende de
@@ -1462,12 +1467,12 @@ Evidencia de cierre de 99.2:
 
 Siguiente sprint:
 
-99.7 - Enforcement en Spaces y Publicaciones. Pendiente y no iniciado; requiere
+99.8 - Google, linking y cuentas Google-only. Pendiente y no iniciado; requiere
 orden expresa para comenzar.
 
 Estado:
 
-En curso. 99.1 a 99.6 cerrados; 99.7 pendiente y no iniciado.
+En curso. 99.1 a 99.7 cerrados; 99.8 pendiente y no iniciado.
 
 Evidencia de cierre de 99.4:
 
@@ -1499,6 +1504,22 @@ Evidencia de cierre de 99.5:
   `phone_verification_challenges`, con reejecucion idempotente aprobada;
 - validacion final: backend 603 OK/9 skips, focales 99.5 78/78, MySQL 10/10,
   PWA 25/25 y `git diff --check` correcto.
+
+Evidencia de cierre de 99.7:
+
+- guard comercial central integrado sin sustituir autenticacion, ownership ni
+  reglas de dominio; acceso HTTP directo y contrato `403` estructurado quedaron
+  cubiertos;
+- frontend conserva backend como autoridad, refresca `/usuarios/me` y reutiliza
+  remediation y `returnTo` interno seguro;
+- perfil de lanzamiento exige telefono E.164 valido pero no su verificacion;
+  email es la unica verificacion obligatoria inicial y SMS/WhatsApp/Twilio no
+  forman parte del gate;
+- Resend queda construible solo con configuracion explicita valida y fail-closed,
+  sin activar identity email ni enforcement;
+- el defecto intermitente `session_timestamp_mismatch` quedo corregido mediante
+  timestamps UTC canonicales a segundos, NumericDate explicito y comparacion
+  exacta, con round-trip MySQL y validacion PWA movil aprobados.
 
 ### ☐ ETAPA 100
 
