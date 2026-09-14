@@ -14,6 +14,10 @@ const mainLayout = await readFile(
   new URL("../src/shared/layouts/MainLayout.jsx", import.meta.url),
   "utf8"
 );
+const passwordInput = await readFile(
+  new URL("../src/shared/components/primitives/PasswordInput.jsx", import.meta.url),
+  "utf8"
+);
 const authSurfaces = `${registro}\n${login}`;
 
 test("Registro y Login adoptan primitives semanticas", () => {
@@ -33,7 +37,7 @@ test("formularios Auth delegan contraccion responsive en primitives", () => {
 
 test("submits conservan accion, loading y variantes visuales aprobadas", () => {
   assert.match(registro, /onSubmit=\{manejarSubmitRegistro\}/);
-  assert.match(registro, /disabled=\{cargando\}[\s\S]*variant="primary"/);
+  assert.match(registro, /disabled=\{cargando \|\| estadoDisponibilidad === "unavailable"\}[\s\S]*variant="primary"/);
   assert.match(registro, /cargando \? "Creando cuenta\.\.\." : "Crear cuenta"/);
 
   assert.match(login, /onSubmit=\{manejarSubmitLogin\}/);
@@ -48,9 +52,10 @@ test("submits conservan accion, loading y variantes visuales aprobadas", () => {
 });
 
 test("visibilidad de password mantiene controles accesibles", () => {
-  assert.equal((authSurfaces.match(/iconOnly/g) || []).length, 3);
-  assert.equal((authSurfaces.match(/aria-label=/g) || []).length, 3);
-  assert.equal((authSurfaces.match(/<span aria-hidden="true">\s*\{mostrar(?:Confirmar)?Password \?/g) || []).length, 3);
+  assert.equal((authSurfaces.match(/<PasswordInput\b/g) || []).length, 3);
+  assert.match(passwordInput, /iconOnly/);
+  assert.match(passwordInput, /aria-label=\{visible \? hideLabel : showLabel\}/);
+  assert.match(passwordInput, /<span aria-hidden="true">\{visible \?/);
   assert.match(registro, /labelFor="registro-password"/);
   assert.match(registro, /id="registro-password"/);
   assert.match(login, /labelFor="login-password"/);
@@ -58,10 +63,10 @@ test("visibilidad de password mantiene controles accesibles", () => {
 });
 
 test("password toggle usa el slot trailing compartido dentro del Input", () => {
-  assert.equal((authSurfaces.match(/trailingAction=/g) || []).length, 3);
+  assert.match(passwordInput, /<Input[\s\S]*trailingAction=/);
   assert.doesNotMatch(authSurfaces, /absolute right-1 top-1\/2|-translate-y-1\/2/);
   assert.doesNotMatch(authSurfaces, /className="pr-12 text-sm"/);
-  assert.equal((authSurfaces.match(/variant="ghost"/g) || []).length, 4);
+  assert.match(passwordInput, /variant="ghost"/);
 });
 
 test("Registro preserva aceptaciones legales separadas y desmarcadas", () => {
