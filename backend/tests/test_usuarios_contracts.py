@@ -1,3 +1,4 @@
+from datetime import date, datetime, timezone
 import unittest
 
 from fastapi import FastAPI
@@ -8,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.auth import crear_token_jwt
 from app.core.database import Base, get_db
+from app.core.model_registry import import_all_models
 from app.modules.ai.models.comercios_embeddings_models import ComercioEmbedding
 from app.modules.analytics.models.comercios_metricas_sociales_models import (
     ComercioMetricasSociales,
@@ -48,6 +50,8 @@ app = FastAPI()
 app.include_router(usuarios_router)
 app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
+
+import_all_models()
 
 
 class UsuariosContractsTests(unittest.TestCase):
@@ -110,6 +114,55 @@ class UsuariosContractsTests(unittest.TestCase):
         self.assertIn("onboarding_completo", data)
         self.assertIn("provincia", data)
         self.assertIn("ciudad", data)
+        self.assertIn("email_verified_at", data)
+        self.assertIn("email_verification_source", data)
+        self.assertIn("fecha_nacimiento", data)
+        self.assertIn("telefono_e164", data)
+        self.assertIn("telefono_verified_at", data)
+        self.assertIn("telefono_verification_source", data)
+        self.assertFalse(data["perfil_completo"])
+        self.assertEqual(
+            data["campos_perfil_faltantes"],
+            ["fecha_nacimiento", "telefono", "email_verificado"],
+        )
+        self.assertEqual(response.headers["cache-control"], "no-store, private")
+
+    def test_me_deriva_perfil_completo_sin_usar_onboarding(self):
+        self._crear_usuario()
+        db = TestingSessionLocal()
+        usuario = db.get(Usuario, 1)
+        usuario.onboarding_completo = False
+        usuario.fecha_nacimiento = date(1996, 8, 14)
+        usuario.email_verified_at = datetime(2026, 9, 6, tzinfo=timezone.utc)
+        usuario.email_verification_source = "email_link"
+        usuario.telefono_e164 = "+5491123456789"
+        usuario.telefono_verified_at = datetime(2026, 9, 6, tzinfo=timezone.utc)
+        usuario.telefono_verification_source = "phone_otp"
+        db.commit()
+        db.close()
+
+        response = client.get("/usuarios/me", headers=self._auth_headers())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["perfil_completo"])
+        self.assertEqual(response.json()["campos_perfil_faltantes"], [])
+        self.assertFalse(response.json()["onboarding_completo"])
+
+    def test_estado_verificacion_es_solo_lectura_en_me(self):
+        self._crear_usuario()
+
+        response = client.patch(
+            "/usuarios/me",
+            json={
+                "email_verified_at": "2026-09-05T12:00:00Z",
+                "email_verification_source": "email_link",
+            },
+            headers=self._auth_headers(),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["email_verified_at"])
+        self.assertIsNone(response.json()["email_verification_source"])
 
     def test_actualizar_mi_perfil_usa_el_handler_correcto_y_persiste(self):
         self._crear_usuario()
@@ -137,6 +190,78 @@ class UsuariosContractsTests(unittest.TestCase):
         self.assertEqual(usuario.color_fondo, "#112233")
         db.close()
 
+    def test_patch_me_canonicaliza_telefono_y_expone_datos_privados(self):
+        self._crear_usuario()
+        response = client.patch(
+            "/usuarios/me",
+            json={
+                "fecha_nacimiento": "1996-08-14",
+                "telefono_e164": "+54 9 11 2345-6789",
+            },
+            headers=self._auth_headers(),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["cache-control"], "no-store, private")
+        self.assertEqual(response.json()["fecha_nacimiento"], "1996-08-14")
+        self.assertEqual(response.json()["telefono_e164"], "+5491123456789")
+        self.assertIsNone(response.json()["telefono_verified_at"])
+        self.assertIsNone(response.json()["telefono_verification_source"])
+        db = TestingSessionLocal()
+        usuario = db.get(Usuario, 1)
+        self.assertEqual(usuario.fecha_nacimiento, date(1996, 8, 14))
+        self.assertEqual(usuario.telefono_e164, "+5491123456789")
+        self.assertTrue(usuario.onboarding_completo)
+        db.close()
+
+    def test_patch_me_no_reemplaza_telefono_verificado(self):
+        self._crear_usuario()
+        db = TestingSessionLocal()
+        usuario = db.get(Usuario, 1)
+        usuario.telefono_e164 = "+5491123456789"
+        usuario.telefono_verified_at = datetime(2026, 9, 6, tzinfo=timezone.utc)
+        usuario.telefono_verification_source = "phone_otp"
+        db.commit()
+        db.close()
+
+        response = client.patch(
+            "/usuarios/me",
+            json={"telefono_e164": "+54 9 11 3456-7890"},
+            headers=self._auth_headers(),
+        )
+        self.assertEqual(response.status_code, 400)
+        db = TestingSessionLocal()
+        usuario = db.get(Usuario, 1)
+        self.assertEqual(usuario.telefono_e164, "+5491123456789")
+        self.assertEqual(usuario.telefono_verification_source, "phone_otp")
+        db.close()
+
+    def test_patch_me_rechaza_telefono_invalido(self):
+        self._crear_usuario()
+        response = client.patch(
+            "/usuarios/me",
+            json={"telefono_e164": "123"},
+            headers=self._auth_headers(),
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_patch_me_respeta_unicidad_global_de_telefono(self):
+        self._crear_usuario(usuario_id=1, email="one@example.com")
+        self._crear_usuario(usuario_id=2, email="two@example.com")
+        first = client.patch(
+            "/usuarios/me",
+            json={"telefono_e164": "+54 9 11 2345-6789"},
+            headers=self._auth_headers(1),
+        )
+        second = client.patch(
+            "/usuarios/me",
+            json={"telefono_e164": "+5491123456789"},
+            headers=self._auth_headers(2),
+        )
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 400)
+        self.assertEqual(second.json()["detail"], "telefono_no_disponible")
+
     def test_obtener_usuario_publico_existente_devuelve_solo_id(self):
         self._crear_usuario()
 
@@ -159,6 +284,12 @@ class UsuariosContractsTests(unittest.TestCase):
         self.assertNotIn("onboarding_completo", data)
         self.assertNotIn("provincia", data)
         self.assertNotIn("ciudad", data)
+        self.assertNotIn("fecha_nacimiento", data)
+        self.assertNotIn("telefono_e164", data)
+        self.assertNotIn("telefono_verified_at", data)
+        self.assertNotIn("telefono_verification_source", data)
+        self.assertNotIn("perfil_completo", data)
+        self.assertNotIn("campos_perfil_faltantes", data)
 
     def test_obtener_usuario_publico_inexistente_devuelve_404(self):
         response = client.get("/usuarios/999")
@@ -170,7 +301,7 @@ class UsuariosContractsTests(unittest.TestCase):
             "/usuarios/registrar",
             json={
                 "email": "nuevo@example.com",
-                "password": "password-segura",
+                "password": "Password1-segura",
                 "acepta_terminos": True,
                 "acepta_privacidad": True,
             },

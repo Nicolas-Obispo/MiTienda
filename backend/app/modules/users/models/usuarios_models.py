@@ -8,7 +8,16 @@ Los campos agregados para MiPlaza fueron diseñados
 para no romper compatibilidad con usuarios existentes.
 """
 
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    Date,
+    DateTime,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -22,6 +31,12 @@ class Usuario(Base):
     # -----------------------------
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, nullable=False)
+
+    # ETAPA 99 expand-first: permanece nullable hasta que Registro/Login migren
+    # al nuevo owner. La unicidad ignora NULL durante la transicion.
+    email_canonical = Column(String(255), nullable=True)
+    email_verified_at = Column(DateTime(timezone=True), nullable=True)
+    email_verification_source = Column(String(32), nullable=True)
 
     # Contraseña hasheada (NO se modifica)
     hashed_password = Column(String(255), nullable=False)
@@ -53,6 +68,33 @@ class Usuario(Base):
     # Son opcionales para no romper registros existentes
     provincia = Column(String(100), nullable=True)
     ciudad = Column(String(100), nullable=True)
+
+    # Dato privado. No forma parte del registro inicial ni de respuestas
+    # publicas. La edad se deriva en backend y nunca se persiste.
+    fecha_nacimiento = Column(Date, nullable=True)
+
+    # Contacto privado de identidad. Su presencia no implica verificacion ni
+    # disponibilidad de SMS/WhatsApp.
+    telefono_e164 = Column(String(16), nullable=True)
+    telefono_verified_at = Column(DateTime(timezone=True), nullable=True)
+    telefono_verification_source = Column(String(32), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "email_canonical",
+            name="ux_usuarios_email_canonical",
+        ),
+        UniqueConstraint(
+            "telefono_e164",
+            name="ux_usuarios_telefono_e164",
+        ),
+        CheckConstraint(
+            "(telefono_verified_at IS NULL AND telefono_verification_source IS NULL) "
+            "OR (telefono_verified_at IS NOT NULL AND "
+            "telefono_verification_source IS NOT NULL)",
+            name="ck_usuarios_telefono_verification_pair",
+        ),
+    )
 
     # -------------------------
     # Likes en publicaciones

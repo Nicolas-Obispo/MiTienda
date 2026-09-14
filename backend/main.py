@@ -50,6 +50,12 @@ from app.modules.incidents.routes.operational_incidents_routers import (
     router as operational_incidents_router,
 )
 from app.modules.geocoding.routes.geocoding_routers import router as geocoding_router
+from app.modules.communications.routes.local_identity_mailbox_routers import (
+    router as local_identity_mailbox_router,
+)
+from app.modules.users.routes.local_phone_otp_mailbox_routers import (
+    router as local_phone_otp_mailbox_router,
+)
 
 # 🔥 ETAPA 60 — Seguidores
 from app.modules.social.routes.seguidores_routers import router as seguidores_router
@@ -151,6 +157,8 @@ app.include_router(health_router)
 app.include_router(operational_status_router)
 app.include_router(operational_incidents_router)
 app.include_router(geocoding_router)
+app.include_router(local_identity_mailbox_router)
+app.include_router(local_phone_otp_mailbox_router)
 
 # 🔥 ETAPA 60 — Seguidores
 app.include_router(seguidores_router)

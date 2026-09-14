@@ -19,6 +19,14 @@ def import_all_models() -> None:
     from app.modules.users.models.usuarios_documentos_aceptaciones_models import (  # noqa: F401
         UsuarioDocumentoAceptacion,
     )
+    from app.modules.users.models.identity_models import (  # noqa: F401
+        AccountActionRateLimit,
+        AccountActionToken,
+        ExternalIdentity,
+        FeedGoSession,
+        PasswordCredential,
+        PhoneVerificationChallenge,
+    )
 
     # SPACES
     from app.modules.spaces.models.comercios_models import Comercio  # noqa: F401

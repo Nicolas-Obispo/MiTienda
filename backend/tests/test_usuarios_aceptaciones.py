@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.auth import crear_token_jwt
 from app.core.database import Base, get_db
+from app.core.model_registry import import_all_models
 from app.modules.ai.models.comercios_embeddings_models import ComercioEmbedding
 from app.modules.analytics.models.comercios_metricas_sociales_models import (
     ComercioMetricasSociales,
@@ -28,6 +29,7 @@ from app.modules.stories.models.historias_vistas_models import HistoriaVista
 from app.modules.users.models.usuarios_documentos_aceptaciones_models import (
     UsuarioDocumentoAceptacion,
 )
+from app.modules.users.models.identity_models import PasswordCredential
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.routes.usuarios_routers import router as usuarios_router
 from app.modules.users.schemas.usuarios_schemas import UsuarioCreate
@@ -38,6 +40,7 @@ from app.modules.users.services.documentos_aceptacion_services import (
     DOCUMENTO_VERSION_INICIAL,
     ESTADO_ACEPTADO,
     METODO_CHECKBOX_EXPLICITO,
+    tiene_aceptaciones_obligatorias_vigentes,
 )
 from app.modules.users.services.usuarios_services import crear_usuario
 
@@ -63,6 +66,8 @@ app.include_router(usuarios_router)
 app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
+import_all_models()
+
 
 class UsuariosAceptacionesTests(unittest.TestCase):
     def setUp(self):
@@ -76,7 +81,7 @@ class UsuariosAceptacionesTests(unittest.TestCase):
     def _payload_valido(self, email: str = "nuevo@example.com") -> dict:
         return {
             "email": email,
-            "password": "password-segura",
+            "password": "Password1-segura",
             "acepta_terminos": True,
             "acepta_privacidad": True,
         }
@@ -195,6 +200,7 @@ class UsuariosAceptacionesTests(unittest.TestCase):
                 crear_usuario(db, payload)
 
         self.assertEqual(db.query(Usuario).count(), 0)
+        self.assertEqual(db.query(PasswordCredential).count(), 0)
         self.assertEqual(db.query(UsuarioDocumentoAceptacion).count(), 0)
         db.close()
 
@@ -212,7 +218,7 @@ class UsuariosAceptacionesTests(unittest.TestCase):
             "/usuarios/login",
             json={
                 "email": "login@example.com",
-                "password": "password-segura",
+                "password": "Password1-segura",
             },
         )
 
@@ -228,6 +234,9 @@ class UsuariosAceptacionesTests(unittest.TestCase):
         data = response.json()
         self.assertIn("email", data)
         self.assertNotIn("documentos_aceptaciones", data)
+        self.assertIn("capabilities", data)
+        self.assertIn("pendientes_comerciales", data)
+        self.assertTrue(data["capabilities"]["puede_crear_espacio"] is False)
 
     def test_usuario_publico_mantiene_contrato_publico_sin_evidencias(self):
         self._registrar_usuario_valido()
@@ -259,6 +268,28 @@ class UsuariosAceptacionesTests(unittest.TestCase):
             db.commit()
 
         db.rollback()
+        db.close()
+
+    def test_owner_legal_detecta_aceptaciones_vigentes_y_ausentes(self):
+        response = self._registrar_usuario_valido()
+        usuario_id = response.json()["id"]
+        db = TestingSessionLocal()
+        self.assertTrue(tiene_aceptaciones_obligatorias_vigentes(db, usuario_id))
+
+        evidencia = (
+            db.query(UsuarioDocumentoAceptacion)
+            .filter(
+                UsuarioDocumentoAceptacion.usuario_id == usuario_id,
+                UsuarioDocumentoAceptacion.documento_tipo
+                == DOCUMENTO_POLITICA_PRIVACIDAD,
+            )
+            .one()
+        )
+        evidencia.estado = "revocado"
+        db.commit()
+
+        self.assertFalse(tiene_aceptaciones_obligatorias_vigentes(db, usuario_id))
+        self.assertFalse(tiene_aceptaciones_obligatorias_vigentes(db, 999999))
         db.close()
 
 

@@ -6,10 +6,20 @@ Lógica de negocio para Usuarios.
 
 import re
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from app.modules.users.models.identity_models import PasswordCredential
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.schemas.usuarios_schemas import UsuarioCreate, UsuarioLogin
 from app.modules.users.services import documentos_aceptacion_services
+from app.modules.users.services.email_normalization import (
+    InvalidEmailError,
+    canonicalize_email,
+)
+from app.modules.users.services.phone_normalization import (
+    InvalidPhoneError,
+    canonicalize_phone,
+)
 
 # Funciones de seguridad
 from app.core.security import hash_password, verificar_password
@@ -21,7 +31,13 @@ COLOR_FONDO_HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 
 def crear_usuario(db: Session, usuario: UsuarioCreate) -> Usuario | None:
-    existente = db.query(Usuario).filter(Usuario.email == usuario.email).first()
+    email = str(usuario.email)
+    email_canonical = canonicalize_email(email)
+    existente = (
+        db.query(Usuario)
+        .filter(Usuario.email_canonical == email_canonical)
+        .first()
+    )
     if existente:
         return None
 
@@ -32,19 +48,40 @@ def crear_usuario(db: Session, usuario: UsuarioCreate) -> Usuario | None:
     hashed = hash_password(usuario.password)
 
     nuevo_usuario = Usuario(
-        email=usuario.email,
-        hashed_password=hashed
+        email=email,
+        email_canonical=email_canonical,
+        hashed_password=hashed,
     )
 
     try:
         db.add(nuevo_usuario)
         db.flush()
+        db.add(
+            PasswordCredential(
+                usuario_id=nuevo_usuario.id,
+                password_hash=hashed,
+                hash_version="bcrypt",
+            )
+        )
         documentos_aceptacion_services.crear_evidencias_aceptacion_registro(
             db=db,
             usuario=nuevo_usuario,
         )
         db.commit()
         db.refresh(nuevo_usuario)
+    except IntegrityError:
+        db.rollback()
+        # La restriccion fisica es la autoridad final ante carreras entre altas
+        # canonicas equivalentes. No se convierten otros errores de integridad
+        # en un falso duplicado.
+        existente = (
+            db.query(Usuario.id)
+            .filter(Usuario.email_canonical == email_canonical)
+            .first()
+        )
+        if existente is not None:
+            return None
+        raise
     except Exception:
         db.rollback()
         raise
@@ -53,11 +90,42 @@ def crear_usuario(db: Session, usuario: UsuarioCreate) -> Usuario | None:
 
 
 def autenticar_usuario(db: Session, data: UsuarioLogin) -> Usuario | None:
-    usuario = db.query(Usuario).filter(Usuario.email == data.email).first()
+    email_canonical = canonicalize_email(str(data.email))
+    usuario = (
+        db.query(Usuario)
+        .filter(Usuario.email_canonical == email_canonical)
+        .first()
+    )
     if not usuario:
-        return None
+        # Fallback acotado a filas legacy todavia no reparadas. La comparacion
+        # reutiliza el owner canonico y no introduce lower/trim paralelos.
+        candidatos_legacy = (
+            db.query(Usuario)
+            .filter(Usuario.email_canonical.is_(None))
+            .all()
+        )
+        coincidencias = []
+        for candidato in candidatos_legacy:
+            try:
+                coincide = canonicalize_email(candidato.email) == email_canonical
+            except InvalidEmailError:
+                coincide = False
+            if coincide:
+                coincidencias.append(candidato)
+        if len(coincidencias) != 1:
+            return None
+        usuario = coincidencias[0]
 
-    if not verificar_password(data.password, usuario.hashed_password):
+    credencial = db.get(PasswordCredential, usuario.id)
+    password_hash = (
+        credencial.password_hash
+        if credencial is not None
+        else usuario.hashed_password
+        if usuario.email_canonical is None
+        else None
+    )
+
+    if password_hash is None or not verificar_password(data.password, password_hash):
         return None
 
     return usuario
@@ -106,25 +174,89 @@ def actualizar_perfil_usuario(
     - provincia
     - ciudad
     - color_fondo
+    - fecha_nacimiento
+    - telefono_e164 inicial/no verificado
     """
 
-    campos_permitidos = {"provincia", "ciudad", "color_fondo"}
+    campos_permitidos = {
+        "provincia",
+        "ciudad",
+        "color_fondo",
+        "fecha_nacimiento",
+        "telefono_e164",
+    }
 
+    telefono_solicitado = None
+    if "telefono_e164" in campos:
+        usuario = (
+            db.query(Usuario)
+            .filter(Usuario.id == usuario.id)
+            .with_for_update()
+            .populate_existing()
+            .one()
+        )
     for campo, valor in campos.items():
         if campo not in campos_permitidos:
             continue
 
-        if isinstance(valor, str):
+        if isinstance(valor, str) and campo != "telefono_e164":
             valor = valor.strip()
 
         if campo == "color_fondo" and valor is not None:
             if not COLOR_FONDO_HEX_RE.fullmatch(valor):
                 raise ValueError("color_fondo debe ser un HEX valido (#RRGGBB)")
 
+        if campo == "telefono_e164":
+            try:
+                telefono_nuevo = canonicalize_phone(valor) if valor else None
+            except InvalidPhoneError as exc:
+                raise ValueError("telefono_invalido") from exc
+
+            telefono_actual = usuario.telefono_e164
+            if (
+                usuario.telefono_verified_at is not None
+                and telefono_nuevo != telefono_actual
+            ):
+                raise ValueError(
+                    "telefono_verificado_requiere_reemplazo_seguro"
+                )
+
+            if telefono_nuevo != telefono_actual:
+                from app.modules.users.models.identity_models import PhoneVerificationChallenge
+                from datetime import datetime, timezone
+                active_challenges = db.query(PhoneVerificationChallenge).filter(
+                    PhoneVerificationChallenge.usuario_id == usuario.id,
+                    PhoneVerificationChallenge.consumed_at.is_(None),
+                    PhoneVerificationChallenge.revoked_at.is_(None),
+                ).with_for_update().all()
+                for challenge in active_challenges:
+                    challenge.revoked_at = datetime.now(timezone.utc)
+                    challenge.invalidation_reason = "administrative"
+                usuario.telefono_e164 = telefono_nuevo
+                usuario.telefono_verified_at = None
+                usuario.telefono_verification_source = None
+            telefono_solicitado = telefono_nuevo
+            continue
+
         setattr(usuario, campo, valor)
 
-    db.commit()
-    db.refresh(usuario)
+    try:
+        db.commit()
+        db.refresh(usuario)
+    except IntegrityError as exc:
+        db.rollback()
+        if telefono_solicitado is not None:
+            ocupado = (
+                db.query(Usuario.id)
+                .filter(
+                    Usuario.telefono_e164 == telefono_solicitado,
+                    Usuario.id != usuario.id,
+                )
+                .first()
+            )
+            if ocupado is not None:
+                raise ValueError("telefono_no_disponible") from exc
+        raise
 
     return usuario
 

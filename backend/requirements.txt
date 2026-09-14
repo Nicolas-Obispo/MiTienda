@@ -1,0 +1,3 @@
+# Dependencia runtime aditiva introducida por ET99.5-A.
+phonenumbers==9.0.38
+tzdata==2025.2

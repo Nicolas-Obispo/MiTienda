@@ -102,3 +102,26 @@ def crear_evidencias_aceptacion_registro(
         evidencias.append(evidencia)
 
     return evidencias
+
+
+def tiene_aceptaciones_obligatorias_vigentes(db: Session, usuario_id: int) -> bool:
+    """Evalua las evidencias exigidas por el contrato legal vigente actual."""
+    evidencias = (
+        db.query(UsuarioDocumentoAceptacion)
+        .filter(UsuarioDocumentoAceptacion.usuario_id == usuario_id)
+        .all()
+    )
+    aceptadas = {
+        (
+            evidencia.documento_tipo,
+            evidencia.documento_version,
+            evidencia.documento_referencia,
+        )
+        for evidencia in evidencias
+        if evidencia.estado == ESTADO_ACEPTADO
+    }
+    requeridas = {
+        (documento.tipo, documento.version, documento.referencia)
+        for documento in DOCUMENTOS_OBLIGATORIOS_REGISTRO
+    }
+    return requeridas.issubset(aceptadas)
