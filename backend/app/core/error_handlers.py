@@ -28,12 +28,25 @@ _DEFAULT_MESSAGES = {
     409: "Conflicto de estado",
     413: "Archivo demasiado grande",
     422: "Payload invalido",
+    429: "Demasiadas solicitudes",
+    503: "Servicio no disponible",
 }
 
 # Solo contratos que declaran explicitamente `public_code` pueden ampliar la
 # respuesta HTTP. Los `detail={"code": ...}` existentes permanecen intactos.
 _PUBLIC_ERROR_CODES_BY_STATUS = {
+    400: frozenset(
+        {
+            "google_authorization_invalid",
+            "google_callback_invalid",
+            "google_session_result_invalid",
+            "google_signup_legal_acceptance_required",
+            "google_oauth_purpose_invalid",
+        }
+    ),
     403: frozenset({"commercial_capability_required"}),
+    429: frozenset({"google_oauth_rate_limited"}),
+    503: frozenset({"google_identity_unavailable"}),
 }
 
 
@@ -65,6 +78,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     if public_code is not None:
         content["code"] = public_code
     response = JSONResponse(status_code=status_code, content=content, headers=exc.headers)
+    _apply_private_identity_no_store(request, response)
     return _with_context_headers(response)
 
 
@@ -80,9 +94,9 @@ async def validation_exception_handler(
         request.url.path,
         len(exc.errors()),
     )
-    return _with_context_headers(
-        JSONResponse(status_code=422, content={"detail": _DEFAULT_MESSAGES[422]})
-    )
+    response = JSONResponse(status_code=422, content={"detail": _DEFAULT_MESSAGES[422]})
+    _apply_private_identity_no_store(request, response)
+    return _with_context_headers(response)
 
 
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -106,6 +120,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
         status_code=500,
         content={"detail": "Error interno del servidor"},
     )
+    _apply_private_identity_no_store(request, response)
     return _with_context_headers(response)
 
 
@@ -168,3 +183,8 @@ def _safe_request_path(request: Request) -> str:
     if isinstance(path, str) and path:
         return path
     return "unmatched"
+
+
+def _apply_private_identity_no_store(request: Request, response: JSONResponse) -> None:
+    if request.url.path.startswith("/usuarios/google/"):
+        response.headers["Cache-Control"] = "private, no-store"

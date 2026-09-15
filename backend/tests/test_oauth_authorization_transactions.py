@@ -24,6 +24,7 @@ from app.modules.users.services.oauth_authorization_transaction_services import 
     invalidate_oauth_authorization_transaction,
     invalidate_expired_oauth_authorization_transactions,
     validate_and_consume_oauth_authorization_transaction,
+    claim_oauth_authorization_transaction_by_state,
 )
 from app.modules.users.services.usuarios_services import autenticar_usuario
 
@@ -123,7 +124,16 @@ class OAuthAuthorizationTransactionTests(unittest.TestCase):
         self.assertEqual(transaction.return_to, "/perfil?tab=security")
         self.assertEqual(transaction.expires_at - transaction.created_at, timedelta(minutes=10))
         columns = set(OAuthAuthorizationTransaction.__table__.columns)
-        self.assertFalse({"access_token", "refresh_token", "id_token", "provider_payload"} & columns)
+        self.assertFalse(
+            {
+                "authorization_code",
+                "access_token",
+                "refresh_token",
+                "id_token",
+                "provider_payload",
+            }
+            & columns
+        )
         db.rollback()
         db.close()
 
@@ -337,7 +347,57 @@ class OAuthAuthorizationTransactionTests(unittest.TestCase):
             db.get(OAuthAuthorizationTransaction, safe.transaction_id).return_to,
             "/perfil?tab=security",
         )
+        double_encoded = self.create(
+            db,
+            return_to="/perfil?%2574oken=secret&%256eonce=secret&tab=security",
+        )
+        self.assertEqual(
+            db.get(
+                OAuthAuthorizationTransaction,
+                double_encoded.transaction_id,
+            ).return_to,
+            "/perfil?tab=security",
+        )
         db.rollback()
+        db.close()
+
+    def test_callback_claim_rejects_link_purpose_and_expired_state(self):
+        db = self.Session()
+        session = create_feedgo_session(
+            db,
+            usuario_id=1,
+            authentication_method="password",
+            clock=lambda: self.now,
+        )
+        link = create_oauth_authorization_transaction(
+            db,
+            provider="google",
+            purpose="link",
+            usuario_id=1,
+            feedgo_session_id=session.id,
+            clock=lambda: self.now,
+        )
+        expired = self.create(db)
+        db.commit()
+        with self.assertRaises(OAuthAuthorizationTransactionError):
+            claim_oauth_authorization_transaction_by_state(
+                db,
+                state=link.state,
+                provider="google",
+                allowed_purposes=frozenset({"login", "signup"}),
+                clock=lambda: self.now + timedelta(seconds=1),
+            )
+        with self.assertRaises(OAuthAuthorizationTransactionError):
+            claim_oauth_authorization_transaction_by_state(
+                db,
+                state=expired.state,
+                provider="google",
+                allowed_purposes=frozenset({"login", "signup"}),
+                clock=lambda: self.now + timedelta(minutes=10),
+            )
+        db.commit()
+        transaction = db.get(OAuthAuthorizationTransaction, expired.transaction_id)
+        self.assertEqual(transaction.invalidation_reason, "expired")
         db.close()
 
 

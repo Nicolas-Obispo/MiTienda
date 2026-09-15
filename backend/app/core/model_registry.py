@@ -25,6 +25,7 @@ def import_all_models() -> None:
         ExternalIdentity,
         FeedGoSession,
         OAuthAuthorizationTransaction,
+        OAuthSessionDeliveryHandle,
         PasswordCredential,
         PhoneVerificationChallenge,
     )

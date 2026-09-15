@@ -26,6 +26,8 @@ TRANSACTION_COLUMNS = {
     "usuario_id": "INTEGER NULL",
     "feedgo_session_id": "VARCHAR(64) NULL",
     "return_to": "VARCHAR(512) NULL",
+    "legal_document_set_digest": "VARCHAR(64) NULL",
+    "legal_accepted_at": "DATETIME NULL",
     "created_at": "DATETIME NOT NULL",
     "expires_at": "DATETIME NOT NULL",
     "consumed_at": "DATETIME NULL",
@@ -67,6 +69,11 @@ TRANSACTION_CHECKS = {
         "(purpose = 'link' AND usuario_id IS NOT NULL AND feedgo_session_id IS NOT NULL) "
         "OR (purpose IN ('signup', 'login') AND usuario_id IS NULL "
         "AND feedgo_session_id IS NULL)"
+    ),
+    "ck_oauth_authorization_transactions_legal_pair": (
+        "(legal_document_set_digest IS NULL AND legal_accepted_at IS NULL) OR "
+        "(purpose = 'signup' AND legal_document_set_digest IS NOT NULL "
+        "AND legal_accepted_at IS NOT NULL)"
     ),
 }
 

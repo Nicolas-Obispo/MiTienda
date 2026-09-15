@@ -56,6 +56,9 @@ from app.modules.communications.routes.local_identity_mailbox_routers import (
 from app.modules.users.routes.local_phone_otp_mailbox_routers import (
     router as local_phone_otp_mailbox_router,
 )
+from app.modules.users.routes.google_identity_routers import (
+    router as google_identity_router,
+)
 
 # 🔥 ETAPA 60 — Seguidores
 from app.modules.social.routes.seguidores_routers import router as seguidores_router
@@ -159,6 +162,7 @@ app.include_router(operational_incidents_router)
 app.include_router(geocoding_router)
 app.include_router(local_identity_mailbox_router)
 app.include_router(local_phone_otp_mailbox_router)
+app.include_router(google_identity_router)
 
 # 🔥 ETAPA 60 — Seguidores
 app.include_router(seguidores_router)

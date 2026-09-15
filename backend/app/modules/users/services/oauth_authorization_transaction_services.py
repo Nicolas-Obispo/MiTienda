@@ -50,6 +50,19 @@ class OAuthAuthorizationMaterial:
     expires_at: datetime
 
 
+@dataclass(frozen=True)
+class ClaimedOAuthAuthorizationTransaction:
+    """Material minimo reclamado por el callback; no sale de backend."""
+
+    transaction_id: str
+    purpose: Literal["signup", "login"]
+    nonce_digest: str
+    pkce_verifier: str
+    return_to: str | None
+    legal_document_set_digest: str | None
+    legal_accepted_at: datetime | None
+
+
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -73,6 +86,16 @@ def _pkce_challenge(verifier: str) -> str:
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
 
 
+def _fully_unquote(value: str) -> str:
+    decoded_value = value
+    for _ in range(3):
+        decoded = unquote(decoded_value)
+        if decoded == decoded_value:
+            break
+        decoded_value = decoded
+    return decoded_value
+
+
 def _safe_internal_return_to(value: str | None) -> str | None:
     if value is None:
         return None
@@ -81,12 +104,7 @@ def _safe_internal_return_to(value: str | None) -> str | None:
     parsed = urlsplit(value)
     if parsed.scheme or parsed.netloc:
         raise OAuthAuthorizationTransactionError("invalid_return_to")
-    decoded_path = parsed.path
-    for _ in range(3):
-        decoded = unquote(decoded_path)
-        if decoded == decoded_path:
-            break
-        decoded_path = decoded
+    decoded_path = _fully_unquote(parsed.path)
     if (
         not decoded_path.startswith("/")
         or decoded_path.startswith("//")
@@ -97,7 +115,18 @@ def _safe_internal_return_to(value: str | None) -> str | None:
     safe_query = [
         (key, item)
         for key, item in parse_qsl(parsed.query, keep_blank_values=True)
-        if key.lower() not in {"token", "code", "state", "nonce", "email", "telefono", "phone", "fecha_nacimiento", "dob"}
+        if _fully_unquote(key).lower()
+        not in {
+            "token",
+            "code",
+            "state",
+            "nonce",
+            "email",
+            "telefono",
+            "phone",
+            "fecha_nacimiento",
+            "dob",
+        }
     ]
     return urlunsplit(("", "", parsed.path, urlencode(safe_query), ""))
 
@@ -136,6 +165,8 @@ def create_oauth_authorization_transaction(
     usuario_id: int | None = None,
     feedgo_session_id: str | None = None,
     return_to: str | None = None,
+    legal_document_set_digest: str | None = None,
+    legal_accepted_at: datetime | None = None,
     ttl: timedelta = OAUTH_TRANSACTION_TTL,
     clock: Callable[[], datetime] = utc_now,
 ) -> OAuthAuthorizationMaterial:
@@ -152,6 +183,16 @@ def create_oauth_authorization_transaction(
         feedgo_session_id=feedgo_session_id,
         clock=clock,
     )
+    legal_pair_present = (
+        legal_document_set_digest is not None and legal_accepted_at is not None
+    )
+    if (legal_document_set_digest is None) != (legal_accepted_at is None):
+        raise OAuthAuthorizationTransactionError("invalid_legal_acceptance")
+    if legal_pair_present and (
+        purpose != OAUTH_PURPOSE_SIGNUP
+        or len(legal_document_set_digest or "") != 64
+    ):
+        raise OAuthAuthorizationTransactionError("invalid_legal_acceptance")
     now = _naive_utc(clock())
     state = _token()
     nonce = _token()
@@ -167,6 +208,10 @@ def create_oauth_authorization_transaction(
         usuario_id=usuario_id,
         feedgo_session_id=feedgo_session_id,
         return_to=_safe_internal_return_to(return_to),
+        legal_document_set_digest=legal_document_set_digest,
+        legal_accepted_at=(
+            _naive_utc(legal_accepted_at) if legal_accepted_at is not None else None
+        ),
         created_at=now,
         expires_at=now + ttl,
     )
@@ -179,6 +224,59 @@ def create_oauth_authorization_transaction(
         pkce_challenge=transaction.pkce_challenge,
         expires_at=transaction.expires_at,
     )
+
+
+def claim_oauth_authorization_transaction_by_state(
+    db: Session,
+    *,
+    state: str,
+    provider: str,
+    allowed_purposes: frozenset[str],
+    clock: Callable[[], datetime] = utc_now,
+) -> ClaimedOAuthAuthorizationTransaction:
+    """Reclama one-use por state antes del exchange y elimina el verifier."""
+
+    if not state or not allowed_purposes:
+        raise OAuthAuthorizationTransactionError("invalid_transaction")
+    state_digest = _digest(state)
+    transaction = (
+        db.query(OAuthAuthorizationTransaction)
+        .filter(OAuthAuthorizationTransaction.state_digest == state_digest)
+        .with_for_update()
+        .one_or_none()
+    )
+    now = _naive_utc(clock())
+    if transaction is None:
+        raise OAuthAuthorizationTransactionError("invalid_transaction")
+    if transaction.expires_at <= now:
+        if transaction.consumed_at is None and transaction.invalidated_at is None:
+            transaction.invalidated_at = now
+            transaction.invalidation_reason = "expired"
+            transaction.pkce_verifier = None
+        raise OAuthAuthorizationTransactionError("invalid_transaction")
+    if (
+        transaction.consumed_at is not None
+        or transaction.invalidated_at is not None
+        or transaction.pkce_verifier is None
+        or not hmac.compare_digest(transaction.state_digest, state_digest)
+        or transaction.provider != provider.strip().lower()
+        or transaction.purpose not in allowed_purposes
+    ):
+        raise OAuthAuthorizationTransactionError("invalid_transaction")
+
+    verifier = transaction.pkce_verifier
+    claimed = ClaimedOAuthAuthorizationTransaction(
+        transaction_id=transaction.id,
+        purpose=transaction.purpose,
+        nonce_digest=transaction.nonce_digest,
+        pkce_verifier=verifier,
+        return_to=transaction.return_to,
+        legal_document_set_digest=transaction.legal_document_set_digest,
+        legal_accepted_at=transaction.legal_accepted_at,
+    )
+    transaction.consumed_at = now
+    transaction.pkce_verifier = None
+    return claimed
 
 
 def validate_and_consume_oauth_authorization_transaction(

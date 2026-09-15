@@ -101,6 +101,8 @@ class OAuthAuthorizationTransaction(Base):
         nullable=True,
     )
     return_to = Column(String(512), nullable=True)
+    legal_document_set_digest = Column(String(64), nullable=True)
+    legal_accepted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     expires_at = Column(DateTime(timezone=True), nullable=False)
     consumed_at = Column(DateTime(timezone=True), nullable=True)
@@ -145,6 +147,12 @@ class OAuthAuthorizationTransaction(Base):
             "AND feedgo_session_id IS NULL)",
             name="ck_oauth_authorization_transactions_correlation",
         ),
+        CheckConstraint(
+            "(legal_document_set_digest IS NULL AND legal_accepted_at IS NULL) OR "
+            "(purpose = 'signup' AND legal_document_set_digest IS NOT NULL "
+            "AND legal_accepted_at IS NOT NULL)",
+            name="ck_oauth_authorization_transactions_legal_pair",
+        ),
         Index(
             "ix_oauth_authorization_transactions_provider_purpose_expiry",
             "provider",
@@ -157,6 +165,72 @@ class OAuthAuthorizationTransaction(Base):
             "purpose",
             "created_at",
         ),
+    )
+
+
+class OAuthSessionDeliveryHandle(Base):
+    """Resultado OAuth opaco, breve y one-use; nunca persiste un JWT."""
+
+    __tablename__ = "oauth_session_delivery_handles"
+
+    id = Column(String(64), primary_key=True)
+    handle_digest = Column(String(64), nullable=False)
+    transaction_id = Column(
+        String(64),
+        ForeignKey("oauth_authorization_transactions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    outcome = Column(String(32), nullable=False)
+    usuario_id = Column(
+        Integer,
+        ForeignKey("usuarios.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    feedgo_session_id = Column(
+        String(64),
+        ForeignKey("feedgo_sessions.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    return_to = Column(String(512), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    consumed_at = Column(DateTime(timezone=True), nullable=True)
+    invalidated_at = Column(DateTime(timezone=True), nullable=True)
+    invalidation_reason = Column(String(32), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("handle_digest", name="uq_oauth_session_delivery_handle_digest"),
+        UniqueConstraint("transaction_id", name="uq_oauth_session_delivery_transaction"),
+        CheckConstraint(
+            "outcome IN ('session_ready', 'authentication_unavailable')",
+            name="ck_oauth_session_delivery_outcome",
+        ),
+        CheckConstraint(
+            "expires_at > created_at",
+            name="ck_oauth_session_delivery_expiry",
+        ),
+        CheckConstraint(
+            "NOT (consumed_at IS NOT NULL AND invalidated_at IS NOT NULL)",
+            name="ck_oauth_session_delivery_terminal_state",
+        ),
+        CheckConstraint(
+            "(outcome = 'session_ready' AND usuario_id IS NOT NULL "
+            "AND feedgo_session_id IS NOT NULL) OR "
+            "(outcome = 'authentication_unavailable' AND usuario_id IS NULL "
+            "AND feedgo_session_id IS NULL)",
+            name="ck_oauth_session_delivery_result_correlation",
+        ),
+        CheckConstraint(
+            "invalidation_reason IS NULL OR invalidation_reason IN "
+            "('expired', 'administrative')",
+            name="ck_oauth_session_delivery_invalidation_reason",
+        ),
+        CheckConstraint(
+            "(invalidated_at IS NULL AND invalidation_reason IS NULL) OR "
+            "(invalidated_at IS NOT NULL AND invalidation_reason IS NOT NULL)",
+            name="ck_oauth_session_delivery_invalidation_pair",
+        ),
+        Index("ix_oauth_session_delivery_expiry", "expires_at"),
     )
 
 
@@ -298,7 +372,7 @@ class AccountActionRateLimit(Base):
     __table_args__ = (
         CheckConstraint(
             "action IN ('email_verification', 'password_reset', 'current_password', "
-            "'phone_verification')",
+            "'phone_verification', 'google_oauth')",
             name="ck_account_action_rate_limits_action",
         ),
         CheckConstraint(

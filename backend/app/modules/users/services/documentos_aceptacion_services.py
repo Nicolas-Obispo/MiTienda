@@ -6,6 +6,7 @@ Definicion centralizada de documentos obligatorios y creacion de evidencia.
 
 from dataclasses import dataclass
 from datetime import datetime
+import hashlib
 
 from sqlalchemy.orm import Session
 
@@ -83,8 +84,10 @@ def validar_aceptaciones_obligatorias_registro(usuario: UsuarioCreate) -> None:
 def crear_evidencias_aceptacion_registro(
     db: Session,
     usuario: Usuario,
+    *,
+    aceptado_en: datetime | None = None,
 ) -> list[UsuarioDocumentoAceptacion]:
-    aceptado_en = datetime.utcnow()
+    aceptado_en = aceptado_en or datetime.utcnow()
     evidencias = []
 
     for documento in DOCUMENTOS_OBLIGATORIOS_REGISTRO:
@@ -102,6 +105,15 @@ def crear_evidencias_aceptacion_registro(
         evidencias.append(evidencia)
 
     return evidencias
+
+
+def digest_documentos_obligatorios_registro() -> str:
+    """Fingerprint estable del set legal que el usuario acepta expresamente."""
+
+    referencias = "\n".join(
+        sorted(documento.referencia for documento in DOCUMENTOS_OBLIGATORIOS_REGISTRO)
+    )
+    return hashlib.sha256(referencias.encode("utf-8")).hexdigest()
 
 
 def tiene_aceptaciones_obligatorias_vigentes(db: Session, usuario_id: int) -> bool:

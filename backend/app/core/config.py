@@ -5,8 +5,9 @@
 
 from datetime import datetime
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
+from urllib.parse import urlsplit
 
 
 class Settings(BaseSettings):
@@ -100,6 +101,80 @@ class Settings(BaseSettings):
     GOOGLE_OAUTH_PUBLIC_RATE_LIMIT_PER_HOUR: int = Field(default=10, ge=1)
     GOOGLE_OAUTH_LINK_RATE_LIMIT_PER_HOUR: int = Field(default=10, ge=1)
     GOOGLE_RECENT_REAUTH_SECONDS: int = Field(default=600, ge=1, le=600)
+    GOOGLE_OIDC_CLIENT_ID: str | None = None
+    GOOGLE_OIDC_CLIENT_SECRET: str | None = None
+    GOOGLE_OIDC_DISCOVERY_URL: str = (
+        "https://accounts.google.com/.well-known/openid-configuration"
+    )
+    GOOGLE_OIDC_ALLOWED_ISSUER: str = "https://accounts.google.com"
+    GOOGLE_OIDC_REDIRECT_URI: str | None = None
+    GOOGLE_OIDC_PUBLIC_BASE_URL: str | None = None
+    GOOGLE_OIDC_FRONTEND_RESULT_PATH: str = "/auth/google/resultado"
+    GOOGLE_OIDC_TIMEOUT_SECONDS: float = Field(default=5.0, gt=0, le=30)
+    GOOGLE_OIDC_RESULT_HANDLE_TTL_SECONDS: int = Field(default=120, ge=1, le=120)
+
+    @model_validator(mode="after")
+    def validate_google_oidc_configuration(self):
+        if not self.GOOGLE_IDENTITY_ENABLED:
+            return self
+
+        required = {
+            "GOOGLE_OIDC_CLIENT_ID": self.GOOGLE_OIDC_CLIENT_ID,
+            "GOOGLE_OIDC_CLIENT_SECRET": self.GOOGLE_OIDC_CLIENT_SECRET,
+            "GOOGLE_OIDC_REDIRECT_URI": self.GOOGLE_OIDC_REDIRECT_URI,
+            "GOOGLE_OIDC_PUBLIC_BASE_URL": self.GOOGLE_OIDC_PUBLIC_BASE_URL,
+            "ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET": (
+                self.ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET
+            ),
+        }
+        missing = [name for name, value in required.items() if not value or not value.strip()]
+        if missing:
+            raise ValueError("google_oidc_configuration_incomplete")
+        if self.ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET in {
+            self.SECRET_KEY,
+            self.RESEND_API_KEY,
+            self.IDENTITY_RESEND_API_KEY,
+        }:
+            raise ValueError("google_oidc_rate_limit_secret_reused")
+        if self.GOOGLE_OIDC_DISCOVERY_URL != (
+            "https://accounts.google.com/.well-known/openid-configuration"
+        ):
+            raise ValueError("google_oidc_discovery_not_allowed")
+        if self.GOOGLE_OIDC_ALLOWED_ISSUER != "https://accounts.google.com":
+            raise ValueError("google_oidc_issuer_not_allowed")
+
+        redirect = urlsplit(self.GOOGLE_OIDC_REDIRECT_URI or "")
+        public_base = urlsplit(self.GOOGLE_OIDC_PUBLIC_BASE_URL or "")
+        if (
+            redirect.scheme != "https"
+            or not redirect.netloc
+            or redirect.username is not None
+            or redirect.password is not None
+            or redirect.query
+            or redirect.fragment
+            or redirect.path != "/usuarios/google/callback"
+        ):
+            raise ValueError("google_oidc_redirect_uri_invalid")
+        if (
+            public_base.scheme != "https"
+            or not public_base.netloc
+            or public_base.username is not None
+            or public_base.password is not None
+            or public_base.path not in {"", "/"}
+            or public_base.query
+            or public_base.fragment
+        ):
+            raise ValueError("google_oidc_public_base_url_invalid")
+        result_path = self.GOOGLE_OIDC_FRONTEND_RESULT_PATH
+        if (
+            not result_path.startswith("/")
+            or result_path.startswith("//")
+            or "\\" in result_path
+            or urlsplit(result_path).query
+            or urlsplit(result_path).fragment
+        ):
+            raise ValueError("google_oidc_frontend_result_path_invalid")
+        return self
 
     class Config:
         env_file = ".env"

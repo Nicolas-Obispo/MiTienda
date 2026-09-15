@@ -25,7 +25,10 @@ EMAIL_VERIFICATION = "email_verification"
 PASSWORD_RESET = "password_reset"
 CURRENT_PASSWORD = "current_password"
 PHONE_VERIFICATION = "phone_verification"
-ALLOWED_ACTIONS = frozenset({EMAIL_VERIFICATION, PASSWORD_RESET, CURRENT_PASSWORD, PHONE_VERIFICATION})
+GOOGLE_OAUTH = "google_oauth"
+ALLOWED_ACTIONS = frozenset(
+    {EMAIL_VERIFICATION, PASSWORD_RESET, CURRENT_PASSWORD, PHONE_VERIFICATION, GOOGLE_OAUTH}
+)
 
 
 @dataclass(frozen=True)
@@ -76,6 +79,12 @@ def canonical_destination_subject(email_canonical: str) -> str:
     if not email_canonical:
         raise ValueError("account_action_subject_invalid")
     return f"destination:{email_canonical}"
+
+
+def client_subject(client_host: str) -> str:
+    if not client_host:
+        raise ValueError("account_action_client_missing")
+    return f"client:{client_host}"
 
 
 def _ensure_bucket(db: Session, *, action: str, digest: str, now: datetime) -> None:
@@ -216,6 +225,26 @@ def record_phone_verification(
             _Policy("day", timedelta(days=1), 10),
         ),
         cooldown=timedelta(seconds=60), now=now, secret=secret,
+    )
+
+
+def record_google_oauth_authorization(
+    db: Session,
+    *,
+    client_host: str,
+    limit_per_hour: int,
+    now: datetime | None = None,
+    secret: str | None = None,
+) -> RateLimitDecision:
+    if limit_per_hour <= 0:
+        raise ValueError("google_oauth_rate_limit_invalid")
+    return _record(
+        db,
+        action=GOOGLE_OAUTH,
+        subject=client_subject(client_host),
+        policies=(_Policy("hour", timedelta(hours=1), limit_per_hour),),
+        now=now,
+        secret=secret,
     )
 
 
