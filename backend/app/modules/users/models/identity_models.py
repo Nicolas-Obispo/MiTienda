@@ -65,6 +65,98 @@ class ExternalIdentity(Base):
             "provider_subject",
             name="uq_external_identities_provider_subject",
         ),
+        UniqueConstraint(
+            "usuario_id",
+            "provider",
+            name="uq_external_identities_usuario_provider",
+        ),
+    )
+
+
+class OAuthAuthorizationTransaction(Base):
+    """Transacción OAuth/OIDC de corta vida y un solo uso.
+
+    No contiene tokens ni claims del provider. ``state`` y ``nonce`` se
+    persisten sólo como digests; el verifier PKCE es el material mínimo que
+    el callback backend necesitará para canjear el authorization code.
+    """
+
+    __tablename__ = "oauth_authorization_transactions"
+
+    id = Column(String(64), primary_key=True)
+    provider = Column(String(32), nullable=False)
+    purpose = Column(String(32), nullable=False)
+    state_digest = Column(String(64), nullable=False)
+    nonce_digest = Column(String(64), nullable=False)
+    pkce_verifier = Column(String(128), nullable=True)
+    pkce_challenge = Column(String(128), nullable=False)
+    usuario_id = Column(
+        Integer,
+        ForeignKey("usuarios.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    feedgo_session_id = Column(
+        String(64),
+        ForeignKey("feedgo_sessions.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    return_to = Column(String(512), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    consumed_at = Column(DateTime(timezone=True), nullable=True)
+    invalidated_at = Column(DateTime(timezone=True), nullable=True)
+    invalidation_reason = Column(String(32), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("state_digest", name="uq_oauth_authorization_transactions_state"),
+        UniqueConstraint("nonce_digest", name="uq_oauth_authorization_transactions_nonce"),
+        CheckConstraint(
+            "purpose IN ('signup', 'login', 'link')",
+            name="ck_oauth_authorization_transactions_purpose",
+        ),
+        CheckConstraint(
+            "expires_at > created_at",
+            name="ck_oauth_authorization_transactions_expiry",
+        ),
+        CheckConstraint(
+            "NOT (consumed_at IS NOT NULL AND invalidated_at IS NOT NULL)",
+            name="ck_oauth_authorization_transactions_terminal_state",
+        ),
+        CheckConstraint(
+            "invalidation_reason IS NULL OR invalidation_reason IN "
+            "('expired', 'superseded', 'administrative', 'session_invalid')",
+            name="ck_oauth_authorization_transactions_invalidation_reason",
+        ),
+        CheckConstraint(
+            "(invalidated_at IS NULL AND invalidation_reason IS NULL) OR "
+            "(invalidated_at IS NOT NULL AND invalidation_reason IS NOT NULL)",
+            name="ck_oauth_authorization_transactions_invalidation_pair",
+        ),
+        CheckConstraint(
+            "(consumed_at IS NULL AND invalidated_at IS NULL AND "
+            "pkce_verifier IS NOT NULL) OR "
+            "((consumed_at IS NOT NULL OR invalidated_at IS NOT NULL) AND "
+            "pkce_verifier IS NULL)",
+            name="ck_oauth_authorization_transactions_pkce_lifecycle",
+        ),
+        CheckConstraint(
+            "(purpose = 'link' AND usuario_id IS NOT NULL AND feedgo_session_id IS NOT NULL) "
+            "OR (purpose IN ('signup', 'login') AND usuario_id IS NULL "
+            "AND feedgo_session_id IS NULL)",
+            name="ck_oauth_authorization_transactions_correlation",
+        ),
+        Index(
+            "ix_oauth_authorization_transactions_provider_purpose_expiry",
+            "provider",
+            "purpose",
+            "expires_at",
+        ),
+        Index(
+            "ix_oauth_authorization_transactions_user_purpose_created",
+            "usuario_id",
+            "purpose",
+            "created_at",
+        ),
     )
 
 

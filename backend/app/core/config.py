@@ -5,6 +5,7 @@
 
 from datetime import datetime
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -91,6 +92,14 @@ class Settings(BaseSettings):
     # No puede reutilizar JWT ni credenciales de providers.
     ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET: str | None = None
     PHONE_VERIFICATION_HMAC_SECRET: str | None = None
+
+    # Fundacion OAuth de ET99.8. Permanece fail-closed hasta que la integracion
+    # Google/OIDC, sus secretos y redirects exactos sean habilitados expresamente.
+    GOOGLE_IDENTITY_ENABLED: bool = False
+    GOOGLE_OAUTH_TRANSACTION_TTL_SECONDS: int = Field(default=600, ge=1, le=600)
+    GOOGLE_OAUTH_PUBLIC_RATE_LIMIT_PER_HOUR: int = Field(default=10, ge=1)
+    GOOGLE_OAUTH_LINK_RATE_LIMIT_PER_HOUR: int = Field(default=10, ge=1)
+    GOOGLE_RECENT_REAUTH_SECONDS: int = Field(default=600, ge=1, le=600)
 
     class Config:
         env_file = ".env"

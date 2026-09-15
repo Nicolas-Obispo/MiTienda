@@ -63,7 +63,6 @@ def preflight(connection) -> dict[str, object]:
     rows = _load_legacy_users(connection)
     canonical_to_ids: dict[str, list[int]] = defaultdict(list)
     invalid_ids: list[int] = []
-    missing_hash_ids: list[int] = []
 
     for row in rows:
         try:
@@ -72,8 +71,6 @@ def preflight(connection) -> dict[str, object]:
             invalid_ids.append(row["id"])
             continue
         canonical_to_ids[canonical].append(row["id"])
-        if not row["hashed_password"]:
-            missing_hash_ids.append(row["id"])
 
     collisions = sorted(
         user_id
@@ -81,12 +78,12 @@ def preflight(connection) -> dict[str, object]:
         if len(ids) > 1
         for user_id in ids
     )
-    if invalid_ids or collisions or missing_hash_ids:
+    if invalid_ids or collisions:
         raise IdentityMigrationPreflightError(
             "Preflight bloqueado: "
             f"emails_invalidos_ids={invalid_ids}, "
             f"colisiones_ids={collisions}, "
-            f"hash_faltante_ids={missing_hash_ids}"
+            "hash_faltante_ids=[]"
         )
 
     columns = {column["name"] for column in inspector.get_columns("usuarios")}
@@ -119,14 +116,16 @@ def preflight(connection) -> dict[str, object]:
         pending_credential_ids = connection.execute(
             text(
                 "SELECT u.id FROM usuarios u LEFT JOIN password_credentials p "
-                "ON p.usuario_id = u.id WHERE p.usuario_id IS NULL ORDER BY u.id"
+                "ON p.usuario_id = u.id WHERE p.usuario_id IS NULL "
+                "AND u.hashed_password IS NOT NULL ORDER BY u.id"
             )
         ).scalars().all()
         divergent_credentials = connection.execute(
             text(
                 "SELECT u.id FROM usuarios u "
                 "JOIN password_credentials p ON p.usuario_id = u.id "
-                "WHERE p.password_hash <> u.hashed_password ORDER BY u.id"
+                "WHERE u.hashed_password IS NOT NULL "
+                "AND p.password_hash <> u.hashed_password ORDER BY u.id"
             )
         ).scalars().all()
         if divergent_credentials:
@@ -180,6 +179,8 @@ def _backfill(connection) -> dict[str, int]:
         )
         email_updates += result.rowcount
 
+        if not row["hashed_password"]:
+            continue
         exists = connection.execute(
             text(
                 "SELECT 1 FROM password_credentials "

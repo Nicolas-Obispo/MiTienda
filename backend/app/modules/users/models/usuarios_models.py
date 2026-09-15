@@ -38,8 +38,9 @@ class Usuario(Base):
     email_verified_at = Column(DateTime(timezone=True), nullable=True)
     email_verification_source = Column(String(32), nullable=True)
 
-    # Contraseña hasheada (NO se modifica)
-    hashed_password = Column(String(255), nullable=False)
+    # Compatibilidad temporal con la credencial legacy. PasswordCredential es el
+    # owner del password; una cuenta Google-only no tiene hash ni credencial.
+    hashed_password = Column(String(255), nullable=True)
 
     # -----------------------------
     # Campos agregados para MiPlaza
