@@ -5,13 +5,24 @@ import threading
 import unittest
 
 from sqlalchemy import inspect
+from sqlalchemy.exc import DBAPIError, IntegrityError
 
 import migrate_google_oidc as migration
 from app.core.database import Base
 from app.core.model_registry import import_all_models
-from app.modules.users.models.identity_models import OAuthAuthorizationTransaction
+from app.modules.users.models.identity_models import (
+    ExternalIdentity,
+    OAuthAuthorizationTransaction,
+)
 from app.modules.users.models.usuarios_models import Usuario
+from app.modules.users.services.authentication_method_services import (
+    AuthenticationMethodError,
+    link_google_identity,
+)
+from app.modules.users.services.feedgo_session_services import create_feedgo_session
+from app.modules.users.services.google_oidc_services import GoogleOidcIdentity
 from app.modules.users.services.oauth_authorization_transaction_services import (
+    ClaimedOAuthAuthorizationTransaction,
     OAuthAuthorizationTransactionError,
     claim_oauth_authorization_transaction_by_state,
     create_oauth_authorization_transaction,
@@ -81,6 +92,124 @@ class GoogleOidcMySQLConcurrencyTests(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=2) as pool:
             results = list(pool.map(lambda _: claim(), range(2)))
         self.assertEqual(results.count(True), 1)
+
+    def test_link_callback_claim_has_exactly_one_winner(self):
+        db = self.Session()
+        db.add(Usuario(id=1, email="link@test.local", hashed_password=None))
+        db.flush()
+        session = create_feedgo_session(
+            db,
+            usuario_id=1,
+            authentication_method="password",
+            clock=lambda: self.now,
+            ttl=timedelta(hours=1),
+            sid_factory=lambda: "link-password-session",
+        )
+        material = create_oauth_authorization_transaction(
+            db,
+            provider="google",
+            purpose="link",
+            usuario_id=1,
+            feedgo_session_id=session.id,
+            clock=lambda: self.now,
+        )
+        db.commit()
+        db.close()
+        barrier = threading.Barrier(2)
+
+        def claim():
+            worker = self.Session()
+            try:
+                barrier.wait(timeout=5)
+                claim_oauth_authorization_transaction_by_state(
+                    worker,
+                    state=material.state,
+                    provider="google",
+                    allowed_purposes=frozenset({"link"}),
+                    clock=lambda: self.now + timedelta(seconds=1),
+                )
+                worker.commit()
+                return True
+            except OAuthAuthorizationTransactionError:
+                worker.rollback()
+                return False
+            finally:
+                worker.close()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda _: claim(), range(2)))
+        self.assertEqual(results.count(True), 1)
+
+    def test_same_google_subject_links_to_exactly_one_user(self):
+        db = self.Session()
+        for user_id in (1, 2):
+            db.add(
+                Usuario(
+                    id=user_id,
+                    email=f"link-{user_id}@test.local",
+                    hashed_password=None,
+                )
+            )
+            db.flush()
+            create_feedgo_session(
+                db,
+                usuario_id=user_id,
+                authentication_method="password",
+                clock=lambda: self.now,
+                ttl=timedelta(hours=1),
+                sid_factory=lambda user_id=user_id: f"link-session-{user_id}",
+            )
+        db.commit()
+        db.close()
+        barrier = threading.Barrier(2)
+
+        def link(user_id):
+            worker = self.Session()
+            claim = ClaimedOAuthAuthorizationTransaction(
+                transaction_id=f"link-transaction-{user_id}",
+                purpose="link",
+                nonce_digest="1" * 64,
+                pkce_verifier="verifier",
+                return_to=None,
+                legal_document_set_digest=None,
+                legal_accepted_at=None,
+                usuario_id=user_id,
+                feedgo_session_id=f"link-session-{user_id}",
+            )
+            try:
+                barrier.wait(timeout=5)
+                link_google_identity(
+                    worker,
+                    claim=claim,
+                    identity=GoogleOidcIdentity(
+                        subject="shared-subject",
+                        email="shared@test.local",
+                        email_verified=True,
+                    ),
+                    clock=lambda: self.now + timedelta(seconds=1),
+                )
+                worker.commit()
+                return True
+            except (AuthenticationMethodError, IntegrityError, DBAPIError):
+                worker.rollback()
+                return False
+            finally:
+                worker.close()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(link, (1, 2)))
+        self.assertEqual(results.count(True), 1)
+        db = self.Session()
+        self.assertEqual(
+            db.query(ExternalIdentity)
+            .filter(
+                ExternalIdentity.provider == "google",
+                ExternalIdentity.provider_subject == "shared-subject",
+            )
+            .count(),
+            1,
+        )
+        db.close()
 
     def test_migration_is_clean_and_idempotent(self):
         with self.engine.begin() as connection:

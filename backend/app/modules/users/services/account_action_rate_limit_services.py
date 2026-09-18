@@ -248,6 +248,30 @@ def record_google_oauth_authorization(
     )
 
 
+def record_authentication_method_management(
+    db: Session,
+    *,
+    usuario_id: int,
+    limit_per_hour: int,
+    now: datetime | None = None,
+    secret: str | None = None,
+) -> RateLimitDecision:
+    """Comparte el owner persistente para acciones sensibles autenticadas."""
+
+    if limit_per_hour <= 0:
+        raise ValueError("authentication_method_rate_limit_invalid")
+    return _record(
+        db,
+        action=GOOGLE_OAUTH,
+        subject=user_subject(usuario_id),
+        policies=(
+            _Policy("authentication-methods-hour", timedelta(hours=1), limit_per_hour),
+        ),
+        now=now,
+        secret=secret,
+    )
+
+
 def record_current_password_failure(
     db: Session, *, usuario_id: int, now: datetime | None = None,
     secret: str | None = None,

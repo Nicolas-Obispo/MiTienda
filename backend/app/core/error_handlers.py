@@ -44,8 +44,26 @@ _PUBLIC_ERROR_CODES_BY_STATUS = {
             "google_oauth_purpose_invalid",
         }
     ),
-    403: frozenset({"commercial_capability_required"}),
-    429: frozenset({"google_oauth_rate_limited"}),
+    403: frozenset(
+        {
+            "commercial_capability_required",
+            "recent_reauthentication_required",
+        }
+    ),
+    409: frozenset(
+        {
+            "authentication_method_already_exists",
+            "authentication_method_operation_unavailable",
+            "cannot_remove_last_authentication_method",
+            "google_link_unavailable",
+        }
+    ),
+    429: frozenset(
+        {
+            "authentication_method_rate_limited",
+            "google_oauth_rate_limited",
+        }
+    ),
     503: frozenset({"google_identity_unavailable"}),
 }
 
@@ -186,5 +204,8 @@ def _safe_request_path(request: Request) -> str:
 
 
 def _apply_private_identity_no_store(request: Request, response: JSONResponse) -> None:
-    if request.url.path.startswith("/usuarios/google/"):
+    if (
+        request.url.path.startswith("/usuarios/google/")
+        or request.url.path.startswith("/usuarios/me/authentication-methods/")
+    ):
         response.headers["Cache-Control"] = "private, no-store"

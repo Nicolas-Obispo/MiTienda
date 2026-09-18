@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlsplit
 import unittest
 from unittest.mock import patch
@@ -11,14 +11,18 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.auth import crear_token_jwt_versionado
 from app.core.config import settings
 from app.core.database import Base, get_db
 from app.core.error_handlers import register_exception_handlers
 from app.core.model_registry import import_all_models
+from app.core.security import hash_password
 from app.modules.users.models.identity_models import (
     AccountActionRateLimit,
     ExternalIdentity,
+    FeedGoSession,
     OAuthAuthorizationTransaction,
+    PasswordCredential,
 )
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.routes import google_identity_routers
@@ -26,6 +30,7 @@ from app.modules.users.services.google_oidc_services import (
     GoogleOidcError,
     GoogleOidcIdentity,
 )
+from app.modules.users.services.feedgo_session_services import create_feedgo_session
 
 
 import_all_models()
@@ -134,6 +139,43 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
         self.assertNotIn("jwt", location.lower())
         return callback, parse_qs(urlsplit(location).query)["handle"][0]
 
+    def _password_user_token(self, *, age_seconds=0):
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        db = self.Session()
+        password_hash = hash_password("Password1")
+        db.add(
+            Usuario(
+                id=1,
+                email="owner@example.com",
+                email_canonical="owner@example.com",
+                hashed_password=password_hash,
+            )
+        )
+        db.add(
+            PasswordCredential(
+                usuario_id=1,
+                password_hash=password_hash,
+                hash_version="bcrypt",
+            )
+        )
+        session = create_feedgo_session(
+            db,
+            usuario_id=1,
+            authentication_method="password",
+            clock=lambda: now - timedelta(seconds=age_seconds),
+            ttl=timedelta(hours=2),
+            sid_factory=lambda: "password-session",
+        )
+        db.commit()
+        token = crear_token_jwt_versionado(
+            usuario_id=1,
+            sid=session.id,
+            issued_at=session.issued_at,
+            expires_at=session.expires_at,
+        )
+        db.close()
+        return token
+
     def test_signup_callback_and_one_use_exchange_deliver_feedgo_jwt_outside_url(self):
         started, state = self._start(
             "signup", acepta_terminos=True, acepta_privacidad=True
@@ -165,6 +207,119 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
         )
         self.assertEqual(replay.status_code, 400)
         self.assertEqual(len(FakeGoogleOidcOwner.exchanges), 1)
+
+    def test_authenticated_recent_session_can_link_google_and_replay_is_rejected(self):
+        token = self._password_user_token()
+        started = self.client.post(
+            "/usuarios/google/link/authorization",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"confirm_link": True, "return_to": "/perfil"},
+        )
+        self.assertEqual(started.status_code, 200, started.text)
+        self.assertEqual(started.headers["cache-control"], "private, no-store")
+        state = parse_qs(
+            urlsplit(started.json()["authorization_url"]).query
+        )["state"][0]
+        callback = self.client.get(
+            "/usuarios/google/callback",
+            params={"state": state, "code": "authorization-code"},
+            follow_redirects=False,
+        )
+        self.assertEqual(callback.status_code, 303, callback.text)
+        self.assertEqual(callback.headers["location"], "https://feedgo.test/perfil")
+        self.assertNotIn("token", callback.headers["location"].lower())
+        db = self.Session()
+        linked = db.query(ExternalIdentity).one()
+        self.assertEqual(linked.usuario_id, 1)
+        self.assertEqual(linked.provider_subject, "new-google-subject")
+        db.close()
+        replay = self.client.get(
+            "/usuarios/google/callback",
+            params={"state": state, "code": "second-code"},
+            follow_redirects=False,
+        )
+        self.assertEqual(replay.status_code, 400)
+        self.assertEqual(len(FakeGoogleOidcOwner.exchanges), 1)
+
+    def test_link_requires_recent_versioned_session_and_confirmation(self):
+        stale = self._password_user_token(age_seconds=601)
+        rejected = self.client.post(
+            "/usuarios/google/link/authorization",
+            headers={"Authorization": f"Bearer {stale}"},
+            json={"confirm_link": True},
+        )
+        self.assertEqual(rejected.status_code, 403)
+        self.assertEqual(rejected.json()["code"], "recent_reauthentication_required")
+        no_confirmation = self.client.post(
+            "/usuarios/google/link/authorization",
+            headers={"Authorization": f"Bearer {stale}"},
+            json={"confirm_link": False},
+        )
+        self.assertEqual(no_confirmation.status_code, 422)
+        self.assertEqual(no_confirmation.headers["cache-control"], "private, no-store")
+
+    def test_link_fails_closed_if_sid_is_revoked_during_oauth(self):
+        token = self._password_user_token()
+        started = self.client.post(
+            "/usuarios/google/link/authorization",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"confirm_link": True},
+        )
+        state = parse_qs(
+            urlsplit(started.json()["authorization_url"]).query
+        )["state"][0]
+        db = self.Session()
+        db.get(FeedGoSession, "password-session").revoked_at = datetime.utcnow()
+        db.commit()
+        db.close()
+        callback = self.client.get(
+            "/usuarios/google/callback",
+            params={"state": state, "code": "authorization-code"},
+            follow_redirects=False,
+        )
+        self.assertEqual(callback.status_code, 400)
+        self.assertEqual(len(FakeGoogleOidcOwner.exchanges), 0)
+
+    def test_link_subject_owned_by_another_user_is_generic_unavailable(self):
+        token = self._password_user_token()
+        db = self.Session()
+        db.add(
+            Usuario(
+                id=2,
+                email="other@example.com",
+                email_canonical="other@example.com",
+                hashed_password=None,
+            )
+        )
+        db.flush()
+        db.add(
+            ExternalIdentity(
+                usuario_id=2,
+                provider="google",
+                provider_subject="new-google-subject",
+            )
+        )
+        db.commit()
+        db.close()
+        started = self.client.post(
+            "/usuarios/google/link/authorization",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"confirm_link": True},
+        )
+        state = parse_qs(
+            urlsplit(started.json()["authorization_url"]).query
+        )["state"][0]
+        callback = self.client.get(
+            "/usuarios/google/callback",
+            params={"state": state, "code": "authorization-code"},
+            follow_redirects=False,
+        )
+        self.assertEqual(callback.status_code, 409)
+        self.assertEqual(callback.json()["code"], "google_link_unavailable")
+        self.assertNotIn("subject", callback.text.lower())
+        db = self.Session()
+        self.assertEqual(db.query(ExternalIdentity).count(), 1)
+        db.close()
 
     def test_failed_exchange_still_consumes_transaction_and_clears_verifier(self):
         _, state = self._start("login")

@@ -5,6 +5,7 @@ Rutas HTTP relacionadas a Usuarios.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 # DB
@@ -33,6 +34,9 @@ from app.modules.users.schemas.usuarios_schemas import (
     PasswordResetResponse,
     AuthenticatedPasswordChangeRequest,
     AuthenticatedPasswordChangeResponse,
+    AddPasswordCredentialRequest,
+    AuthenticationMethodConfirmationRequest,
+    AuthenticationMethodMutationResponse,
     PhoneVerificationIssueResponse,
     PhoneVerificationConfirmRequest,
     PhoneVerificationConfirmResponse,
@@ -66,6 +70,7 @@ from datetime import datetime, timedelta
 from app.core.config import settings
 
 # Modelo para logout
+from app.modules.users.models.identity_models import PasswordCredential
 from app.modules.users.models.tokens_models import TokenRevocado
 
 # Services
@@ -97,6 +102,16 @@ from app.modules.users.services.authenticated_password_services import (
     AuthenticatedPasswordChangeError,
     change_authenticated_password,
 )
+from app.modules.users.services.account_action_rate_limit_services import (
+    record_authentication_method_management,
+)
+from app.modules.users.services.authentication_method_services import (
+    AuthenticationMethodError,
+    add_password_credential,
+    derive_authentication_methods,
+    require_recent_reauthentication,
+    unlink_google_identity,
+)
 from app.modules.users.services.feedgo_session_services import (
     PASSWORD,
     create_feedgo_session,
@@ -111,6 +126,48 @@ router = APIRouter(
     prefix="/usuarios",
     tags=["Usuarios"]
 )
+
+AUTH_METHOD_NO_STORE = {"Cache-Control": "private, no-store"}
+
+
+def _authentication_method_http_error(exc: AuthenticationMethodError) -> HTTPException:
+    status_by_code = {
+        "recent_reauthentication_required": 403,
+        "authentication_method_already_exists": 409,
+        "cannot_remove_last_authentication_method": 409,
+        "authentication_method_operation_unavailable": 409,
+    }
+    return HTTPException(
+        status_code=status_by_code.get(exc.code, 409),
+        detail={"public_code": exc.code},
+        headers=AUTH_METHOD_NO_STORE,
+    )
+
+
+def _authorize_authentication_method_mutation(
+    db: Session,
+    *,
+    usuario_id: int,
+    sid: str | None,
+) -> None:
+    require_recent_reauthentication(
+        db,
+        usuario_id=usuario_id,
+        feedgo_session_id=sid,
+    )
+    decision = record_authentication_method_management(
+        db,
+        usuario_id=usuario_id,
+        limit_per_hour=settings.GOOGLE_OAUTH_LINK_RATE_LIMIT_PER_HOUR,
+    )
+    db.commit()
+    if not decision.allowed:
+        raise HTTPException(
+            status_code=429,
+            detail={"public_code": "authentication_method_rate_limited"},
+            headers=AUTH_METHOD_NO_STORE
+            | {"Retry-After": str(decision.retry_after_seconds or 3600)},
+        )
 
 
 # =============================================================
@@ -259,6 +316,86 @@ def cambiar_password_autenticado_endpoint(
     return AuthenticatedPasswordChangeResponse(status="password_updated")
 
 
+@router.post(
+    "/me/authentication-methods/password",
+    response_model=AuthenticationMethodMutationResponse,
+)
+def agregar_password_endpoint(
+    payload: AddPasswordCredentialRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    auth_context=Depends(obtener_contexto_usuario_actual),
+):
+    response.headers.update(AUTH_METHOD_NO_STORE)
+    usuario_id = auth_context.usuario.id
+    sid = auth_context.token.sid if auth_context.token.contract == "versioned" else None
+    try:
+        _authorize_authentication_method_mutation(
+            db,
+            usuario_id=usuario_id,
+            sid=sid,
+        )
+        add_password_credential(
+            db,
+            usuario_id=usuario_id,
+            feedgo_session_id=sid,
+            new_password=payload.new_password,
+        )
+        db.commit()
+    except AuthenticationMethodError as exc:
+        db.rollback()
+        raise _authentication_method_http_error(exc) from None
+    except IntegrityError:
+        db.rollback()
+        if db.get(PasswordCredential, usuario_id) is None:
+            raise
+        raise _authentication_method_http_error(
+            AuthenticationMethodError("authentication_method_already_exists")
+        ) from None
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    return AuthenticationMethodMutationResponse(status="password_added")
+
+
+@router.delete(
+    "/me/authentication-methods/google",
+    response_model=AuthenticationMethodMutationResponse,
+)
+def desvincular_google_endpoint(
+    payload: AuthenticationMethodConfirmationRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    auth_context=Depends(obtener_contexto_usuario_actual),
+):
+    response.headers.update(AUTH_METHOD_NO_STORE)
+    usuario_id = auth_context.usuario.id
+    sid = auth_context.token.sid if auth_context.token.contract == "versioned" else None
+    try:
+        _authorize_authentication_method_mutation(
+            db,
+            usuario_id=usuario_id,
+            sid=sid,
+        )
+        unlink_google_identity(
+            db,
+            usuario_id=usuario_id,
+            feedgo_session_id=sid,
+        )
+        db.commit()
+    except AuthenticationMethodError as exc:
+        db.rollback()
+        raise _authentication_method_http_error(exc) from None
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    return AuthenticationMethodMutationResponse(status="google_unlinked")
+
+
 # =============================================================
 #  LOGIN (AUTENTICACIÓN)
 # =============================================================
@@ -337,6 +474,10 @@ def logout_endpoint(
 # =============================================================
 def _usuario_me_response(db: Session, usuario) -> dict:
     readiness = derive_commercial_readiness(db, usuario)
+    authentication_methods = derive_authentication_methods(
+        db,
+        usuario_id=usuario.id,
+    )
     status = readiness.profile_status
     return UsuarioResponse.model_validate(usuario).model_dump() | {
         "perfil_completo": status.perfil_completo,
@@ -351,6 +492,12 @@ def _usuario_me_response(db: Session, usuario) -> dict:
             ),
         },
         "pendientes_comerciales": list(readiness.pendientes_comerciales),
+        "authentication_methods": {
+            "has_password": authentication_methods.has_password,
+            "google_linked": authentication_methods.google_linked,
+            "usable_methods": list(authentication_methods.usable_methods),
+            "can_unlink_google": authentication_methods.can_unlink_google,
+        },
     }
 
 

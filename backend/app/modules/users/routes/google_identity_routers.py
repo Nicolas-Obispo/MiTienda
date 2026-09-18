@@ -1,4 +1,4 @@
-"""Endpoints backend para Google OIDC login/signup (sin linking)."""
+"""Endpoints backend para Google OIDC login, signup y linking explicito."""
 
 from __future__ import annotations
 
@@ -10,13 +10,14 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.auth import crear_token_jwt_versionado
+from app.core.auth import crear_token_jwt_versionado, obtener_contexto_usuario_actual
 from app.core.config import settings
 from app.core.database import get_db
 from app.modules.users.models.identity_models import FeedGoSession
 from app.modules.users.schemas.google_identity_schemas import (
     GoogleAuthorizationStartRequest,
     GoogleAuthorizationStartResponse,
+    GoogleLinkAuthorizationStartRequest,
     GoogleSessionExchangeRequest,
     GoogleSessionExchangeResponse,
 )
@@ -29,7 +30,15 @@ from app.modules.users.services.google_identity_services import (
     process_google_identity,
 )
 from app.modules.users.services.account_action_rate_limit_services import (
+    record_authentication_method_management,
     record_google_oauth_authorization,
+)
+from app.modules.users.services.authentication_method_services import (
+    AuthenticationMethodError,
+    ensure_google_link_available,
+    google_link_collision_exists,
+    link_google_identity,
+    require_recent_reauthentication,
 )
 from app.modules.users.services.google_oidc_services import (
     GOOGLE_PROVIDER,
@@ -39,6 +48,7 @@ from app.modules.users.services.google_oidc_services import (
 )
 from app.modules.users.services.oauth_authorization_transaction_services import (
     OAUTH_PURPOSE_LOGIN,
+    OAUTH_PURPOSE_LINK,
     OAUTH_PURPOSE_SIGNUP,
     OAuthAuthorizationTransactionError,
     claim_oauth_authorization_transaction_by_state,
@@ -54,7 +64,9 @@ from app.modules.users.services.oauth_session_delivery_services import (
 
 router = APIRouter(prefix="/usuarios/google", tags=["Google identity"])
 NO_STORE = {"Cache-Control": "private, no-store"}
-ALLOWED_PURPOSES = frozenset({OAUTH_PURPOSE_LOGIN, OAUTH_PURPOSE_SIGNUP})
+ALLOWED_PURPOSES = frozenset(
+    {OAUTH_PURPOSE_LOGIN, OAUTH_PURPOSE_SIGNUP, OAUTH_PURPOSE_LINK}
+)
 
 
 def utc_now() -> datetime:
@@ -71,6 +83,16 @@ def _safe_http_error(status_code: int, code: str) -> HTTPException:
         detail={"public_code": code},
         headers=NO_STORE,
     )
+
+
+def _authentication_method_http_error(exc: AuthenticationMethodError) -> HTTPException:
+    status_by_code = {
+        "recent_reauthentication_required": 403,
+        "authentication_method_already_exists": 409,
+        "google_link_unavailable": 409,
+        "authentication_method_operation_unavailable": 409,
+    }
+    return _safe_http_error(status_by_code.get(exc.code, 409), exc.code)
 
 
 @router.post(
@@ -149,6 +171,84 @@ async def start_google_authorization(
     )
 
 
+@router.post(
+    "/link/authorization",
+    response_model=GoogleAuthorizationStartResponse,
+)
+async def start_google_link_authorization(
+    payload: GoogleLinkAuthorizationStartRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    auth_context=Depends(obtener_contexto_usuario_actual),
+):
+    response.headers.update(NO_STORE)
+    usuario_id = auth_context.usuario.id
+    sid = (
+        auth_context.token.sid
+        if auth_context.token.contract == "versioned"
+        else None
+    )
+    try:
+        google_oidc_configuration()
+        owner = build_google_oidc_owner()
+        require_recent_reauthentication(
+            db,
+            usuario_id=usuario_id,
+            feedgo_session_id=sid,
+        )
+        ensure_google_link_available(db, usuario_id=usuario_id)
+        rate_limit = record_authentication_method_management(
+            db,
+            usuario_id=usuario_id,
+            limit_per_hour=settings.GOOGLE_OAUTH_LINK_RATE_LIMIT_PER_HOUR,
+        )
+        db.commit()
+        if not rate_limit.allowed:
+            raise HTTPException(
+                status_code=429,
+                detail={"public_code": "authentication_method_rate_limited"},
+                headers=NO_STORE
+                | {"Retry-After": str(rate_limit.retry_after_seconds or 3600)},
+            )
+
+        # Revalida despues de la UoW del rate limit para cerrar TOCTOU.
+        require_recent_reauthentication(
+            db,
+            usuario_id=usuario_id,
+            feedgo_session_id=sid,
+        )
+        ensure_google_link_available(db, usuario_id=usuario_id)
+        material = create_oauth_authorization_transaction(
+            db,
+            provider=GOOGLE_PROVIDER,
+            purpose=OAUTH_PURPOSE_LINK,
+            usuario_id=usuario_id,
+            feedgo_session_id=sid,
+            return_to=payload.return_to,
+            ttl=timedelta(seconds=settings.GOOGLE_OAUTH_TRANSACTION_TTL_SECONDS),
+        )
+        authorization_url = await owner.create_authorization_url(material)
+        db.commit()
+    except AuthenticationMethodError as exc:
+        db.rollback()
+        raise _authentication_method_http_error(exc) from None
+    except OAuthAuthorizationTransactionError:
+        db.rollback()
+        raise _safe_http_error(400, "google_authorization_invalid") from None
+    except GoogleOidcError:
+        db.rollback()
+        raise _safe_http_error(503, "google_identity_unavailable") from None
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    return GoogleAuthorizationStartResponse(
+        authorization_url=authorization_url,
+        expires_at=material.expires_at,
+    )
+
+
 @router.get("/callback")
 async def google_callback(
     state: str = Query(min_length=20, max_length=256),
@@ -180,6 +280,13 @@ async def google_callback(
             pkce_verifier=claim.pkce_verifier,
             expected_nonce_digest=claim.nonce_digest,
         )
+        if claim.purpose == OAUTH_PURPOSE_LINK:
+            link_google_identity(db, claim=claim, identity=identity)
+            db.commit()
+            destination = (
+                f"{configuration.public_base_url}{claim.return_to or '/perfil'}"
+            )
+            return RedirectResponse(destination, status_code=303, headers=NO_STORE)
         result = process_google_identity(
             db,
             claim=claim,
@@ -190,6 +297,9 @@ async def google_callback(
             ),
         )
         db.commit()
+    except AuthenticationMethodError as exc:
+        db.rollback()
+        raise _authentication_method_http_error(exc) from None
     except (GoogleOidcError, GoogleIdentityError):
         db.rollback()
         raise _safe_http_error(400, "google_callback_invalid") from None
@@ -197,9 +307,19 @@ async def google_callback(
         # UNIQUE(provider, subject) y email canonical deciden carreras. Todos
         # los perdedores reciben el mismo resultado opaco, sin enumeracion.
         db.rollback()
-        if (
-            claim.purpose != OAUTH_PURPOSE_SIGNUP
-            or not google_signup_collision_exists(db, identity=identity)
+        if claim.purpose == OAUTH_PURPOSE_LINK:
+            if (
+                claim.usuario_id is None
+                or not google_link_collision_exists(
+                    db,
+                    usuario_id=claim.usuario_id,
+                    provider_subject=identity.subject,
+                )
+            ):
+                raise
+            raise _safe_http_error(409, "google_link_unavailable") from None
+        if claim.purpose != OAUTH_PURPOSE_SIGNUP or not google_signup_collision_exists(
+            db, identity=identity
         ):
             raise
         delivery = create_oauth_session_delivery(

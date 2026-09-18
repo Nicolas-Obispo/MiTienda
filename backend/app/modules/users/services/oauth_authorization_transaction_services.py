@@ -55,12 +55,14 @@ class ClaimedOAuthAuthorizationTransaction:
     """Material minimo reclamado por el callback; no sale de backend."""
 
     transaction_id: str
-    purpose: Literal["signup", "login"]
+    purpose: Literal["signup", "login", "link"]
     nonce_digest: str
     pkce_verifier: str
     return_to: str | None
     legal_document_set_digest: str | None
     legal_accepted_at: datetime | None
+    usuario_id: int | None = None
+    feedgo_session_id: str | None = None
 
 
 def utc_now() -> datetime:
@@ -264,6 +266,14 @@ def claim_oauth_authorization_transaction_by_state(
     ):
         raise OAuthAuthorizationTransactionError("invalid_transaction")
 
+    _validate_correlation(
+        db,
+        purpose=transaction.purpose,
+        usuario_id=transaction.usuario_id,
+        feedgo_session_id=transaction.feedgo_session_id,
+        clock=clock,
+    )
+
     verifier = transaction.pkce_verifier
     claimed = ClaimedOAuthAuthorizationTransaction(
         transaction_id=transaction.id,
@@ -273,6 +283,8 @@ def claim_oauth_authorization_transaction_by_state(
         return_to=transaction.return_to,
         legal_document_set_digest=transaction.legal_document_set_digest,
         legal_accepted_at=transaction.legal_accepted_at,
+        usuario_id=transaction.usuario_id,
+        feedgo_session_id=transaction.feedgo_session_id,
     )
     transaction.consumed_at = now
     transaction.pkce_verifier = None

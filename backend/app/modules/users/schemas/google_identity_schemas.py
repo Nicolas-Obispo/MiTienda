@@ -18,6 +18,11 @@ class GoogleAuthorizationStartResponse(BaseModel):
     expires_at: datetime
 
 
+class GoogleLinkAuthorizationStartRequest(BaseModel):
+    confirm_link: Literal[True]
+    return_to: str | None = Field(default=None, max_length=512)
+
+
 class GoogleSessionExchangeRequest(BaseModel):
     handle: str = Field(min_length=32, max_length=128)
 

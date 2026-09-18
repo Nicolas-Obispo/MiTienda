@@ -96,6 +96,23 @@ class AuthenticatedPasswordChangeResponse(BaseModel):
     status: Literal["password_updated"]
 
 
+class AuthenticationMethodConfirmationRequest(BaseModel):
+    confirm: Literal[True]
+
+
+class AddPasswordCredentialRequest(AuthenticationMethodConfirmationRequest):
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validar_password_nuevo(cls, value: str) -> str:
+        return validate_new_password(value)
+
+
+class AuthenticationMethodMutationResponse(BaseModel):
+    status: Literal["password_added", "google_unlinked"]
+
+
 class PhoneVerificationIssueResponse(BaseModel):
     challenge_id: str
     status: Literal["sent"]
@@ -147,6 +164,13 @@ class CommercialCapabilitiesResponse(BaseModel):
     puede_publicar_en_espacios: bool
 
 
+class AuthenticationMethodsResponse(BaseModel):
+    has_password: bool
+    google_linked: bool
+    usable_methods: list[Literal["password", "google"]]
+    can_unlink_google: bool
+
+
 class UsuarioMeResponse(UsuarioResponse):
     perfil_completo: bool
     campos_perfil_faltantes: list[
@@ -166,6 +190,7 @@ class UsuarioMeResponse(UsuarioResponse):
             "mayoria_edad_requerida",
         ]
     ]
+    authentication_methods: AuthenticationMethodsResponse
 
 
 # ---------------------------------
