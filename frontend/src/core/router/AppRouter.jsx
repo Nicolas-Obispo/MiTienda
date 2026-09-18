@@ -5,7 +5,13 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // Páginas
 import { Home } from "@features/home";
 import { Login } from "@features/auth";
-import { RecuperarPassword, Registro, RestablecerPassword, VerificarEmail } from "@features/auth";
+import {
+  GoogleAuthResult,
+  RecuperarPassword,
+  Registro,
+  RestablecerPassword,
+  VerificarEmail,
+} from "@features/auth";
 import { FeedPage } from "@features/feed";
 import { RankingPage } from "@features/posts";
 import { ProfilePage } from "@features/auth";
@@ -179,6 +185,8 @@ export default function AppRouter() {
               </ProtectedRoute>
             }
           />
+
+          <Route path="/auth/google/resultado" element={<GoogleAuthResult />} />
 
           <Route path="/verificar-email" element={<VerificarEmail />} />
           <Route path="/recuperar-password" element={<RecuperarPassword />} />

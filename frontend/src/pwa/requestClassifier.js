@@ -10,6 +10,7 @@ const FRONTEND_ROUTES = new Set([
   "/politica-de-privacidad",
   "/login",
   "/registro",
+  "/auth/google/resultado",
   "/verificar-email",
   "/recuperar-password",
   "/restablecer-password",

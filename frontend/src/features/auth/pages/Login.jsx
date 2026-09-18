@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { loginUsuario, useAuth } from "@features/auth";
+import {
+  loginUsuario,
+  startGoogleAuthorization,
+  useAuth,
+  useGoogleIdentityAvailability,
+} from "@features/auth";
 import { Alert, Button, FormControl, Input, PasswordInput, Surface } from "@shared";
 import { getInternalReturnTo } from "@core/navigation/internalReturnTo";
 
@@ -28,6 +33,8 @@ export default function Login() {
   // Estados UI
   const [errorMensaje, setErrorMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [cargandoGoogle, setCargandoGoogle] = useState(false);
+  const googleAuthorizationInFlightRef = useRef(false);
 
   // Auth global
   const { login } = useAuth();
@@ -37,6 +44,7 @@ export default function Login() {
   const location = useLocation();
   const mensajeContextual = location.state?.message || "";
   const returnTo = getInternalReturnTo(location.state?.returnTo, "/feed");
+  const { isAvailable: googleIdentityAvailable } = useGoogleIdentityAvailability();
 
   /**
    * manejarSubmitLogin
@@ -61,6 +69,34 @@ export default function Login() {
       setErrorMensaje(error.message || "Error al iniciar sesión.");
     } finally {
       setCargando(false);
+    }
+  }
+
+  async function manejarLoginGoogle() {
+    if (
+      !googleIdentityAvailable ||
+      cargando ||
+      cargandoGoogle ||
+      googleAuthorizationInFlightRef.current
+    ) {
+      return;
+    }
+
+    googleAuthorizationInFlightRef.current = true;
+    setErrorMensaje("");
+    setCargandoGoogle(true);
+    try {
+      const result = await startGoogleAuthorization({
+        purpose: "login",
+        returnTo,
+        aceptaTerminos: false,
+        aceptaPrivacidad: false,
+      });
+      window.location.assign(result.authorization_url);
+    } catch {
+      googleAuthorizationInFlightRef.current = false;
+      setErrorMensaje("No pudimos iniciar el acceso con Google. Intentá nuevamente más tarde.");
+      setCargandoGoogle(false);
     }
   }
 
@@ -134,6 +170,17 @@ export default function Login() {
           >
             {cargando ? "Ingresando..." : "Ingresar"}
           </Button>
+          {googleIdentityAvailable && (
+            <Button
+              type="button"
+              disabled={cargando || cargandoGoogle}
+              variant="ghost"
+              className="w-full px-4 py-2 text-sm text-secondary hover:border-brand hover:text-secondary"
+              onClick={manejarLoginGoogle}
+            >
+              {cargandoGoogle ? "Redirigiendo a Google..." : "Continuar con Google"}
+            </Button>
+          )}
           <Link
             to="/recuperar-password"
             className="block text-center text-sm font-medium text-brand underline decoration-current underline-offset-2"

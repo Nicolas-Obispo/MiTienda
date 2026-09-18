@@ -35,6 +35,9 @@ export {
   PHONE_VERIFICATION_RATE_LIMITED,
   solicitarVerificacionTelefono,
   confirmarVerificacionTelefono,
+  getGoogleIdentityAvailability,
+  startGoogleAuthorization,
+  exchangeGoogleSession,
 } from "@features/auth/services/authService";
 
 export * from '@features/auth/services/usuarioService';
@@ -44,4 +47,6 @@ export { default as Registro } from '@features/auth/pages/Registro';
 export { default as VerificarEmail } from '@features/auth/pages/VerificarEmail';
 export { default as RecuperarPassword } from '@features/auth/pages/RecuperarPassword';
 export { default as RestablecerPassword } from '@features/auth/pages/RestablecerPassword';
+export { default as GoogleAuthResult } from '@features/auth/pages/GoogleAuthResult';
 export { default as ProfilePage } from '@features/auth/pages/ProfilePage';
+export { useGoogleIdentityAvailability } from "@features/auth/hooks/useGoogleIdentityAvailability";

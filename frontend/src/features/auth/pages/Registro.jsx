@@ -6,7 +6,9 @@ import {
   comprobarDisponibilidadEmail,
   registrarUsuario,
   loginUsuario,
+  startGoogleAuthorization,
   useAuth,
+  useGoogleIdentityAvailability,
 } from "@features/auth";
 import { Alert, Button, FormControl, Input, PasswordInput, Surface } from "@shared";
 import {
@@ -44,10 +46,13 @@ export default function Registro() {
 
   const [errorMensaje, setErrorMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [cargandoGoogle, setCargandoGoogle] = useState(false);
   const emailRef = useRef(null);
   const solicitudEmailRef = useRef(0);
+  const googleAuthorizationInFlightRef = useRef(false);
 
   const { login } = useAuth();
+  const { isAvailable: googleIdentityAvailable } = useGoogleIdentityAvailability();
   const requisitosPassword = evaluarPasswordRegistro(password);
   const passwordValida = passwordRegistroValida(password);
 
@@ -149,6 +154,36 @@ export default function Registro() {
       }
     } finally {
       setCargando(false);
+    }
+  }
+
+  async function manejarRegistroGoogle() {
+    if (
+      !googleIdentityAvailable ||
+      !aceptaTerminos ||
+      !aceptaPrivacidad ||
+      cargando ||
+      cargandoGoogle ||
+      googleAuthorizationInFlightRef.current
+    ) {
+      return;
+    }
+
+    googleAuthorizationInFlightRef.current = true;
+    setErrorMensaje("");
+    setCargandoGoogle(true);
+    try {
+      const result = await startGoogleAuthorization({
+        purpose: "signup",
+        returnTo,
+        aceptaTerminos: true,
+        aceptaPrivacidad: true,
+      });
+      window.location.assign(result.authorization_url);
+    } catch {
+      googleAuthorizationInFlightRef.current = false;
+      setErrorMensaje("No pudimos iniciar el registro con Google. Intentá nuevamente más tarde.");
+      setCargandoGoogle(false);
     }
   }
 
@@ -397,6 +432,22 @@ export default function Registro() {
           >
             {cargando ? "Creando cuenta..." : "Crear cuenta"}
           </Button>
+          {googleIdentityAvailable && (
+            <Button
+              type="button"
+              disabled={cargando || cargandoGoogle || !aceptaTerminos || !aceptaPrivacidad}
+              variant="ghost"
+              className="w-full px-4 py-2 text-sm text-secondary hover:border-brand hover:text-secondary"
+              onClick={manejarRegistroGoogle}
+            >
+              {cargandoGoogle ? "Redirigiendo a Google..." : "Continuar con Google"}
+            </Button>
+          )}
+          {googleIdentityAvailable && (!aceptaTerminos || !aceptaPrivacidad) && (
+            <p className="text-center text-sm text-secondary" role="status">
+              Aceptá Términos y Condiciones y Política de Privacidad para continuar con Google.
+            </p>
+          )}
         </form>
 
         <p className="mt-4 text-sm text-secondary">

@@ -16,6 +16,35 @@ export const CURRENT_PASSWORD_RATE_LIMITED = "current_password_rate_limited";
 export const PHONE_VERIFICATION_INVALID = "phone_verification_invalid";
 export const PHONE_VERIFICATION_RATE_LIMITED = "phone_verification_rate_limited";
 
+/**
+ * Contratos públicos de Google OIDC. El frontend sólo inicia el flujo y
+ * canjea el handle opaco: el backend conserva state, nonce, PKCE y tokens.
+ */
+export async function getGoogleIdentityAvailability(options = {}) {
+  return httpGet("/usuarios/google/availability", null, {
+    signal: options.signal,
+    cache: "no-store",
+  });
+}
+
+export async function startGoogleAuthorization({
+  purpose,
+  returnTo = null,
+  aceptaTerminos = false,
+  aceptaPrivacidad = false,
+}) {
+  return httpPost("/usuarios/google/authorization", {
+    purpose,
+    return_to: returnTo,
+    acepta_terminos: aceptaTerminos,
+    acepta_privacidad: aceptaPrivacidad,
+  });
+}
+
+export async function exchangeGoogleSession(handle) {
+  return httpPost("/usuarios/google/session", { handle });
+}
+
 export async function comprobarDisponibilidadEmail(email, options = {}) {
   return httpPost(
     "/usuarios/email-disponibilidad",
