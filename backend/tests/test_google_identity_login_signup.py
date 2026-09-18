@@ -119,7 +119,10 @@ class GoogleIdentityLoginSignupTests(unittest.TestCase):
         self.assertEqual(session.authentication_method, "google")
         self.assertEqual(session.external_identity_id, external.id)
         delivery = consume_oauth_session_delivery(
-            db, handle=result.delivery.handle, clock=lambda: self.now
+            db,
+            handle=result.delivery.handle,
+            allowed_purposes=frozenset({"signup"}),
+            clock=lambda: self.now,
         )
         self.assertEqual(delivery.usuario_id, usuario.id)
         db.close()
@@ -257,11 +260,19 @@ class GoogleIdentityLoginSignupTests(unittest.TestCase):
             {"access_token", "refresh_token", "id_token", "provider_payload", "jwt"}
             & set(OAuthSessionDeliveryHandle.__table__.columns)
         )
-        consume_oauth_session_delivery(db, handle=result.delivery.handle, clock=lambda: self.now)
+        consume_oauth_session_delivery(
+            db,
+            handle=result.delivery.handle,
+            allowed_purposes=frozenset({"signup"}),
+            clock=lambda: self.now,
+        )
         db.commit()
         with self.assertRaises(OAuthSessionDeliveryError):
             consume_oauth_session_delivery(
-                db, handle=result.delivery.handle, clock=lambda: self.now
+                db,
+                handle=result.delivery.handle,
+                allowed_purposes=frozenset({"signup"}),
+                clock=lambda: self.now,
             )
         db.rollback()
         db.close()
@@ -274,6 +285,7 @@ class GoogleIdentityLoginSignupTests(unittest.TestCase):
             consume_oauth_session_delivery(
                 db,
                 handle=result.delivery.handle,
+                allowed_purposes=frozenset({"signup"}),
                 clock=lambda: self.now + timedelta(minutes=2),
             )
         db.commit()

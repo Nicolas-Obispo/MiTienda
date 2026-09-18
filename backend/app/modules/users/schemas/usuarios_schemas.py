@@ -113,6 +113,14 @@ class AuthenticationMethodMutationResponse(BaseModel):
     status: Literal["password_added", "google_unlinked"]
 
 
+class PasswordReauthenticationRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=512)
+
+
+class ReauthenticationResponse(BaseModel):
+    token: str
+
+
 class PhoneVerificationIssueResponse(BaseModel):
     challenge_id: str
     status: Literal["sent"]

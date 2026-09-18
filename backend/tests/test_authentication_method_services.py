@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import unittest
+from unittest.mock import patch
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -28,6 +29,9 @@ from app.modules.users.services.feedgo_session_services import create_feedgo_ses
 from app.modules.users.services.google_oidc_services import GoogleOidcIdentity
 from app.modules.users.services.oauth_authorization_transaction_services import (
     ClaimedOAuthAuthorizationTransaction,
+)
+from app.modules.users.services.reauthentication_services import (
+    reauthenticate_with_password,
 )
 
 
@@ -130,6 +134,38 @@ class AuthenticationMethodServicesTests(unittest.TestCase):
                 clock=lambda: self.now,
             )
         db.rollback()
+        db.close()
+
+    def test_password_reauthentication_rolls_back_rotation_atomically(self):
+        db = self.Session()
+        password_hash = hash_password("Password1")
+        db.add(
+            PasswordCredential(
+                usuario_id=1,
+                password_hash=password_hash,
+                hash_version="bcrypt",
+            )
+        )
+        self.password_session(db, sid="original")
+        db.commit()
+        with patch(
+            "app.modules.users.services.account_action_rate_limit_services.settings."
+            "ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET",
+            "reauth-test-secret",
+        ):
+            replacement = reauthenticate_with_password(
+                db,
+                usuario_id=1,
+                feedgo_session_id="original",
+                current_password="Password1",
+                session_ttl=timedelta(hours=2),
+                clock=lambda: self.now,
+            )
+        replacement_id = replacement.id
+        db.rollback()
+        db.expire_all()
+        self.assertIsNone(db.get(FeedGoSession, "original").revoked_at)
+        self.assertIsNone(db.get(FeedGoSession, replacement_id))
         db.close()
 
     def test_link_uses_subject_and_explicit_session_not_email_ownership(self):

@@ -18,8 +18,17 @@ class GoogleAuthorizationStartResponse(BaseModel):
     expires_at: datetime
 
 
+class GoogleIdentityAvailabilityResponse(BaseModel):
+    google_identity_available: bool
+
+
 class GoogleLinkAuthorizationStartRequest(BaseModel):
     confirm_link: Literal[True]
+    return_to: str | None = Field(default=None, max_length=512)
+
+
+class GoogleReauthenticationAuthorizationStartRequest(BaseModel):
+    confirm_reauthentication: Literal[True]
     return_to: str | None = Field(default=None, max_length=512)
 
 

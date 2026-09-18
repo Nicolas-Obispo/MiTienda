@@ -47,7 +47,7 @@ TRANSACTION_INDEXES = {
     ),
 }
 TRANSACTION_CHECKS = {
-    "ck_oauth_authorization_transactions_purpose": "purpose IN ('signup', 'login', 'link')",
+    "ck_oauth_authorization_transactions_purpose": "purpose IN ('signup', 'login', 'link', 'reauth')",
     "ck_oauth_authorization_transactions_expiry": "expires_at > created_at",
     "ck_oauth_authorization_transactions_terminal_state": (
         "NOT (consumed_at IS NOT NULL AND invalidated_at IS NOT NULL)"
@@ -66,7 +66,7 @@ TRANSACTION_CHECKS = {
         "AND pkce_verifier IS NULL)"
     ),
     "ck_oauth_authorization_transactions_correlation": (
-        "(purpose = 'link' AND usuario_id IS NOT NULL AND feedgo_session_id IS NOT NULL) "
+        "(purpose IN ('link', 'reauth') AND usuario_id IS NOT NULL AND feedgo_session_id IS NOT NULL) "
         "OR (purpose IN ('signup', 'login') AND usuario_id IS NULL "
         "AND feedgo_session_id IS NULL)"
     ),
@@ -194,11 +194,11 @@ def _ensure_transaction_table(connection, changes: list[str]) -> None:
         changes.append("oauth_authorization_transactions.terminal_pkce_verifiers_cleared")
     invalid_rows = connection.exec_driver_sql(
         "SELECT COUNT(*) FROM oauth_authorization_transactions WHERE "
-        "purpose NOT IN ('signup', 'login', 'link') OR expires_at <= created_at OR "
+        "purpose NOT IN ('signup', 'login', 'link', 'reauth') OR expires_at <= created_at OR "
         "(consumed_at IS NOT NULL AND invalidated_at IS NOT NULL) OR "
         "((invalidated_at IS NULL) <> (invalidation_reason IS NULL)) OR "
         "(consumed_at IS NULL AND invalidated_at IS NULL AND pkce_verifier IS NULL) OR "
-        "(purpose = 'link' AND (usuario_id IS NULL OR feedgo_session_id IS NULL)) OR "
+        "(purpose IN ('link', 'reauth') AND (usuario_id IS NULL OR feedgo_session_id IS NULL)) OR "
         "(purpose IN ('signup', 'login') AND "
         "(usuario_id IS NOT NULL OR feedgo_session_id IS NOT NULL))"
     ).scalar_one()

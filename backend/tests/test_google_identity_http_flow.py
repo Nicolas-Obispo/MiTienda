@@ -26,6 +26,7 @@ from app.modules.users.models.identity_models import (
 )
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.routes import google_identity_routers
+from app.modules.users.routes.usuarios_routers import router as usuarios_router
 from app.modules.users.services.google_oidc_services import (
     GoogleOidcError,
     GoogleOidcIdentity,
@@ -83,6 +84,7 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
         app = FastAPI()
         register_exception_handlers(app)
         app.include_router(google_identity_routers.router)
+        app.include_router(usuarios_router)
         app.dependency_overrides[get_db] = override_get_db
         cls.client = TestClient(app, raise_server_exceptions=False)
 
@@ -195,6 +197,203 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
         user = db.query(Usuario).one()
         self.assertIsNone(user.hashed_password)
         self.assertEqual(db.query(ExternalIdentity).one().provider_subject, "new-google-subject")
+        db.close()
+
+    def test_availability_is_derived_from_effective_configuration(self):
+        available = self.client.get("/usuarios/google/availability")
+        self.assertEqual(available.status_code, 200)
+        self.assertEqual(available.json(), {"google_identity_available": True})
+        self.assertEqual(available.headers["cache-control"], "no-store")
+        with patch.object(settings, "GOOGLE_IDENTITY_ENABLED", False):
+            disabled = self.client.get("/usuarios/google/availability")
+        self.assertEqual(disabled.json(), {"google_identity_available": False})
+        with patch.object(settings, "GOOGLE_OIDC_CLIENT_ID", None):
+            invalid = self.client.get("/usuarios/google/availability")
+        self.assertEqual(invalid.json(), {"google_identity_available": False})
+
+    def test_linked_google_is_distinct_from_provider_availability(self):
+        token = self._password_user_token()
+        db = self.Session()
+        db.add(
+            ExternalIdentity(
+                usuario_id=1,
+                provider="google",
+                provider_subject="linked-while-off",
+                linked_at=datetime.now(timezone.utc).replace(microsecond=0),
+            )
+        )
+        db.commit()
+        db.close()
+        with patch.object(settings, "GOOGLE_IDENTITY_ENABLED", False):
+            availability = self.client.get("/usuarios/google/availability")
+            me = self.client.get(
+                "/usuarios/me", headers={"Authorization": f"Bearer {token}"}
+            )
+        self.assertEqual(availability.json(), {"google_identity_available": False})
+        self.assertEqual(me.status_code, 200, me.text)
+        self.assertTrue(me.json()["authentication_methods"]["google_linked"])
+        self.assertIn("google", me.json()["authentication_methods"]["usable_methods"])
+
+    def test_google_reauthentication_requires_same_linked_subject_and_rotates_session(self):
+        token = self._password_user_token()
+        db = self.Session()
+        identity = ExternalIdentity(
+            usuario_id=1,
+            provider="google",
+            provider_subject="new-google-subject",
+            provider_email_snapshot="owner@example.com",
+            provider_email_verified_snapshot=True,
+            linked_at=datetime.now(timezone.utc).replace(microsecond=0),
+        )
+        db.add(identity)
+        other_session = create_feedgo_session(
+            db,
+            usuario_id=1,
+            authentication_method="password",
+            ttl=timedelta(hours=2),
+            sid_factory=lambda: "other-client-session",
+        )
+        db.commit()
+        identity_id = identity.id
+        other_session_id = other_session.id
+        db.close()
+        started = self.client.post(
+            "/usuarios/google/reauth/authorization",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"confirm_reauthentication": True, "return_to": "/perfil"},
+        )
+        self.assertEqual(started.status_code, 200, started.text)
+        state = parse_qs(urlsplit(started.json()["authorization_url"]).query)["state"][0]
+        _, handle = self._callback_handle(state)
+        wrong_exchange = self.client.post(
+            "/usuarios/google/session", json={"handle": handle}
+        )
+        self.assertEqual(wrong_exchange.status_code, 400)
+        exchanged = self.client.post(
+            "/usuarios/google/reauth/session", json={"handle": handle}
+        )
+        self.assertEqual(exchanged.status_code, 200, exchanged.text)
+        self.assertEqual(exchanged.json()["status"], "authenticated")
+        db = self.Session()
+        self.assertIsNotNone(db.get(FeedGoSession, "password-session").revoked_at)
+        sessions = db.query(FeedGoSession).filter(FeedGoSession.usuario_id == 1).all()
+        self.assertEqual(len(sessions), 3)
+        active = [item for item in sessions if item.revoked_at is None]
+        self.assertEqual(len(active), 2)
+        self.assertIn(other_session_id, {item.id for item in active})
+        google_sessions = [item for item in active if item.authentication_method == "google"]
+        self.assertEqual(len(google_sessions), 1)
+        self.assertEqual(google_sessions[0].external_identity_id, identity_id)
+        db.close()
+
+    def test_login_handle_cannot_be_consumed_as_reauthentication(self):
+        _, state = self._start("signup", acepta_terminos=True, acepta_privacidad=True)
+        _, handle = self._callback_handle(state)
+        wrong_exchange = self.client.post(
+            "/usuarios/google/reauth/session", json={"handle": handle}
+        )
+        self.assertEqual(wrong_exchange.status_code, 400)
+        correct_exchange = self.client.post(
+            "/usuarios/google/session", json={"handle": handle}
+        )
+        self.assertEqual(correct_exchange.status_code, 200)
+
+    def test_google_reauthentication_rejects_other_subject_even_with_same_email(self):
+        token = self._password_user_token()
+        db = self.Session()
+        db.add(
+            ExternalIdentity(
+                usuario_id=1,
+                provider="google",
+                provider_subject="linked-subject",
+                provider_email_snapshot="same@example.com",
+                provider_email_verified_snapshot=True,
+                linked_at=datetime.now(timezone.utc).replace(microsecond=0),
+            )
+        )
+        db.commit()
+        db.close()
+        started = self.client.post(
+            "/usuarios/google/reauth/authorization",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"confirm_reauthentication": True},
+        )
+        state = parse_qs(urlsplit(started.json()["authorization_url"]).query)["state"][0]
+        FakeGoogleOidcOwner.identity = GoogleOidcIdentity(
+            subject="different-subject",
+            email="same@example.com",
+            email_verified=True,
+        )
+        callback = self.client.get(
+            "/usuarios/google/callback",
+            params={"state": state, "code": "authorization-code"},
+            follow_redirects=False,
+        )
+        self.assertEqual(callback.status_code, 409)
+        db = self.Session()
+        self.assertIsNone(db.get(FeedGoSession, "password-session").revoked_at)
+        self.assertEqual(db.query(FeedGoSession).count(), 1)
+        db.close()
+
+    def test_google_reauthentication_fails_if_original_sid_is_revoked(self):
+        token = self._password_user_token()
+        db = self.Session()
+        db.add(
+            ExternalIdentity(
+                usuario_id=1,
+                provider="google",
+                provider_subject="new-google-subject",
+                linked_at=datetime.now(timezone.utc).replace(microsecond=0),
+            )
+        )
+        db.commit()
+        db.close()
+        started = self.client.post(
+            "/usuarios/google/reauth/authorization",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"confirm_reauthentication": True},
+        )
+        state = parse_qs(urlsplit(started.json()["authorization_url"]).query)["state"][0]
+        db = self.Session()
+        db.get(FeedGoSession, "password-session").revoked_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        db.commit()
+        db.close()
+        callback = self.client.get(
+            "/usuarios/google/callback",
+            params={"state": state, "code": "authorization-code"},
+            follow_redirects=False,
+        )
+        self.assertEqual(callback.status_code, 400)
+        self.assertEqual(len(FakeGoogleOidcOwner.exchanges), 0)
+
+    def test_google_reauthentication_start_failure_invalidates_transaction(self):
+        token = self._password_user_token()
+        db = self.Session()
+        db.add(
+            ExternalIdentity(
+                usuario_id=1,
+                provider="google",
+                provider_subject="new-google-subject",
+                linked_at=datetime.now(timezone.utc).replace(microsecond=0),
+            )
+        )
+        db.commit()
+        db.close()
+        FakeGoogleOidcOwner.authorization_error = GoogleOidcError(
+            "google_oidc_provider_unavailable"
+        )
+        response = self.client.post(
+            "/usuarios/google/reauth/authorization",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"confirm_reauthentication": True},
+        )
+        self.assertEqual(response.status_code, 503)
+        db = self.Session()
+        transaction = db.query(OAuthAuthorizationTransaction).one()
+        self.assertEqual(transaction.purpose, "reauth")
+        self.assertIsNotNone(transaction.invalidated_at)
+        self.assertEqual(transaction.invalidation_reason, "administrative")
+        self.assertIsNone(transaction.pkce_verifier)
         db.close()
 
     def test_callback_transaction_replay_is_rejected_before_second_exchange(self):

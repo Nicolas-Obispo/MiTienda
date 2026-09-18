@@ -113,7 +113,7 @@ class OAuthAuthorizationTransaction(Base):
         UniqueConstraint("state_digest", name="uq_oauth_authorization_transactions_state"),
         UniqueConstraint("nonce_digest", name="uq_oauth_authorization_transactions_nonce"),
         CheckConstraint(
-            "purpose IN ('signup', 'login', 'link')",
+            "purpose IN ('signup', 'login', 'link', 'reauth')",
             name="ck_oauth_authorization_transactions_purpose",
         ),
         CheckConstraint(
@@ -142,7 +142,7 @@ class OAuthAuthorizationTransaction(Base):
             name="ck_oauth_authorization_transactions_pkce_lifecycle",
         ),
         CheckConstraint(
-            "(purpose = 'link' AND usuario_id IS NOT NULL AND feedgo_session_id IS NOT NULL) "
+            "(purpose IN ('link', 'reauth') AND usuario_id IS NOT NULL AND feedgo_session_id IS NOT NULL) "
             "OR (purpose IN ('signup', 'login') AND usuario_id IS NULL "
             "AND feedgo_session_id IS NULL)",
             name="ck_oauth_authorization_transactions_correlation",

@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.auth import crear_token_jwt, crear_token_jwt_versionado
+from app.core.config import settings
 from app.core.database import Base, get_db
 from app.core.error_handlers import register_exception_handlers
 from app.core.security import hash_password
@@ -144,6 +145,63 @@ class AuthenticationMethodsHttpTests(unittest.TestCase):
         )
         self.assertIsNone(db.get(FeedGoSession, "google-session").revoked_at)
         db.close()
+
+    def test_password_reauthentication_rotates_sid_and_rejects_old_token(self):
+        token = self.google_user_token(with_password=True)
+        response = self.client.post(
+            "/usuarios/me/reauthentication/password",
+            headers=self.headers(token),
+            json={"current_password": "Password1"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.headers["cache-control"], "private, no-store")
+        replacement = response.json()["token"]
+        self.assertNotEqual(replacement, token)
+        self.assertEqual(self.client.get("/usuarios/me", headers=self.headers(token)).status_code, 401)
+        self.assertEqual(self.client.get("/usuarios/me", headers=self.headers(replacement)).status_code, 200)
+        db = self.Session()
+        current = (
+            db.query(FeedGoSession)
+            .filter(FeedGoSession.usuario_id == 1, FeedGoSession.revoked_at.is_(None))
+            .one()
+        )
+        self.assertEqual(current.authentication_method, "password")
+        self.assertIsNone(current.external_identity_id)
+        self.assertEqual(current.contract_version, 1)
+        self.assertEqual(current.issued_at.microsecond, 0)
+        self.assertEqual(
+            current.expires_at - current.issued_at,
+            timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        )
+        db.close()
+
+    def test_password_reauthentication_requires_real_usable_password(self):
+        token = self.google_user_token(with_password=True)
+        rejected = self.client.post(
+            "/usuarios/me/reauthentication/password",
+            headers=self.headers(token),
+            json={"current_password": "incorrecta"},
+        )
+        self.assertEqual(rejected.status_code, 400)
+        self.assertEqual(rejected.json()["code"], "reauthentication_invalid")
+        self.assertEqual(rejected.headers["cache-control"], "private, no-store")
+
+    def test_password_reauthentication_failures_persist_and_rate_limit(self):
+        token = self.google_user_token(with_password=True)
+        for _ in range(5):
+            rejected = self.client.post(
+                "/usuarios/me/reauthentication/password",
+                headers=self.headers(token),
+                json={"current_password": "incorrecta"},
+            )
+            self.assertEqual(rejected.status_code, 400)
+        limited = self.client.post(
+            "/usuarios/me/reauthentication/password",
+            headers=self.headers(token),
+            json={"current_password": "Password1"},
+        )
+        self.assertEqual(limited.status_code, 429)
+        self.assertEqual(limited.json()["code"], "reauthentication_rate_limited")
 
     def test_add_password_requires_confirmation_recent_sid_and_no_duplicate(self):
         stale = self.google_user_token(age=601)

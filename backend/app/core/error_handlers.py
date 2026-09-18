@@ -42,6 +42,7 @@ _PUBLIC_ERROR_CODES_BY_STATUS = {
             "google_session_result_invalid",
             "google_signup_legal_acceptance_required",
             "google_oauth_purpose_invalid",
+            "reauthentication_invalid",
         }
     ),
     403: frozenset(
@@ -62,6 +63,7 @@ _PUBLIC_ERROR_CODES_BY_STATUS = {
         {
             "authentication_method_rate_limited",
             "google_oauth_rate_limited",
+            "reauthentication_rate_limited",
         }
     ),
     503: frozenset({"google_identity_unavailable"}),
@@ -207,5 +209,6 @@ def _apply_private_identity_no_store(request: Request, response: JSONResponse) -
     if (
         request.url.path.startswith("/usuarios/google/")
         or request.url.path.startswith("/usuarios/me/authentication-methods/")
+        or request.url.path.startswith("/usuarios/me/reauthentication/")
     ):
         response.headers["Cache-Control"] = "private, no-store"

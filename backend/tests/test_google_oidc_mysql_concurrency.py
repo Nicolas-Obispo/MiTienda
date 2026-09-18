@@ -307,6 +307,7 @@ class GoogleOidcMySQLConcurrencyTests(unittest.TestCase):
                 consume_oauth_session_delivery(
                     worker,
                     handle=delivery.handle,
+                    allowed_purposes=frozenset({"login"}),
                     clock=lambda: self.now + timedelta(seconds=1),
                 )
                 worker.commit()

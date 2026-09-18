@@ -17,7 +17,9 @@ from app.modules.users.models.identity_models import FeedGoSession
 from app.modules.users.schemas.google_identity_schemas import (
     GoogleAuthorizationStartRequest,
     GoogleAuthorizationStartResponse,
+    GoogleIdentityAvailabilityResponse,
     GoogleLinkAuthorizationStartRequest,
+    GoogleReauthenticationAuthorizationStartRequest,
     GoogleSessionExchangeRequest,
     GoogleSessionExchangeResponse,
 )
@@ -39,6 +41,7 @@ from app.modules.users.services.authentication_method_services import (
     google_link_collision_exists,
     link_google_identity,
     require_recent_reauthentication,
+    derive_authentication_methods,
 )
 from app.modules.users.services.google_oidc_services import (
     GOOGLE_PROVIDER,
@@ -50,9 +53,17 @@ from app.modules.users.services.oauth_authorization_transaction_services import 
     OAUTH_PURPOSE_LOGIN,
     OAUTH_PURPOSE_LINK,
     OAUTH_PURPOSE_SIGNUP,
+    OAUTH_PURPOSE_REAUTH,
     OAuthAuthorizationTransactionError,
     claim_oauth_authorization_transaction_by_state,
     create_oauth_authorization_transaction,
+    invalidate_oauth_authorization_transaction,
+)
+from app.modules.users.services.google_identity_availability_services import (
+    google_identity_is_available,
+)
+from app.modules.users.services.reauthentication_services import (
+    reauthenticate_with_google,
 )
 from app.modules.users.services.oauth_session_delivery_services import (
     AUTHENTICATION_UNAVAILABLE,
@@ -65,7 +76,7 @@ from app.modules.users.services.oauth_session_delivery_services import (
 router = APIRouter(prefix="/usuarios/google", tags=["Google identity"])
 NO_STORE = {"Cache-Control": "private, no-store"}
 ALLOWED_PURPOSES = frozenset(
-    {OAUTH_PURPOSE_LOGIN, OAUTH_PURPOSE_SIGNUP, OAUTH_PURPOSE_LINK}
+    {OAUTH_PURPOSE_LOGIN, OAUTH_PURPOSE_SIGNUP, OAUTH_PURPOSE_LINK, OAUTH_PURPOSE_REAUTH}
 )
 
 
@@ -93,6 +104,16 @@ def _authentication_method_http_error(exc: AuthenticationMethodError) -> HTTPExc
         "authentication_method_operation_unavailable": 409,
     }
     return _safe_http_error(status_by_code.get(exc.code, 409), exc.code)
+
+
+@router.get("/availability", response_model=GoogleIdentityAvailabilityResponse)
+def google_identity_availability(response: Response):
+    """Contrato publico minimo; nunca expone configuracion ni causas internas."""
+
+    response.headers["Cache-Control"] = "no-store"
+    return GoogleIdentityAvailabilityResponse(
+        google_identity_available=google_identity_is_available()
+    )
 
 
 @router.post(
@@ -249,6 +270,78 @@ async def start_google_link_authorization(
     )
 
 
+@router.post("/reauth/authorization", response_model=GoogleAuthorizationStartResponse)
+async def start_google_reauthentication_authorization(
+    payload: GoogleReauthenticationAuthorizationStartRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    auth_context=Depends(obtener_contexto_usuario_actual),
+):
+    response.headers.update(NO_STORE)
+    usuario_id = auth_context.usuario.id
+    sid = auth_context.token.sid if auth_context.token.contract == "versioned" else None
+    material = None
+    try:
+        google_oidc_configuration()
+        owner = build_google_oidc_owner()
+        methods = derive_authentication_methods(db, usuario_id=usuario_id)
+        if GOOGLE_PROVIDER not in methods.usable_methods:
+            raise AuthenticationMethodError("authentication_method_operation_unavailable")
+        rate_limit = record_authentication_method_management(
+            db,
+            usuario_id=usuario_id,
+            limit_per_hour=settings.GOOGLE_OAUTH_LINK_RATE_LIMIT_PER_HOUR,
+        )
+        db.commit()
+        if not rate_limit.allowed:
+            raise HTTPException(
+                status_code=429,
+                detail={"public_code": "authentication_method_rate_limited"},
+                headers=NO_STORE | {"Retry-After": str(rate_limit.retry_after_seconds or 3600)},
+            )
+        material = create_oauth_authorization_transaction(
+            db,
+            provider=GOOGLE_PROVIDER,
+            purpose=OAUTH_PURPOSE_REAUTH,
+            usuario_id=usuario_id,
+            feedgo_session_id=sid,
+            return_to=payload.return_to,
+            ttl=timedelta(seconds=settings.GOOGLE_OAUTH_TRANSACTION_TTL_SECONDS),
+        )
+        # La correlacion queda persistida antes de discovery: no se mantiene
+        # el lock de la SID durante I/O externo.
+        db.commit()
+        authorization_url = await owner.create_authorization_url(material)
+    except AuthenticationMethodError as exc:
+        db.rollback()
+        raise _authentication_method_http_error(exc) from None
+    except OAuthAuthorizationTransactionError:
+        db.rollback()
+        raise _safe_http_error(400, "google_authorization_invalid") from None
+    except GoogleOidcError:
+        db.rollback()
+        if material is not None:
+            invalidate_oauth_authorization_transaction(
+                db, transaction_id=material.transaction_id, reason="administrative"
+            )
+            db.commit()
+        raise _safe_http_error(503, "google_identity_unavailable") from None
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        if material is not None:
+            invalidate_oauth_authorization_transaction(
+                db, transaction_id=material.transaction_id, reason="administrative"
+            )
+            db.commit()
+        raise
+    return GoogleAuthorizationStartResponse(
+        authorization_url=authorization_url,
+        expires_at=material.expires_at,
+    )
+
+
 @router.get("/callback")
 async def google_callback(
     state: str = Query(min_length=20, max_length=256),
@@ -287,16 +380,36 @@ async def google_callback(
                 f"{configuration.public_base_url}{claim.return_to or '/perfil'}"
             )
             return RedirectResponse(destination, status_code=303, headers=NO_STORE)
-        result = process_google_identity(
-            db,
-            claim=claim,
-            identity=identity,
-            session_ttl=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
-            result_ttl=timedelta(
-                seconds=configuration.result_handle_ttl_seconds
-            ),
-        )
-        db.commit()
+        if claim.purpose == OAUTH_PURPOSE_REAUTH:
+            feedgo_session = reauthenticate_with_google(
+                db,
+                claim=claim,
+                identity=identity,
+                session_ttl=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+            )
+            delivery = create_oauth_session_delivery(
+                db,
+                transaction_id=claim.transaction_id,
+                outcome="session_ready",
+                usuario_id=claim.usuario_id,
+                feedgo_session_id=feedgo_session.id,
+                return_to=claim.return_to,
+                ttl=timedelta(seconds=configuration.result_handle_ttl_seconds),
+            )
+            db.commit()
+            delivery_handle = delivery.handle
+        else:
+            result = process_google_identity(
+                db,
+                claim=claim,
+                identity=identity,
+                session_ttl=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+                result_ttl=timedelta(
+                    seconds=configuration.result_handle_ttl_seconds
+                ),
+            )
+            db.commit()
+            delivery_handle = result.delivery.handle
     except AuthenticationMethodError as exc:
         db.rollback()
         raise _authentication_method_http_error(exc) from None
@@ -335,7 +448,7 @@ async def google_callback(
         db.rollback()
         raise
     else:
-        delivery_handle = result.delivery.handle
+        pass
 
     destination = (
         f"{configuration.public_base_url}{configuration.frontend_result_path}?"
@@ -359,13 +472,60 @@ def exchange_google_session(
     except GoogleOidcError:
         raise _safe_http_error(503, "google_identity_unavailable") from None
     try:
-        delivery = consume_oauth_session_delivery(db, handle=payload.handle)
+        delivery = consume_oauth_session_delivery(
+            db,
+            handle=payload.handle,
+            allowed_purposes=frozenset({OAUTH_PURPOSE_LOGIN, OAUTH_PURPOSE_SIGNUP}),
+        )
         if delivery.outcome == AUTHENTICATION_UNAVAILABLE:
             db.commit()
             return GoogleSessionExchangeResponse(
                 status="action_required",
                 return_to=delivery.return_to,
             )
+        feedgo_session = db.get(FeedGoSession, delivery.feedgo_session_id)
+        if feedgo_session is None:
+            raise OAuthSessionDeliveryError("invalid_result_handle")
+        token = crear_token_jwt_versionado(
+            usuario_id=delivery.usuario_id,
+            sid=feedgo_session.id,
+            issued_at=feedgo_session.issued_at,
+            expires_at=feedgo_session.expires_at,
+        )
+        db.commit()
+    except OAuthSessionDeliveryError:
+        db.commit()
+        raise _safe_http_error(400, "google_session_result_invalid") from None
+    return GoogleSessionExchangeResponse(
+        status="authenticated",
+        token=token,
+        usuario_id=delivery.usuario_id,
+        return_to=delivery.return_to,
+    )
+
+
+@router.post(
+    "/reauth/session",
+    response_model=GoogleSessionExchangeResponse,
+)
+def exchange_google_reauthentication_session(
+    payload: GoogleSessionExchangeRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    response.headers.update(NO_STORE)
+    try:
+        google_oidc_configuration()
+    except GoogleOidcError:
+        raise _safe_http_error(503, "google_identity_unavailable") from None
+    try:
+        delivery = consume_oauth_session_delivery(
+            db,
+            handle=payload.handle,
+            allowed_purposes=frozenset({OAUTH_PURPOSE_REAUTH}),
+        )
+        if delivery.outcome != "session_ready":
+            raise OAuthSessionDeliveryError("invalid_result_handle")
         feedgo_session = db.get(FeedGoSession, delivery.feedgo_session_id)
         if feedgo_session is None:
             raise OAuthSessionDeliveryError("invalid_result_handle")

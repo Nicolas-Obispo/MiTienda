@@ -11,7 +11,10 @@ from typing import Callable, Literal
 
 from sqlalchemy.orm import Session
 
-from app.modules.users.models.identity_models import OAuthSessionDeliveryHandle
+from app.modules.users.models.identity_models import (
+    OAuthAuthorizationTransaction,
+    OAuthSessionDeliveryHandle,
+)
 from app.modules.users.services.feedgo_session_services import (
     FeedGoSessionInvalidError,
     get_valid_feedgo_session,
@@ -112,6 +115,7 @@ def consume_oauth_session_delivery(
     db: Session,
     *,
     handle: str,
+    allowed_purposes: frozenset[str],
     clock: Callable[[], datetime] = utc_now,
 ) -> ConsumedOAuthSessionDelivery:
     """Consume atomicamente el resultado y valida de nuevo la FeedGoSession."""
@@ -138,6 +142,11 @@ def consume_oauth_session_delivery(
         or row.invalidated_at is not None
         or not hmac.compare_digest(row.handle_digest, digest)
     ):
+        raise OAuthSessionDeliveryError("invalid_result_handle")
+    if not allowed_purposes:
+        raise OAuthSessionDeliveryError("invalid_result_handle")
+    transaction = db.get(OAuthAuthorizationTransaction, row.transaction_id)
+    if transaction is None or transaction.purpose not in allowed_purposes:
         raise OAuthSessionDeliveryError("invalid_result_handle")
     if row.outcome == SESSION_READY:
         try:

@@ -27,7 +27,8 @@ from app.modules.users.services.feedgo_session_services import (
 OAUTH_PURPOSE_SIGNUP = "signup"
 OAUTH_PURPOSE_LOGIN = "login"
 OAUTH_PURPOSE_LINK = "link"
-OAUTH_PURPOSES = frozenset((OAUTH_PURPOSE_SIGNUP, OAUTH_PURPOSE_LOGIN, OAUTH_PURPOSE_LINK))
+OAUTH_PURPOSE_REAUTH = "reauth"
+OAUTH_PURPOSES = frozenset((OAUTH_PURPOSE_SIGNUP, OAUTH_PURPOSE_LOGIN, OAUTH_PURPOSE_LINK, OAUTH_PURPOSE_REAUTH))
 OAUTH_TRANSACTION_TTL = timedelta(minutes=10)
 
 
@@ -55,7 +56,7 @@ class ClaimedOAuthAuthorizationTransaction:
     """Material minimo reclamado por el callback; no sale de backend."""
 
     transaction_id: str
-    purpose: Literal["signup", "login", "link"]
+    purpose: Literal["signup", "login", "link", "reauth"]
     nonce_digest: str
     pkce_verifier: str
     return_to: str | None
@@ -143,10 +144,10 @@ def _validate_correlation(
 ) -> None:
     if purpose not in OAUTH_PURPOSES:
         raise OAuthAuthorizationTransactionError("unsupported_purpose")
-    is_link = purpose == OAUTH_PURPOSE_LINK
-    if is_link != (usuario_id is not None and feedgo_session_id is not None):
+    is_session_bound = purpose in {OAUTH_PURPOSE_LINK, OAUTH_PURPOSE_REAUTH}
+    if is_session_bound != (usuario_id is not None and feedgo_session_id is not None):
         raise OAuthAuthorizationTransactionError("invalid_correlation")
-    if is_link:
+    if is_session_bound:
         try:
             get_valid_feedgo_session(
                 db,
@@ -163,7 +164,7 @@ def create_oauth_authorization_transaction(
     db: Session,
     *,
     provider: str,
-    purpose: Literal["signup", "login", "link"],
+    purpose: Literal["signup", "login", "link", "reauth"],
     usuario_id: int | None = None,
     feedgo_session_id: str | None = None,
     return_to: str | None = None,
@@ -298,7 +299,7 @@ def validate_and_consume_oauth_authorization_transaction(
     state: str,
     nonce: str,
     provider: str,
-    purpose: Literal["signup", "login", "link"],
+    purpose: Literal["signup", "login", "link", "reauth"],
     usuario_id: int | None = None,
     feedgo_session_id: str | None = None,
     clock: Callable[[], datetime] = utc_now,

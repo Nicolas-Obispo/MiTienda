@@ -37,6 +37,8 @@ from app.modules.users.schemas.usuarios_schemas import (
     AddPasswordCredentialRequest,
     AuthenticationMethodConfirmationRequest,
     AuthenticationMethodMutationResponse,
+    PasswordReauthenticationRequest,
+    ReauthenticationResponse,
     PhoneVerificationIssueResponse,
     PhoneVerificationConfirmRequest,
     PhoneVerificationConfirmResponse,
@@ -112,6 +114,9 @@ from app.modules.users.services.authentication_method_services import (
     require_recent_reauthentication,
     unlink_google_identity,
 )
+from app.modules.users.services.reauthentication_services import (
+    reauthenticate_with_password,
+)
 from app.modules.users.services.feedgo_session_services import (
     PASSWORD,
     create_feedgo_session,
@@ -136,10 +141,17 @@ def _authentication_method_http_error(exc: AuthenticationMethodError) -> HTTPExc
         "authentication_method_already_exists": 409,
         "cannot_remove_last_authentication_method": 409,
         "authentication_method_operation_unavailable": 409,
+        "reauthentication_invalid": 400,
+        "current_password_rate_limited": 429,
     }
+    public_code = (
+        "reauthentication_rate_limited"
+        if exc.code == "current_password_rate_limited"
+        else exc.code
+    )
     return HTTPException(
         status_code=status_by_code.get(exc.code, 409),
-        detail={"public_code": exc.code},
+        detail={"public_code": public_code},
         headers=AUTH_METHOD_NO_STORE,
     )
 
@@ -358,6 +370,52 @@ def agregar_password_endpoint(
         db.rollback()
         raise
     return AuthenticationMethodMutationResponse(status="password_added")
+
+
+@router.post("/me/reauthentication/password", response_model=ReauthenticationResponse)
+def reautenticar_password_endpoint(
+    payload: PasswordReauthenticationRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    auth_context=Depends(obtener_contexto_usuario_actual),
+):
+    """Prueba password real y rota SID; nunca refresca una sesion en sitio."""
+
+    response.headers.update(AUTH_METHOD_NO_STORE)
+    usuario_id = auth_context.usuario.id
+    sid = auth_context.token.sid if auth_context.token.contract == "versioned" else None
+    try:
+        replacement = reauthenticate_with_password(
+            db,
+            usuario_id=usuario_id,
+            feedgo_session_id=sid,
+            current_password=payload.current_password,
+            session_ttl=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        )
+        token_data = (
+            replacement.id,
+            replacement.issued_at,
+            replacement.expires_at,
+        )
+        db.commit()
+        token = crear_token_jwt_versionado(
+            usuario_id=usuario_id,
+            sid=token_data[0],
+            issued_at=token_data[1],
+            expires_at=token_data[2],
+        )
+    except AuthenticationMethodError as exc:
+        # Los fallos de password y el bloqueo asociado son evidencia de rate
+        # limit persistente; no deben revertirse junto con la respuesta 4xx.
+        if exc.code in {"reauthentication_invalid", "current_password_rate_limited"}:
+            db.commit()
+        else:
+            db.rollback()
+        raise _authentication_method_http_error(exc) from None
+    except Exception:
+        db.rollback()
+        raise
+    return ReauthenticationResponse(token=token)
 
 
 @router.delete(
