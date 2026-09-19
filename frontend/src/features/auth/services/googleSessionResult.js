@@ -16,14 +16,15 @@ export function getGoogleSessionHandle(search) {
  * memoria y evita un segundo POST normal; el backend conserva la autoridad
  * one-use y no se guarda el handle en ningún storage ni cache de queries.
  */
-export function exchangeGoogleSessionOnce(handle, exchange) {
-  const current = exchangesByHandle.get(handle);
+export function exchangeGoogleSessionOnce(handle, exchange, purpose = "authentication") {
+  const key = `${purpose}:${handle}`;
+  const current = exchangesByHandle.get(key);
   if (current) return current;
 
   const request = Promise.resolve().then(() => exchange(handle));
-  exchangesByHandle.set(handle, request);
+  exchangesByHandle.set(key, request);
   const cleanupTimer = globalThis.setTimeout(
-    () => exchangesByHandle.delete(handle),
+    () => exchangesByHandle.delete(key),
     HANDLE_MEMORY_TTL_MS,
   );
   // En Node el timer no debe mantener vivos los tests; en browser conserva la

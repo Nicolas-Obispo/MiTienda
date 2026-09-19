@@ -5,7 +5,7 @@
  * - Usar http_service como única capa HTTP de infraestructura.
  */
 
-import { httpGet, httpPatch, httpPost } from "@core";
+import { httpDelete, httpGet, httpPatch, httpPost } from "@core";
 
 export const REGISTRATION_EMAIL_UNAVAILABLE = "registration_email_unavailable";
 export const EMAIL_VERIFICATION_INVALID = "email_verification_invalid";
@@ -43,6 +43,50 @@ export async function startGoogleAuthorization({
 
 export async function exchangeGoogleSession(handle) {
   return httpPost("/usuarios/google/session", { handle });
+}
+
+export async function addPasswordCredential(tokenJWT, { newPassword }) {
+  return httpPost(
+    "/usuarios/me/authentication-methods/password",
+    { confirm: true, new_password: newPassword },
+    tokenJWT,
+  );
+}
+
+export async function startGoogleLinkAuthorization(tokenJWT, { returnTo }) {
+  return httpPost(
+    "/usuarios/google/link/authorization",
+    { confirm_link: true, return_to: returnTo },
+    tokenJWT,
+  );
+}
+
+export async function unlinkGoogleIdentity(tokenJWT) {
+  return httpDelete(
+    "/usuarios/me/authentication-methods/google",
+    { confirm: true },
+    tokenJWT,
+  );
+}
+
+export async function reauthenticateWithPassword(tokenJWT, { currentPassword }) {
+  return httpPost(
+    "/usuarios/me/reauthentication/password",
+    { current_password: currentPassword },
+    tokenJWT,
+  );
+}
+
+export async function startGoogleReauthentication(tokenJWT, { returnTo }) {
+  return httpPost(
+    "/usuarios/google/reauth/authorization",
+    { confirm_reauthentication: true, return_to: returnTo },
+    tokenJWT,
+  );
+}
+
+export async function exchangeGoogleReauthenticationSession(handle) {
+  return httpPost("/usuarios/google/reauth/session", { handle });
 }
 
 export async function comprobarDisponibilidadEmail(email, options = {}) {

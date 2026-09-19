@@ -11,6 +11,7 @@ const FRONTEND_ROUTES = new Set([
   "/login",
   "/registro",
   "/auth/google/resultado",
+  "/auth/google/reauth-resultado",
   "/verificar-email",
   "/recuperar-password",
   "/restablecer-password",

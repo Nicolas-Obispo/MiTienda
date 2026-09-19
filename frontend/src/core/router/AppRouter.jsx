@@ -7,6 +7,7 @@ import { Home } from "@features/home";
 import { Login } from "@features/auth";
 import {
   GoogleAuthResult,
+  GoogleReauthenticationResult,
   RecuperarPassword,
   Registro,
   RestablecerPassword,
@@ -187,6 +188,7 @@ export default function AppRouter() {
           />
 
           <Route path="/auth/google/resultado" element={<GoogleAuthResult />} />
+          <Route path="/auth/google/reauth-resultado" element={<GoogleReauthenticationResult />} />
 
           <Route path="/verificar-email" element={<VerificarEmail />} />
           <Route path="/recuperar-password" element={<RecuperarPassword />} />

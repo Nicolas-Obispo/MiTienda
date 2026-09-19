@@ -159,11 +159,22 @@ export async function httpPost(path, body = null, token = null, options = {}) {
  * @param {string|null} token - JWT opcional
  * @returns {Promise<any>} respuesta vacía o texto
  */
-export async function httpDelete(path, token = null, options = {}) {
+export async function httpDelete(path, bodyOrToken = null, tokenOrOptions = null, options = {}) {
+  // Compatibilidad: los callers existentes usan httpDelete(path, token).
+  // Las mutaciones que requieren confirmacion usan httpDelete(path, body, token).
+  const hasJsonBody = Boolean(
+    bodyOrToken && typeof bodyOrToken === "object" && !Array.isArray(bodyOrToken)
+  );
+  const body = hasJsonBody ? bodyOrToken : null;
+  const token = hasJsonBody ? tokenOrOptions : bodyOrToken;
+  const requestOptions = hasJsonBody
+    ? options
+    : (tokenOrOptions && typeof tokenOrOptions === "object" ? tokenOrOptions : {});
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "DELETE",
     headers: buildHeaders(token),
-    signal: options.signal,
+    body: body ? JSON.stringify(body) : null,
+    signal: requestOptions.signal,
   });
 
   if (!response.ok) {

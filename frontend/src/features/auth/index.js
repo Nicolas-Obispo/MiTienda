@@ -38,6 +38,12 @@ export {
   getGoogleIdentityAvailability,
   startGoogleAuthorization,
   exchangeGoogleSession,
+  addPasswordCredential,
+  startGoogleLinkAuthorization,
+  unlinkGoogleIdentity,
+  reauthenticateWithPassword,
+  startGoogleReauthentication,
+  exchangeGoogleReauthenticationSession,
 } from "@features/auth/services/authService";
 
 export * from '@features/auth/services/usuarioService';
@@ -48,5 +54,6 @@ export { default as VerificarEmail } from '@features/auth/pages/VerificarEmail';
 export { default as RecuperarPassword } from '@features/auth/pages/RecuperarPassword';
 export { default as RestablecerPassword } from '@features/auth/pages/RestablecerPassword';
 export { default as GoogleAuthResult } from '@features/auth/pages/GoogleAuthResult';
+export { default as GoogleReauthenticationResult } from '@features/auth/pages/GoogleReauthenticationResult';
 export { default as ProfilePage } from '@features/auth/pages/ProfilePage';
 export { useGoogleIdentityAvailability } from "@features/auth/hooks/useGoogleIdentityAvailability";

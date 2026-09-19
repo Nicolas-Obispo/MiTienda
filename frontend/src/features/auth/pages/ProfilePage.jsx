@@ -30,6 +30,7 @@ import {
   FormControl,
   getMediaUrlFromAny,
   Input,
+  PasswordInput,
   uploadImagen,
   LocationPicker,
   Select,
@@ -40,8 +41,14 @@ import {
 import { invalidateLocationAfterAddressEdit } from "@shared/components/locationPickerState";
 import {
   actualizarPerfilUsuario,
+  addPasswordCredential,
+  reauthenticateWithPassword,
+  startGoogleLinkAuthorization,
+  startGoogleReauthentication,
+  unlinkGoogleIdentity,
   useAuth,
   useCommercialCapabilityRemediation,
+  useGoogleIdentityAvailability,
 } from "@features/auth";
 import { getInternalReturnTo } from "@core/navigation/internalReturnTo";
 import { cambiarModoUsuario } from "@features/auth/services/usuarioService";
@@ -57,6 +64,10 @@ import {
 } from "@features/availability/services/horarios_draft_flow";
 import AppearanceSelector from "@features/auth/components/AppearanceSelector";
 import CambiarPasswordForm from "@features/auth/components/CambiarPasswordForm";
+import {
+  evaluarPasswordRegistro,
+  passwordRegistroValida,
+} from "@features/auth/services/registrationValidation";
 
 import {
   crearComercio,
@@ -91,6 +102,11 @@ const PERSONAL_PENDING_FIELDS = [
   "ciudad",
 ];
 
+const AUTHENTICATION_METHOD_LABELS = {
+  password: "Contraseña",
+  google: "Google",
+};
+
 function PendingAsterisk() {
   return <span aria-hidden="true" className={PENDING_ASTERISK_CLASS}>*</span>;
 }
@@ -108,6 +124,14 @@ export default function ProfilePage() {
   const [isSavingPerfil, setIsSavingPerfil] = useState(false);
   const [perfilErrorMessage, setPerfilErrorMessage] = useState("");
   const [perfilSuccessMessage, setPerfilSuccessMessage] = useState("");
+  const [securityErrorMessage, setSecurityErrorMessage] = useState("");
+  const [securityStatusMessage, setSecurityStatusMessage] = useState("");
+  const [securityConfirmation, setSecurityConfirmation] = useState(null);
+  const [isSecurityActionPending, setIsSecurityActionPending] = useState(false);
+  const [addPasswordForm, setAddPasswordForm] = useState({ password: "", confirmation: "" });
+  const [showReauthentication, setShowReauthentication] = useState(false);
+  const [reauthenticationPassword, setReauthenticationPassword] = useState("");
+  const [isReauthenticating, setIsReauthenticating] = useState(false);
   const [remediationTarget, setRemediationTarget] = useState(null);
   const [perfilForm, setPerfilForm] = useState({
     provincia: "",
@@ -118,6 +142,7 @@ export default function ProfilePage() {
 
   const fileInputRef = useRef(null);
   const accountPendingPanelCloseRef = useRef(null);
+  const securityActionInFlightRef = useRef(false);
 
   // =====================================================
   // Estado: Portada de espacio
@@ -404,10 +429,12 @@ export default function ProfilePage() {
   const {
     accessToken,
     isCargandoUsuario: isLoadingMe,
+    login,
     logout,
     refrescarUsuario,
     usuario,
   } = useAuth();
+  const { isAvailable: googleIdentityAvailable } = useGoogleIdentityAvailability();
   const camposPerfilFaltantes = Array.isArray(usuario?.campos_perfil_faltantes)
     ? usuario.campos_perfil_faltantes
     : [];
@@ -626,6 +653,16 @@ export default function ProfilePage() {
       setPerfilSuccessMessage("Necesitás ser mayor de edad para usar esta función.");
     }
   }, [camposPerfilFaltantes, navigate, pendientesComerciales, searchParams, usuario]);
+
+  useEffect(() => {
+    if (searchParams.get("security") !== "access" || !usuario) return;
+    navigate("/perfil", { replace: true });
+    setShowAccountPendingPanel(false);
+    setShowPasswordForm(false);
+    setShowPerfilForm(true);
+    setPerfilSection("security");
+    setRemediationTarget(null);
+  }, [navigate, searchParams, usuario]);
 
   useEffect(() => {
     const editarEspacioId = Number(searchParams.get("editarEspacioId"));
@@ -912,6 +949,180 @@ export default function ProfilePage() {
   }
 
   const avatarUrl = usuario?.avatar_url || "";
+  const authenticationMethods = usuario?.authentication_methods || {};
+  const hasPassword = authenticationMethods.has_password === true;
+  const googleLinked = authenticationMethods.google_linked === true;
+  const usableAuthenticationMethods = Array.isArray(authenticationMethods.usable_methods)
+    ? authenticationMethods.usable_methods
+    : [];
+  const canUnlinkGoogle = authenticationMethods.can_unlink_google === true;
+  const canReauthenticateWithPassword = usableAuthenticationMethods.includes("password");
+  const canReauthenticateWithGoogle =
+    usableAuthenticationMethods.includes("google") && googleIdentityAvailable;
+  const addPasswordRequirements = evaluarPasswordRegistro(addPasswordForm.password);
+  const addPasswordIsValid = passwordRegistroValida(addPasswordForm.password);
+
+  function clearSecurityFeedback() {
+    setSecurityErrorMessage("");
+    setSecurityStatusMessage("");
+  }
+
+  function requestRecentReauthentication() {
+    setAddPasswordForm({ password: "", confirmation: "" });
+    setSecurityConfirmation(null);
+    setReauthenticationPassword("");
+    setShowReauthentication(true);
+    setSecurityStatusMessage(
+      "Para continuar, confirma nuevamente uno de tus metodos de acceso."
+    );
+  }
+
+  function handleSecurityOperationError(error) {
+    if (error?.status === 403 && error?.code === "recent_reauthentication_required") {
+      requestRecentReauthentication();
+      return true;
+    }
+    if (error?.status === 401) {
+      void refrescarUsuario();
+      setSecurityErrorMessage("Tu sesion ya no esta activa. Inicia sesion nuevamente.");
+      return true;
+    }
+    return false;
+  }
+
+  async function refreshSecurityMethods() {
+    const refreshed = await refrescarUsuario();
+    return Boolean(refreshed);
+  }
+
+  async function handleAddPassword(event) {
+    event.preventDefault();
+    clearSecurityFeedback();
+    if (
+      !accessToken ||
+      !addPasswordIsValid ||
+      addPasswordForm.password !== addPasswordForm.confirmation ||
+      isSecurityActionPending ||
+      securityActionInFlightRef.current
+    ) {
+      return;
+    }
+
+    securityActionInFlightRef.current = true;
+    setIsSecurityActionPending(true);
+    try {
+      await addPasswordCredential(accessToken, { newPassword: addPasswordForm.password });
+      setAddPasswordForm({ password: "", confirmation: "" });
+      if (await refreshSecurityMethods()) {
+        setSecurityStatusMessage("Listo, configuraste tu contrasena.");
+      }
+    } catch (error) {
+      setAddPasswordForm({ password: "", confirmation: "" });
+      if (!handleSecurityOperationError(error)) {
+        setSecurityErrorMessage("No pudimos agregar la contrasena. Intenta nuevamente.");
+      }
+    } finally {
+      securityActionInFlightRef.current = false;
+      setIsSecurityActionPending(false);
+    }
+  }
+
+  async function startGoogleLink() {
+    if (
+      !accessToken ||
+      !googleIdentityAvailable ||
+      googleLinked ||
+      securityActionInFlightRef.current
+    ) {
+      return;
+    }
+    securityActionInFlightRef.current = true;
+    setIsSecurityActionPending(true);
+    clearSecurityFeedback();
+    try {
+      const result = await startGoogleLinkAuthorization(accessToken, { returnTo: "/perfil?security=access" });
+      if (typeof result?.authorization_url !== "string") throw new Error("authorization_url_missing");
+      window.location.assign(result.authorization_url);
+    } catch (error) {
+      securityActionInFlightRef.current = false;
+      if (!handleSecurityOperationError(error)) {
+        setSecurityErrorMessage("No pudimos iniciar la vinculacion con Google.");
+      }
+      setIsSecurityActionPending(false);
+    }
+  }
+
+  async function confirmUnlinkGoogle() {
+    if (!accessToken || !canUnlinkGoogle || securityActionInFlightRef.current) return;
+    securityActionInFlightRef.current = true;
+    setIsSecurityActionPending(true);
+    clearSecurityFeedback();
+    try {
+      await unlinkGoogleIdentity(accessToken);
+      setSecurityConfirmation(null);
+      if (await refreshSecurityMethods()) {
+        setSecurityStatusMessage("Google fue desvinculada de tu cuenta.");
+      }
+    } catch (error) {
+      if (!handleSecurityOperationError(error)) {
+        setSecurityErrorMessage(
+          error?.code === "cannot_remove_last_authentication_method"
+            ? "No podes desvincular Google porque es tu unico metodo de acceso."
+            : "No pudimos desvincular Google. Intenta nuevamente."
+        );
+      }
+    } finally {
+      securityActionInFlightRef.current = false;
+      setIsSecurityActionPending(false);
+    }
+  }
+
+  async function submitPasswordReauthentication(event) {
+    event.preventDefault();
+    if (
+      !accessToken ||
+      !reauthenticationPassword ||
+      isReauthenticating ||
+      securityActionInFlightRef.current
+    ) return;
+    clearSecurityFeedback();
+    securityActionInFlightRef.current = true;
+    setIsReauthenticating(true);
+    try {
+      const result = await reauthenticateWithPassword(accessToken, {
+        currentPassword: reauthenticationPassword,
+      });
+      if (typeof result?.token !== "string") throw new Error("reauthentication_token_missing");
+      login(result.token);
+      setReauthenticationPassword("");
+      setShowReauthentication(false);
+      setSecurityStatusMessage(
+        "Reautenticacion completada. Confirma nuevamente la operacion que querias realizar."
+      );
+    } catch {
+      setReauthenticationPassword("");
+      setSecurityErrorMessage("No pudimos confirmar tu contrasena. Intenta nuevamente.");
+    } finally {
+      securityActionInFlightRef.current = false;
+      setIsReauthenticating(false);
+    }
+  }
+
+  async function beginGoogleReauthentication() {
+    if (!accessToken || !canReauthenticateWithGoogle || securityActionInFlightRef.current) return;
+    securityActionInFlightRef.current = true;
+    setIsReauthenticating(true);
+    clearSecurityFeedback();
+    try {
+      const result = await startGoogleReauthentication(accessToken, { returnTo: "/perfil?security=access" });
+      if (typeof result?.authorization_url !== "string") throw new Error("authorization_url_missing");
+      window.location.assign(result.authorization_url);
+    } catch {
+      securityActionInFlightRef.current = false;
+      setIsReauthenticating(false);
+      setSecurityErrorMessage("No pudimos iniciar la reautenticacion con Google.");
+    }
+  }
   const esModoPublicador = usuario?.modo_activo === "publicador";
   const perfilCompleto = usuario?.perfil_completo === true;
   const capacidadesComerciales = usuario?.capabilities || {};
@@ -1181,8 +1392,8 @@ export default function ProfilePage() {
                   <Button type="button" onClick={() => setPerfilSection("foto")} variant="secondary" className="px-3 py-2 text-xs">
                     Cambiar foto
                   </Button>
-                  <Button type="button" onClick={() => { setShowPasswordForm(true); setPerfilSection("password"); }} variant="secondary" className="px-3 py-2 text-xs">
-                    Cambiar contraseña
+                  <Button type="button" onClick={() => { setShowPasswordForm(hasPassword); setPerfilSection("security"); }} variant="secondary" className="px-3 py-2 text-xs">
+                    Seguridad y acceso
                   </Button>
                   <Button type="button" onClick={() => setPerfilSection("fondo")} variant="secondary" className="px-3 py-2 text-xs">
                     Cambiar fondo
@@ -1218,11 +1429,187 @@ export default function ProfilePage() {
                   <Button type="button" onClick={volverAlMenuEdicion} variant="secondary" className="px-3 py-2 text-xs">Cancelar</Button>
                 </div>
               </section>
-            ) : perfilSection === "password" ? (
-              <section className="space-y-4" aria-labelledby="perfil-password-title">
-                <h2 id="perfil-password-title" className="text-lg font-semibold">Seguridad</h2>
-                <h3 className="text-base font-semibold">Cambiar contraseña</h3>
-                <CambiarPasswordForm onCancel={volverAlMenuEdicion} onSuccess={completarCambioPassword} />
+            ) : perfilSection === "security" ? (
+              <section className="space-y-4" aria-labelledby="perfil-security-title">
+                <div>
+                  <h2 id="perfil-security-title" className="text-lg font-semibold">Seguridad y acceso</h2>
+                  <p className="mt-1 text-sm text-secondary">
+                    Revisá los métodos disponibles para acceder a tu cuenta.
+                  </p>
+                </div>
+
+                <dl className="space-y-2 rounded-xl border border-border p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <dt className="font-medium text-primary">Contraseña</dt>
+                    <dd className="text-secondary">{hasPassword ? "Configurada" : "No configurada"}</dd>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <dt className="font-medium text-primary">Google</dt>
+                    <dd className="text-secondary">{googleLinked ? "Vinculada" : "No vinculada"}</dd>
+                  </div>
+                </dl>
+
+                <section className="space-y-2" aria-labelledby="metodos-acceso-title">
+                  <h3 id="metodos-acceso-title" className="text-base font-semibold">Métodos disponibles</h3>
+                  {usableAuthenticationMethods.length > 0 ? (
+                    <ul className="list-disc space-y-1 pl-5 text-sm text-secondary">
+                      {usableAuthenticationMethods.map((method) => (
+                        <li key={method}>{AUTHENTICATION_METHOD_LABELS[method] || "Método de acceso"}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-secondary">No hay métodos de acceso disponibles para mostrar.</p>
+                  )}
+                </section>
+
+                {securityErrorMessage && (
+                  <Alert role="alert" variant="danger">{securityErrorMessage}</Alert>
+                )}
+                {securityStatusMessage && (
+                  <Alert role="status" variant="success">{securityStatusMessage}</Alert>
+                )}
+
+                {showReauthentication && (
+                  <section className="space-y-3 rounded-xl border border-border p-3" aria-labelledby="reauthentication-title">
+                    <div>
+                      <h3 id="reauthentication-title" className="text-base font-semibold">Confirmar acceso</h3>
+                      <p className="mt-1 text-sm text-secondary">
+                        Volve a demostrar control de uno de tus metodos de acceso antes de continuar.
+                      </p>
+                    </div>
+                    {canReauthenticateWithPassword && (
+                      <form onSubmit={submitPasswordReauthentication} className="space-y-2">
+                        <FormControl label="Contrasena actual" labelFor="security-reauth-password">
+                          <PasswordInput
+                            id="security-reauth-password"
+                            autoComplete="current-password"
+                            value={reauthenticationPassword}
+                            onChange={(event) => setReauthenticationPassword(event.target.value)}
+                            required
+                          />
+                        </FormControl>
+                        <Button type="submit" disabled={isReauthenticating} variant="secondary" className="px-3 py-2 text-xs">
+                          {isReauthenticating ? "Confirmando..." : "Confirmar con contrasena"}
+                        </Button>
+                      </form>
+                    )}
+                    {canReauthenticateWithGoogle && (
+                      <Button
+                        type="button"
+                        onClick={beginGoogleReauthentication}
+                        disabled={isReauthenticating}
+                        variant="secondary"
+                        className="px-3 py-2 text-xs"
+                      >
+                        Continuar con Google
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      onClick={() => { setReauthenticationPassword(""); setShowReauthentication(false); }}
+                      disabled={isReauthenticating}
+                      variant="secondary"
+                      className="px-3 py-2 text-xs"
+                    >
+                      Cancelar
+                    </Button>
+                  </section>
+                )}
+
+                {hasPassword ? (
+                  <section className="space-y-3" aria-labelledby="cambiar-password-title">
+                    <h3 id="cambiar-password-title" className="text-base font-semibold">Cambiar contraseña</h3>
+                    <CambiarPasswordForm onCancel={volverAlMenuEdicion} onSuccess={completarCambioPassword} />
+                  </section>
+                ) : (
+                  <section className="space-y-3" aria-labelledby="agregar-password-title">
+                    <h3 id="agregar-password-title" className="text-base font-semibold">Contraseña</h3>
+                    <p className="text-sm text-secondary">Todavía no configuraste una contraseña.</p>
+                    <form onSubmit={handleAddPassword} className="space-y-3">
+                      <FormControl label="Nueva contraseña" labelFor="add-password-new">
+                        <PasswordInput
+                          id="add-password-new"
+                          autoComplete="new-password"
+                          value={addPasswordForm.password}
+                          onChange={(event) => setAddPasswordForm((current) => ({ ...current, password: event.target.value }))}
+                          required
+                        />
+                        <p className="mt-1 text-xs text-secondary">
+                          {addPasswordRequirements.longitud && addPasswordRequirements.mayuscula && addPasswordRequirements.minuscula && addPasswordRequirements.numero && addPasswordRequirements.sinEspacios
+                            ? "La contraseña cumple los requisitos."
+                            : "Usá al menos 8 caracteres, mayúscula, minúscula, número y sin espacios."}
+                        </p>
+                      </FormControl>
+                      <FormControl
+                        label="Confirmar nueva contraseña"
+                        labelFor="add-password-confirmation"
+                        error={addPasswordForm.confirmation && addPasswordForm.confirmation !== addPasswordForm.password ? "Las contraseñas no coinciden." : null}
+                      >
+                        <PasswordInput
+                          id="add-password-confirmation"
+                          autoComplete="new-password"
+                          value={addPasswordForm.confirmation}
+                          onChange={(event) => setAddPasswordForm((current) => ({ ...current, confirmation: event.target.value }))}
+                          required
+                        />
+                      </FormControl>
+                      <Button
+                        type="submit"
+                        disabled={isSecurityActionPending || !addPasswordIsValid || addPasswordForm.password !== addPasswordForm.confirmation}
+                        variant="secondary"
+                        className="px-3 py-2 text-xs"
+                      >
+                        {isSecurityActionPending ? "Guardando..." : "Agregar contraseña"}
+                      </Button>
+                    </form>
+                  </section>
+                )}
+
+                <section className="space-y-2" aria-labelledby="google-access-title">
+                  <h3 id="google-access-title" className="text-base font-semibold">Google</h3>
+                  {googleLinked ? (
+                    <>
+                      {!googleIdentityAvailable && (
+                        <p className="text-sm text-secondary">Google está vinculada, pero no está disponible actualmente.</p>
+                      )}
+                      {canUnlinkGoogle && (
+                        <Button type="button" onClick={() => setSecurityConfirmation("unlink-google")} disabled={isSecurityActionPending} variant="secondary" className="px-3 py-2 text-xs">
+                          Desvincular Google
+                        </Button>
+                      )}
+                    </>
+                  ) : googleIdentityAvailable ? (
+                    <Button type="button" onClick={() => setSecurityConfirmation("link-google")} disabled={isSecurityActionPending} variant="secondary" className="px-3 py-2 text-xs">
+                      Vincular Google
+                    </Button>
+                  ) : null}
+                </section>
+                {securityConfirmation && (
+                  <section className="space-y-3 rounded-xl border border-border p-3" aria-labelledby="security-confirmation-title">
+                    <h3 id="security-confirmation-title" className="text-base font-semibold">
+                      {securityConfirmation === "link-google" ? "Vincular Google" : "Desvincular Google"}
+                    </h3>
+                    <p className="text-sm text-secondary">
+                      {securityConfirmation === "link-google"
+                        ? "Vas a continuar con Google para vincular este método de acceso a tu cuenta FeedGo."
+                        : "Vas a quitar Google como método de acceso de esta cuenta."}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        onClick={securityConfirmation === "link-google" ? startGoogleLink : confirmUnlinkGoogle}
+                        disabled={isSecurityActionPending}
+                        variant="secondary"
+                        className="px-3 py-2 text-xs"
+                      >
+                        {isSecurityActionPending ? "Procesando..." : "Confirmar"}
+                      </Button>
+                      <Button type="button" onClick={() => setSecurityConfirmation(null)} disabled={isSecurityActionPending} variant="secondary" className="px-3 py-2 text-xs">
+                        Cancelar
+                      </Button>
+                    </div>
+                  </section>
+                )}
               </section>
             ) : (
             <form onSubmit={handlePerfilSubmit} className="space-y-3">
