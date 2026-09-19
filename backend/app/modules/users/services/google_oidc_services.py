@@ -16,7 +16,11 @@ from urllib.parse import urlsplit
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 from authlib.integrations.starlette_client import OAuth
 
-from app.core.config import Settings, settings
+from app.core.config import (
+    Settings,
+    is_valid_google_oidc_frontend_result_path,
+    settings,
+)
 from app.modules.users.services.oauth_authorization_transaction_services import (
     OAuthAuthorizationMaterial,
 )
@@ -42,6 +46,7 @@ class GoogleOidcConfiguration:
     redirect_uri: str
     public_base_url: str
     frontend_result_path: str
+    frontend_reauth_result_path: str
     timeout_seconds: float
     result_handle_ttl_seconds: int
 
@@ -94,7 +99,6 @@ def google_oidc_configuration(
         raise GoogleOidcError("google_oidc_configuration_invalid")
     redirect = urlsplit(source.GOOGLE_OIDC_REDIRECT_URI or "")
     public_base = urlsplit(source.GOOGLE_OIDC_PUBLIC_BASE_URL or "")
-    result_path = source.GOOGLE_OIDC_FRONTEND_RESULT_PATH
     if (
         source.GOOGLE_OIDC_DISCOVERY_URL
         != "https://accounts.google.com/.well-known/openid-configuration"
@@ -105,11 +109,12 @@ def google_oidc_configuration(
         or redirect.query
         or public_base.path not in {"", "/"}
         or public_base.query
-        or not result_path.startswith("/")
-        or result_path.startswith("//")
-        or "\\" in result_path
-        or urlsplit(result_path).query
-        or urlsplit(result_path).fragment
+        or not is_valid_google_oidc_frontend_result_path(
+            source.GOOGLE_OIDC_FRONTEND_RESULT_PATH
+        )
+        or not is_valid_google_oidc_frontend_result_path(
+            source.GOOGLE_OIDC_FRONTEND_REAUTH_RESULT_PATH
+        )
     ):
         raise GoogleOidcError("google_oidc_configuration_invalid")
     return GoogleOidcConfiguration(
@@ -120,6 +125,7 @@ def google_oidc_configuration(
         redirect_uri=source.GOOGLE_OIDC_REDIRECT_URI,
         public_base_url=source.GOOGLE_OIDC_PUBLIC_BASE_URL.rstrip("/"),
         frontend_result_path=source.GOOGLE_OIDC_FRONTEND_RESULT_PATH,
+        frontend_reauth_result_path=source.GOOGLE_OIDC_FRONTEND_REAUTH_RESULT_PATH,
         timeout_seconds=source.GOOGLE_OIDC_TIMEOUT_SECONDS,
         result_handle_ttl_seconds=source.GOOGLE_OIDC_RESULT_HANDLE_TTL_SECONDS,
     )

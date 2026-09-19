@@ -74,6 +74,7 @@ def config():
         redirect_uri="https://api.feedgo.test/usuarios/google/callback",
         public_base_url="https://feedgo.test",
         frontend_result_path="/auth/google/resultado",
+        frontend_reauth_result_path="/auth/google/reauth-resultado",
         timeout_seconds=5,
         result_handle_ttl_seconds=120,
     )
@@ -144,6 +145,25 @@ class GoogleOidcOwnerTests(unittest.TestCase):
             GOOGLE_OIDC_PUBLIC_BASE_URL="https://feedgo.test",
         )
         self.assertEqual(google_oidc_configuration(source).client_id, "feedgo-client")
+
+    def test_reauth_frontend_result_path_must_be_an_internal_path(self):
+        with self.assertRaises(ValueError):
+            Settings(
+                _env_file=None,
+                DATABASE_URL="sqlite://",
+                SECRET_KEY="jwt-test-secret",
+                ALGORITHM="HS256",
+                ACCESS_TOKEN_EXPIRE_MINUTES=60,
+                ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET="rate-limit-test-secret",
+                GOOGLE_IDENTITY_ENABLED=True,
+                GOOGLE_OIDC_CLIENT_ID="feedgo-client",
+                GOOGLE_OIDC_CLIENT_SECRET="google-test-secret",
+                GOOGLE_OIDC_REDIRECT_URI=(
+                    "https://api.feedgo.test/usuarios/google/callback"
+                ),
+                GOOGLE_OIDC_PUBLIC_BASE_URL="https://feedgo.test",
+                GOOGLE_OIDC_FRONTEND_REAUTH_RESULT_PATH="//untrusted.test/result",
+            )
 
     def test_result_handle_ttl_cannot_exceed_two_minutes(self):
         with self.assertRaises(ValueError):

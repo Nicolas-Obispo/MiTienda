@@ -450,8 +450,13 @@ async def google_callback(
     else:
         pass
 
+    result_path = (
+        configuration.frontend_reauth_result_path
+        if claim.purpose == OAUTH_PURPOSE_REAUTH
+        else configuration.frontend_result_path
+    )
     destination = (
-        f"{configuration.public_base_url}{configuration.frontend_result_path}?"
+        f"{configuration.public_base_url}{result_path}?"
         f"{urlencode({'handle': delivery_handle})}"
     )
     return RedirectResponse(destination, status_code=303, headers=NO_STORE)

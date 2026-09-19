@@ -106,6 +106,7 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
             "GOOGLE_OIDC_REDIRECT_URI": "https://api.feedgo.test/usuarios/google/callback",
             "GOOGLE_OIDC_PUBLIC_BASE_URL": "https://feedgo.test",
             "GOOGLE_OIDC_FRONTEND_RESULT_PATH": "/auth/google/resultado",
+            "GOOGLE_OIDC_FRONTEND_REAUTH_RESULT_PATH": "/auth/google/reauth-resultado",
             "ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET": "google-rate-limit-test-secret",
         }
         self.patches = ExitStack()
@@ -139,6 +140,7 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
         location = callback.headers["location"]
         self.assertNotIn("token=", location)
         self.assertNotIn("jwt", location.lower())
+        self.assertNotIn("purpose=", location)
         return callback, parse_qs(urlsplit(location).query)["handle"][0]
 
     def _password_user_token(self, *, age_seconds=0):
@@ -199,6 +201,42 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
         self.assertEqual(db.query(ExternalIdentity).one().provider_subject, "new-google-subject")
         db.close()
 
+    def test_login_and_signup_callback_use_the_normal_frontend_result_path(self):
+        for purpose, payload in (
+            ("login", {}),
+            ("signup", {"acepta_terminos": True, "acepta_privacidad": True}),
+        ):
+            with self.subTest(purpose=purpose):
+                _, state = self._start(purpose, **payload)
+                callback, _ = self._callback_handle(state)
+                parsed = urlsplit(callback.headers["location"])
+                self.assertEqual(parsed.path, "/auth/google/resultado")
+
+    def test_reauthentication_callback_uses_dedicated_frontend_result_path(self):
+        token = self._password_user_token()
+        db = self.Session()
+        db.add(
+            ExternalIdentity(
+                usuario_id=1,
+                provider="google",
+                provider_subject="new-google-subject",
+                linked_at=datetime.now(timezone.utc).replace(microsecond=0),
+            )
+        )
+        db.commit()
+        db.close()
+        started = self.client.post(
+            "/usuarios/google/reauth/authorization",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"confirm_reauthentication": True},
+        )
+        self.assertEqual(started.status_code, 200, started.text)
+        state = parse_qs(urlsplit(started.json()["authorization_url"]).query)["state"][0]
+        callback, _ = self._callback_handle(state)
+        parsed = urlsplit(callback.headers["location"])
+        self.assertEqual(parsed.path, "/auth/google/reauth-resultado")
+        self.assertEqual(set(parse_qs(parsed.query)), {"handle"})
+
     def test_availability_is_derived_from_effective_configuration(self):
         available = self.client.get("/usuarios/google/availability")
         self.assertEqual(available.status_code, 200)
@@ -210,6 +248,15 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
         with patch.object(settings, "GOOGLE_OIDC_CLIENT_ID", None):
             invalid = self.client.get("/usuarios/google/availability")
         self.assertEqual(invalid.json(), {"google_identity_available": False})
+        with patch.object(
+            settings,
+            "GOOGLE_OIDC_FRONTEND_REAUTH_RESULT_PATH",
+            "//untrusted.test/result",
+        ):
+            invalid_reauth_path = self.client.get("/usuarios/google/availability")
+        self.assertEqual(
+            invalid_reauth_path.json(), {"google_identity_available": False}
+        )
 
     def test_linked_google_is_distinct_from_provider_availability(self):
         token = self._password_user_token()
@@ -286,17 +333,22 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
         self.assertEqual(google_sessions[0].external_identity_id, identity_id)
         db.close()
 
-    def test_login_handle_cannot_be_consumed_as_reauthentication(self):
-        _, state = self._start("signup", acepta_terminos=True, acepta_privacidad=True)
-        _, handle = self._callback_handle(state)
-        wrong_exchange = self.client.post(
-            "/usuarios/google/reauth/session", json={"handle": handle}
-        )
-        self.assertEqual(wrong_exchange.status_code, 400)
-        correct_exchange = self.client.post(
-            "/usuarios/google/session", json={"handle": handle}
-        )
-        self.assertEqual(correct_exchange.status_code, 200)
+    def test_login_and_signup_handles_cannot_be_consumed_as_reauthentication(self):
+        for purpose, payload in (
+            ("login", {}),
+            ("signup", {"acepta_terminos": True, "acepta_privacidad": True}),
+        ):
+            with self.subTest(purpose=purpose):
+                _, state = self._start(purpose, **payload)
+                _, handle = self._callback_handle(state)
+                wrong_exchange = self.client.post(
+                    "/usuarios/google/reauth/session", json={"handle": handle}
+                )
+                self.assertEqual(wrong_exchange.status_code, 400)
+                correct_exchange = self.client.post(
+                    "/usuarios/google/session", json={"handle": handle}
+                )
+                self.assertEqual(correct_exchange.status_code, 200)
 
     def test_google_reauthentication_rejects_other_subject_even_with_same_email(self):
         token = self._password_user_token()

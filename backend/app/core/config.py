@@ -10,6 +10,19 @@ from pydantic_settings import BaseSettings
 from urllib.parse import urlsplit
 
 
+def is_valid_google_oidc_frontend_result_path(value: str) -> bool:
+    """Acepta exclusivamente rutas internas sin query ni fragmento."""
+
+    return (
+        isinstance(value, str)
+        and value.startswith("/")
+        and not value.startswith("//")
+        and "\\" not in value
+        and not urlsplit(value).query
+        and not urlsplit(value).fragment
+    )
+
+
 class Settings(BaseSettings):
     """
     Configuración general de la aplicación.
@@ -110,6 +123,7 @@ class Settings(BaseSettings):
     GOOGLE_OIDC_REDIRECT_URI: str | None = None
     GOOGLE_OIDC_PUBLIC_BASE_URL: str | None = None
     GOOGLE_OIDC_FRONTEND_RESULT_PATH: str = "/auth/google/resultado"
+    GOOGLE_OIDC_FRONTEND_REAUTH_RESULT_PATH: str = "/auth/google/reauth-resultado"
     GOOGLE_OIDC_TIMEOUT_SECONDS: float = Field(default=5.0, gt=0, le=30)
     GOOGLE_OIDC_RESULT_HANDLE_TTL_SECONDS: int = Field(default=120, ge=1, le=120)
 
@@ -165,13 +179,10 @@ class Settings(BaseSettings):
             or public_base.fragment
         ):
             raise ValueError("google_oidc_public_base_url_invalid")
-        result_path = self.GOOGLE_OIDC_FRONTEND_RESULT_PATH
-        if (
-            not result_path.startswith("/")
-            or result_path.startswith("//")
-            or "\\" in result_path
-            or urlsplit(result_path).query
-            or urlsplit(result_path).fragment
+        if not is_valid_google_oidc_frontend_result_path(
+            self.GOOGLE_OIDC_FRONTEND_RESULT_PATH
+        ) or not is_valid_google_oidc_frontend_result_path(
+            self.GOOGLE_OIDC_FRONTEND_REAUTH_RESULT_PATH
         ):
             raise ValueError("google_oidc_frontend_result_path_invalid")
         return self
