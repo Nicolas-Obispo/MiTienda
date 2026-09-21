@@ -183,7 +183,7 @@ class GoogleOidcMySQLConcurrencyTests(unittest.TestCase):
                     claim=claim,
                     identity=GoogleOidcIdentity(
                         subject="shared-subject",
-                        email="shared@test.local",
+                        email="shared@feedgo.com",
                         email_verified=True,
                     ),
                     clock=lambda: self.now + timedelta(seconds=1),

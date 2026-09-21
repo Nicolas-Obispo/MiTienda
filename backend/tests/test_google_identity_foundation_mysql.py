@@ -42,13 +42,15 @@ class GoogleIdentityFoundationMySQLMigrationTests(unittest.TestCase):
 
     def test_clean_migration_makes_legacy_hash_nullable_and_is_idempotent(self):
         with self.engine.begin() as connection:
+            connection.exec_driver_sql("DROP TABLE oauth_session_delivery_handles")
             connection.exec_driver_sql("DROP TABLE oauth_authorization_transactions")
             connection.exec_driver_sql(
                 "ALTER TABLE usuarios MODIFY COLUMN hashed_password VARCHAR(255) NOT NULL"
             )
             connection.exec_driver_sql(
-                "INSERT INTO usuarios (id, email, hashed_password) "
-                "VALUES (99, 'existing@test.local', 'existing-hash')"
+                "INSERT INTO usuarios "
+                "(id, email, hashed_password, modo_activo, onboarding_completo) "
+                "VALUES (99, 'existing@test.local', 'existing-hash', 'usuario', 0)"
             )
             first = migration.upgrade(connection)
             second = migration.upgrade(connection)
@@ -69,6 +71,7 @@ class GoogleIdentityFoundationMySQLMigrationTests(unittest.TestCase):
 
     def test_empty_partial_transaction_table_is_recovered_and_rerun_is_noop(self):
         with self.engine.begin() as connection:
+            connection.exec_driver_sql("DROP TABLE oauth_session_delivery_handles")
             connection.exec_driver_sql("DROP TABLE oauth_authorization_transactions")
             connection.exec_driver_sql(
                 "CREATE TABLE oauth_authorization_transactions (id VARCHAR(64) PRIMARY KEY)"
