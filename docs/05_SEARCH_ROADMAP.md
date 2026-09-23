@@ -1399,24 +1399,36 @@ y no crean ni renumeran etapas.
   verificacion y recovery reales. La ruta de snapshot social queda fuera del
   guard como infraestructura analitica derivada. Rollback: desactivar
   centralmente el enforcement, nunca parchear excepciones por endpoint.
-- 99.8 - Google, linking y cuentas Google-only. Integra Google con scopes
-  `openid email`, validacion OAuth/OIDC backend, linking y unlinking explicitos,
-  resolucion segura de colisiones y creacion posterior de contrasena. Depende de
-  `FeedGoSession`, runtime sin dependencia obligatoria de password legacy y
-  capabilities uniformes. No admite auto-link por email, passwords ficticios ni
-  uso de Google como sesion o autorizacion. Solo aqui puede hacerse nullable el
-  hash legacy, sin eliminarlo. Gate: ninguna operacion deja una cuenta sin
-  metodo de acceso y Google-only funciona mediante sesion FeedGo. Rollback:
-  deshabilitar nuevas altas y vinculaciones conservando identidades existentes
-  y sus metodos alternativos.
-- 99.9 - Contract, limpieza legacy y cierre. Desactiva dual-read y dual-write,
-  retira la dependencia funcional de `usuarios.hashed_password`, JWT y
-  revocacion legacy y, solo con evidencia de cero consumidores y sesiones
-  vigentes, ejecuta eliminaciones fisicas separadas. Incluye auditoria final de
-  APIs privadas, PWA/cache, seguridad, migracion, restore, suite integral y
-  cierre documental. Depende de 99.2 a 99.8 cerrados. Rollback: cada contract es
-  independiente, respaldado y posterior a dejar de usar el elemento; ningun
-  retiro se fuerza por calendario.
+- 99.8 - Google, linking y cuentas Google-only. Cerrada tecnicamente. Integra
+  Google con scopes `openid email`, Authorization Code, PKCE S256, `state`,
+  `nonce` y validacion OAuth/OIDC backend; usa exclusivamente
+  `(provider, provider_subject)` como identidad externa estable, sin auto-link
+  por email ni passwords ficticios. Login/signup, link y reauth quedan aislados
+  por purpose mediante transacciones y handles opacos de un uso. Incluye
+  availability fail-closed, linking y unlinking explicitos, proteccion del
+  ultimo metodo, revocacion selectiva de sesiones Google, alta posterior de
+  password, reautenticacion reciente de 600 segundos y rotacion SID/JWT. El
+  frontend integra Login, Registro y Seguridad y acceso desde contratos
+  backend-derived. El hash legacy se hizo nullable sin eliminarlo. Gate
+  tecnico: ninguna operacion deja una cuenta sin metodo de acceso,
+  Google-only funciona mediante `FeedGoSession` y el gate MySQL aislado finaliza
+  11/11 OK. Google permanece operativamente OFF; rollback: deshabilitar nuevas
+  altas y vinculaciones conservando identidades existentes y sus metodos
+  alternativos.
+- 99.9 - Contract, limpieza legacy y cierre. Siguiente sprint oficial, no
+  iniciado. Debe retirar emision y aceptacion de JWT legacy, ramas
+  `contract == "legacy"`, `_validar_contrato_legacy` y `TokenRevocado` cuando
+  quede sin consumidores; completar el gate/backfill de `email_canonical`;
+  garantizar `PasswordCredential` para usuarios password y dejarlo como unica
+  autoridad; retirar fallback y dual-write de `usuarios.hashed_password` y
+  decidir su eliminacion fisica. Tambien debe cerrar rate limiting persistente
+  del login, revision final de password policy y el oracle de disponibilidad de
+  email. Incluye migraciones, tests, restore, rollback, auditoria final de APIs
+  privadas, PWA/cache, seguridad y cierre documental. Depende de 99.2 a 99.8
+  cerrados. Rollback: cada contract es independiente, respaldado y posterior a
+  dejar de usar el elemento; ningun retiro se fuerza por calendario. Es owner
+  temporal de `AUTH-LEGACY-01`, `AUTH-ABUSE-01` y `AUTH-POLICY-01`; los
+  criterios de cierre permanentes viven en `15_LEGAL_AND_OPERATIONAL` 27.8.1.
 
 Reglas transversales de ejecucion:
 
@@ -1467,12 +1479,12 @@ Evidencia de cierre de 99.2:
 
 Siguiente sprint:
 
-99.8 - Google, linking y cuentas Google-only. Pendiente y no iniciado; requiere
-orden expresa para comenzar.
+99.9 - Contract, limpieza legacy y cierre. No iniciado; requiere orden expresa
+para comenzar.
 
 Estado:
 
-En curso. 99.1 a 99.7 cerrados; 99.8 pendiente y no iniciado.
+En curso. 99.1 a 99.8 tecnicamente cerrados; 99.9 no iniciado.
 
 Evidencia de cierre de 99.4:
 
@@ -1487,8 +1499,8 @@ Evidencia de cierre de 99.4:
   puede sobrevivir hasta su TTL maximo actual de 60 minutos. No se incorporo
   `credential_version`; las 656 revocaciones legacy permanecen sin cleanup y
   su retirada corresponde a la transicion/99.9;
-- Google Auth no fue implementado; solo se preparo el contrato de sesion para
-  el metodo `google`;
+- 99.4 preparo el contrato de sesion para el metodo `google`; su consumo
+  funcional fue implementado posteriormente por 99.8;
 - validacion final: backend 568 OK/6 skips, MySQL aislado ET99.4 7/7, E2E
   MySQL 1/1, frontend/PWA contractual 20/20, schema 37/37 y
   `git diff --check` correcto.
@@ -1520,6 +1532,35 @@ Evidencia de cierre de 99.7:
 - el defecto intermitente `session_timestamp_mismatch` quedo corregido mediante
   timestamps UTC canonicales a segundos, NumericDate explicito y comparacion
   exacta, con round-trip MySQL y validacion PWA movil aprobados.
+
+Evidencia de cierre tecnico de 99.8:
+
+- backend mantiene a `Usuario` como identidad y a `ExternalIdentity`,
+  `FeedGoSession`, `PasswordCredential`, aceptaciones legales, perfil y
+  capabilities bajo owners FeedGo; Google se resuelve solo por subject estable
+  y nunca por email;
+- login/signup, link y reauth validan Authorization Code, PKCE S256, `state`,
+  `nonce`, issuer, audience/`azp`, firma, algoritmo, expiracion, emision,
+  `subject`, email y `email_verified`, con replay y purpose isolation cubiertos;
+- Login, Registro y Seguridad y acceso consumen availability y metodos
+  backend-derived; los resultados tecnicos separados canjean handles de un uso
+  sin poner JWT, tokens Google ni purpose en la URL;
+- reauth password y Google rotan SID/JWT; unlink protege el ultimo metodo y
+  revoca solamente las sesiones Google asociadas; una cuenta Google-only puede
+  agregar `PasswordCredential` sin password ficticio;
+- el gate MySQL aislado finalizo 11/11 OK sobre `mitienda_stage97_test`, con
+  foundation, nulabilidad del hash legacy, migraciones clean/partial e
+  idempotentes, transacciones y handles one-use, callbacks concurrentes de
+  login/link, unicidad concurrente del subject Google y checks de reauth;
+- `GOOGLE_IDENTITY_ENABLED=False` permanece como estado operativo. El cierre
+  tecnico no autoriza Google ON. Google Cloud, consentimiento/test users cuando
+  corresponda, client ID/secret, HTTPS, DNS, proxy/topologia publica, redirect
+  URI exacta, secret management, redaccion de query strings OAuth y una prueba
+  real controlada son gates operativos pendientes;
+- la auditoria profesional preproduccion no confirmo vulnerabilidades CRITICAL,
+  pero identifico findings y blockers para remediar antes de Internet. La
+  matriz completa y sus gates pertenecen a un bloque documental posterior; no
+  se presentan como resueltos por el cierre de 99.8.
 
 ### ☐ ETAPA 100
 
@@ -1567,6 +1608,10 @@ Division maxima sugerida:
 - 100.4 - staging aislado, reset, accesos y providers de prueba;
 - 100.5 - observabilidad base y correlacion de evidencia;
 - 100.6 - automatizacion reproducible, runbook y gate de fundacion.
+
+Esta etapa debe producir evidencia para `SUPPLY-01`, `SUPPLY-02`, `RUNTIME-01`
+y `CICD-01`, sin declarar cerrados los gates de infraestructura real ni
+duplicar la matriz central de `15_LEGAL_AND_OPERATIONAL`.
 
 Estado:
 
@@ -1819,6 +1864,9 @@ Division maxima sugerida:
 - 108.5 - compatibilidad, accesibilidad y escenarios adversos;
 - 108.6 - gate integral de calidad y cierre de brechas.
 
+La matriz y las regresiones de esta etapa deben aportar evidencia a
+`AUTHZ-01` y `EXTERNAL-VAL-01`, incluida la matriz negativa BOLA/IDOR.
+
 Estado:
 
 Pendiente.
@@ -1858,6 +1906,12 @@ Division maxima sugerida:
 - 109.4 - secretos, dependencias, SAST, SCA y supply chain;
 - 109.5 - DAST y pentest manual controlado;
 - 109.6 - remediacion, retest y cierre formal de riesgos.
+
+Esta etapa consume el registro `15_LEGAL_AND_OPERATIONAL` 27.8.1. En
+particular, 109.2 cubre `AUTH-SENSITIVE-01`, `AUTH-BEARER-01` y `AUTHZ-01`;
+109.3 cubre `UPLOAD-01`, abuso y APIs costosas; 109.4 cubre `SUPPLY-01` y
+`SUPPLY-02`; 109.5-109.6 cubren `EXTERNAL-VAL-01` y el retest de todos los
+findings aplicables.
 
 Estado:
 
@@ -1906,6 +1960,11 @@ Division maxima sugerida:
 - 110.5 - IA, providers, Payments/Billing y capacidad multimedia;
 - 110.6 - gate integral de confiabilidad y resiliencia.
 
+ET110.2 debe cerrar `RECOVERY-01` con backup externo cifrado y restore
+recurrente; ET110.5 debe aportar capacidad, limites y degradacion para
+`UPLOAD-01`. La evidencia se registra sin reemplazar los owners `docs/16` y
+`docs/17`.
+
 Estado:
 
 Pendiente.
@@ -1923,6 +1982,13 @@ El concepto de GO / NO-GO permanece vigente, pero no esta asociado a un numero
 actual. Dominio, DNS, hosting, HTTPS, API/CORS productivos, secretos,
 observabilidad, rollback, soporte, smoke y estrategia de apertura se resolveran
 solo dentro de ese proceso futuro documentado.
+
+Esa evaluacion debe consumir la checklist unica `SECURITY GO` de
+`15_LEGAL_AND_OPERATIONAL` 28.6. Mientras exista un item obligatorio `FAIL` o
+`BLOCKED`, un `HIGH` abierto o no haya decision humana explicita, FeedGo
+permanece `NO-GO`. Los gates de infraestructura `HTTP-EDGE-01`, `DB-SEC-01`,
+`INFRA-01` y, si se habilita Google, `GOOGLE-OPS-01`, solo pueden cerrarse con
+evidencia del entorno real.
 
 ### ☐ ETAPA 111
 

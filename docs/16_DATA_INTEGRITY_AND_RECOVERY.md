@@ -23,6 +23,50 @@ privacidad, retencion y operacion desde la perspectiva legal y de compliance.
 
 No contiene dumps, credenciales, secretos ni procedimientos con contrasenas.
 
+## Checkpoint de integridad de identidad en ETAPA 99.8
+
+ET99.8 completo la transicion tecnica de Google Identity sobre las estructuras
+aditivas de identidad. `PasswordCredential` conserva la credencial de password;
+`ExternalIdentity` identifica Google exclusivamente mediante
+`(provider, provider_subject)`; `FeedGoSession` conserva SID, metodo real de
+autenticacion, expiracion y revocacion bajo ownership FeedGo.
+
+`oauth_authorization_transactions` persiste la correlacion de los purposes
+`login`, `signup`, `link` y `reauth`, digests de `state` y `nonce`, verifier PKCE
+solo durante el lifecycle activo, expiracion y consumo terminal. Link y reauth
+quedan ligados a Usuario y sesion FeedGo; signup queda ligado a la evidencia
+legal aplicable. `oauth_session_delivery_handles` persiste solamente el digest
+del handle, purpose, referencia al resultado, expiracion breve y consumo unico;
+no persiste JWT, access token, refresh token, ID token completo ni payload OIDC.
+`account_action_rate_limits` continua como owner persistente compartido de los
+limites de acciones de cuenta e identidad.
+
+El gate MySQL aislado se ejecuto exclusivamente sobre
+`mitienda_stage97_test` y finalizo 11/11 OK. La evidencia cubrio
+`usuarios.hashed_password` nullable, foundation y migraciones clean/partial e
+idempotentes, transaccion OAuth one-use, callbacks concurrentes de login y link
+con unico ganador, unicidad concurrente del subject Google con exactamente un
+ganador, migracion OIDC, handles de entrega one-use y migracion/checks de
+reauth. Este gate valida schema, constraints, migraciones y concurrencia de
+ET99.8; no constituye backup, restore ni evidencia de recuperacion productiva.
+
+Google permanece operativamente deshabilitado mediante
+`GOOGLE_IDENTITY_ENABLED=False`. Las filas de identidad y sesion que existan
+son datos criticos no regenerables durante su vigencia; deshabilitar nuevas
+altas no autoriza borrarlas ni inventar metodos alternativos.
+
+El gate MySQL 11/11 es evidencia de ET99.8, no evidencia de seguridad ni
+recuperacion productiva. Antes de Internet, `DB-SEC-01` exige DB no publica,
+red/firewall controlados, TLS cuando corresponda, credenciales separadas por
+entorno y usuarios runtime, migracion y backup con minimo privilegio. El
+runtime no debe poder administrar la instancia ni destruir backups.
+
+`RECOVERY-01` permanece `HIGH` y abierto: el cierre requiere backup automatizado
+fuera del mismo host, cifrado, credencial separada, retencion aprobada, restore
+completo probado, RPO/RTO medidos y evidencia periodica. Los scripts y pruebas
+locales de ETAPA 92 no satisfacen por si solos ese gate. Estado y criterio
+central: `15_LEGAL_AND_OPERATIONAL` 27.8.1; checklist: `SG-07` y `SG-08`.
+
 ## Checkpoint de integridad social en ETAPA 98
 
 El bloque correctivo incidental de ETAPA 98 fija dos fronteras distintas:
@@ -132,8 +176,11 @@ verificables y restaurables.
 | ------- | ----- | ---------- | ------------- | ------------ | ------- | ------------ | ------------------- | ------------- |
 | Usuarios | `usuarios` | critica | Usuario | identidad, credenciales, perfil privado | fisico restringido por dependencias y cascadas | comercios, social, embeddings, aceptaciones, denuncias | critica | No regenerable. Contiene datos personales y credenciales hasheadas. |
 | Identidad | `password_credentials` | critica | Credencial de password | hash y version de credencial | cascada subordinada al usuario | usuarios | critica | No regenerable. Backfill inicial copia exactamente el hash legacy; no almacena password plano. |
-| Identidad | `external_identities` | critica | Identidad externa | provider, subject y snapshots minimos | cascada subordinada al usuario | usuarios | critica | No regenerable. `(provider, provider_subject)` es unico; permanece vacia hasta integrar Google. |
-| Identidad | `feedgo_sessions` | alta | Sesion FeedGo | sesion interna temporal y revocacion | cascada subordinada al usuario; referencia externa nullable | usuarios, external_identities | alta | No regenerable durante su vigencia. Permanece vacia y no reemplaza JWT/revocacion legacy en la fundacion inicial. |
+| Identidad | `external_identities` | critica | Identidad externa | provider, subject y snapshots minimos | cascada subordinada al usuario | usuarios | critica | No regenerable. `(provider, provider_subject)` es unico y `(usuario_id, provider)` impide dos identidades Google para el mismo Usuario. |
+| Identidad | `oauth_authorization_transactions` | alta | Correlacion OAuth FeedGo | purpose, digests, verifier PKCE, binding legal/Usuario/SID, expiracion y consumo | terminal y expirable; hija del usuario/sesion cuando aplica | usuarios, feedgo_sessions | alta | No contiene tokens Google. `state`, `nonce`, purpose y consumo one-use protegen el flujo. |
+| Identidad | `oauth_session_delivery_handles` | alta | Entrega de resultado OAuth | digest del handle, purpose, resultado referenciado, expiracion y consumo | terminal y expirable; subordinada a transaccion/sesion | oauth_authorization_transactions, feedgo_sessions | alta | No persiste JWT ni payload OIDC; los handles son opacos, breves, atomicos y no intercambiables entre purposes. |
+| Identidad | `feedgo_sessions` | alta | Sesion FeedGo | SID, metodo de autenticacion, expiracion y revocacion | cascada subordinada al usuario; referencia externa nullable | usuarios, external_identities | alta | No regenerable durante su vigencia. Password y Google emiten sesiones FeedGo; unlink revoca selectivamente las asociadas a la identidad eliminada. |
+| Seguridad | `account_action_rate_limits` | alta | Limites persistentes de identidad | bucket pseudonimizado, ventana y consumo | expirable segun owner | acciones de cuenta e identidad | alta | Autoridad persistente para limites compartidos; no debe almacenar IP o PII en claro. |
 | Comercios | `comercios` | critica | Comercio | perfil comercial publico y ownership | soft delete por `activo`; FK con cascadas fisicas | publicaciones, historias, horarios, agenda, metricas, embeddings | critica | No regenerable; eje de ownership. |
 | Publicaciones | `publicaciones` | critica | Publicacion | contenido publico/comercial | soft delete por `is_activa`; cascada al borrar comercio | historias, likes, guardados, feed, busqueda | critica | No regenerable; contenido visible. |
 | Historias | `historias` | alta | Historia | contenido publico temporal | soft delete por `is_activa`; expiracion; cascada al borrar comercio | vistas, likes, denuncias | alta | Media publica; puede vencer pero no es automaticamente regenerable. |

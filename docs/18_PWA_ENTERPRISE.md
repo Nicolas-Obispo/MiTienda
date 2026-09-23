@@ -717,6 +717,50 @@ Wall no modifica el firewall network-only de APIs privadas y no puede depender
 de mutaciones offline o Background Sync. `ActiveLayer` conserva el ownership de
 backdrop, foco, inertness, scroll lock y restauracion de foco.
 
+## Google Identity, rutas tecnicas y cache
+
+Las integraciones frontend de ET99.8 conservan el firewall PWA existente. Toda
+API privada, request con `Authorization` y mutacion de identidad es
+`network-only`; el Service Worker no puede responderla desde cache, diferirla,
+encolarla ni fabricar exito offline.
+
+Las rutas tecnicas frontend son navegaciones SPA, no endpoints cacheables de
+identidad:
+
+- login/signup: `/auth/google/resultado?handle=<opaco>` canjea exclusivamente
+  mediante `POST /usuarios/google/session`;
+- reauth: `/auth/google/reauth-resultado?handle=<opaco>` canjea exclusivamente
+  mediante `POST /usuarios/google/reauth/session`;
+- link vuelve al `return_to` interno validado por backend.
+
+El purpose procede de la transaccion backend y no se agrega a la URL. Los
+handles de login/signup y reauth no son intercambiables y frontend no los
+decodifica ni infiere su tipo. El handle se captura en memoria efimera, se
+elimina de la URL mediante navegacion `replace` antes del canje y se consume una
+sola vez sin retry automatico. JWT FeedGo no puede ingresar en precache, Cache
+Storage, IndexedDB, TanStack Query, Background Sync ni URLs. Tokens Google,
+payloads OIDC, handles, passwords e intenciones sensibles de reauth tampoco
+pueden persistirse en `localStorage` o `sessionStorage`. Tras una reauth Google,
+la persona regresa a Seguridad y acceso y confirma nuevamente la operacion; la
+intencion sensible original no se persiste.
+
+Estas rutas amplian solamente el reconocimiento de navegacion SPA. No modifican
+precache, lifecycle, estrategia de actualizacion, caches privadas ni el
+tratamiento network-only de APIs y mutaciones.
+
+El firewall PWA no elimina el riesgo bearer del token que la aplicacion web
+conserva actualmente en `localStorage`. `AUTH-BEARER-01` exige una decision
+explicita de transporte/storage, CSP y evidencia XSS antes de produccion; no se
+considera resuelto por mantener JWT fuera de Cache Storage. Cualquier evolucion
+debe conservar un unico owner de sesion y no mover tokens a URLs, logs,
+precache, IndexedDB o colas offline.
+
+El gate `SG-16` requiere una regresion sobre el artefacto desplegado que
+demuestre APIs privadas, `Authorization` y mutaciones siempre network-only;
+rutas tecnicas SPA operativas; y ausencia de JWT, handles, tokens Google y
+datos privados en caches. Los estados oficiales de `AUTH-BEARER-01` y `SG-16`
+pertenecen a `15_LEGAL_AND_OPERATIONAL` 27.8.1 y 28.6.
+
 ## Criterio final de aprobacion
 
 ETAPA 96 queda aprobada con sus tres sprints cerrados, arquitectura por capas,

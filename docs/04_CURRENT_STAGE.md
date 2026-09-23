@@ -559,8 +559,8 @@ Estado de continuidad:
 
 - Ultima etapa cerrada: ETAPA 98 - Correccion y Pulido Visual del Frontend.
 - Etapa vigente: ETAPA 99 - Identidad, Registro y Autenticacion. Sus bloques
-  99.1 a 99.7 quedan formalmente cerrados. El siguiente sprint oficial es
-  99.8 - Google, linking y cuentas Google-only, pendiente y no iniciado.
+  99.1 a 99.8 quedan tecnicamente cerrados. El siguiente sprint oficial es
+  99.9 - Contract, limpieza legacy y cierre, no iniciado.
 - Checkpoint intermedio aprobado: sistema visual Liquid consolidado y bloque
   correctivo incidental de publicaciones e interacciones validado. Este
   checkpoint no constituyo por si solo el cierre posterior de ETAPA 98.
@@ -586,11 +586,11 @@ Estado de continuidad:
   capacidad para crear o administrar espacios y publicar contenido asociado.
   La cuenta basica no excluye automaticamente a menores de 18 anos; la politica
   vigente exige 18 anos o mas para esas capacidades de Espacios. ETAPA 99,
-  ahora vigente con 99.1 a 99.7 cerrados y 99.8 pendiente, absorbe
-  `fecha_nacimiento` privada y nullable, perfil y
-  capabilities backend, borrador seguro de Registro y flujo Google conforme a
-  `DEC-048`; el backend de Espacios conserva el enforcement. No se implemento
-  ninguna de estas funciones en ETAPA 98, los documentos publicos `v1`
+  ahora vigente con 99.1 a 99.8 tecnicamente cerrados y 99.9 no iniciado,
+  incorporo `fecha_nacimiento` privada y nullable, perfil y capabilities
+  backend, borrador seguro de Registro y flujo Google conforme a `DEC-048`; el
+  backend de Espacios conserva el enforcement. No se implemento ninguna de
+  estas funciones en ETAPA 98, los documentos publicos `v1`
   permanecen intactos y la revision juridica profesional previa al lanzamiento
   sigue siendo bloqueante para el lanzamiento.
 - Diseño futuro formalizado durante ETAPA 98: `DEC-058` y
@@ -742,7 +742,7 @@ Estado de continuidad:
   en `frontend/.pwa-fixtures/story-video-case-b.html` y la investigacion pasa a
   ETAPA 124 - Compatibilidad Multimedia iOS/Safari/PWA.
 - ETAPA 99 - Identidad, Registro y Autenticacion se encuentra en curso con 99.1
-  a 99.7 cerrados. El sprint 99.8 es el siguiente oficial, pendiente y no
+  a 99.8 tecnicamente cerrados. El sprint 99.9 es el siguiente oficial, no
   iniciado; la compatibilidad JWT legacy permanece hasta su retiro gobernado.
 - FeedGo Clasificados queda incorporado documentalmente como vertical futura
   de primer nivel en ETAPAS 101 a 105; ETAPAS 106 y 107 preparan Plataforma
@@ -761,16 +761,17 @@ En curso.
 
 Bloque vigente:
 
-99.8 - Google, linking y cuentas Google-only. Pendiente y no iniciado.
+99.9 - Contract, limpieza legacy y cierre. Siguiente sprint oficial, no
+iniciado.
 
 Objetivo inmediato:
 
-ET99.7 queda cerrada tecnica y funcionalmente. El siguiente trabajo es ET99.8:
-Google, linking y cuentas Google-only, sin iniciar cleanup legacy.
+ET99.8 queda tecnicamente cerrada y validada. El siguiente trabajo es ET99.9:
+contract, limpieza legacy y cierre; este sprint no fue iniciado.
 
 Restricciones:
 
-- no iniciar ET99.9;
+- no iniciar ET99.9 sin orden expresa;
 - no convertir Google en owner de identidad, sesion o autorizacion;
 - no aplicar auto-link por coincidencia de email;
 - no persistir edad ni inferir capabilities en frontend;
@@ -818,8 +819,9 @@ legacy. Logout revoca la sesion nueva sin persistir el bearer completo. Reset
 revoca todas las sesiones FeedGo sin auto-login; el cambio autenticado con JWT
 nuevo conserva la sesion actual y revoca las demas, mientras el cambio con JWT
 legacy revoca las sesiones FeedGo existentes sin migrar el token en caliente.
-Google Auth no fue implementado: solo queda preparado el contrato de sesion
-para el metodo `google`.
+Desde 99.8, Google Auth crea y rota sesiones mediante el mismo owner
+`FeedGoSession`; Google no emite la sesion FeedGo y permanece operativamente
+deshabilitado.
 
 La validacion final registro backend completo 568 OK y 6 skips, MySQL aislado
 ET99.4 7/7, E2E MySQL 1/1, frontend/PWA contractual 20/20, schema 37/37 y
@@ -894,15 +896,66 @@ El contrato de lanzamiento exige provincia, ciudad, fecha de nacimiento y
 telefono E.164 validos, mas email verificado. `telefono_verified_at` no bloquea
 perfil ni capabilities; la infraestructura OTP queda future-ready y Twilio no
 es requisito ni provider activo. La cuenta basica continua disponible con
-perfil incompleto, sin grandfathering. ETAPA 99 global sigue abierta y 99.8 es
-el siguiente sprint oficial, pendiente y no iniciado.
+perfil incompleto, sin grandfathering. ETAPA 99 global sigue abierta y 99.9 es
+el siguiente sprint oficial, no iniciado.
+
+Estado de cierre tecnico de 99.8:
+
+ET99.8 implemento Google OIDC para login y signup, cuentas Google-only,
+vinculacion y desvinculacion explicitas, alta posterior de
+`PasswordCredential`, reautenticacion reciente y administracion de metodos de
+acceso. `Usuario FeedGo` conserva identidad, aceptacion legal, perfil,
+capabilities, sesiones y JWT. Google se identifica exclusivamente por
+`(provider, provider_subject)` y la coincidencia de email nunca autoriza
+auto-link ni autenticacion de otra cuenta.
+
+El flujo usa Authorization Code, PKCE S256, `state`, `nonce`, scopes
+`openid email`, validacion OIDC backend y transacciones de un uso. Los
+resultados de login/signup y reauth se entregan mediante handles opacos de
+digest persistido, TTL breve y consumo unico, aislados por purpose. Login y
+signup vuelven a `/auth/google/resultado` y canjean solamente en
+`POST /usuarios/google/session`; reauth vuelve a
+`/auth/google/reauth-resultado` y canjea solamente en
+`POST /usuarios/google/reauth/session`; link conserva un `return_to` interno
+validado.
+
+Las operaciones sensibles exigen evidencia backend de reautenticacion de hasta
+600 segundos. Password y Google rotan SID/JWT mediante una nueva
+`FeedGoSession`; unlink protege el ultimo metodo y revoca selectivamente las
+sesiones Google de la identidad eliminada. `/usuarios/me` deriva
+`authentication_methods` desde `PasswordCredential` y `ExternalIdentity`, sin
+persistir esos booleanos ni exponer subjects externos.
+
+El gate MySQL aislado de ET99.8 finalizo 11/11 OK sobre
+`mitienda_stage97_test`. Cubrio nulabilidad del hash legacy, migraciones clean,
+partial e idempotentes, transacciones OAuth de un uso, callbacks concurrentes
+de login y link con unico ganador, unicidad concurrente del subject Google,
+handles de entrega de un uso y migracion/checks de reauth. Esta evidencia no
+equivale a backup o restore productivo.
+
+`GOOGLE_IDENTITY_ENABLED=False` permanece como estado operativo. El cierre
+tecnico no autoriza Google ON. Antes de habilitarlo deben configurarse y
+validarse el cliente OAuth de Google Cloud, consentimiento/test users cuando
+corresponda, client ID/secret, HTTPS, DNS, topologia publica y proxy, redirect
+URI exacta, gestion de secretos, redaccion de query strings OAuth en access
+logs y una prueba OAuth real controlada.
+
+La auditoria profesional preproduccion posterior no confirmo vulnerabilidades
+`CRITICAL`, pero FeedGo permanece `NO-GO` para Internet. El registro central
+vive en `15_LEGAL_AND_OPERATIONAL` `27.8.1` y la checklist unica en `28.6`.
+Antes de cerrar ET99 deben resolverse `AUTH-LEGACY-01`, `AUTH-ABUSE-01` y
+`AUTH-POLICY-01` mediante ET99.9. Los findings `UPLOAD-01`, `RECOVERY-01` y
+`SUPPLY-01` permanecen `HIGH` abiertos; el resto de gates preproduccion sigue
+`FAIL` o `BLOCKED` hasta evidencia real. Google ON conserva su gate separado
+`GOOGLE-OPS-01`; el cierre tecnico de 99.8 no declara `SECURITY GO`.
 
 Resultado de la primera implementacion:
 
 - `usuarios` incorpora de forma nullable `email_canonical`,
   `email_verified_at`, `email_verification_source` y `fecha_nacimiento`;
-- se incorporan `password_credentials`, `external_identities` y
-  `feedgo_sessions`, registradas en metadata pero todavia sin consumo funcional;
+- se incorporaron `password_credentials`, `external_identities` y
+  `feedgo_sessions`; desde 99.8 las dos ultimas participan funcionalmente en
+  identidad Google y sesiones FeedGo;
 - el preflight de 15 usuarios encontro 15 emails canonicos unicos, sin
   colisiones ni emails invalidos;
 - el backfill copio exactamente los 15 hashes legacy y completo los 15 emails
@@ -1048,8 +1101,8 @@ Pendientes derivados:
   operacion manual que no forman parte de observabilidad base.
 - ETAPA 98: correccion y pulido visual completo del frontend, posterior a PWA
   y operacion minima y previo al lanzamiento controlado.
-- ETAPA 99: identidad, registro y autenticacion, vigente con 99.1 a 99.7
-  cerrados y 99.8 pendiente/no iniciado.
+- ETAPA 99: identidad, registro y autenticacion, vigente con 99.1 a 99.8
+  tecnicamente cerrados y 99.9 como siguiente sprint, no iniciado.
 - ETAPA 100: fundacion de validacion y staging aislado.
 - ETAPAS 101 a 105: FeedGo Clasificados, desde dominio y experiencia hasta
   Search, IA multimodal, Historias, promocion y beneficios.
@@ -1090,7 +1143,8 @@ El trabajo previo a ETAPA 97 queda formalmente cerrado. ETAPA 96 permanece
 cerrada. ETAPA 97 - Administracion Operativa Minima queda formalmente cerrada
 con 97.1, 97.2, 97.3, 97.4, 97.5 y 97.6 cerradas. ETAPA 98 - Correccion y
 Pulido Visual del Frontend queda formalmente cerrada. ETAPA 99 es la etapa
-oficial vigente con 99.1 a 99.7 cerrados y 99.8 pendiente/no iniciado.
+oficial vigente con 99.1 a 99.8 tecnicamente cerrados y 99.9 como siguiente
+sprint, no iniciado.
 
 ## Estado ETAPA 92
 

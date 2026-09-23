@@ -19,7 +19,6 @@ uploads/storage con impacto operativo.
 ## 1. Objetivo
 
 Este documento gobierna la arquitectura operativa de FeedGo.
-
 Define contratos, politicas y limites para observar, diagnosticar y operar el
 sistema sin acoplarlo prematuramente a proveedores concretos.
 
@@ -358,6 +357,9 @@ Prohibido registrar, salvo excepcion aprobada y sanitizada:
 - archivos `.env`;
 - request bodies completos;
 - response bodies completos;
+- URL o query string raw cuando pueda contener material sensible;
+- OAuth/OIDC `code`, `state`, handle, `nonce` o verifier/challenge PKCE;
+- header `Authorization` o cualquier bearer;
 - datos bancarios;
 - documentos personales;
 - direcciones privadas innecesarias;
@@ -380,6 +382,12 @@ Tratamiento por dato:
 | Rutas del sistema | No registrar rutas absolutas sensibles. |
 | Excepciones | Registrar clase segura y mensaje sanitizado. |
 | Payloads | No registrar payload completo; registrar campos permitidos y tamanos. |
+
+Access logs, reverse proxies, CDN y APM deben registrar metodo, ruta
+normalizada y status sin conservar queries sensibles. La redaccion debe ocurrir
+antes de emitir o exportar el evento; borrar despues no constituye control
+suficiente. Los identificadores opacos de correlacion no pueden derivarse de
+codes, handles, tokens ni PII.
 
 ## 9. Separacion de dominios observables
 
@@ -434,6 +442,15 @@ responsabilidad.
 | `FEEDGO_BACKUP_DIR` | Destino backups | media | obligatoria para backups | fuera del repo/escribible | degradar backup | si local dev | estado, no contenido |
 | `FEEDGO_RESTORE_EVIDENCE_DIR` | Evidencia restore | media | obligatoria para restore | fuera del repo/escribible | degradar restore | si local dev | estado |
 | Debug flag | Diagnostico local | media | prohibido en produccion | false en produccion | impedir produccion | no | booleano seguro |
+| Trusted hosts / proxy | Validar host y cadena de proxy confiable | media | obligatoria en produccion | allowlist y proxies explicitos | impedir arranque o trafico | no | cantidad, no valores internos |
+| Google availability | Informar solo disponibilidad operativa | baja | obligatoria si existe integracion | flag y config segura completa | `false` fail-closed | `false` | booleano; nunca secretos ni razones internas |
+
+En produccion, errores y access logs no exponen stack, SQL, configuracion,
+credenciales ni query completa. El proxy de confianza se define de forma
+explicita; headers reenviados por clientes no confiables no determinan IP,
+scheme, host ni rate-limit. La disponibilidad Google es un booleano
+backend-derived y no revela client ID, secret, HMAC, discovery ni redirect
+internos.
 
 ## 11. Modelo de salud
 
@@ -510,8 +527,19 @@ Eventos excepcionales:
 - configuracion critica invalida;
 - tasa elevada de 5xx;
 - fallos repetidos de autenticacion/autorizacion.
+- intentos de login password aceptados, rechazados y limitados por categoria
+  pseudonimizada;
+- rate limits consumidos y bloqueados por owner/ruta normalizada;
+- fallos OAuth por fase segura (authorization, callback, validation, exchange),
+  sin `code`, `state`, handle, subject, nonce ni PKCE;
+- bytes de upload procesados/rechazados, rechazos por causa segura y uso de
+  cuota, sin filename original ni owner de alta cardinalidad.
 
 No se define almacenamiento ni exportacion en 93.1.
+
+Labels y dimensiones deben pertenecer a catalogos acotados. Email, IP raw,
+user-agent completo, URL/query, IDs arbitrarios, filenames y mensajes de error
+no son labels permitidas: generan PII y cardinalidad peligrosa.
 
 ## 13. Alertas
 
@@ -544,6 +572,10 @@ Casos minimos que justifican alerta futura:
 - storage/uploads no escribible;
 - configuracion critica invalida;
 - proceso operativo recurrentemente fallido.
+- tasa anomala de login fallido, credential stuffing o rate-limit saturado;
+- aumento de fallos OAuth por fase o callback/replay invalido;
+- rechazos, consumo de cuota o crecimiento de storage de uploads fuera de
+  umbrales aprobados.
 
 No se implementa proveedor externo en 93.1.
 
@@ -555,7 +587,8 @@ Estado actual auditado:
   local.
 - `backend/app/modules/media/routes/media_routers.py` requiere JWT para
   `POST /media/upload`.
-- El upload valida MIME permitido y tamano maximo.
+- El upload valida actualmente el `Content-Type` declarado y tamano maximo; no
+  demuestra formato real, magic bytes ni ausencia de contenido poliglota.
 - El archivo se guarda con nombre UUID y se devuelve una ruta publica
   `/uploads/<archivo>`.
 - No existe asociacion persistente del archivo con usuario, comercio,
@@ -577,6 +610,15 @@ Destino arquitectonico:
 - una entidad nueva solo se justifica si su responsabilidad unica es gobernar
   archivos, asociaciones, lifecycle y limpieza;
 - no debe implementarse cloud storage ni proveedor externo sin etapa futura.
+
+Antes de aceptar uploads productivos debe cerrarse `UPLOAD-01`: detectar firma
+y formato real mediante parser seguro; procesar en streaming acotado; aplicar
+limites de request, tamano, cantidad y cuota; rechazar traversal, polyglots,
+SVG/HTML ejecutable, bombs y archivos malformados; usar nombres y rutas
+generados; persistir ownership/lifecycle; limpiar huerfanos; y servir media con
+headers, tipo y disposicion seguros. La suite adversarial debe probar RAM,
+storage, concurrencia, autorizacion y cleanup. El criterio y estado central
+pertenecen a `15_LEGAL_AND_OPERATIONAL` (`UPLOAD-01`, `SG-05`).
 
 La resolucion futura debera reutilizar logging, errores, Request Context,
 health, metricas y alertas ya implementados, sin crear tablas ni modelos antes
@@ -1024,7 +1066,7 @@ Acciones:
 
 1. Distinguir rechazo esperado por tipo o tamano de falla de storage.
 2. Verificar permisos del directorio de uploads.
-3. Revisar configuracion de tamano permitido y MIME permitido.
+3. Revisar limites y contrastar `Content-Type` declarado con formato real.
 4. Confirmar que la respuesta al usuario sea clara y segura.
 5. Registrar como deuda operativa si se detectan archivos huerfanos o falta de
    asociacion persistente.
@@ -1034,6 +1076,34 @@ No hacer:
 - aceptar tipos arbitrarios;
 - guardar nombres originales sensibles en observabilidad;
 - crear tablas de archivos sin auditoria del modelo de datos.
+
+### 23.7 Credential stuffing o fuerza bruta de login
+
+Senales: crecimiento sostenido de fallos password, rate limits activados,
+distribucion anomala por identidad pseudonimizada o origen confiable y aumento
+de recovery. Acciones: confirmar que el limite persistente consume fallos,
+acotar abuso en edge/backend, preservar evidencia sanitizada, revisar cuentas
+afectadas y revocar sesiones solo con criterio aprobado. No registrar emails,
+passwords, JWT o IP raw; no deshabilitar rate limits para recuperar servicio.
+
+### 23.8 Fuga de material OAuth en URL o logs
+
+Senales: deteccion de `code`, `state`, handle, nonce, PKCE o bearer en access
+logs, APM, analytics, referers o soporte. Acciones: contener exportacion y
+acceso, preservar evidencia minima, invalidar transacciones/handles, revocar o
+rotar credenciales cuando corresponda, verificar redaccion en toda la cadena y
+retestear login/signup/link/reauth. No copiar valores al incidente ni asumir
+que TTL breve elimina el riesgo.
+
+### 23.9 Upload malicioso o agotamiento de media
+
+Senales: parser failures, discrepancia Content-Type/formato, crecimiento de RAM
+o storage, cuota excedida, payload malformado o contenido ejecutable. Acciones:
+aislar el objeto sin servirlo, bloquear nuevas referencias, preservar hash y
+metadata minima, identificar recursos afectados, limpiar mediante lifecycle
+aprobado y ejecutar la suite adversarial. No abrir el archivo en herramientas
+no aisladas, no conservar nombre original ni borrar evidencia antes de decidir
+contencion.
 
 ## 24. Cierre tecnico de ETAPA 93
 

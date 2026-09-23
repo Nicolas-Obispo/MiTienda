@@ -9,6 +9,83 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## Recuperacion documental D99.8-REC y DSEC-PREPROD
+
+**Estado:** Formalizacion documental posterior al cierre tecnico de ET99.8;
+sin cambios funcionales y sin `SECURITY GO`
+
+- Se sincronizan `CURRENT_STAGE`, Roadmap, decisiones, integridad/recovery y
+  PWA con el cierre tecnico de ET99.8, Google operativamente OFF y ET99.9 como
+  siguiente sprint oficial no iniciado.
+- La auditoria profesional preproduccion queda formalizada en
+  `docs/15_LEGAL_AND_OPERATIONAL.md` mediante 20 findings con ID, severidad,
+  naturaleza, evidencia, owner, etapa/gate, estado y criterio objetivo de
+  cierre, mas la checklist unica `SG-01` a `SG-17`.
+- No se confirmaron vulnerabilidades `CRITICAL`. FeedGo permanece `NO-GO` para
+  Internet: hay findings `HIGH` abiertos y controles obligatorios en `FAIL` o
+  `BLOCKED`; Google ON conserva un gate operativo separado.
+- Se integran por patches localizados en Observabilidad reglas de redaccion de
+  queries OAuth, metricas/alertas de abuso, requisitos de upload y runbooks de
+  credential stuffing, fuga OAuth y upload malicioso, preservando el cambio
+  local anterior del documento.
+- La revision historica confirma cobertura continua en este CHANGELOG desde
+  ET94 hasta ET99.8. La evidencia de cierre inequivoca incluye `0df2f20`
+  (ET94), `01a1f02` (ET95), `db6708c` (ET96), `9d2405b` (ET97), `89e32a9`
+  (ET98), `519bc9e` (regularizacion documental 99.3-99.7) y los commits
+  `1b884ba` a `43ebb6d` para ET99.8. Las subetapas permanecen detalladas en sus
+  entradas historicas; no se inventaron ni renumeraron etapas.
+- D99.8-REC y DSEC-PREPROD registran estado y gates; no constituyen
+  implementacion, inicio de ET99.9, activacion de Google, despliegue ni decision
+  humana de lanzamiento.
+
+## ETAPA 99.8 - Google OIDC, metodos de acceso y reautenticacion
+
+**Estado:** Cierre tecnico validado; Google permanece operativamente OFF
+
+- `1b884ba` prepara la fundacion Google-only y OAuth sobre `Usuario`,
+  `PasswordCredential`, `ExternalIdentity`, `FeedGoSession` y transacciones
+  persistidas, sin convertir email en identidad externa estable.
+- `bb01491` incorpora login y signup Google OIDC backend con Authlib, scopes
+  `openid email`, Authorization Code, PKCE S256, `state`, `nonce`, validacion
+  OIDC completa, aceptacion legal FeedGo previa al alta, colision segura de
+  email y entrega mediante handle opaco de digest persistido, TTL breve y un
+  solo uso. Google se identifica exclusivamente por
+  `(provider, provider_subject)` y no existe auto-link por email.
+- `78e31af` completa link y unlink explicitos, proteccion del ultimo metodo,
+  revocacion selectiva de sesiones Google, alta de password para cuentas
+  Google-only y `authentication_methods` backend-derived en `/usuarios/me`.
+- `018768e` incorpora availability fail-closed y reautenticacion password o
+  Google con evidencia backend de hasta 600 segundos y rotacion SID/JWT; Google
+  sigue deshabilitado si el flag o la configuracion segura no estan completos.
+- `1d77c74` integra Login y Registro publicos con Google y el canje one-use por
+  la sesion FeedGo, sin SDK Google ni material OAuth persistido en frontend.
+- `1548c94` separa por purpose los resultados tecnicos: login/signup usa
+  `/auth/google/resultado` y `POST /usuarios/google/session`; reauth usa
+  `/auth/google/reauth-resultado` y
+  `POST /usuarios/google/reauth/session`; link conserva `return_to` interno.
+- `30b71b9` incorpora Seguridad y acceso, metodos backend-derived, agregar
+  password, link/unlink y reauth password/Google. Las APIs privadas,
+  `Authorization` y mutaciones permanecen network-only; JWT, tokens Google y
+  handles no ingresan en caches PWA.
+- `43ebb6d` cierra el gate MySQL aislado de ET99.8: 11/11 OK sobre
+  `mitienda_stage97_test`, incluidos hash legacy nullable, foundation y
+  migraciones clean/partial/idempotentes, transacciones OAuth y handles
+  one-use, callbacks concurrentes de login/link, subject Google con exactamente
+  un ganador y migracion/checks de reauth. No constituye prueba de backup o
+  restore productivo.
+- `GOOGLE_IDENTITY_ENABLED=False` permanece como estado operativo. El cierre
+  tecnico no autoriza Google ON: siguen pendientes cliente OAuth de Google
+  Cloud, consentimiento/test users cuando corresponda, client ID/secret, HTTPS,
+  DNS, topologia publica/proxy, redirect URI exacta, secret management,
+  redaccion de query strings OAuth en access logs y una prueba real controlada.
+- La auditoria profesional preproduccion posterior no confirmo
+  vulnerabilidades `CRITICAL`, pero identifico findings y blockers que deben
+  remediarse antes de Internet. Su registro central y checklist SECURITY GO
+  quedaron formalizados posteriormente por DSEC-PREPROD; no se declaran
+  resueltos en este cierre.
+- ETAPA 99 global continua abierta. ET99.9 - Contract, limpieza legacy y cierre
+  es el siguiente sprint oficial y no fue iniciado.
+
 ## ETAPA 99.7 - Enforcement comercial y readiness de lanzamiento
 
 **Estado:** Cerrada tecnica y funcionalmente

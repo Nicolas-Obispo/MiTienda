@@ -453,7 +453,8 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-048
 - Titulo: Identidad FeedGo central con metodos de acceso vinculables
-- Estado: Aprobada para incorporacion futura al roadmap; implementacion no iniciada.
+- Estado: Aprobada e implementada tecnicamente mediante ETAPA 99 hasta 99.8.
+  Google permanece operativamente deshabilitado.
 - Problema: El registro actual necesita evolucionar hacia menor friccion,
   verificacion de email, hardening y proveedores de identidad sin mezclar una
   cuenta personal con el alta de espacios ni crear usuarios duplicados por
@@ -474,10 +475,10 @@ No reemplaza la documentación oficial existente.
   Los datos comerciales, profesionales, de disponibilidad, agenda, catalogo o
   facturacion permanecen en sus dominios y no se vuelven requisitos del
   registro general.
-- Limites: la decision no elige proveedor de correo, no define todavia modelo,
-  codigo, expiracion, OAuth/OIDC, SDK ni migracion. La etapa debe comenzar con
-  auditoria de datos, usuarios existentes, seguridad, abuso, privacidad,
-  proveedores, recuperacion y compatibilidad PWA.
+- Limites: los contratos concretos de modelo, expiracion, OAuth/OIDC,
+  migracion, seguridad y compatibilidad PWA fueron definidos y validados en los
+  sprints de ETAPA 99. La decision no autoriza activar un proveedor real sin sus
+  gates operativos, legales, de secretos, HTTPS y validacion controlada.
 - Roadmap: se incorpora ETAPA 99 - Identidad, Registro y Autenticacion. ETAPAS
   97 y 98 se preservan. Las antiguas ETAPAS 99-112 pasan a 100-113 conservando
   nombre, alcance y orden relativo.
@@ -780,8 +781,8 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-059
 - Titulo: Identidad, perfil y capabilities base de ETAPA 99
-- Estado: Aprobada e implementada hasta ETAPA 99.7; 99.1 a 99.7 cerradas.
-  Google permanece pendiente para 99.8.
+- Estado: Aprobada e implementada tecnicamente hasta ETAPA 99.8; 99.1 a 99.8
+  cerradas tecnicamente. Google permanece operativamente deshabilitado.
 - Identidad: `Usuario FeedGo` es la unica identidad funcional interna y
   conserva su `id` estable y el email principal. `PasswordCredential` es una
   credencial opcional uno a uno; `ExternalIdentity` representa Google mediante
@@ -794,10 +795,36 @@ No reemplaza la documentación oficial existente.
   pero la coincidencia de email nunca autoriza auto-link ni reemplaza prueba de
   control de una cuenta FeedGo existente.
 - Google: se integra como adapter backend con scopes minimos `openid` y
-  `email`. Backend valida code, firma, issuer, audience, expiracion, `state`,
-  `nonce`, PKCE y `subject` segun el flujo aprobado. No confia identidad
-  declarada por frontend ni entrega a Google codigo, DB, sesion FeedGo o
-  capabilities. No persiste tokens o claims externos no necesarios.
+  `email`, Authorization Code y PKCE S256. Backend valida code, firma/JWKS,
+  algoritmo RS256, issuer, audience, `azp`, `exp`, `iat`, `state`, `nonce`,
+  PKCE, `subject`, email y `email_verified`. No confia identidad declarada por
+  frontend ni entrega a Google DB, sesion FeedGo o capabilities. No persiste
+  access token, refresh token, ID token completo ni claims externos no
+  necesarios.
+- Transaccion OAuth: login, signup, link y reauth usan purposes persistidos y
+  no intercambiables. `state` y `nonce` se conservan como digest, el verifier
+  PKCE permanece solo durante el lifecycle activo y cada transaccion es
+  expirable y terminal de un uso. Signup exige aceptacion legal FeedGo previa;
+  link y reauth quedan ligados al Usuario y SID vigentes.
+- Entrega de sesion: callback nunca coloca JWT FeedGo en URL. Login/signup y
+  reauth producen handles opacos CSPRNG con digest persistido, TTL maximo de
+  120 segundos y consumo atomico de un uso. Login/signup regresan a
+  `/auth/google/resultado` y solo canjean en `POST /usuarios/google/session`;
+  reauth regresa a `/auth/google/reauth-resultado` y solo canjea en
+  `POST /usuarios/google/reauth/session`. Link conserva un `return_to` interno
+  validado. Un resultado no puede consumirse bajo otro purpose.
+- Metodos de acceso: linking requiere sesion FeedGo, reautenticacion reciente y
+  confirmacion explicita; nunca usa email. Unlink exige que permanezca otro
+  metodo utilizable y revoca solamente las sesiones Google asociadas a la
+  identidad eliminada. Una cuenta Google-only puede crear una
+  `PasswordCredential` real mediante la politica unica de password, sin
+  password ficticio. `/usuarios/me` deriva `authentication_methods` desde el
+  estado real y no expone provider subject, tokens ni snapshots internos.
+- Reautenticacion: las operaciones sensibles aceptan solamente evidencia
+  backend de control de un metodo dentro de una ventana de 600 segundos.
+  Password y Google crean una nueva `FeedGoSession`, rotan SID/JWT, revocan la
+  sesion original y representan el metodo realmente utilizado; no se persiste
+  un booleano de recent-auth ni se confia en timestamps del frontend.
 - Sesion: password o Google terminan en la misma sesion FeedGo. El contrato
   nuevo referencia Usuario y sesion, conserva version explicita y no congela
   perfil, edad ni autorizacion en JWT. La transicion acepta JWT legados durante
@@ -811,7 +838,8 @@ No reemplaza la documentación oficial existente.
   actual y revoca las demas. JWT legacy conserva temporalmente su blacklist y
   puede sobrevivir hasta 60 minutos tras reset/cambio; no se incorporo
   `credential_version`. La retirada de legacy y sus 656 revocaciones actuales
-  pertenece a la transicion/99.9. Google Auth no esta implementado.
+  pertenece a la transicion/99.9. Desde 99.8, password y Google terminan en
+  `FeedGoSession` y Google nunca emite la sesion funcional.
 - Perfil: `perfil_completo` y `campos_perfil_faltantes` son derivados por un
   unico owner backend. La formula vigente pertenece a `DEC-063` e incorpora
   Provincia, Ciudad, `fecha_nacimiento`, email verificado y telefono privado
@@ -866,16 +894,21 @@ No reemplaza la documentación oficial existente.
   legacy permanecieron owners activos hasta la transicion controlada de 99.2.
 - Gates: el tratamiento de fecha de nacimiento, menores, Google, documentos
   publicos, versionado y reaceptacion conserva la revision juridica profesional
-  previa al lanzamiento de `docs/15_LEGAL_AND_OPERATIONAL.md`. Esta decision no
-  autoriza por si sola activar Google, perfil, capabilities o los contratos
-  nuevos de Login, Registro y sesion.
+  previa al lanzamiento de `docs/15_LEGAL_AND_OPERATIONAL.md`. La implementacion
+  tecnica no autoriza por si sola activar Google ni los flags operativos de
+  email o capabilities.
+- Activacion Google: `GOOGLE_IDENTITY_ENABLED=False` es el estado operativo
+  posterior al cierre tecnico. Antes de Google ON deben validarse cliente OAuth
+  de Google Cloud, consentimiento/test users cuando corresponda, client
+  ID/secret, HTTPS, DNS, topologia publica/proxy, redirect URI exacta, secret
+  management, redaccion de query strings OAuth y una prueba real controlada.
 
 ## DEC-060
 
 - ID: DEC-060
 - Titulo: Descomposicion ejecutable de ETAPA 99
-- Estado: Aprobada documentalmente; 99.1 a 99.7 cerradas; 99.8 pendiente/no
-  iniciada.
+- Estado: Aprobada documentalmente; 99.1 a 99.8 cerradas tecnicamente; 99.9 es
+  el siguiente sprint oficial y no fue iniciado.
 - Decision: ETAPA 99 se ejecuta mediante los nueve sprints oficiales 99.1 a
   99.9 definidos por `docs/05_SEARCH_ROADMAP.md`, en orden obligatorio
   `expand -> backfill -> transicion -> contract`. La cantidad excede la guia
@@ -893,8 +926,8 @@ No reemplaza la documentación oficial existente.
 - Gate inmediato cumplido: 99.2 cerro luego de convertir
   `email_canonical` y `PasswordCredential` en owners efectivos de Registro y
   Login, reparar filas transitorias, preservar rollback legacy y aprobar tests y
-  validacion manual. 99.3 a 99.7 cumplieron sus gates y quedan cerradas; 99.8
-  permanece pendiente y requiere orden expresa.
+  validacion manual. 99.3 a 99.8 cumplieron sus gates tecnicos y quedan
+  cerradas; 99.9 permanece no iniciado y requiere orden expresa.
 
 ## DEC-061
 
@@ -1062,6 +1095,6 @@ No reemplaza la documentación oficial existente.
   permanecen future-ready. Twilio, SMS y WhatsApp reales no estan contratados ni
   activados y no son blocker de lanzamiento. Ningun provider externo posee
   identidad, sesiones, OTP, recovery o autorizacion FeedGo.
-- Continuidad: ET99.7 queda cerrada tecnica y funcionalmente; ETAPA 99 global
-  continua abierta. ET99.8 es el siguiente sprint oficial, pendiente y no
-  iniciado.
+- Continuidad: ET99.8 queda cerrada tecnicamente; ETAPA 99 global continua
+  abierta. ET99.9 es el siguiente sprint oficial y no fue iniciado. El cierre
+  tecnico de Google no autoriza su activacion operativa.

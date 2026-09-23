@@ -124,6 +124,23 @@ reproducible y automatizable sin imponer una plataforma CI/CD concreta antes
 de su auditoria. Secret scanning, SCA, inventario y SBOM se incorporan cuando
 corresponda, evitando herramientas solapadas sin beneficio demostrado.
 
+Antes de Internet, los manifests backend y frontend deben permitir una
+instalacion limpia reproducible sin depender del entorno de un desarrollador
+(`SUPPLY-01`). La estrategia de pins/lock, SCA, secret scanning, SAST, SBOM o
+su `N/A` justificado, y actualizacion/rollback pertenece a `SUPPLY-02`.
+
+El artefacto productivo debe ser reproducible e inmutable, ejecutarse con
+usuario no-root y permisos/filesystem minimos, excluir `.env`, secretos, dumps,
+backups, historial Git y herramientas de desarrollo innecesarias, y exponer
+health/readiness y shutdown controlado (`RUNTIME-01`). El repositorio completo
+no es un artefacto de despliegue.
+
+CI/CD no posee las reglas de negocio: aplica gates reproducibles sobre owners
+existentes. Antes de deploy debe ejecutar tests, lint/build, scans aprobados,
+validacion de migraciones, separacion de secretos/ambientes, identificacion del
+artefacto y rollback probado (`CICD-01`). Los estados y criterios centrales de
+estos findings viven en `15_LEGAL_AND_OPERATIONAL` 27.8.1 y 28.6.
+
 ## Fuente unica de verdad
 
 Cada dato debe tener un unico propietario.

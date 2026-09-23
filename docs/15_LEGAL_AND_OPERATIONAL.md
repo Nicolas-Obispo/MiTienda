@@ -960,6 +960,27 @@ region, entrenamiento, subprocessors, eliminacion, telemetria, seguridad y
 contrato. Ninguna IA acepta riesgos, cierra hallazgos ni reemplaza verificacion
 humana o independiente.
 
+La auditoria profesional preproduccion posterior al cierre tecnico de ET99.8
+no confirmo vulnerabilidades `CRITICAL`. Si confirmo debilidades, riesgos y
+controles pendientes que mantienen a FeedGo en `NO-GO` para Internet. Esta
+conclusion no equivale a `SECURITY GO` ni permite diferir findings `HIGH`.
+
+Para evitar conclusiones imprecisas, el registro central distingue:
+
+- **vulnerabilidad demostrada**: existe evidencia reproducible de una condicion
+  explotable o de un control incumplido;
+- **debilidad arquitectonica**: el contrato o diseno deja una superficie que
+  debe reducirse, aunque no se haya demostrado bypass remoto;
+- **riesgo operativo**: depende de infraestructura, configuracion, credenciales
+  o procedimientos todavia inexistentes;
+- **control pendiente**: falta evidencia objetiva para aprobar el control;
+- **defensa en profundidad**: reduce impacto o probabilidad, pero no sustituye
+  el cierre de una vulnerabilidad o blocker.
+
+La matriz de `27.8.1` es el owner central de los findings preproduccion. Los
+documentos tecnicos conservan el detalle de su dominio y deben referenciar los
+IDs, no mantener matrices paralelas.
+
 ## 21. Logs, observabilidad y auditoria
 
 La arquitectura tecnica de observabilidad y operacion pertenece a
@@ -1313,6 +1334,37 @@ ficticios.
 | Funcion | Riesgo legal | Riesgo usuario | Riesgo empresa | Probabilidad | Impacto | Mitigacion | Bloqueante |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
+### 27.8.1 Registro central de seguridad preproduccion
+
+Clasificacion temporal: `A` resolver localmente antes de cerrar ET99; `B`
+sprint oficial ya previsto; `C` gate preproduccion que requiere infraestructura
+real; `D` gate Google ON; `E` gate SECURITY GO; `F` hardening posterior no
+bloqueante. Una fila puede participar en varios gates, pero conserva un unico
+owner documental principal en esta matriz.
+
+| ID | Severidad | Naturaleza y evidencia | Clasificacion | Owner tecnico | Etapa / gate | Estado actual | Criterio objetivo de cierre |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `AUTH-LEGACY-01` | MEDIUM | Debilidad arquitectonica confirmada: se aceptan JWT legacy sin SID y subsisten ramas `contract == "legacy"`, `_validar_contrato_legacy`, `TokenRevocado`, fallback y dual-write de `Usuario.hashed_password`; no se demostro bypass remoto. | A, B, E | Identidad backend; decision `DEC-059` | ET99.9 / SG-01, SG-03 | ABIERTO | Cero emision y aceptacion de JWT sin SID; cero consumidores legacy; `email_canonical` completo; todo usuario password con `PasswordCredential`; fallback y dual-write retirados; migracion, restore y rollback probados antes de retirar columnas o tablas. |
+| `AUTH-ABUSE-01` | HIGH | Vulnerabilidad de abuso: login password sin anti-automatizacion persistente suficiente; permite credential stuffing/fuerza bruta aunque no sea bypass logico. | A, E | Identidad y rate-limit backend | ET99.9 / SG-02 | ABIERTO; BLOQUEA INTERNET | Limite persistente y pseudonimizado; password incorrecta consume intento; comportamiento fail-closed; tests concurrentes demuestran que no existe bypass trivial ni rollback del consumo. |
+| `AUTH-POLICY-01` | MEDIUM | Control pendiente: politica final de password y oracle/enumeracion en disponibilidad de email requieren cierre conjunto. | A, E | Identidad backend y Producto | ET99.9 / SG-02 | ABIERTO | Politica unica aplicada por owner backend y tests de limites; respuestas y tiempos de disponibilidad/login no revelan de forma util existencia de cuenta; regresion password aprobada. |
+| `AUTH-SENSITIVE-01` | MEDIUM | Control parcial: ET99.8 implemento reauth reciente de 600 s y rate limits para metodos de acceso; falta matriz completa de acciones sensibles/admin. | B, E | Owners de identidad y administracion | ET109.2 / SG-04 | PARCIAL | Matriz de acciones sensibles; sesion vigente y reauth fuerte backend-derived; rate limits persistentes; tests de expiracion, revocacion, concurrencia y permisos para cada accion. |
+| `AUTH-BEARER-01` | MEDIUM | Debilidad arquitectonica: JWT bearer se conserva actualmente en `localStorage`; no se demostro robo, pero un XSS ampliaria impacto. | B, E | Arquitectura frontend e identidad | ET109.2 / SG-03 | ABIERTO | Decision explicita de transporte/storage; CSP y suite XSS; JWT ausente de URL, logs y caches; riesgo residual documentado y aprobado. |
+| `UPLOAD-01` | HIGH | Vulnerabilidad demostrada de superficie: confianza en Content-Type/extension, lectura potencial completa en RAM y ausencia de cuotas/lifecycle suficiente. | B, C, E | Media/storage backend; owner operativo `docs/17` | ET109.3, ET110.5 / SG-05 | ABIERTO; BLOQUEA INTERNET | Magic bytes/formato real; streaming acotado; limites de body/tamano/cantidad/cuota; nombres y rutas seguras; rechazo de traversal, polyglot, SVG/HTML ejecutable y bombs; serving seguro, ownership, cleanup y suite adversarial. |
+| `AUTHZ-01` | MEDIUM | Gap de assurance con impacto potencial alto: falta matriz negativa integral BOLA/IDOR y boundaries owner/admin; no se confirmo bypass. | B, E | Owners de dominio y autorizacion | ET108.2, ET109.2 / SG-04 | BLOCKED por evidencia | Matriz endpoint/recurso/rol; tests negativos horizontal y vertical, IDs ajenos, estados y mutaciones; respuestas privadas minimizadas; cero hallazgo High abierto. |
+| `LOG-PRIV-01` | MEDIUM | Riesgo de privacidad/operacion: PII y query strings OAuth pueden alcanzar logs; fake mailboxes/dev endpoints deben quedar fuera de produccion. | B, C, D, E | Observabilidad y owners HTTP | ET109, gate Google ON / SG-12 | ABIERTO | Logs de staging inspeccionados sin secretos, PII ni query sensible; rutas normalizadas; redaccion de code/state/handle/nonce/PKCE/Authorization; endpoints fake/dev ausentes o fail-closed en produccion. |
+| `HTTP-EDGE-01` | MEDIUM | Riesgo operativo/control pendiente: perimetro productivo aun inexistente (HTTPS, HSTS, CSP, nosniff, referrer, framing, trusted hosts, CORS y body limits) y falta gate integral de URLs/campos y anti-abuso de endpoints costosos. | B, C, E | Plataforma HTTP/edge y owners de input | ET109.3 y evaluacion de lanzamiento / SG-06 | BLOCKED por infraestructura | Tests server-side de URLs/campos y costos; pruebas externas verifican TLS/HTTPS-only, headers, hosts/proxy confiables, CORS allowlist, limites de body y rate limits en la topologia desplegada. |
+| `DB-SEC-01` | MEDIUM | Riesgo operativo: falta demostrar DB privada, TLS, firewall, least privilege y separacion de credenciales/ambientes. | C, E | Datos/plataforma; owner `docs/16` | Gate preproduccion / SG-07 | BLOCKED por infraestructura | DB no publica; reglas de red; TLS cuando corresponda; usuarios runtime/migration/backup separados y de minimo privilegio; secretos fuera del repo; migraciones y constraints verificadas. |
+| `RECOVERY-01` | HIGH | Control pendiente critico para recuperacion: existe evidencia local, no backup externo cifrado y restore recurrente productivo. | B, C, E | Recovery; owner `docs/16` | ET110.2 / SG-08 | BLOCKED; BLOQUEA INTERNET | Backup automatizado externo/cifrado, credencial separada, retencion aprobada, restore completo ejecutado, evidencia periodica y RPO/RTO medidos. |
+| `RUNTIME-01` | MEDIUM | Riesgo operativo: falta runtime/container reproducible, no-root, permisos/filesystem minimos, health/readiness y artefacto controlado sin repo/secretos. | B, C, E | Platform Engineering | ET100 y gate preproduccion / SG-09 | ABIERTO | Imagen/artefacto inmutable reproducible; non-root; limites y permisos; health/readiness; shutdown/rollback; no `.env`, historial, dumps ni secretos; logs redactados. |
+| `RUNTIME-LOW-01` | LOW | Defensa en profundidad: politica productiva para OpenAPI/docs/devtools aun no decidida. | C, E | Plataforma HTTP | Gate preproduccion / SG-09 | ABIERTO | Politica por ambiente aplicada y prueba externa demuestra que herramientas no aprobadas no estan expuestas. |
+| `SUPPLY-01` | HIGH | Debilidad demostrada: manifest backend incompleto/no reproducible. | B, E | Ingenieria/build | ET100.1-100.2, ET109.4 / SG-10 | ABIERTO; BLOQUEA INTERNET | Instalacion limpia y build/test desde manifests completos y versionados, sin dependencias implicitas del entorno local. |
+| `SUPPLY-02` | MEDIUM | Control pendiente: pinning/lock, SCA frontend/backend, secret scan, SAST, SBOM y proceso de actualizacion. | B, E, F | Ingenieria/DevSecOps | ET100.2, ET109.4 / SG-10 | ABIERTO | Estrategia de pins/lock aprobada; scans reproducibles sin High/Critical abierto; secret scan limpio; SAST revisado; SBOM generado o N/A justificado; update/rollback probado. |
+| `CICD-01` | MEDIUM | Control pendiente: no existe gate automatizado/equivalente de deploy, ambientes y rollback. | B, C, E | DevSecOps | ET100.6 y gate preproduccion / SG-11 | ABIERTO | Pipeline o procedimiento reproducible ejecuta tests, lint/build, scans, migration dry-run, separa secretos/ambientes, produce artefacto inmutable y prueba rollback con aprobacion. |
+| `INFRA-01` | MEDIUM | Riesgo operativo: DNS/TLS/proxy/origin protection, backend/DB privados, WAF/rate/bot/DDoS y alertas dependen del despliegue. | C, E, F | Plataforma/edge | Evaluacion futura de lanzamiento / SG-17 | BLOCKED por infraestructura | DNS/TLS y routing verificados; origen protegido; backend/DB sin exposicion innecesaria; reglas base de cache/WAF/rate/bot/DDoS; metricas/alertas; prueba de bypass directo rechazada. |
+| `GOOGLE-OPS-01` | MEDIUM | Gate operativo, no defecto OIDC confirmado: Google real continua OFF y sin interoperabilidad externa. | C, D, E | Identidad y plataforma; decision `DEC-059` | Gate Google ON / SG-13 | BLOCKED; Google OFF | Cliente/consent/test users/redirect/secrets configurados; smoke real login/signup/link/reauth; subject correcto; handles one-use; JWT ausente de URL; access logs redactados; aprobacion explicita antes de ON. |
+| `EXTERNAL-VAL-01` | MEDIUM | Gap de assurance: faltan DAST/pentest y regresiones adversariales sobre entorno desplegado. | B, E | Seguridad/QA | ET108, ET109.5-109.6, ET110 / SG-14 | BLOCKED por staging | DAST y revision manual controlada; regresion auth/session, autorizacion, uploads y restore; cero Critical/High abierto; remediacion y retest fechados. |
+| `IR-01` | MEDIUM | Control pendiente: runbooks y ownership de respuesta no cubren aun todos los escenarios preproduccion. | B, C, E | Operaciones, Seguridad y Legal | ET109/110 y gate preproduccion / SG-15 | ABIERTO | Runbooks y tabletop fechados para secretos, DB, account takeover, upload malicioso, CVE, container, DDoS y corrupcion; owner/contactos, contencion, rotacion, recovery y evidencia verificados. |
+
 ### 27.9 Matriz RACI
 
 | Proceso | Ingenieria | Producto | Seguridad | Compliance | Legal | Direccion |
@@ -1463,6 +1515,38 @@ ETAPAS 97 a 110 autoriza apertura.
 - [ ] Revision humana definida si corresponde.
 - [ ] Riesgo de sesgo evaluado.
 - [ ] Politica de IA requerida identificada.
+
+### 28.6 Checklist unica SECURITY GO
+
+Estados permitidos: `PASS`, `FAIL`, `BLOCKED` y `N/A justificado`. Cada item
+debe incluir evidencia fechada y owner. `N/A` exige justificacion, owner y
+evidencia de que el control no aplica; no significa pendiente.
+
+| ID | Control | Estado actual | Evidencia requerida para PASS o N/A |
+| --- | --- | --- | --- |
+| `SG-01` | Identity contract | BLOCKED | Cierre verificable de `AUTH-LEGACY-01`, migraciones, restore y cero consumidores legacy. |
+| `SG-02` | Login abuse, password policy y enumeracion | FAIL | Cierre de `AUTH-ABUSE-01` y `AUTH-POLICY-01` con tests concurrentes y anti-enumeracion. |
+| `SG-03` | Session, JWT, revocacion y bearer storage | BLOCKED | Sesiones SID-only, revocacion probada y decision/evidencia de bearer storage y XSS. |
+| `SG-04` | Authorization, BOLA/IDOR y administracion | BLOCKED | Matriz negativa y acciones sensibles/admin aprobadas sin High abierto. |
+| `SG-05` | Upload y media | FAIL | Cierre integral y suite adversarial de `UPLOAD-01`. |
+| `SG-06` | HTTP, TLS, headers, CORS, hosts y body limits | BLOCKED | Evidencia externa del perimetro desplegado conforme a `HTTP-EDGE-01`. |
+| `SG-07` | Database security | BLOCKED | Evidencia de red privada, TLS y least privilege conforme a `DB-SEC-01`. |
+| `SG-08` | Backup, restore, RPO y RTO | BLOCKED | Backup externo cifrado y restore recurrente conforme a `RECOVERY-01`. |
+| `SG-09` | Runtime, container, artifact y source | BLOCKED | Artefacto reproducible, minimo y no-root conforme a `RUNTIME-01`. |
+| `SG-10` | Dependencies, SCA, SAST, secrets y SBOM | FAIL | Manifests reproducibles y gates de `SUPPLY-01`/`SUPPLY-02`; SBOM solo puede ser N/A justificado. |
+| `SG-11` | CI/CD, environments y rollback | BLOCKED | Gate reproducible conforme a `CICD-01`. |
+| `SG-12` | Observability, log redaction y alerts | BLOCKED | Evidencia de staging y alertas conforme a `LOG-PRIV-01`. |
+| `SG-13` | Google real o Google OFF justificado | BLOCKED | PASS tras `GOOGLE-OPS-01`; alternativamente N/A justificado solo con flag OFF, availability false y controles ocultos. |
+| `SG-14` | DAST, pentest y retest | BLOCKED | Cierre fechado de `EXTERNAL-VAL-01`. |
+| `SG-15` | Incident response | BLOCKED | Runbooks y tabletop conforme a `IR-01`. |
+| `SG-16` | PWA private network-only y cache isolation | BLOCKED | Regresion desplegada demuestra API/Auth/mutaciones network-only y ausencia de JWT/handles/datos privados en caches. |
+| `SG-17` | Infra, edge y origin protection | BLOCKED | Cierre de `INFRA-01` en la topologia real. |
+
+Cualquier `FAIL` o `BLOCKED` obligatorio produce `NO-GO`. No puede existir un
+`CRITICAL` abierto ni un `HIGH` abierto o diferido. `SECURITY GO` requiere que
+todos los items obligatorios esten `PASS` o `N/A justificado`, evidencia
+fechada y una decision humana explicita. El cierre de etapas, tests locales o
+ausencia de exploit conocido no reemplazan esa decision.
 
 ## 29. Control de vigencia y revision periodica
 
