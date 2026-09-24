@@ -559,8 +559,8 @@ Estado de continuidad:
 
 - Ultima etapa cerrada: ETAPA 98 - Correccion y Pulido Visual del Frontend.
 - Etapa vigente: ETAPA 99 - Identidad, Registro y Autenticacion. Sus bloques
-  99.1 a 99.8 quedan tecnicamente cerrados. El siguiente sprint oficial es
-  99.9 - Contract, limpieza legacy y cierre, no iniciado.
+  99.1 a 99.8 y ET99.9-A quedan cerrados. El siguiente bloque oficial es
+  ET99.9-B; ET99.9 global y ETAPA 99 permanecen abiertas.
 - Checkpoint intermedio aprobado: sistema visual Liquid consolidado y bloque
   correctivo incidental de publicaciones e interacciones validado. Este
   checkpoint no constituyo por si solo el cierre posterior de ETAPA 98.
@@ -586,7 +586,8 @@ Estado de continuidad:
   capacidad para crear o administrar espacios y publicar contenido asociado.
   La cuenta basica no excluye automaticamente a menores de 18 anos; la politica
   vigente exige 18 anos o mas para esas capacidades de Espacios. ETAPA 99,
-  ahora vigente con 99.1 a 99.8 tecnicamente cerrados y 99.9 no iniciado,
+  ahora vigente con 99.1 a 99.8 y ET99.9-A tecnicamente cerrados; ET99.9-B es
+  el siguiente bloque no iniciado,
   incorporo `fecha_nacimiento` privada y nullable, perfil y capabilities
   backend, borrador seguro de Registro y flujo Google conforme a `DEC-048`; el
   backend de Espacios conserva el enforcement. No se implemento ninguna de
@@ -940,6 +941,36 @@ corresponda, client ID/secret, HTTPS, DNS, topologia publica y proxy, redirect
 URI exacta, gestion de secretos, redaccion de query strings OAuth en access
 logs y una prueba OAuth real controlada.
 
+Estado de cierre de ET99.9-A - Inventario y gates de datos legacy:
+
+ET99.9-A queda CERRADA con aprobacion humana. El inventario encontro 18
+usuarios: 16 con `PasswordCredential` y hash legacy coincidente, 2
+legacy-only pendientes de migracion futura, cero hashes divergentes, cero
+emails invalidos y cero colisiones de `email_canonical`. No se modificaron esos
+usuarios.
+
+La base local pre-upgrade de ET99.8 conserva 38 tablas fisicas frente a 40 de
+metadata; faltan `oauth_authorization_transactions` y
+`oauth_session_delivery_handles`. Los drifts conocidos de schema fueron
+preservados y no corregidos. El inventario JWT legacy quedo completado: no se
+demostro emisor productivo HTTP actual, pero permanecen probes/tests y
+consumidores legacy identificados; su retiro no esta autorizado.
+
+Las herramientas de backup, restore y schema quedaron endurecidas en A2
+(`d506d81`, 56 tests OK). A3 ejecuto backup y restore real: el backup de
+`mitienda` con manifest v2 y SHA-256
+`ef19099abc087d9027e5648be0cad4ed6cee4767af4ff6a6b76c4d0b4af93d6a` se
+conservo fuera del repositorio; schema y 22 conteos criticos coincidieron entre
+origen, manifest y temporal; `mitienda` no tuvo mutaciones y la base temporal
+fue eliminada despues de validar la evidencia.
+
+ET99.9-A esta cerrada; ET99.9-B es el siguiente bloque y no esta iniciado.
+ET99.9 y ETAPA 99 siguen abiertas. Google permanece OFF, FeedGo continua
+NO-GO para Internet y `SECURITY GO` no esta declarado. Los findings de
+preproduccion, incluidos `AUTH-LEGACY-01`, `AUTH-ABUSE-01`,
+`AUTH-POLICY-01`, `UPLOAD-01`, `RECOVERY-01`, `SUPPLY-01` y
+`GOOGLE-OPS-01`, conservan sus owners, estados y gates.
+
 La auditoria profesional preproduccion posterior no confirmo vulnerabilidades
 `CRITICAL`, pero FeedGo permanece `NO-GO` para Internet. El registro central
 vive en `15_LEGAL_AND_OPERATIONAL` `27.8.1` y la checklist unica en `28.6`.
@@ -1101,8 +1132,8 @@ Pendientes derivados:
   operacion manual que no forman parte de observabilidad base.
 - ETAPA 98: correccion y pulido visual completo del frontend, posterior a PWA
   y operacion minima y previo al lanzamiento controlado.
-- ETAPA 99: identidad, registro y autenticacion, vigente con 99.1 a 99.8
-  tecnicamente cerrados y 99.9 como siguiente sprint, no iniciado.
+- ETAPA 99: identidad, registro y autenticacion, vigente con 99.1 a 99.8 y
+  ET99.9-A tecnicamente cerrados; ET99.9-B es el siguiente bloque no iniciado.
 - ETAPA 100: fundacion de validacion y staging aislado.
 - ETAPAS 101 a 105: FeedGo Clasificados, desde dominio y experiencia hasta
   Search, IA multimodal, Historias, promocion y beneficios.

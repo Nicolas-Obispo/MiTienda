@@ -745,6 +745,37 @@ validarse dentro de ETAPA 110 antes de una apertura publica significativa. La
 superficie operativa que ETAPA 97 pueda incorporar solo consume evidencia y
 acciones seguras; no redefine backup, restore, cifrado ni retencion.
 
+## 7.6 Gate real ET99.9-A - Inventario y recovery
+
+Estado: cerrado tecnicamente y aprobado para cierre documental.
+
+La implementacion A2 de las herramientas de backup, restore y schema quedo
+validada en `d506d81` con 56 tests OK. La prueba A3 ejecuto el procedimiento
+oficial sobre la base runtime `mitienda` sin migraciones ni mutaciones de
+datos.
+
+Backup conservado fuera del repositorio:
+
+- Archivo: `C:\FeedGoOps\backups\mysql\mitienda_20260924T203003Z.sql.gz`.
+- Manifest: `C:\FeedGoOps\backups\mysql\mitienda_20260924T203003Z.sql.gz.json`.
+- `format_version`: 2.
+- Tamano: 175574 bytes.
+- SHA-256:
+  `ef19099abc087d9027e5648be0cad4ed6cee4767af4ff6a6b76c4d0b4af93d6a`.
+- Gzip, checksum, ausencia de `CREATE DATABASE`/`USE` y manifest: validos.
+
+El restore real se ejecuto exclusivamente sobre la base temporal
+`feedgo_restore_tmp_et999a3_20260924_000001`. El snapshot de schema y los 22
+conteos de `CRITICAL_TABLES` coincidieron exactamente entre origen, manifest y
+temporal, incluyendo como `null` las dos tablas OAuth ausentes del estado
+pre-upgrade. La evidencia se conserva en
+`C:\FeedGoOps\restore_tmp\evidence\feedgo_restore_tmp_et999a3_20260924_000001_20260924T203100992630Z_restore.json`.
+
+La base temporal fue eliminada con confirmacion explicita despues de validar
+la evidencia. La base `mitienda` permanecio intacta. Esta evidencia demuestra
+un backup/restore local controlado; no cierra `RECOVERY-01`, que conserva sus
+requisitos de backup externo cifrado, retencion, recurrencia y RPO/RTO medidos.
+
 ## 8. Seguridad de secretos y artefactos
 
 Reglas:

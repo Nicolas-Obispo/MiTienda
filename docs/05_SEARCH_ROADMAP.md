@@ -1415,8 +1415,9 @@ y no crean ni renumeran etapas.
   11/11 OK. Google permanece operativamente OFF; rollback: deshabilitar nuevas
   altas y vinculaciones conservando identidades existentes y sus metodos
   alternativos.
-- 99.9 - Contract, limpieza legacy y cierre. Siguiente sprint oficial, no
-  iniciado. Debe retirar emision y aceptacion de JWT legacy, ramas
+- 99.9 - Contract, limpieza legacy y cierre. 99.9-A - Inventario y gates de
+  datos legacy queda cerrada; 99.9-B es el siguiente bloque y no fue iniciado.
+  Debe retirar emision y aceptacion de JWT legacy, ramas
   `contract == "legacy"`, `_validar_contrato_legacy` y `TokenRevocado` cuando
   quede sin consumidores; completar el gate/backfill de `email_canonical`;
   garantizar `PasswordCredential` para usuarios password y dejarlo como unica
@@ -1477,14 +1478,15 @@ Evidencia de cierre de 99.2:
   UX de Registro quedaron cubiertas por tests y aprobadas manualmente;
 - schema, suite relevante, frontend, build/PWA, lint y diff quedaron validados.
 
-Siguiente sprint:
+Siguiente bloque:
 
-99.9 - Contract, limpieza legacy y cierre. No iniciado; requiere orden expresa
+99.9-B - Contract, limpieza legacy y cierre. ET99.9-A - Inventario y gates de
+datos legacy queda cerrada; 99.9-B no fue iniciado y requiere orden expresa
 para comenzar.
 
 Estado:
 
-En curso. 99.1 a 99.8 tecnicamente cerrados; 99.9 no iniciado.
+En curso. 99.1 a 99.8 y 99.9-A tecnicamente cerrados; ET99.9-B no iniciado.
 
 Evidencia de cierre de 99.4:
 

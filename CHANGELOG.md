@@ -9,6 +9,31 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ET99.9-A - Inventario legacy y gate real de backup/restore
+
+**Estado:** Cerrada; ET99.9-B siguiente bloque, no iniciado
+
+- A2 endurecio las herramientas de backup, restore y schema en `d506d81`;
+  56 tests quedaron OK.
+- El inventario de identidad registro 18 usuarios: 16 con
+  `PasswordCredential` y hash legacy coincidente, 2 legacy-only pendientes,
+  cero hashes divergentes, cero emails invalidos y cero colisiones canonicas.
+- La DB local conserva 38 tablas fisicas frente a 40 de metadata; las dos
+  tablas OAuth ausentes y los demas drifts conocidos fueron preservados, no
+  corregidos.
+- El inventario JWT legacy se completo. No se demostro emisor productivo HTTP
+  actual; probes/tests y consumidores legacy identificados permanecen, por lo
+  que el retiro sigue no autorizado.
+- A3 creo y conservo fuera del repositorio un backup v2 de `mitienda` en
+  `C:\FeedGoOps\backups\mysql\mitienda_20260924T203003Z.sql.gz`, con SHA-256
+  `ef19099abc087d9027e5648be0cad4ed6cee4767af4ff6a6b76c4d0b4af93d6a`.
+- El restore real en una base temporal reprodujo exactamente schema y 22
+  conteos criticos; `mitienda` no fue modificada y la temporal fue eliminada.
+  La evidencia permanece fuera del repositorio.
+- ET99.9 global y ETAPA 99 siguen abiertas. Google permanece OFF, FeedGo es
+  NO-GO para Internet y no se declara `SECURITY GO`; los findings de
+  preproduccion conservan sus owners y gates.
+
 ## Recuperacion documental D99.8-REC y DSEC-PREPROD
 
 **Estado:** Formalizacion documental posterior al cierre tecnico de ET99.8;
