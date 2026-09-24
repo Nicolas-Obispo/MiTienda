@@ -8,7 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from check_database_schema import SchemaCheckResult
+from check_database_schema import SchemaCheckResult, schema_result_to_dict
 from app.core.operation_metrics import (
     METRIC_RESTORE_RUN_COUNT,
     METRIC_RESTORE_RUN_DURATION_MS,
@@ -131,6 +131,13 @@ class DatabaseRestoreTests(unittest.TestCase):
                 with self.assertRaises(database_restore.RestoreExecutionError):
                     database_restore.restore_backup(config)
 
+    def test_destino_runtime_es_case_insensitive(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = self._config(tmpdir, target_database="MITIENDA")
+            with patch.object(database_restore, "engine", _fake_engine()):
+                with self.assertRaises(database_restore.RestoreExecutionError):
+                    database_restore.restore_backup(config)
+
     def test_destino_existente_aborta(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             config = self._config(tmpdir)
@@ -213,6 +220,61 @@ class DatabaseRestoreTests(unittest.TestCase):
             metric_names = [sample.name for sample in local_metrics_sink.snapshot()]
             self.assertIn(METRIC_RESTORE_RUN_COUNT, metric_names)
             self.assertIn(METRIC_RESTORE_RUN_DURATION_MS, metric_names)
+
+    def test_restore_reproduce_schema_preupgrade_y_tabla_critica_ausente(self):
+        schema_preupgrade = SchemaCheckResult(
+            metadata_count=2,
+            physical_count=1,
+            missing_tables=["oauth_authorization_transactions"],
+            extra_tables=[],
+            column_differences={},
+        )
+        critical_counts = {table: None for table in database_restore.CRITICAL_TABLES}
+        critical_counts["usuarios"] = 1
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = self._config(
+                tmpdir,
+                manifest_updates={
+                    "format_version": 2,
+                    "critical_table_counts": critical_counts,
+                    "schema_check": schema_result_to_dict(schema_preupgrade),
+                },
+            )
+            with patch.object(database_restore, "engine", _fake_engine()), \
+                patch.object(database_restore, "_database_exists", return_value=False), \
+                patch.object(database_restore, "_create_database"), \
+                patch.object(database_restore, "_run_mysql_restore"), \
+                patch.object(
+                    database_restore,
+                    "_run_schema_check",
+                    return_value=schema_preupgrade,
+                ), \
+                patch.object(
+                    database_restore,
+                    "_collect_restored_counts",
+                    return_value=critical_counts,
+                ):
+                result = database_restore.restore_backup(config)
+
+        self.assertTrue(result.evidence.schema_ok)
+        self.assertTrue(result.evidence.counts_ok)
+        self.assertFalse(result.schema_result.ok)
+
+    def test_restore_rechaza_drift_distinto_al_snapshot_del_backup(self):
+        source_schema = SchemaCheckResult(2, 1, ["oauth_authorization_transactions"], [], {})
+        restored_schema = SchemaCheckResult(2, 1, ["oauth_session_delivery_handles"], [], {})
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = self._config(
+                tmpdir,
+                manifest_updates={"schema_check": schema_result_to_dict(source_schema)},
+            )
+            with patch.object(database_restore, "engine", _fake_engine()), \
+                patch.object(database_restore, "_database_exists", return_value=False), \
+                patch.object(database_restore, "_create_database"), \
+                patch.object(database_restore, "_run_mysql_restore"), \
+                patch.object(database_restore, "_run_schema_check", return_value=restored_schema):
+                with self.assertRaises(database_restore.RestoreExecutionError):
+                    database_restore.restore_backup(config)
 
     def test_restore_provider_conocido_y_desconocido(self):
         provider = database_restore.get_restore_provider("mysql_client")

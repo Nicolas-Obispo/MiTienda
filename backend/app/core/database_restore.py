@@ -22,6 +22,7 @@ from typing import Any, Protocol
 from sqlalchemy import create_engine, inspect, text
 
 from app.core.database import Base, engine
+from app.core.database_backup import CRITICAL_TABLES
 from app.core.model_registry import import_all_models
 from app.core.operation_metrics import (
     METRIC_RESTORE_RUN_COUNT,
@@ -29,11 +30,16 @@ from app.core.operation_metrics import (
     increment_counter,
     record_duration,
 )
-from check_database_schema import SchemaCheckResult, check_schema
+from check_database_schema import (
+    SchemaCheckResult,
+    check_schema,
+    schema_result_to_dict,
+)
 
 RESTORE_DATABASE_PATTERN = re.compile(r"^feedgo_restore_tmp_[a-z0-9_]+$")
 DROP_CONFIRMATION = "DROP_RESTORE_TEMP_DB"
 DEFAULT_EVIDENCE_DIR = Path("restore_tmp/evidence")
+WORKSPACE_ROOT = Path(__file__).resolve().parents[3]
 
 
 class RestoreConfigurationError(RuntimeError):
@@ -73,8 +79,8 @@ class RestoreEvidence:
     duration_seconds: float
     schema_ok: bool
     counts_ok: bool
-    expected_counts: dict[str, int]
-    restored_counts: dict[str, int]
+    expected_counts: dict[str, int | None]
+    restored_counts: dict[str, int | None]
     result: str
     errors: list[str]
     cleanup: str
@@ -136,7 +142,7 @@ def _runtime_database() -> str:
 
 
 def _validate_target_database(target_database: str) -> None:
-    if target_database == _runtime_database():
+    if target_database.casefold() == _runtime_database().casefold():
         raise RestoreValidationError("El destino runtime esta prohibido.")
 
     if not RESTORE_DATABASE_PATTERN.fullmatch(target_database):
@@ -167,6 +173,12 @@ def _manifest_restore_requirement(
 
 
 def _validate_manifest_for_restore(manifest: dict[str, Any]) -> None:
+    format_version = manifest.get("format_version", 1)
+    if isinstance(format_version, bool) or not isinstance(format_version, int):
+        raise RestoreValidationError("La version del manifiesto es invalida.")
+    if format_version not in {1, 2}:
+        raise RestoreValidationError("La version del manifiesto no esta soportada.")
+
     compression = _manifest_restore_requirement(manifest, "compression")
     if compression != "gzip":
         raise RestoreValidationError("El backup no declara compresion gzip.")
@@ -184,8 +196,31 @@ def _validate_manifest_for_restore(manifest: dict[str, Any]) -> None:
     if restore_target_required is not True:
         raise RestoreValidationError("El manifiesto no exige destino de restore.")
 
-    if not isinstance(manifest.get("critical_table_counts"), dict):
+    critical_counts = manifest.get("critical_table_counts")
+    if not isinstance(critical_counts, dict) or not critical_counts:
         raise RestoreValidationError("El manifiesto no contiene conteos criticos.")
+    if any(
+        not isinstance(table, str)
+        or isinstance(count, bool)
+        or (count is not None and not isinstance(count, int))
+        or (isinstance(count, int) and count < 0)
+        for table, count in critical_counts.items()
+    ):
+        raise RestoreValidationError("El manifiesto contiene conteos criticos invalidos.")
+
+    if "schema_check" in manifest and not isinstance(manifest["schema_check"], dict):
+        raise RestoreValidationError("El snapshot de schema del manifiesto es invalido.")
+    if format_version >= 2:
+        missing_critical = sorted(set(CRITICAL_TABLES) - set(critical_counts))
+        if missing_critical:
+            raise RestoreValidationError(
+                "El manifiesto v2 omite tablas criticas actuales: "
+                + ", ".join(missing_critical)
+            )
+        if not isinstance(manifest.get("schema_check"), dict):
+            raise RestoreValidationError(
+                "El manifiesto v2 no contiene snapshot de schema."
+            )
 
     if not manifest.get("sha256") and not manifest.get("checksum"):
         raise RestoreValidationError("El manifiesto no contiene SHA-256.")
@@ -210,15 +245,38 @@ def _validate_backup_file(backup_file: Path, manifest: dict[str, Any]) -> None:
 def _validate_config(config: RestoreConfig) -> dict[str, Any]:
     _validate_target_database(config.target_database)
 
-    if not config.defaults_extra_file.exists():
+    if not config.defaults_extra_file.is_file():
         raise RestoreConfigurationError(
             "El archivo seguro de credenciales MySQL no existe."
         )
+
+    _require_outside_workspace(
+        config.defaults_extra_file,
+        "El archivo de credenciales debe quedar fuera del repositorio.",
+    )
+    _require_outside_workspace(
+        config.backup_file,
+        "El backup a restaurar debe quedar fuera del repositorio.",
+    )
+    _require_outside_workspace(
+        config.manifest_file,
+        "El manifiesto debe quedar fuera del repositorio.",
+    )
+    _require_outside_workspace(
+        config.evidence_dir,
+        "La evidencia de restore debe quedar fuera del repositorio.",
+    )
 
     manifest = _load_manifest(config.manifest_file)
     _validate_manifest_for_restore(manifest)
     _validate_backup_file(config.backup_file, manifest)
     return manifest
+
+
+def _require_outside_workspace(path: Path, message: str) -> None:
+    resolved = path.resolve(strict=False)
+    if resolved == WORKSPACE_ROOT or WORKSPACE_ROOT in resolved.parents:
+        raise RestoreConfigurationError(message)
 
 
 def _database_exists(target_database: str) -> bool:
@@ -306,12 +364,16 @@ def _run_schema_check(target_database: str) -> SchemaCheckResult:
 def _collect_restored_counts(
     target_database: str,
     table_names: list[str],
-) -> dict[str, int]:
+) -> dict[str, int | None]:
     target_engine = _target_engine(target_database)
-    counts: dict[str, int] = {}
+    counts: dict[str, int | None] = {}
     try:
         with target_engine.connect() as connection:
+            existing_tables = set(inspect(connection).get_table_names())
             for table_name in table_names:
+                if table_name not in existing_tables:
+                    counts[table_name] = None
+                    continue
                 quoted = target_engine.dialect.identifier_preparer.quote(table_name)
                 result = connection.execute(text(f"SELECT COUNT(*) FROM {quoted}"))
                 counts[table_name] = int(result.scalar_one())
@@ -323,15 +385,16 @@ def _collect_restored_counts(
 def _write_evidence(config: RestoreConfig, evidence: RestoreEvidence) -> Path:
     config.evidence_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.fromisoformat(evidence.finished_at_utc).strftime(
-        "%Y%m%dT%H%M%SZ"
+        "%Y%m%dT%H%M%S%fZ"
     )
     evidence_path = config.evidence_dir / (
         f"{config.target_database}_{timestamp}_restore.json"
     )
-    evidence_path.write_text(
-        json.dumps(asdict(evidence), indent=2, sort_keys=True),
-        encoding="utf-8",
-    )
+    try:
+        with evidence_path.open("x", encoding="utf-8") as evidence_file:
+            evidence_file.write(json.dumps(asdict(evidence), indent=2, sort_keys=True))
+    except FileExistsError as exc:
+        raise RestoreExecutionError("El archivo de evidencia ya existe.") from exc
     return evidence_path
 
 
@@ -353,13 +416,14 @@ class RestoreService:
         started = _utc_now()
         errors: list[str] = []
         schema_result = SchemaCheckResult(0, 0, [], [], {})
-        expected_counts: dict[str, int] = {}
-        restored_counts: dict[str, int] = {}
+        schema_matches_expected = False
+        expected_counts: dict[str, int | None] = {}
+        restored_counts: dict[str, int | None] = {}
 
         try:
             manifest = _validate_config(config)
             expected_counts = {
-                str(table): int(count)
+                str(table): (None if count is None else int(count))
                 for table, count in manifest["critical_table_counts"].items()
             }
 
@@ -370,8 +434,17 @@ class RestoreService:
             self.provider.restore(config, popen_factory=popen_factory)
 
             schema_result = _run_schema_check(config.target_database)
-            if not schema_result.ok:
-                raise RestoreExecutionError("El schema restaurado no coincide.")
+            expected_schema = manifest.get("schema_check")
+            if expected_schema is None:
+                schema_matches_expected = schema_result.ok
+            else:
+                schema_matches_expected = (
+                    schema_result_to_dict(schema_result) == expected_schema
+                )
+            if not schema_matches_expected:
+                raise RestoreExecutionError(
+                    "El schema restaurado no reproduce el snapshot del backup."
+                )
 
             restored_counts = _collect_restored_counts(
                 config.target_database,
@@ -392,7 +465,7 @@ class RestoreService:
                 started_at_utc=started.isoformat(),
                 finished_at_utc=finished.isoformat(),
                 duration_seconds=round((finished - started).total_seconds(), 3),
-                schema_ok=schema_result.ok,
+                schema_ok=schema_matches_expected,
                 counts_ok=bool(expected_counts) and restored_counts == expected_counts,
                 expected_counts=expected_counts,
                 restored_counts=restored_counts,
@@ -420,7 +493,7 @@ class RestoreService:
             started_at_utc=started.isoformat(),
             finished_at_utc=finished.isoformat(),
             duration_seconds=round((finished - started).total_seconds(), 3),
-            schema_ok=schema_result.ok,
+            schema_ok=schema_matches_expected,
             counts_ok=restored_counts == expected_counts,
             expected_counts=expected_counts,
             restored_counts=restored_counts,

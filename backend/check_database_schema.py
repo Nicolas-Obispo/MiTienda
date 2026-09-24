@@ -6,9 +6,11 @@ Verificacion read-only entre Base.metadata y la base fisica configurada.
 No crea, modifica ni elimina tablas o datos.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+import re
 
 from sqlalchemy import inspect
+from sqlalchemy.sql import sqltypes
 
 from app.core.database import Base, engine
 from app.core.model_registry import import_all_models
@@ -26,6 +28,16 @@ class SchemaCheckResult:
     )
     index_differences: dict[str, dict[str, list[str]]] = field(default_factory=dict)
     unique_differences: dict[str, dict[str, list[str]]] = field(default_factory=dict)
+    nullability_differences: dict[str, dict[str, dict[str, bool]]] = field(
+        default_factory=dict
+    )
+    type_differences: dict[str, dict[str, dict[str, str]]] = field(
+        default_factory=dict
+    )
+    default_differences: dict[str, dict[str, dict[str, str | None]]] = field(
+        default_factory=dict
+    )
+    check_differences: dict[str, dict[str, object]] = field(default_factory=dict)
 
     @property
     def ok(self) -> bool:
@@ -36,11 +48,147 @@ class SchemaCheckResult:
             and not self.foreign_key_differences
             and not self.index_differences
             and not self.unique_differences
+            and not self.nullability_differences
+            and not self.type_differences
+            and not self.default_differences
+            and not self.check_differences
         )
+
+
+def schema_result_to_dict(result: SchemaCheckResult) -> dict[str, object]:
+    """Serializa evidencia estable para manifiestos de backup/restore."""
+
+    value = asdict(result)
+    value["ok"] = result.ok
+    return value
 
 
 def _column_names(columns: list[dict]) -> set[str]:
     return {column["name"] for column in columns}
+
+
+def _type_signature(column_type) -> str:
+    """Normaliza familias que MySQL introspecta con clases equivalentes."""
+
+    if isinstance(column_type, sqltypes.Boolean) or (
+        column_type.__class__.__name__.lower() == "tinyint"
+        and getattr(column_type, "display_width", None) == 1
+    ):
+        return "boolean"
+    if isinstance(column_type, sqltypes.Text):
+        return "text"
+    if isinstance(column_type, sqltypes.String):
+        return f"string({getattr(column_type, 'length', None) or '*'})"
+    if isinstance(column_type, sqltypes.BigInteger):
+        return "bigint"
+    if isinstance(column_type, sqltypes.SmallInteger):
+        return "smallint"
+    if isinstance(column_type, sqltypes.Integer):
+        return "integer"
+    if isinstance(column_type, sqltypes.Float):
+        return "float"
+    if isinstance(column_type, sqltypes.Numeric):
+        return (
+            f"numeric({getattr(column_type, 'precision', None)},"
+            f"{getattr(column_type, 'scale', None)})"
+        )
+    if isinstance(column_type, sqltypes.DateTime):
+        return "datetime"
+    if isinstance(column_type, sqltypes.Date):
+        return "date"
+    if isinstance(column_type, sqltypes.Time):
+        return "time"
+    if isinstance(column_type, sqltypes.JSON):
+        return "json"
+    if isinstance(column_type, sqltypes.LargeBinary):
+        return f"binary({getattr(column_type, 'length', None) or '*'})"
+    return column_type.__class__.__name__.lower()
+
+
+def _strip_wrapping_parentheses(value: str) -> str:
+    while value.startswith("(") and value.endswith(")"):
+        depth = 0
+        wraps_all = True
+        for index, character in enumerate(value):
+            if character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+                if depth == 0 and index != len(value) - 1:
+                    wraps_all = False
+                    break
+        if not wraps_all or depth != 0:
+            break
+        value = value[1:-1].strip()
+    return value
+
+
+def _normalize_default(value) -> str | None:
+    if value is None:
+        return None
+    value = getattr(value, "arg", value)
+    normalized = str(value).strip().lower().replace("`", "")
+    normalized = normalized.replace("_utf8mb4", "")
+    normalized = _strip_wrapping_parentheses(normalized)
+    normalized = re.sub(r"\bnow\(\)", "current_timestamp", normalized)
+    normalized = re.sub(r"\bcurrent_timestamp\(\)", "current_timestamp", normalized)
+    normalized = re.sub(r"\btrue\b", "1", normalized)
+    normalized = re.sub(r"\bfalse\b", "0", normalized)
+    if re.fullmatch(r"'[^']*'", normalized):
+        normalized = normalized[1:-1]
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
+def _normalize_check(value: object) -> str:
+    normalized = str(value).lower().replace("`", "")
+    normalized = normalized.replace("_utf8mb4", "")
+    normalized = re.sub(r"\s+", "", normalized)
+    normalized = normalized.replace("!=", "<>")
+    normalized = re.sub(r"\btrue\b", "1", normalized)
+    normalized = re.sub(r"\bfalse\b", "0", normalized)
+    # MySQL reescribe NOT (a IS NOT NULL AND b IS NOT NULL) mediante De Morgan.
+    normalized = re.sub(
+        r"not\(([a-z0-9_]+)isnotnulland([a-z0-9_]+)isnotnull\)",
+        r"(\1isnullor\2isnull)",
+        normalized,
+    )
+    atomic = re.compile(
+        r"\(([a-z0-9_]+(?:isnull|isnotnull|in\([^()]*\)|"
+        r"(?:<>|<=|>=|=|<|>)[a-z0-9_'\.\-]+))\)"
+    )
+    previous = None
+    while previous != normalized:
+        previous = normalized
+        normalized = atomic.sub(r"\1", normalized)
+        normalized = _strip_wrapping_parentheses(normalized)
+    return normalized
+
+
+def _metadata_checks(table) -> tuple[dict[str, str], set[str]]:
+    checks: dict[str, str] = {}
+    ignored: set[str] = set()
+    for constraint in getattr(table, "constraints", set()):
+        if constraint.__class__.__name__ != "CheckConstraint":
+            continue
+        name = getattr(constraint, "name", None)
+        if not name:
+            continue
+        expression = str(getattr(constraint, "sqltext", ""))
+        # SQLAlchemy Enum(native_enum=False) usa placeholders internos que no
+        # pueden compararse literalmente con la expresion introspectada.
+        if "__[POSTCOMPILE" in expression:
+            ignored.add(name)
+            continue
+        checks[name] = _normalize_check(expression)
+    return checks, ignored
+
+
+def _physical_checks(inspector, table_name: str, ignored: set[str]) -> dict[str, str]:
+    return {
+        item["name"]: _normalize_check(item.get("sqltext", ""))
+        for item in inspector.get_check_constraints(table_name)
+        if item.get("name") and item["name"] not in ignored
+    }
 
 
 def _metadata_foreign_keys(table) -> set[str]:
@@ -158,10 +306,18 @@ def check_schema(inspector=None, metadata=None) -> SchemaCheckResult:
     foreign_key_differences: dict[str, dict[str, list[str]]] = {}
     index_differences: dict[str, dict[str, list[str]]] = {}
     unique_differences: dict[str, dict[str, list[str]]] = {}
+    nullability_differences: dict[str, dict[str, dict[str, bool]]] = {}
+    type_differences: dict[str, dict[str, dict[str, str]]] = {}
+    default_differences: dict[str, dict[str, dict[str, str | None]]] = {}
+    check_differences: dict[str, dict[str, object]] = {}
     for table_name in sorted(common_tables):
         table = metadata.tables[table_name]
+        metadata_columns_by_name = {column.name: column for column in table.columns}
+        physical_columns_by_name = {
+            column["name"]: column for column in inspector.get_columns(table_name)
+        }
         metadata_columns = set(table.columns.keys())
-        physical_columns = _column_names(inspector.get_columns(table_name))
+        physical_columns = set(physical_columns_by_name)
         missing_columns = sorted(metadata_columns - physical_columns)
         extra_columns = sorted(physical_columns - metadata_columns)
         if missing_columns or extra_columns:
@@ -205,6 +361,55 @@ def check_schema(inspector=None, metadata=None) -> SchemaCheckResult:
                 "extra_uniques": extra_uniques,
             }
 
+        for column_name in sorted(metadata_columns & physical_columns):
+            metadata_column = metadata_columns_by_name[column_name]
+            physical_column = physical_columns_by_name[column_name]
+
+            if "nullable" in physical_column and (
+                bool(metadata_column.nullable) != bool(physical_column["nullable"])
+            ):
+                nullability_differences.setdefault(table_name, {})[column_name] = {
+                    "metadata": bool(metadata_column.nullable),
+                    "physical": bool(physical_column["nullable"]),
+                }
+
+            if "type" in physical_column:
+                metadata_type = _type_signature(metadata_column.type)
+                physical_type = _type_signature(physical_column["type"])
+                if metadata_type != physical_type:
+                    type_differences.setdefault(table_name, {})[column_name] = {
+                        "metadata": metadata_type,
+                        "physical": physical_type,
+                    }
+
+            if "default" in physical_column:
+                metadata_default = _normalize_default(metadata_column.server_default)
+                physical_default = _normalize_default(physical_column.get("default"))
+                if metadata_default != physical_default:
+                    default_differences.setdefault(table_name, {})[column_name] = {
+                        "metadata": metadata_default,
+                        "physical": physical_default,
+                    }
+
+        metadata_checks, ignored_checks = _metadata_checks(table)
+        physical_checks = _physical_checks(inspector, table_name, ignored_checks)
+        missing_checks = sorted(set(metadata_checks) - set(physical_checks))
+        extra_checks = sorted(set(physical_checks) - set(metadata_checks))
+        changed_checks = {
+            name: {
+                "metadata": metadata_checks[name],
+                "physical": physical_checks[name],
+            }
+            for name in sorted(set(metadata_checks) & set(physical_checks))
+            if metadata_checks[name] != physical_checks[name]
+        }
+        if missing_checks or extra_checks or changed_checks:
+            check_differences[table_name] = {
+                "missing_checks": missing_checks,
+                "extra_checks": extra_checks,
+                "changed_checks": changed_checks,
+            }
+
     return SchemaCheckResult(
         metadata_count=len(metadata_tables),
         physical_count=len(physical_tables),
@@ -214,6 +419,10 @@ def check_schema(inspector=None, metadata=None) -> SchemaCheckResult:
         foreign_key_differences=foreign_key_differences,
         index_differences=index_differences,
         unique_differences=unique_differences,
+        nullability_differences=nullability_differences,
+        type_differences=type_differences,
+        default_differences=default_differences,
+        check_differences=check_differences,
     )
 
 
@@ -271,6 +480,30 @@ def print_result(result: SchemaCheckResult) -> None:
             )
     else:
         print("Diferencias de restricciones unicas: ninguna")
+    if result.nullability_differences:
+        print("Diferencias de nullability:")
+        for table_name, diff in result.nullability_differences.items():
+            print(f"- {table_name}: {diff}")
+    else:
+        print("Diferencias de nullability: ninguna")
+    if result.type_differences:
+        print("Diferencias de tipos/longitudes:")
+        for table_name, diff in result.type_differences.items():
+            print(f"- {table_name}: {diff}")
+    else:
+        print("Diferencias de tipos/longitudes: ninguna")
+    if result.default_differences:
+        print("Diferencias de server defaults:")
+        for table_name, diff in result.default_differences.items():
+            print(f"- {table_name}: {diff}")
+    else:
+        print("Diferencias de server defaults: ninguna")
+    if result.check_differences:
+        print("Diferencias de check constraints:")
+        for table_name, diff in result.check_differences.items():
+            print(f"- {table_name}: {diff}")
+    else:
+        print("Diferencias de check constraints: ninguna")
 
 
 def main() -> int:

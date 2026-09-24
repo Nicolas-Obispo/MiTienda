@@ -11,6 +11,7 @@ import gzip
 import hashlib
 import json
 import os
+import re
 import subprocess
 import tempfile
 import time
@@ -19,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Protocol
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
 from app.core.database import engine
 from app.core.operation_metrics import (
@@ -28,16 +29,27 @@ from app.core.operation_metrics import (
     increment_counter,
     record_duration,
 )
+from check_database_schema import check_schema, schema_result_to_dict
 
 DEFAULT_BACKUP_DIR = Path("backups/mysql")
 DEFAULT_RETENTION_DAYS = 14
 DEFAULT_KEEP_LAST = 10
+WORKSPACE_ROOT = Path(__file__).resolve().parents[3]
 CRITICAL_TABLES = (
     "usuarios",
+    "password_credentials",
+    "external_identities",
+    "feedgo_sessions",
+    "tokens_revocados",
+    "account_action_tokens",
+    "account_action_rate_limits",
+    "phone_verification_challenges",
+    "oauth_authorization_transactions",
+    "oauth_session_delivery_handles",
+    "usuarios_documentos_aceptaciones",
     "comercios",
     "publicaciones",
     "historias",
-    "usuarios_documentos_aceptaciones",
     "contenido_denuncias",
     "administrative_capability_events",
     "agenda_contextos_agendables",
@@ -46,7 +58,6 @@ CRITICAL_TABLES = (
     "comercios_horarios_atencion",
     "publicaciones_guardadas",
     "seguidores",
-    "tokens_revocados",
 )
 
 
@@ -101,9 +112,10 @@ class BackupManifest:
     restore_target_required: bool
     restore_requirements: dict[str, object]
     binlog_coordinates: dict[str, str] | None
-    critical_table_counts: dict[str, int]
+    critical_table_counts: dict[str, int | None]
     external_copy: str
     result: str
+    schema_check: dict[str, object] | None = None
 
 
 class BackupProvider(Protocol):
@@ -153,6 +165,8 @@ class MySQLDumpBackupProvider:
         backup_path: Path,
         popen_factory,
     ) -> None:
+        if backup_path.exists():
+            raise BackupExecutionError("El archivo de backup destino ya existe.")
         command = _build_mysqldump_command(config)
         try:
             with tempfile.TemporaryFile() as stderr_file:
@@ -219,6 +233,8 @@ def _safe_database_name() -> str:
     database = engine.url.database
     if not database:
         raise BackupConfigurationError("Base de datos no configurada.")
+    if not re.fullmatch(r"[A-Za-z0-9_]+", database):
+        raise BackupConfigurationError("Nombre de base de datos inseguro.")
     return database
 
 
@@ -239,10 +255,19 @@ def _validate_config(config: BackupConfig) -> None:
     if not config.defaults_extra_file:
         raise BackupConfigurationError("Falta defaults_extra_file.")
 
-    if not config.defaults_extra_file.exists():
+    if not config.defaults_extra_file.is_file():
         raise BackupConfigurationError(
             "El archivo seguro de credenciales MySQL no existe."
         )
+
+    _require_outside_workspace(
+        config.defaults_extra_file,
+        "El archivo de credenciales debe quedar fuera del repositorio.",
+    )
+    _require_outside_workspace(
+        config.output_dir,
+        "El directorio de backup debe quedar fuera del repositorio.",
+    )
 
     if config.retention_days < 1:
         raise BackupConfigurationError("retention_days debe ser mayor a cero.")
@@ -266,6 +291,12 @@ def _build_mysqldump_command(config: BackupConfig) -> list[str]:
     ]
 
 
+def _require_outside_workspace(path: Path, message: str) -> None:
+    resolved = path.resolve(strict=False)
+    if resolved == WORKSPACE_ROOT or WORKSPACE_ROOT in resolved.parents:
+        raise BackupConfigurationError(message)
+
+
 def _backup_file_path(config: BackupConfig, now: datetime | None = None) -> Path:
     timestamp = _timestamp_for_filename(now or _utc_now())
     database = _safe_database_name()
@@ -282,24 +313,51 @@ def _sha256_file(path: Path) -> str:
 
 def _write_manifest(path: Path, manifest: BackupManifest) -> Path:
     manifest_path = path.with_suffix(path.suffix + ".json")
-    manifest_path.write_text(
-        json.dumps(asdict(manifest), indent=2, sort_keys=True),
-        encoding="utf-8",
-    )
+    try:
+        with manifest_path.open("x", encoding="utf-8") as manifest_file:
+            manifest_file.write(json.dumps(asdict(manifest), indent=2, sort_keys=True))
+    except FileExistsError as exc:
+        raise BackupExecutionError("El manifiesto destino ya existe.") from exc
     return manifest_path
 
 
-def collect_critical_table_counts(table_names=CRITICAL_TABLES) -> dict[str, int]:
-    counts: dict[str, int] = {}
+def collect_critical_table_counts(
+    table_names=CRITICAL_TABLES,
+) -> dict[str, int | None]:
+    """Cuenta tablas presentes y representa explicitamente las ausentes."""
+
+    counts: dict[str, int | None] = {}
     with engine.connect() as connection:
+        existing_tables = set(inspect(connection).get_table_names())
         for table_name in table_names:
-            if table_name not in engine.dialect.identifier_preparer.reserved_words:
-                quoted_name = engine.dialect.identifier_preparer.quote(table_name)
-            else:
-                quoted_name = engine.dialect.identifier_preparer.quote(table_name)
+            if table_name not in existing_tables:
+                counts[table_name] = None
+                continue
+            quoted_name = engine.dialect.identifier_preparer.quote(table_name)
             result = connection.execute(text(f"SELECT COUNT(*) FROM {quoted_name}"))
             counts[table_name] = int(result.scalar_one())
     return counts
+
+
+def collect_schema_snapshot() -> dict[str, object]:
+    """Captura read-only la relacion metadata/schema del origen del backup."""
+
+    return schema_result_to_dict(check_schema())
+
+
+def _validate_critical_table_counts(counts: dict[str, int | None]) -> None:
+    missing = sorted(set(CRITICAL_TABLES) - set(counts))
+    if missing:
+        raise BackupExecutionError(
+            "Faltan tablas criticas en el manifiesto: " + ", ".join(missing)
+        )
+    if any(
+        isinstance(count, bool)
+        or (count is not None and not isinstance(count, int))
+        or (isinstance(count, int) and count < 0)
+        for count in counts.values()
+    ):
+        raise BackupExecutionError("Los conteos criticos son invalidos.")
 
 
 def rotate_backups(output_dir: Path, retention_days: int, keep_last: int) -> list[Path]:
@@ -346,66 +404,74 @@ class BackupService:
         config: BackupConfig,
         now: datetime | None = None,
         popen_factory=subprocess.Popen,
-        counts_provider: Callable[[], dict[str, int]] = collect_critical_table_counts,
+        counts_provider: Callable[[], dict[str, int | None]] = collect_critical_table_counts,
         engine_version_provider: Callable[[], str] = _database_engine_version,
+        schema_provider: Callable[[], dict[str, object]] = collect_schema_snapshot,
     ) -> BackupManifest:
         _validate_config(config)
         config.output_dir.mkdir(parents=True, exist_ok=True)
 
         started = _utc_now()
         backup_path = self.storage.backup_file_path(config, now=now or started)
+        manifest_path = backup_path.with_suffix(backup_path.suffix + ".json")
+        if backup_path.exists() or manifest_path.exists():
+            raise BackupExecutionError("El destino de backup o manifiesto ya existe.")
         try:
             self.provider.create_backup(config, backup_path, popen_factory)
+            finished = _utc_now()
+            sha256 = _sha256_file(backup_path)
+            size_bytes = backup_path.stat().st_size
+            critical_table_counts = counts_provider()
+            _validate_critical_table_counts(critical_table_counts)
+            schema_snapshot = schema_provider()
+
+            manifest = BackupManifest(
+                format_version=2,
+                provider=self.provider.name,
+                storage_provider=self.storage.name,
+                database_engine=self.provider.database_engine,
+                engine_version=engine_version_provider(),
+                backup_type=self.provider.backup_type,
+                database=_safe_database_name(),
+                host=_safe_host(),
+                started_at_utc=started.isoformat(),
+                finished_at_utc=finished.isoformat(),
+                duration_seconds=round((finished - started).total_seconds(), 3),
+                backup_file=str(backup_path),
+                size_bytes=size_bytes,
+                checksum_algorithm="sha256",
+                checksum=sha256,
+                sha256=sha256,
+                compression="gzip",
+                tool=self.provider.name,
+                consistent=True,
+                single_transaction=True,
+                routines=True,
+                events=True,
+                database_statements=False,
+                restore_target_required=True,
+                restore_requirements={
+                    "compression": "gzip",
+                    "database_statements": False,
+                    "requires_empty_database": True,
+                    "restore_target_required": True,
+                    "target_database_pattern": "feedgo_restore_tmp_<nombre>",
+                },
+                binlog_coordinates=None,
+                critical_table_counts=critical_table_counts,
+                external_copy="prepared_not_implemented",
+                result="ok",
+                schema_check=schema_snapshot,
+            )
+            self.storage.write_manifest(backup_path, manifest)
         except Exception:
+            backup_path.unlink(missing_ok=True)
+            manifest_path.unlink(missing_ok=True)
             increment_counter(
                 METRIC_BACKUP_RUN_COUNT,
                 tags={"provider": self.provider.name, "result": "failed"},
             )
             raise
-
-        finished = _utc_now()
-        sha256 = _sha256_file(backup_path)
-        size_bytes = backup_path.stat().st_size
-        critical_table_counts = counts_provider()
-
-        manifest = BackupManifest(
-            format_version=1,
-            provider=self.provider.name,
-            storage_provider=self.storage.name,
-            database_engine=self.provider.database_engine,
-            engine_version=engine_version_provider(),
-            backup_type=self.provider.backup_type,
-            database=_safe_database_name(),
-            host=_safe_host(),
-            started_at_utc=started.isoformat(),
-            finished_at_utc=finished.isoformat(),
-            duration_seconds=round((finished - started).total_seconds(), 3),
-            backup_file=str(backup_path),
-            size_bytes=size_bytes,
-            checksum_algorithm="sha256",
-            checksum=sha256,
-            sha256=sha256,
-            compression="gzip",
-            tool=self.provider.name,
-            consistent=True,
-            single_transaction=True,
-            routines=True,
-            events=True,
-            database_statements=False,
-            restore_target_required=True,
-            restore_requirements={
-                "compression": "gzip",
-                "database_statements": False,
-                "requires_empty_database": True,
-                "restore_target_required": True,
-                "target_database_pattern": "feedgo_restore_tmp_<nombre>",
-            },
-            binlog_coordinates=None,
-            critical_table_counts=critical_table_counts,
-            external_copy="prepared_not_implemented",
-            result="ok",
-        )
-        self.storage.write_manifest(backup_path, manifest)
         self.storage.rotate(
             config.output_dir,
             retention_days=config.retention_days,
@@ -429,6 +495,7 @@ def run_backup(
     popen_factory=subprocess.Popen,
     counts_provider=collect_critical_table_counts,
     engine_version_provider=_database_engine_version,
+    schema_provider=collect_schema_snapshot,
 ) -> BackupManifest:
     service = BackupService(
         provider=get_backup_provider(config.provider),
@@ -440,6 +507,7 @@ def run_backup(
         popen_factory=popen_factory,
         counts_provider=counts_provider,
         engine_version_provider=engine_version_provider,
+        schema_provider=schema_provider,
     )
 
 

@@ -18,6 +18,12 @@ from app.core.operation_metrics import (
 from app.core import database_backup
 
 
+def _critical_counts() -> dict[str, int | None]:
+    counts = {table: None for table in database_backup.CRITICAL_TABLES}
+    counts["usuarios"] = 1
+    return counts
+
+
 def _fake_engine():
     return SimpleNamespace(
         dialect=SimpleNamespace(name="mysql"),
@@ -104,8 +110,9 @@ class DatabaseBackupTests(unittest.TestCase):
                     config,
                     now=fixed_now,
                     popen_factory=popen_factory,
-                    counts_provider=lambda: {"usuarios": 1},
+                    counts_provider=_critical_counts,
                     engine_version_provider=lambda: "8.0-test",
+                    schema_provider=lambda: {"ok": True},
                 )
 
             backup_path = Path(manifest.backup_file)
@@ -117,7 +124,7 @@ class DatabaseBackupTests(unittest.TestCase):
             self.assertEqual(manifest.sha256, database_backup._sha256_file(backup_path))
             self.assertEqual(manifest.database, "mitienda")
             self.assertEqual(manifest.host, "localhost")
-            self.assertEqual(manifest.format_version, 1)
+            self.assertEqual(manifest.format_version, 2)
             self.assertEqual(manifest.provider, "mysqldump")
             self.assertEqual(manifest.storage_provider, "local")
             self.assertEqual(manifest.database_engine, "mysql")
@@ -133,7 +140,8 @@ class DatabaseBackupTests(unittest.TestCase):
                 "feedgo_restore_tmp_<nombre>",
             )
             self.assertIsNone(manifest.binlog_coordinates)
-            self.assertEqual(manifest.critical_table_counts, {"usuarios": 1})
+            self.assertEqual(manifest.critical_table_counts, _critical_counts())
+            self.assertEqual(manifest.schema_check, {"ok": True})
             self.assertEqual(manifest.external_copy, "prepared_not_implemented")
             self.assertEqual(manifest.result, "ok")
             self.assertEqual(len(popen_factory.calls), 1)
@@ -144,14 +152,15 @@ class DatabaseBackupTests(unittest.TestCase):
                 self.assertIn(b"CREATE TABLE usuarios", backup_file.read())
 
             metadata = json.loads(manifest_path.read_text(encoding="utf-8"))
-            self.assertEqual(metadata["format_version"], 1)
+            self.assertEqual(metadata["format_version"], 2)
             self.assertEqual(metadata["provider"], "mysqldump")
             self.assertEqual(metadata["storage_provider"], "local")
             self.assertEqual(metadata["sha256"], manifest.sha256)
             self.assertEqual(metadata["checksum"], manifest.sha256)
             self.assertFalse(metadata["database_statements"])
             self.assertTrue(metadata["restore_target_required"])
-            self.assertEqual(metadata["critical_table_counts"], {"usuarios": 1})
+            self.assertEqual(metadata["critical_table_counts"], _critical_counts())
+            self.assertEqual(metadata["schema_check"], {"ok": True})
             metric_names = [sample.name for sample in local_metrics_sink.snapshot()]
             self.assertIn(METRIC_BACKUP_RUN_COUNT, metric_names)
             self.assertIn(METRIC_BACKUP_RUN_DURATION_MS, metric_names)
@@ -170,11 +179,32 @@ class DatabaseBackupTests(unittest.TestCase):
                         popen_factory=popen_factory,
                         counts_provider=lambda: {"usuarios": 1},
                         engine_version_provider=lambda: "8.0-test",
+                        schema_provider=lambda: {"ok": True},
                     )
 
             self.assertEqual(list((Path(tmpdir) / "backups").glob("*.sql.gz")), [])
             metric_names = [sample.name for sample in local_metrics_sink.snapshot()]
             self.assertIn(METRIC_BACKUP_RUN_COUNT, metric_names)
+
+    def test_fallo_post_dump_elimina_backup_huerfano(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = self._config(tmpdir)
+            fixed_now = datetime(2026, 8, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+            with patch.object(database_backup, "engine", _fake_engine()):
+                with self.assertRaises(RuntimeError):
+                    database_backup.run_backup(
+                        config,
+                        now=fixed_now,
+                        popen_factory=CapturingPopenFactory(),
+                        counts_provider=_critical_counts,
+                        engine_version_provider=lambda: "8.0-test",
+                        schema_provider=lambda: (_ for _ in ()).throw(
+                            RuntimeError("schema failed")
+                        ),
+                    )
+
+            self.assertEqual(list((Path(tmpdir) / "backups").iterdir()), [])
 
     def test_provider_escribe_gzip_desde_stdout_pipe_realista(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -190,6 +220,70 @@ class DatabaseBackupTests(unittest.TestCase):
             self.assertEqual(popen_factory.calls[0].stdout_arg, database_backup.subprocess.PIPE)
             with gzip.open(backup_path, "rb") as backup_file:
                 self.assertIn(b"CREATE TABLE usuarios", backup_file.read())
+
+    def test_critical_tables_cubre_identidad_actual(self):
+        expected_identity_tables = {
+            "usuarios",
+            "password_credentials",
+            "external_identities",
+            "feedgo_sessions",
+            "tokens_revocados",
+            "account_action_tokens",
+            "account_action_rate_limits",
+            "phone_verification_challenges",
+            "oauth_authorization_transactions",
+            "oauth_session_delivery_handles",
+            "usuarios_documentos_aceptaciones",
+        }
+
+        self.assertTrue(expected_identity_tables.issubset(database_backup.CRITICAL_TABLES))
+
+    def test_conteos_criticos_representan_tabla_faltante(self):
+        class Result:
+            def scalar_one(self):
+                return 3
+
+        class Connection:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def execute(self, _statement):
+                return Result()
+
+        fake_engine = SimpleNamespace(
+            connect=lambda: Connection(),
+            dialect=SimpleNamespace(
+                identifier_preparer=SimpleNamespace(quote=lambda value: f"`{value}`")
+            ),
+        )
+        fake_inspector = SimpleNamespace(get_table_names=lambda: ["usuarios"])
+        with patch.object(database_backup, "engine", fake_engine), patch.object(
+            database_backup, "inspect", return_value=fake_inspector
+        ):
+            counts = database_backup.collect_critical_table_counts(
+                ("usuarios", "oauth_authorization_transactions")
+            )
+
+        self.assertEqual(
+            counts,
+            {"usuarios": 3, "oauth_authorization_transactions": None},
+        )
+
+    def test_provider_no_sobrescribe_backup_existente(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = self._config(tmpdir)
+            backup_path = Path(tmpdir) / "backup.sql.gz"
+            backup_path.write_bytes(b"existing")
+
+            with self.assertRaises(database_backup.BackupExecutionError):
+                database_backup.MySQLDumpBackupProvider().create_backup(
+                    config,
+                    backup_path,
+                    CapturingPopenFactory(),
+                )
 
     def test_config_from_env_requiere_defaults_file(self):
         with patch.dict(os.environ, {}, clear=True):
