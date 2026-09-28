@@ -62,7 +62,9 @@ hibrida con tokens globales de densidad moderada, `clamp()` y container queries,
 manteniendo reflow en las excepciones inevitables. No existen todavia tokens
 de densidad, container queries ni owner implementado; la prueba reversible
 permanece pendiente. ETAPA 98 está cerrada; ETAPA 99 - Identidad, Registro y
-Autenticación es la siguiente etapa oficial, pendiente y no iniciada.
+Autenticación conserva su estado vigente exclusivamente en
+`docs/04_CURRENT_STAGE.md` y su secuencia en `docs/05_SEARCH_ROADMAP.md`; este
+documento no los redefine ni autoriza cambios visuales o activación funcional.
 
 ## 2. Matriz acumulada
 
