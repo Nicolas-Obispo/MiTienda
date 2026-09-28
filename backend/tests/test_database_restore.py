@@ -4,6 +4,7 @@ import io
 import json
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -389,9 +390,9 @@ class DatabaseRestoreTests(unittest.TestCase):
             }
         }
 
-        normalized = database_restore._normalized_schema_snapshot_for_manifest(
-            restored_with_legacy,
-            manifest,
+        normalized = database_restore.normalize_schema_snapshot_for_profile(
+            schema_result_to_dict(restored_with_legacy),
+            database_restore._manifest_schema_profile(manifest),
         )
 
         self.assertEqual(normalized, expected_historical)
@@ -412,9 +413,9 @@ class DatabaseRestoreTests(unittest.TestCase):
             "schema_profile": database_restore.CURRENT_SCHEMA_PROFILE,
             "critical_table_counts": {"usuarios": 1},
         }
-        normalized = database_restore._normalized_schema_snapshot_for_manifest(
-            result,
-            manifest,
+        normalized = database_restore.normalize_schema_snapshot_for_profile(
+            schema_result_to_dict(result),
+            database_restore._manifest_schema_profile(manifest),
         )
         self.assertEqual(normalized["extra_tables"], ["tokens_revocados"])
         self.assertFalse(normalized["ok"])
@@ -436,12 +437,181 @@ class DatabaseRestoreTests(unittest.TestCase):
             "schema_profile": database_restore.PARTIAL_SCHEMA_PROFILE,
             "critical_table_counts": {"usuarios": 1},
         }
-        normalized = database_restore._normalized_schema_snapshot_for_manifest(
-            result,
-            manifest,
+        normalized = database_restore.normalize_schema_snapshot_for_profile(
+            schema_result_to_dict(result),
+            database_restore._manifest_schema_profile(manifest),
         )
         self.assertEqual(normalized["column_differences"], {})
         self.assertTrue(normalized["ok"])
+
+    def test_comparacion_pre_cleanup_normaliza_ambos_lados_sin_mutar_manifest(self):
+        raw = SchemaCheckResult(
+            metadata_count=10,
+            physical_count=11,
+            missing_tables=["oauth_authorization_transactions"],
+            extra_tables=["tokens_revocados"],
+            column_differences={
+                "usuarios": {
+                    "missing_columns": [],
+                    "extra_columns": ["hashed_password"],
+                }
+            },
+        )
+        manifest = {
+            "schema_profile": database_restore.LEGACY_SCHEMA_PROFILE,
+            "schema_check": schema_result_to_dict(raw),
+            "critical_table_counts": {"usuarios": 1, "tokens_revocados": 1},
+        }
+        original = deepcopy(manifest)
+
+        self.assertTrue(
+            database_restore._schema_snapshots_match_for_manifest(raw, manifest)
+        )
+        self.assertEqual(manifest, original)
+
+    def test_missing_moderno_del_baseline_no_se_ignora_globalmente(self):
+        expected = SchemaCheckResult(
+            metadata_count=10,
+            physical_count=9,
+            missing_tables=["oauth_authorization_transactions"],
+            extra_tables=[],
+            column_differences={},
+        )
+        actual_same = deepcopy(expected)
+        actual_drift = SchemaCheckResult(
+            metadata_count=10,
+            physical_count=8,
+            missing_tables=[
+                "oauth_authorization_transactions",
+                "oauth_session_delivery_handles",
+            ],
+            extra_tables=[],
+            column_differences={},
+        )
+        manifest = {
+            "schema_profile": database_restore.CURRENT_SCHEMA_PROFILE,
+            "schema_check": schema_result_to_dict(expected),
+        }
+
+        self.assertTrue(
+            database_restore._schema_snapshots_match_for_manifest(actual_same, manifest)
+        )
+        self.assertFalse(
+            database_restore._schema_snapshots_match_for_manifest(actual_drift, manifest)
+        )
+
+    def test_profile_parcial_no_tolera_tabla_tokens(self):
+        expected = SchemaCheckResult(
+            metadata_count=10,
+            physical_count=10,
+            missing_tables=[],
+            extra_tables=[],
+            column_differences={
+                "usuarios": {
+                    "missing_columns": [],
+                    "extra_columns": ["hashed_password"],
+                }
+            },
+        )
+        actual = SchemaCheckResult(
+            metadata_count=10,
+            physical_count=11,
+            missing_tables=[],
+            extra_tables=["tokens_revocados"],
+            column_differences=deepcopy(expected.column_differences),
+        )
+        manifest = {
+            "schema_profile": database_restore.PARTIAL_SCHEMA_PROFILE,
+            "schema_check": schema_result_to_dict(expected),
+        }
+
+        self.assertTrue(
+            database_restore._schema_snapshots_match_for_manifest(expected, manifest)
+        )
+        self.assertFalse(
+            database_restore._schema_snapshots_match_for_manifest(actual, manifest)
+        )
+
+    def test_profile_post_cleanup_es_estricto_con_estructuras_legacy(self):
+        expected = SchemaCheckResult(10, 10, [], [], {})
+        actual = SchemaCheckResult(
+            metadata_count=10,
+            physical_count=11,
+            missing_tables=[],
+            extra_tables=["tokens_revocados"],
+            column_differences={
+                "usuarios": {
+                    "missing_columns": [],
+                    "extra_columns": ["hashed_password"],
+                }
+            },
+        )
+        manifest = {
+            "schema_profile": database_restore.CURRENT_SCHEMA_PROFILE,
+            "schema_check": schema_result_to_dict(expected),
+        }
+
+        self.assertFalse(
+            database_restore._schema_snapshots_match_for_manifest(actual, manifest)
+        )
+
+    def test_profiles_no_toleran_diferencias_ajenas(self):
+        expected = SchemaCheckResult(
+            metadata_count=10,
+            physical_count=11,
+            missing_tables=[],
+            extra_tables=["tokens_revocados"],
+            column_differences={
+                "usuarios": {
+                    "missing_columns": [],
+                    "extra_columns": ["hashed_password"],
+                }
+            },
+        )
+        manifest = {
+            "schema_profile": database_restore.LEGACY_SCHEMA_PROFILE,
+            "schema_check": schema_result_to_dict(expected),
+        }
+        unexpected_table = deepcopy(expected)
+        unexpected_table.extra_tables.append("unexpected_table")
+        unexpected_column = deepcopy(expected)
+        unexpected_column.column_differences["usuarios"]["extra_columns"].append(
+            "unexpected_column"
+        )
+
+        self.assertFalse(
+            database_restore._schema_snapshots_match_for_manifest(
+                unexpected_table, manifest
+            )
+        )
+        self.assertFalse(
+            database_restore._schema_snapshots_match_for_manifest(
+                unexpected_column, manifest
+            )
+        )
+
+    def test_normalizacion_por_profile_es_idempotente(self):
+        raw = schema_result_to_dict(
+            SchemaCheckResult(
+                metadata_count=10,
+                physical_count=11,
+                missing_tables=[],
+                extra_tables=["tokens_revocados"],
+                column_differences={
+                    "usuarios": {
+                        "missing_columns": [],
+                        "extra_columns": ["hashed_password"],
+                    }
+                },
+            )
+        )
+        once = database_restore.normalize_schema_snapshot_for_profile(
+            raw, database_restore.LEGACY_SCHEMA_PROFILE
+        )
+        twice = database_restore.normalize_schema_snapshot_for_profile(
+            once, database_restore.LEGACY_SCHEMA_PROFILE
+        )
+        self.assertEqual(once, twice)
 
     def test_limpieza_explicita_requiere_confirmacion(self):
         with patch.object(database_restore, "engine", _fake_engine()), \

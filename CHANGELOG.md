@@ -81,6 +81,12 @@ contractual de `AUTH-LEGACY-01`
   restore del fixture se validaron exclusivamente en
   `mitienda_stage97_test`. Los DROP sobre `mitienda` continuan pendientes;
   `AUTH-LEGACY-01` permanece abierto.
+- El primer restore pre-DROP detecto un falso negativo contractual: el manifest
+  preservaba el snapshot bruto mientras el comparador normalizaba solo el lado
+  restaurado. Recovery ahora conserva ambos snapshots brutos y aplica una unica
+  normalizacion simetrica, idempotente y limitada por schema profile. El backup
+  y manifest historicos permanecen inmutables, ningun schema fue alterado y el
+  PRE-DROP GATE debe repetirse desde cero antes de autorizar los DROP reales.
 - `DEC-066` aprueba como direccion pendiente el modelo `identidad primero ->
   verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`.
   ET99 conserva solo un handoff de compatibilidad, primitivas reutilizables y

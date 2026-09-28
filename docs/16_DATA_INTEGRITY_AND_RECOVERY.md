@@ -838,6 +838,15 @@ restore completo: no se reconstruyen manualmente ni los tokens expirados ni los
 hashes duplicados. En este hito no se aplico DDL sobre `mitienda` y
 `AUTH-LEGACY-01` permanece abierto.
 
+El primer restore fresco pre-DROP expuso un falso negativo de certificacion:
+el manifest contenia el snapshot bruto del origen y el comparador normalizaba
+solo el snapshot restaurado. El contrato corregido preserva la evidencia bruta
+en manifests historicos y normaliza simetricamente ambos lados mediante un
+unico owner, con deltas cerrados para cada profile. Diferencias ajenas al
+profile siguen siendo fail-closed. El backup y manifest afectados no se editan;
+la correccion debe validarlos read-only y luego repetir el PRE-DROP GATE con un
+nuevo recovery point fresco.
+
 ## 8. Seguridad de secretos y artefactos
 
 Reglas:

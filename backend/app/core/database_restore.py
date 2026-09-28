@@ -245,24 +245,26 @@ def _manifest_schema_profile(manifest: dict[str, Any]) -> str:
     return CURRENT_SCHEMA_PROFILE
 
 
-def _normalized_schema_snapshot_for_manifest(
-    result: SchemaCheckResult,
-    manifest: dict[str, Any],
+def normalize_schema_snapshot_for_profile(
+    snapshot: dict[str, object],
+    profile: str,
 ) -> dict[str, object]:
-    """Normaliza únicamente las estructuras contract retiradas para restores históricos."""
+    """Normaliza solo los deltas legacy autorizados por un profile."""
 
-    snapshot = deepcopy(schema_result_to_dict(result))
-    profile = _manifest_schema_profile(manifest)
+    normalized = deepcopy(snapshot)
     if profile == CURRENT_SCHEMA_PROFILE:
-        return snapshot
+        return normalized
+    if profile not in {LEGACY_SCHEMA_PROFILE, PARTIAL_SCHEMA_PROFILE}:
+        raise RestoreValidationError("El perfil de schema del manifiesto es invalido.")
 
     if profile == LEGACY_SCHEMA_PROFILE:
-        snapshot["metadata_count"] = int(snapshot["metadata_count"]) + 1
-        snapshot["extra_tables"] = [
-            table for table in snapshot.get("extra_tables", [])
-            if table != "tokens_revocados"
-        ]
-    column_differences = snapshot.get("column_differences", {})
+        extra_tables = list(normalized.get("extra_tables", []))
+        if "tokens_revocados" in extra_tables:
+            normalized["metadata_count"] = int(normalized["metadata_count"]) + 1
+            normalized["extra_tables"] = [
+                table for table in extra_tables if table != "tokens_revocados"
+            ]
+    column_differences = normalized.get("column_differences", {})
     usuarios = column_differences.get("usuarios")
     if usuarios:
         usuarios["extra_columns"] = [
@@ -277,8 +279,22 @@ def _normalized_schema_snapshot_for_manifest(
         "nullability_differences", "type_differences", "default_differences",
         "check_differences",
     )
-    snapshot["ok"] = not any(snapshot.get(key) for key in difference_keys)
-    return snapshot
+    normalized["ok"] = not any(normalized.get(key) for key in difference_keys)
+    return normalized
+
+
+def _schema_snapshots_match_for_manifest(
+    result: SchemaCheckResult,
+    manifest: dict[str, Any],
+) -> bool:
+    expected = manifest.get("schema_check")
+    if expected is None:
+        return result.ok
+    profile = _manifest_schema_profile(manifest)
+    return normalize_schema_snapshot_for_profile(
+        schema_result_to_dict(result),
+        profile,
+    ) == normalize_schema_snapshot_for_profile(expected, profile)
 
 
 def _validate_backup_file(backup_file: Path, manifest: dict[str, Any]) -> None:
@@ -489,17 +505,10 @@ class RestoreService:
             self.provider.restore(config, popen_factory=popen_factory)
 
             schema_result = _run_schema_check(config.target_database)
-            expected_schema = manifest.get("schema_check")
-            if expected_schema is None:
-                schema_matches_expected = schema_result.ok
-            else:
-                schema_matches_expected = (
-                    _normalized_schema_snapshot_for_manifest(
-                        schema_result,
-                        manifest,
-                    )
-                    == expected_schema
-                )
+            schema_matches_expected = _schema_snapshots_match_for_manifest(
+                schema_result,
+                manifest,
+            )
             if not schema_matches_expected:
                 raise RestoreExecutionError(
                     "El schema restaurado no reproduce el snapshot del backup."
