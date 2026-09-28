@@ -142,7 +142,7 @@ def request_password_recovery(
 def reset_password_with_token(
     *, db: Session, secret: str, new_password: str, clock=utc_now
 ) -> None:
-    """Cambia ambos owners legacy/nuevo y consume el token en un solo commit."""
+    """Cambia la credencial canonica y consume el token en un solo commit."""
 
     validate_new_password(new_password)
     current = clock()
@@ -162,7 +162,6 @@ def reset_password_with_token(
         new_hash = hash_password(new_password)
         credential.password_hash = new_hash
         credential.hash_version = "bcrypt"
-        usuario.hashed_password = new_hash
 
         siblings = (
             db.query(AccountActionToken)

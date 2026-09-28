@@ -297,7 +297,7 @@ def add_password_credential(
     new_password: str,
     clock: Callable[[], datetime] = utc_now,
 ) -> PasswordCredential:
-    """Agrega password real con la politica unica y dual-write legacy."""
+    """Agrega password real con la politica unica y su owner canonico."""
 
     validate_new_password(new_password)
     require_recent_reauthentication(
@@ -324,6 +324,5 @@ def add_password_credential(
         hash_version="bcrypt",
     )
     db.add(credential)
-    usuario.hashed_password = password_hash
     db.flush()
     return credential

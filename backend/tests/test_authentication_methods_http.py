@@ -98,7 +98,6 @@ class AuthenticationMethodsHttpTests(unittest.TestCase):
                     hash_version="bcrypt",
                 )
             )
-            user.hashed_password = password_hash
         db.commit()
         token = crear_token_jwt_versionado(
             usuario_id=1,
@@ -139,10 +138,8 @@ class AuthenticationMethodsHttpTests(unittest.TestCase):
         self.assertNotIn("subject", serialized)
         self.assertNotIn("token", serialized)
         db = self.Session()
-        self.assertEqual(
-            db.get(Usuario, 1).hashed_password,
-            db.get(PasswordCredential, 1).password_hash,
-        )
+        self.assertIsNone(db.get(Usuario, 1).hashed_password)
+        self.assertIsNotNone(db.get(PasswordCredential, 1).password_hash)
         self.assertIsNone(db.get(FeedGoSession, "google-session").revoked_at)
         db.close()
 

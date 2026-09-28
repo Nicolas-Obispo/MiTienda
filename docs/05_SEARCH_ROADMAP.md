@@ -1433,6 +1433,12 @@ y no crean ni renumeran etapas.
   cerrados en el alcance aprobado de 99.9-B. Los
   criterios de cierre permanentes viven en `15_LEGAL_AND_OPERATIONAL` 27.8.1.
 
+  L3A queda tecnicamente aprobado: `PasswordCredential` es la unica autoridad
+  runtime de password y ya no existen fallback ni dual-write productivos hacia
+  `usuarios.hashed_password`. La columna permanece fisicamente preservada hasta
+  su decision contractual posterior. Resta L3B para retirar JWT sin SID y los
+  consumidores runtime de `TokenRevocado`; `AUTH-LEGACY-01` continua abierto.
+
   `DEC-066` aprueba como direccion de producto pendiente el modelo `identidad
   primero -> verificacion -> resolucion de identidad -> datos minimos -> cuenta
   -> sesion`. El contrato neutral de B1 se preserva como baseline

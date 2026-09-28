@@ -109,7 +109,7 @@ class PasswordRecoveryFlowTests(unittest.TestCase):
             )
         db.commit(); db.close()
 
-    def test_reset_hash_unico_dual_write_consumo_y_no_login(self):
+    def test_reset_hash_unico_actualiza_solo_credential_consumo_y_no_login(self):
         self.create_sessions()
         issued = self.issue()
         with patch("app.modules.users.services.password_recovery_services.hash_password", return_value="new-hash") as hasher:
@@ -119,7 +119,7 @@ class PasswordRecoveryFlowTests(unittest.TestCase):
         self.assertIsNone(result)
         hasher.assert_called_once_with("Password1")
         with self.Session() as db:
-            self.assertEqual(db.get(Usuario, 1).hashed_password, "new-hash")
+            self.assertEqual(db.get(Usuario, 1).hashed_password, "legacy")
             self.assertEqual(db.get(PasswordCredential, 1).password_hash, "new-hash")
             self.assertIsNotNone(db.get(AccountActionToken, issued.token_id).consumed_at)
             self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 0)

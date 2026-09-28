@@ -182,7 +182,6 @@ def process_google_identity(
         usuario = Usuario(
             email=identity.email,
             email_canonical=canonical_email,
-            hashed_password=None,
             email_verified_at=now,
             email_verification_source="google_oidc",
         )

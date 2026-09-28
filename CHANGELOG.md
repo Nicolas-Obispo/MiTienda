@@ -60,6 +60,12 @@ contractual de `AUTH-LEGACY-01`
   finalizo PASS con 16 dual-equivalent y cero legacy-only, por lo que L2
   backfill queda como no-op sin targets. El retiro runtime legacy permanece
   pendiente y `AUTH-LEGACY-01` continua abierto.
+- L3A establecio `PasswordCredential` como unica autoridad runtime de password:
+  Registro, Login, cambio autenticado, reset y alta de password dejaron de leer
+  o escribir `usuarios.hashed_password`. La columna fisica, L1 y las migraciones
+  historicas permanecen preservadas. El gate focal aprobo 184/184 contratos
+  locales y 2/2 de concurrencia MySQL aislada. JWT legacy y `TokenRevocado`
+  continúan pendientes de L3B; `AUTH-LEGACY-01` sigue abierto.
 - `DEC-066` aprueba como direccion pendiente el modelo `identidad primero ->
   verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`.
   ET99 conserva solo un handoff de compatibilidad, primitivas reutilizables y

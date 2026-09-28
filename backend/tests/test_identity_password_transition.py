@@ -1,3 +1,4 @@
+import inspect
 import tempfile
 import threading
 import unittest
@@ -23,7 +24,19 @@ from app.modules.users.models.usuarios_documentos_aceptaciones_models import (
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.routes.usuarios_routers import router as usuarios_router
 from app.modules.users.schemas.usuarios_schemas import UsuarioCreate
-from app.modules.users.services.usuarios_services import crear_usuario
+from app.modules.users.services.authenticated_password_services import (
+    change_authenticated_password,
+)
+from app.modules.users.services.authentication_method_services import (
+    add_password_credential,
+)
+from app.modules.users.services.google_identity_services import (
+    process_google_identity,
+)
+from app.modules.users.services.password_recovery_services import (
+    reset_password_with_token,
+)
+from app.modules.users.services.usuarios_services import autenticar_usuario, crear_usuario
 
 
 import_all_models()
@@ -91,8 +104,8 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
         credencial = db.query(PasswordCredential).one()
         evidencias = db.query(UsuarioDocumentoAceptacion).all()
         self.assertEqual(usuario.email_canonical, "persona@example.com")
-        self.assertEqual(usuario.hashed_password, "$2b$hash-unico")
-        self.assertEqual(credencial.password_hash, usuario.hashed_password)
+        self.assertIsNone(usuario.hashed_password)
+        self.assertEqual(credencial.password_hash, "$2b$hash-unico")
         self.assertEqual(len(evidencias), 2)
         self.assertEqual(hasher.call_count, 1)
         db.close()
@@ -204,7 +217,7 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("token", response.json())
 
-    def test_login_fallback_se_limita_a_fila_legacy_sin_reparar(self):
+    def test_login_no_usa_fallback_legacy_sin_canonical_ni_credential(self):
         db = TestingSessionLocal()
         db.add(
             Usuario(
@@ -224,7 +237,11 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.json(),
+            {"detail": "Credenciales inv\u00e1lidas"},
+        )
 
     def test_usuario_canonico_sin_credencial_no_usa_hash_legacy(self):
         db = TestingSessionLocal()
@@ -248,6 +265,18 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"detail": "Credenciales inválidas"})
+
+    def test_runtime_password_no_referencia_hashed_password_legacy(self):
+        runtime_flows = (
+            crear_usuario,
+            autenticar_usuario,
+            change_authenticated_password,
+            reset_password_with_token,
+            add_password_credential,
+            process_google_identity,
+        )
+        for flow in runtime_flows:
+            self.assertNotIn("hashed_password", inspect.getsource(flow), flow.__name__)
 
     def test_politica_password_cubre_requisitos_y_limite_bcrypt(self):
         invalid_passwords = [

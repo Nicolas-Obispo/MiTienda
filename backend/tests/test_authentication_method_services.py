@@ -172,7 +172,7 @@ class AuthenticationMethodServicesTests(unittest.TestCase):
         self.assertIsNone(db.get(FeedGoSession, replacement_id))
         db.close()
 
-    def test_reauthentication_accepts_an_existing_legacy_password_without_reapplying_policy(self):
+    def test_reauthentication_accepts_existing_credential_without_reapplying_policy(self):
         db = self.Session()
         legacy_hash = hash_password("abc")
         db.add(
@@ -182,7 +182,6 @@ class AuthenticationMethodServicesTests(unittest.TestCase):
                 hash_version="bcrypt",
             )
         )
-        db.get(Usuario, 1).hashed_password = legacy_hash
         self.password_session(db, sid="legacy-password-session")
         db.commit()
         with patch(
@@ -291,7 +290,8 @@ class AuthenticationMethodServicesTests(unittest.TestCase):
             clock=lambda: self.now,
         )
         db.commit()
-        self.assertEqual(db.get(Usuario, 1).hashed_password, credential.password_hash)
+        self.assertIsNone(db.get(Usuario, 1).hashed_password)
+        self.assertIsNotNone(credential.password_hash)
         self.assertIsNotNone(db.get(ExternalIdentity, identity.id))
         self.assertIsNone(db.get(FeedGoSession, session.id).revoked_at)
         methods = derive_authentication_methods(db, usuario_id=1)
@@ -345,7 +345,6 @@ class AuthenticationMethodServicesTests(unittest.TestCase):
                 hash_version="bcrypt",
             )
         )
-        db.get(Usuario, 1).hashed_password = password_hash
         identity = self.google_identity(db)
         current = self.google_session(db, identity, sid="google-current")
         other = self.google_session(db, identity, sid="google-other")

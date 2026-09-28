@@ -789,6 +789,14 @@ duales equivalentes, cero legacy-only y cero canonical pendientes. El backfill
 de datos L2 queda como no-op sin targets; `AUTH-LEGACY-01` continua ABIERTO por
 el retiro runtime legacy y sus gates finales.
 
+L3A quedo tecnicamente validado: `PasswordCredential` es la unica autoridad
+runtime para Registro, Login, cambio autenticado, reset, alta y reautenticacion
+por password. Se retiraron el fallback de Login y todos los dual-write hacia
+`usuarios.hashed_password`; la columna fisica, el preflight L1 y las migraciones
+historicas permanecen sin cambios. El gate aprobo 184/184 contratos locales y
+2/2 de concurrencia MySQL aislada. `AUTH-LEGACY-01` continua ABIERTO: el
+siguiente trabajo es L3B, retiro runtime de JWT sin SID y `TokenRevocado`.
+
 Restricciones:
 
 - no implementar el modelo identity-first dentro de ETAPA 99; su handoff

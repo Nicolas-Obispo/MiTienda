@@ -109,7 +109,6 @@ def run_probe() -> dict[str, object]:
                 id=1,
                 email="synthetic-existing@example.com",
                 email_canonical="synthetic-existing@example.com",
-                hashed_password=password_hash,
                 email_verified_at=datetime(2026, 9, 25, tzinfo=timezone.utc),
             )
         )

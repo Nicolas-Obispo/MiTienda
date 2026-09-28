@@ -50,8 +50,10 @@ class DualJwtFeedGoSessionValidationTests(unittest.TestCase):
         )
         self.rate_secret_patch.start()
         db = SessionLocal()
+        self.legacy_hashes = {}
         for user_id in (1, 2):
             password_hash = hash_password("Password1")
+            self.legacy_hashes[user_id] = password_hash
             db.add(Usuario(
                 id=user_id,
                 email=f"user{user_id}@example.com",
@@ -229,7 +231,11 @@ class DualJwtFeedGoSessionValidationTests(unittest.TestCase):
         sessions = db.query(FeedGoSession).all()
         self.assertEqual(sum(item.revoked_at is None for item in sessions), 1)
         self.assertIsNone(db.get(FeedGoSession, self.claims(current)["sid"]).revoked_at)
-        self.assertEqual(db.get(Usuario, 1).hashed_password, db.get(PasswordCredential, 1).password_hash)
+        self.assertEqual(db.get(Usuario, 1).hashed_password, self.legacy_hashes[1])
+        self.assertNotEqual(
+            db.get(Usuario, 1).hashed_password,
+            db.get(PasswordCredential, 1).password_hash,
+        )
         db.close()
 
     def test_legacy_password_change_revokes_feedgo_sessions_without_creating_one(self):
@@ -246,6 +252,11 @@ class DualJwtFeedGoSessionValidationTests(unittest.TestCase):
         db = SessionLocal()
         self.assertEqual(db.query(FeedGoSession).count(), 2)
         self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 0)
+        self.assertEqual(db.get(Usuario, 1).hashed_password, self.legacy_hashes[1])
+        self.assertNotEqual(
+            db.get(Usuario, 1).hashed_password,
+            db.get(PasswordCredential, 1).password_hash,
+        )
         db.close()
 
 

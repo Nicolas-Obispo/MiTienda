@@ -13,7 +13,6 @@ from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.schemas.usuarios_schemas import UsuarioCreate, UsuarioLogin
 from app.modules.users.services import documentos_aceptacion_services
 from app.modules.users.services.email_normalization import (
-    InvalidEmailError,
     canonicalize_email,
 )
 from app.modules.users.services.phone_normalization import (
@@ -58,7 +57,6 @@ def crear_usuario(db: Session, usuario: UsuarioCreate) -> Usuario | None:
     nuevo_usuario = Usuario(
         email=email,
         email_canonical=email_canonical,
-        hashed_password=hashed,
     )
 
     try:
@@ -109,33 +107,8 @@ def autenticar_usuario(
         .filter(Usuario.email_canonical == email_canonical)
         .first()
     )
-    if not usuario:
-        # Fallback acotado a filas legacy todavia no reparadas. La comparacion
-        # reutiliza el owner canonico y no introduce lower/trim paralelos.
-        candidatos_legacy = (
-            db.query(Usuario)
-            .filter(Usuario.email_canonical.is_(None))
-            .all()
-        )
-        coincidencias = []
-        for candidato in candidatos_legacy:
-            try:
-                coincide = canonicalize_email(candidato.email) == email_canonical
-            except InvalidEmailError:
-                coincide = False
-            if coincide:
-                coincidencias.append(candidato)
-        if len(coincidencias) == 1:
-            usuario = coincidencias[0]
-
     credencial = db.get(PasswordCredential, usuario.id) if usuario is not None else None
-    password_hash = (
-        credencial.password_hash
-        if credencial is not None
-        else usuario.hashed_password
-        if usuario is not None and usuario.email_canonical is None
-        else None
-    )
+    password_hash = credencial.password_hash if credencial is not None else None
 
     if not verificar_password_o_dummy(data.password, password_hash):
         return None

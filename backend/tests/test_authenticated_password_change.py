@@ -30,6 +30,7 @@ class AuthenticatedPasswordChangeTests(unittest.TestCase):
         self.Session = sessionmaker(bind=self.engine)
         self.legacy_password = "abc"
         legacy_hash = hash_password(self.legacy_password)
+        self.legacy_hash = legacy_hash
         with self.Session.begin() as db:
             db.add(Usuario(id=1, email="person@example.com", email_canonical="person@example.com", hashed_password=legacy_hash))
             db.add(PasswordCredential(usuario_id=1, password_hash=legacy_hash, hash_version="bcrypt"))
@@ -65,12 +66,14 @@ class AuthenticatedPasswordChangeTests(unittest.TestCase):
         with self.Session() as db:
             self.assertNotEqual(db.get(PasswordCredential, 1).password_hash, "abc")
 
-    def test_hash_unico_y_dual_write_identico(self):
+    def test_hash_unico_actualiza_solo_password_credential(self):
+        with self.Session() as db:
+            legacy_hash = db.get(Usuario, 1).hashed_password
         with patch("app.modules.users.services.authenticated_password_services.hash_password", return_value="new-hash") as hasher:
             self.change()
         hasher.assert_called_once_with("Password1")
         with self.Session() as db:
-            self.assertEqual(db.get(Usuario, 1).hashed_password, "new-hash")
+            self.assertEqual(db.get(Usuario, 1).hashed_password, legacy_hash)
             self.assertEqual(db.get(PasswordCredential, 1).password_hash, "new-hash")
 
     def test_incorrecta_registra_fallos_y_bloquea_despues_de_cinco(self):
@@ -148,7 +151,10 @@ class AuthenticatedPasswordChangeTests(unittest.TestCase):
                 )
         with self.Session() as db:
             self.assertTrue(db.get(PasswordCredential, 1).password_hash != "Password1")
-            self.assertEqual(db.get(Usuario, 1).hashed_password, db.get(PasswordCredential, 1).password_hash)
+            self.assertEqual(
+                db.get(Usuario, 1).hashed_password,
+                self.legacy_hash,
+            )
             self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 2)
 
     def test_no_crea_revocacion_ni_feedgo_session(self):

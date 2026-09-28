@@ -43,6 +43,7 @@ class PasswordSessionRevocationMySQLConcurrencyTests(unittest.TestCase):
         Base.metadata.create_all(self.engine)
         self.now = datetime.now(timezone.utc)
         password_hash = hash_password("Password1")
+        self.legacy_hash = password_hash
         db = self.Session()
         db.add(Usuario(
             id=1, email="user@example.com", email_canonical="user@example.com",
@@ -96,7 +97,11 @@ class PasswordSessionRevocationMySQLConcurrencyTests(unittest.TestCase):
         self.assertEqual(results.count("rejected"), 1)
         db = self.Session()
         self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 0)
-        self.assertEqual(db.get(Usuario, 1).hashed_password, db.get(PasswordCredential, 1).password_hash)
+        self.assertEqual(db.get(Usuario, 1).hashed_password, self.legacy_hash)
+        self.assertNotEqual(
+            db.get(Usuario, 1).hashed_password,
+            db.get(PasswordCredential, 1).password_hash,
+        )
         db.close()
 
     def test_concurrent_change_preserves_only_current_session(self):
@@ -113,7 +118,11 @@ class PasswordSessionRevocationMySQLConcurrencyTests(unittest.TestCase):
         db = self.Session()
         self.assertIsNone(db.get(FeedGoSession, "current").revoked_at)
         self.assertIsNotNone(db.get(FeedGoSession, "other").revoked_at)
-        self.assertEqual(db.get(Usuario, 1).hashed_password, db.get(PasswordCredential, 1).password_hash)
+        self.assertEqual(db.get(Usuario, 1).hashed_password, self.legacy_hash)
+        self.assertNotEqual(
+            db.get(Usuario, 1).hashed_password,
+            db.get(PasswordCredential, 1).password_hash,
+        )
         db.close()
 
 

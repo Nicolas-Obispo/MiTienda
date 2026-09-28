@@ -1,4 +1,4 @@
-"""Cambio autenticado de password con dual-write transaccional."""
+"""Cambio autenticado de password sobre la credencial canonica."""
 
 from __future__ import annotations
 
@@ -71,7 +71,6 @@ def change_authenticated_password(
         new_hash = hash_password(new_password)
         credential.password_hash = new_hash
         credential.hash_version = "bcrypt"
-        usuario.hashed_password = new_hash
 
         tokens = (
             db.query(AccountActionToken)
