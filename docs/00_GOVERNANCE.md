@@ -417,6 +417,17 @@ que el alcance excederá claramente esa guía, deberá dividirse por fronteras
 funcionales o arquitectónicas coherentes, con objetivo, dependencias y criterio
 de cierre propios para cada etapa resultante.
 
+La estructura normal es `etapa -> sprint`. Un tercer nivel se admite solo para
+un gate o correctivo puntual y no debe transformarse en una jerarquia
+persistente. Debe ejecutarse un rebaseline formal cuando una etapa supere seis
+sprints, requiera una nueva capa persistente de subdivisiones o incorpore un
+nuevo journey de usuario. El rebaseline debe clasificar cada hallazgo nuevo
+como: (a) violacion de una invariante o del criterio de cierre vigente; (b) gate
+preproduccion; o (c) evolucion de producto. El contrato de salida queda
+congelado durante la implementacion salvo decision explicita de rebaseline. El
+trabajo ya cerrado conserva su numeracion historica y nunca se renumera
+retrospectivamente.
+
 El Roadmap es una planificacion gobernada y evolutiva: representa el mejor
 orden conocido con la evidencia disponible, no un contrato inmutable ni una
 autorizacion automatica para ejecutar o lanzar. Nueva evidencia puede justificar
