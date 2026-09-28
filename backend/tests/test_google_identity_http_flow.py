@@ -152,7 +152,6 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
                 id=1,
                 email="owner@example.com",
                 email_canonical="owner@example.com",
-                hashed_password=password_hash,
             )
         )
         db.add(
@@ -197,7 +196,7 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
         self.assertEqual(replay.json()["code"], "google_session_result_invalid")
         db = self.Session()
         user = db.query(Usuario).one()
-        self.assertIsNone(user.hashed_password)
+        self.assertFalse(hasattr(user, "hashed_password"))
         self.assertEqual(db.query(ExternalIdentity).one().provider_subject, "new-google-subject")
         db.close()
 
@@ -539,7 +538,6 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
                 id=2,
                 email="other@example.com",
                 email_canonical="other@example.com",
-                hashed_password=None,
             )
         )
         db.flush()
@@ -623,7 +621,6 @@ class GoogleIdentityHttpFlowTests(unittest.TestCase):
             Usuario(
                 email="existing@example.com",
                 email_canonical="existing@example.com",
-                hashed_password="legacy-hash",
             )
         )
         db.commit()

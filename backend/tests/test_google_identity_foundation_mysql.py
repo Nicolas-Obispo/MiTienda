@@ -93,7 +93,7 @@ class GoogleIdentityFoundationMySQLMigrationTests(unittest.TestCase):
     def test_concurrent_consumption_has_exactly_one_winner(self):
         now = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)
         db = self.Session()
-        db.add(Usuario(id=1, email="oauth@test.local", hashed_password=None))
+        db.add(Usuario(id=1, email="oauth@test.local"))
         db.commit()
         material = create_oauth_authorization_transaction(
             db,

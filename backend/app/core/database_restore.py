@@ -14,6 +14,7 @@ import os
 import re
 import subprocess
 import tempfile
+from copy import deepcopy
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -40,6 +41,9 @@ RESTORE_DATABASE_PATTERN = re.compile(r"^feedgo_restore_tmp_[a-z0-9_]+$")
 DROP_CONFIRMATION = "DROP_RESTORE_TEMP_DB"
 DEFAULT_EVIDENCE_DIR = Path("restore_tmp/evidence")
 WORKSPACE_ROOT = Path(__file__).resolve().parents[3]
+CURRENT_SCHEMA_PROFILE = "post_legacy_cleanup_v1"
+LEGACY_SCHEMA_PROFILE = "pre_legacy_cleanup_v1"
+PARTIAL_SCHEMA_PROFILE = "after_tokens_cleanup_v1"
 
 
 class RestoreConfigurationError(RuntimeError):
@@ -210,6 +214,11 @@ def _validate_manifest_for_restore(manifest: dict[str, Any]) -> None:
 
     if "schema_check" in manifest and not isinstance(manifest["schema_check"], dict):
         raise RestoreValidationError("El snapshot de schema del manifiesto es invalido.")
+    schema_profile = manifest.get("schema_profile")
+    if schema_profile not in {
+        None, CURRENT_SCHEMA_PROFILE, LEGACY_SCHEMA_PROFILE, PARTIAL_SCHEMA_PROFILE
+    }:
+        raise RestoreValidationError("El perfil de schema del manifiesto es invalido.")
     if format_version >= 2:
         missing_critical = sorted(set(CRITICAL_TABLES) - set(critical_counts))
         if missing_critical:
@@ -224,6 +233,52 @@ def _validate_manifest_for_restore(manifest: dict[str, Any]) -> None:
 
     if not manifest.get("sha256") and not manifest.get("checksum"):
         raise RestoreValidationError("El manifiesto no contiene SHA-256.")
+
+
+def _manifest_schema_profile(manifest: dict[str, Any]) -> str:
+    explicit = manifest.get("schema_profile")
+    if explicit:
+        return str(explicit)
+    critical_counts = manifest.get("critical_table_counts") or {}
+    if "tokens_revocados" in critical_counts:
+        return LEGACY_SCHEMA_PROFILE
+    return CURRENT_SCHEMA_PROFILE
+
+
+def _normalized_schema_snapshot_for_manifest(
+    result: SchemaCheckResult,
+    manifest: dict[str, Any],
+) -> dict[str, object]:
+    """Normaliza únicamente las estructuras contract retiradas para restores históricos."""
+
+    snapshot = deepcopy(schema_result_to_dict(result))
+    profile = _manifest_schema_profile(manifest)
+    if profile == CURRENT_SCHEMA_PROFILE:
+        return snapshot
+
+    if profile == LEGACY_SCHEMA_PROFILE:
+        snapshot["metadata_count"] = int(snapshot["metadata_count"]) + 1
+        snapshot["extra_tables"] = [
+            table for table in snapshot.get("extra_tables", [])
+            if table != "tokens_revocados"
+        ]
+    column_differences = snapshot.get("column_differences", {})
+    usuarios = column_differences.get("usuarios")
+    if usuarios:
+        usuarios["extra_columns"] = [
+            column for column in usuarios.get("extra_columns", [])
+            if column != "hashed_password"
+        ]
+        if not usuarios.get("missing_columns") and not usuarios.get("extra_columns"):
+            column_differences.pop("usuarios", None)
+    difference_keys = (
+        "missing_tables", "extra_tables", "column_differences",
+        "foreign_key_differences", "index_differences", "unique_differences",
+        "nullability_differences", "type_differences", "default_differences",
+        "check_differences",
+    )
+    snapshot["ok"] = not any(snapshot.get(key) for key in difference_keys)
+    return snapshot
 
 
 def _validate_backup_file(backup_file: Path, manifest: dict[str, Any]) -> None:
@@ -439,7 +494,11 @@ class RestoreService:
                 schema_matches_expected = schema_result.ok
             else:
                 schema_matches_expected = (
-                    schema_result_to_dict(schema_result) == expected_schema
+                    _normalized_schema_snapshot_for_manifest(
+                        schema_result,
+                        manifest,
+                    )
+                    == expected_schema
                 )
             if not schema_matches_expected:
                 raise RestoreExecutionError(

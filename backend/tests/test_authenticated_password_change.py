@@ -10,7 +10,6 @@ from app.core.database import Base
 from app.core.model_registry import import_all_models
 from app.core.security import hash_password
 from app.modules.users.models.identity_models import AccountActionRateLimit, AccountActionToken, FeedGoSession, PasswordCredential
-from app.modules.users.models.tokens_models import TokenRevocado
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.services.account_action_rate_limit_services import CURRENT_PASSWORD, subject_digest
 from app.modules.users.services.account_action_token_services import PASSWORD_RESET, issue_account_action_token
@@ -32,7 +31,7 @@ class AuthenticatedPasswordChangeTests(unittest.TestCase):
         legacy_hash = hash_password(self.legacy_password)
         self.legacy_hash = legacy_hash
         with self.Session.begin() as db:
-            db.add(Usuario(id=1, email="person@example.com", email_canonical="person@example.com", hashed_password=legacy_hash))
+            db.add(Usuario(id=1, email="person@example.com", email_canonical="person@example.com"))
             db.add(PasswordCredential(usuario_id=1, password_hash=legacy_hash, hash_version="bcrypt"))
         self.now = datetime(2026, 9, 5, 12, 0, tzinfo=timezone.utc)
         self.clock = lambda: self.now
@@ -67,13 +66,10 @@ class AuthenticatedPasswordChangeTests(unittest.TestCase):
             self.assertNotEqual(db.get(PasswordCredential, 1).password_hash, "abc")
 
     def test_hash_unico_actualiza_solo_password_credential(self):
-        with self.Session() as db:
-            legacy_hash = db.get(Usuario, 1).hashed_password
         with patch("app.modules.users.services.authenticated_password_services.hash_password", return_value="new-hash") as hasher:
             self.change()
         hasher.assert_called_once_with("Password1")
         with self.Session() as db:
-            self.assertEqual(db.get(Usuario, 1).hashed_password, legacy_hash)
             self.assertEqual(db.get(PasswordCredential, 1).password_hash, "new-hash")
 
     def test_incorrecta_registra_fallos_y_bloquea_despues_de_cinco(self):
@@ -120,7 +116,7 @@ class AuthenticatedPasswordChangeTests(unittest.TestCase):
     def test_rollback_no_diverge_ni_invalida(self):
         self.create_sessions()
         db = self.Session(); issued = issue_account_action_token(db=db, usuario_id=1, purpose=PASSWORD_RESET, clock=self.clock); db.close()
-        db = self.Session(); original = db.get(Usuario, 1).hashed_password; failed = {"done": False}
+        db = self.Session(); original = db.get(PasswordCredential, 1).password_hash; failed = {"done": False}
         def fail_once(session):
             if not failed["done"]: failed["done"] = True; raise RuntimeError("commit_failed")
         event.listen(db, "before_commit", fail_once)
@@ -129,7 +125,6 @@ class AuthenticatedPasswordChangeTests(unittest.TestCase):
                 change_authenticated_password(db=db, usuario=db.get(Usuario, 1), current_password="abc", new_password="Password1", clock=self.clock)
         event.remove(db, "before_commit", fail_once); db.close()
         with self.Session() as check:
-            self.assertEqual(check.get(Usuario, 1).hashed_password, original)
             self.assertEqual(check.get(PasswordCredential, 1).password_hash, original)
             self.assertIsNone(check.get(AccountActionToken, issued.token_id).invalidated_at)
             self.assertEqual(check.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 2)
@@ -151,16 +146,12 @@ class AuthenticatedPasswordChangeTests(unittest.TestCase):
                 )
         with self.Session() as db:
             self.assertTrue(db.get(PasswordCredential, 1).password_hash != "Password1")
-            self.assertEqual(
-                db.get(Usuario, 1).hashed_password,
-                self.legacy_hash,
-            )
+            self.assertEqual(db.get(PasswordCredential, 1).password_hash, self.legacy_hash)
             self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 2)
 
-    def test_no_crea_revocacion_ni_feedgo_session(self):
+    def test_no_crea_feedgo_session(self):
         self.change()
         with self.Session() as db:
-            self.assertEqual(db.query(TokenRevocado).count(), 0)
             self.assertEqual(db.query(FeedGoSession).count(), 0)
 
 

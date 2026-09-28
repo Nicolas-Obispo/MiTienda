@@ -40,7 +40,7 @@ class PhoneVerificationMySQLConcurrencyTests(unittest.TestCase):
         Base.metadata.drop_all(self.engine)
         Base.metadata.create_all(self.engine)
         db = self.Session()
-        user = Usuario(email="otp-mysql@example.com", hashed_password="x", modo_activo="usuario", onboarding_completo=False, telefono_e164="+5491123456789")
+        user = Usuario(email="otp-mysql@example.com", modo_activo="usuario", onboarding_completo=False, telefono_e164="+5491123456789")
         db.add(user); db.flush(); self.user_id = user.id; db.commit(); db.close()
 
     def _issue(self):

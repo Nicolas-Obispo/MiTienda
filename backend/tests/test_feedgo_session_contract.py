@@ -32,8 +32,8 @@ class FeedGoSessionContractTests(unittest.TestCase):
         self.now = datetime(2026, 9, 6, 12, 0, tzinfo=timezone.utc)
         db = self.Session()
         db.add_all([
-            Usuario(id=1, email="one@example.com", hashed_password="$2b$one"),
-            Usuario(id=2, email="two@example.com", hashed_password="$2b$two"),
+            Usuario(id=1, email="one@example.com"),
+            Usuario(id=2, email="two@example.com"),
         ])
         db.commit()
         db.close()

@@ -104,7 +104,7 @@ class GoogleIdentityLoginSignupTests(unittest.TestCase):
         result = self.process(db, self.claim(db), self.identity())
         db.commit()
         usuario = db.query(Usuario).one()
-        self.assertIsNone(usuario.hashed_password)
+        self.assertFalse(hasattr(usuario, "hashed_password"))
         self.assertIsNone(db.get(PasswordCredential, usuario.id))
         self.assertEqual(usuario.email_verified_at, self.now.replace(tzinfo=None))
         self.assertEqual(usuario.email_verification_source, "google_oidc")
@@ -150,7 +150,6 @@ class GoogleIdentityLoginSignupTests(unittest.TestCase):
         user = Usuario(
             email="owner@example.com",
             email_canonical="owner@example.com",
-            hashed_password=None,
         )
         db.add(user)
         db.flush()
@@ -182,7 +181,6 @@ class GoogleIdentityLoginSignupTests(unittest.TestCase):
             Usuario(
                 email="existing@example.com",
                 email_canonical="existing@example.com",
-                hashed_password="legacy",
             )
         )
         db.commit()
@@ -206,13 +204,12 @@ class GoogleIdentityLoginSignupTests(unittest.TestCase):
         self.assertEqual(db.query(ExternalIdentity).count(), 0)
         db.close()
 
-    def test_signup_also_detects_legacy_email_without_canonical_backfill(self):
+    def test_signup_detects_email_without_canonical_backfill(self):
         db = self.Session()
         db.add(
             Usuario(
                 email="Legacy@Example.com",
                 email_canonical=None,
-                hashed_password="legacy",
             )
         )
         db.commit()

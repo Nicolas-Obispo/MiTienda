@@ -93,7 +93,6 @@ class ComercioLocationServiceTests(unittest.TestCase):
         self.usuario = Usuario(
             id=1,
             email="owner@example.com",
-            hashed_password="hash",
             modo_activo="publicador",
             onboarding_completo=True,
         )

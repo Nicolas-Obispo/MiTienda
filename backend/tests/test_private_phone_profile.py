@@ -32,12 +32,11 @@ class PrivatePhoneMigrationTests(unittest.TestCase):
             connection.exec_driver_sql(
                 "CREATE TABLE usuarios ("
                 "id INTEGER PRIMARY KEY, email VARCHAR(255) NOT NULL UNIQUE, "
-                "hashed_password VARCHAR(255) NOT NULL, "
                 "onboarding_completo BOOLEAN NOT NULL DEFAULT 0)"
             )
             connection.exec_driver_sql(
-                "INSERT INTO usuarios (id, email, hashed_password) VALUES "
-                "(1, 'one@example.com', 'hash'), (2, 'two@example.com', 'hash')"
+                "INSERT INTO usuarios (id, email) VALUES "
+                "(1, 'one@example.com'), (2, 'two@example.com')"
             )
 
     def test_upgrade_limpio_es_aditivo_sin_backfill_e_idempotente(self):

@@ -206,7 +206,7 @@ verificables y restaurables.
 | Analytics | `comercios_metricas_snapshots` | media | Analytics | historico agregado | acumulativo | comercios, senales | media | Snapshots historicos no se reconstruyen perfectamente. |
 | IA | `comercios_embeddings` | regenerable | IA/Discovery | vector derivado | derivado | comercios | baja | Recalcular desde fuente y modelo. |
 | IA | `usuarios_embeddings` | media | IA/Usuario | vector derivado de usuario | cascada por usuario | usuarios | media | Derivado, pero puede reflejar preferencias historicas. |
-| Seguridad | `tokens_revocados` | media | Seguridad | tokens invalidados | temporal | usuarios | media | Perdida puede reactivar tokens hasta expiracion si no hay otra defensa. |
+| Seguridad legacy pre-cleanup | `tokens_revocados` | retirada | JWT legacy | tokens expirados | DROP fisico aprobado | ninguna en runtime SID-only | baja | Existe solo en schemas/backups pre-cleanup; no integra el inventario critico post-cleanup. |
 
 ## 5. Matriz de borrado e integridad
 
@@ -598,7 +598,9 @@ Cambios de metadata aceptados:
 - `comercios.ciudad` queda expresado como indice aceptado.
 - `secciones.activo` queda expresado como indice aceptado.
 - `seguidores.comercio_id` queda expresado como indice aceptado.
-- `tokens_revocados.usuario_id` queda expresado como indice aceptado.
+- En el perfil historico pre-cleanup, `tokens_revocados.usuario_id` queda
+  expresado como indice aceptado; el perfil actual post-cleanup no contiene la
+  tabla.
 - Los indices de `knowledge_proposals` asociados a sus FKs quedan expresados
   por metadata.
 
@@ -811,6 +813,30 @@ finalizo PASS con 16 credenciales duales equivalentes, cero legacy-only y cero
 canonical pendientes. El recovery point previo se conserva; por preceder al
 apply canonical, un restore completo exige repetir canonical-only. Esta
 eliminacion de datos ficticios no cierra `RECOVERY-01` ni `AUTH-LEGACY-01`.
+
+## 7.8 Recovery del cleanup fisico legacy
+
+El cleanup fisico aprobado se divide en dos migraciones diagnosticables: (A)
+retirar `tokens_revocados`; (B) retirar `usuarios.hashed_password`. Cada una
+exige opt-in, target exacto, preflight global, una unica sentencia DDL,
+postcheck e idempotencia. El orden A -> B desacopla la blacklist JWT ya retirada
+del retiro posterior del hash duplicado y permite identificar con precision un
+estado parcial.
+
+Los manifests actuales declaran uno de tres perfiles de schema:
+`pre_legacy_cleanup_v1`, `after_tokens_cleanup_v1` o
+`post_legacy_cleanup_v1`. Restore conserva compatibilidad con manifests
+historicos y tolera exclusivamente las estructuras legacy declaradas por su
+perfil; un manifest post-cleanup no tolera su reaparicion. Los recovery points
+existentes no se alteran ni eliminan.
+
+La implementacion, la matriz legacy/parcial/final, la segunda ejecucion
+idempotente y la recuperacion del fixture legacy se validan primero sobre
+`mitienda_stage97_test`. Antes del apply real debe generarse un recovery point
+fresco pre-cleanup y demostrarse su restore oficial. El rollback de los DROP es
+restore completo: no se reconstruyen manualmente ni los tokens expirados ni los
+hashes duplicados. En este hito no se aplico DDL sobre `mitienda` y
+`AUTH-LEGACY-01` permanece abierto.
 
 ## 8. Seguridad de secretos y artefactos
 

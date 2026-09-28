@@ -63,7 +63,6 @@ RUNTIME_PROBE = textwrap.dedent(
     db.add(Usuario(
         id=1,
         email="runtime-registry@example.com",
-        hashed_password="hash",
         modo_activo="usuario",
         onboarding_completo=True,
     ))

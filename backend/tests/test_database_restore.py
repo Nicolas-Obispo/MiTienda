@@ -358,8 +358,90 @@ class DatabaseRestoreTests(unittest.TestCase):
             patches = self._patch_successful_side_effects()
             with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:
                 result = database_restore.restore_backup(config)
-
             self.assertEqual(result.evidence.result, "ok")
+
+    def test_snapshot_historico_normaliza_solo_estructuras_legacy_retiradas(self):
+        restored_with_legacy = SchemaCheckResult(
+            metadata_count=1,
+            physical_count=2,
+            missing_tables=[],
+            extra_tables=["tokens_revocados"],
+            column_differences={
+                "usuarios": {
+                    "missing_columns": [],
+                    "extra_columns": ["hashed_password"],
+                }
+            },
+        )
+        expected_historical = schema_result_to_dict(
+            SchemaCheckResult(
+                metadata_count=2,
+                physical_count=2,
+                missing_tables=[],
+                extra_tables=[],
+                column_differences={},
+            )
+        )
+        manifest = {
+            "critical_table_counts": {
+                "usuarios": 1,
+                "tokens_revocados": 1,
+            }
+        }
+
+        normalized = database_restore._normalized_schema_snapshot_for_manifest(
+            restored_with_legacy,
+            manifest,
+        )
+
+        self.assertEqual(normalized, expected_historical)
+        self.assertEqual(
+            database_restore._manifest_schema_profile(manifest),
+            database_restore.LEGACY_SCHEMA_PROFILE,
+        )
+
+    def test_snapshot_actual_no_tolera_reaparicion_legacy(self):
+        result = SchemaCheckResult(
+            metadata_count=1,
+            physical_count=2,
+            missing_tables=[],
+            extra_tables=["tokens_revocados"],
+            column_differences={},
+        )
+        manifest = {
+            "schema_profile": database_restore.CURRENT_SCHEMA_PROFILE,
+            "critical_table_counts": {"usuarios": 1},
+        }
+        normalized = database_restore._normalized_schema_snapshot_for_manifest(
+            result,
+            manifest,
+        )
+        self.assertEqual(normalized["extra_tables"], ["tokens_revocados"])
+        self.assertFalse(normalized["ok"])
+
+    def test_snapshot_parcial_tolera_solo_hashed_password_historico(self):
+        result = SchemaCheckResult(
+            metadata_count=1,
+            physical_count=1,
+            missing_tables=[],
+            extra_tables=[],
+            column_differences={
+                "usuarios": {
+                    "missing_columns": [],
+                    "extra_columns": ["hashed_password"],
+                }
+            },
+        )
+        manifest = {
+            "schema_profile": database_restore.PARTIAL_SCHEMA_PROFILE,
+            "critical_table_counts": {"usuarios": 1},
+        }
+        normalized = database_restore._normalized_schema_snapshot_for_manifest(
+            result,
+            manifest,
+        )
+        self.assertEqual(normalized["column_differences"], {})
+        self.assertTrue(normalized["ok"])
 
     def test_limpieza_explicita_requiere_confirmacion(self):
         with patch.object(database_restore, "engine", _fake_engine()), \

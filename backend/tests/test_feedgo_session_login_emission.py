@@ -56,7 +56,6 @@ class FeedGoSessionLoginEmissionTests(unittest.TestCase):
             id=1,
             email="user@example.com",
             email_canonical="user@example.com",
-            hashed_password=password_hash,
         ))
         db.add(PasswordCredential(
             usuario_id=1, password_hash=password_hash, hash_version="bcrypt"

@@ -72,6 +72,15 @@ contractual de `AUTH-LEGACY-01`
   su tabla/modelo y las migraciones historicas permanecen fisicamente
   preservados. El gate aprobo 410/410 contratos locales y 8/8 MySQL aislados.
   `AUTH-LEGACY-01` sigue abierto por la decision fisica y regresion final.
+- El cleanup fisico legacy fue aprobado e implementado como dos migraciones
+  independientes y fail-closed: primero `DROP TABLE tokens_revocados` y luego
+  `ALTER TABLE usuarios DROP COLUMN hashed_password`. El modelo y registry
+  actuales, el inventario de backup, L1 y los fixtures modernos quedaron
+  adaptados al schema objetivo; migraciones y backups historicos conservan su
+  perfil reproducible. La matriz legacy/parcial/final, la idempotencia y el
+  restore del fixture se validaron exclusivamente en
+  `mitienda_stage97_test`. Los DROP sobre `mitienda` continuan pendientes;
+  `AUTH-LEGACY-01` permanece abierto.
 - `DEC-066` aprueba como direccion pendiente el modelo `identidad primero ->
   verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`.
   ET99 conserva solo un handoff de compatibilidad, primitivas reutilizables y

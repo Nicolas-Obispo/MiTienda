@@ -25,7 +25,6 @@ from app.modules.spaces.models.comercios_models import Comercio
 from app.modules.stories.models.historias_likes_models import HistoriaLike
 from app.modules.stories.models.historias_models import Historia
 from app.modules.stories.models.historias_vistas_models import HistoriaVista
-from app.modules.users.models.tokens_models import TokenRevocado
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.routes.usuarios_routers import router as usuarios_router
 
@@ -73,7 +72,6 @@ class UsuariosContractsTests(unittest.TestCase):
         usuario = Usuario(
             id=usuario_id,
             email=email,
-            hashed_password="hash",
             avatar_url="/uploads/avatar.jpg",
             color_fondo="#112233",
             modo_activo="publicador",

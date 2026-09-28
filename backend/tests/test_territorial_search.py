@@ -53,7 +53,7 @@ class TerritorialSearchTests(unittest.TestCase):
     def setUp(self):
         Base.metadata.create_all(bind=engine)
         self.db = SessionLocal()
-        self.db.add(Usuario(id=1, email="owner@example.com", hashed_password="hash"))
+        self.db.add(Usuario(id=1, email="owner@example.com"))
         self.db.add(Rubro(id=1, nombre="Servicios", activo=True))
         self.db.commit()
 

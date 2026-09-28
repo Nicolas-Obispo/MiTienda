@@ -29,7 +29,7 @@ class PhoneVerificationTests(unittest.TestCase):
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.db = self.Session()
-        self.user = Usuario(email="otp@example.com", hashed_password="x", modo_activo="usuario", onboarding_completo=False, telefono_e164="+5491123456789")
+        self.user = Usuario(email="otp@example.com", modo_activo="usuario", onboarding_completo=False, telefono_e164="+5491123456789")
         self.db.add(self.user); self.db.commit()
         self.delivery = FakePhoneOtpDelivery([])
         self.now = datetime(2026, 9, 6, 12, tzinfo=timezone.utc)

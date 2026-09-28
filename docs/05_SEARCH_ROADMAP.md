@@ -1447,6 +1447,14 @@ y no crean ni renumeran etapas.
   legacy se preservan hasta su decision posterior y `AUTH-LEGACY-01` continua
   abierto por esa decision, regresion final y cierre documental.
 
+  La decision fisica posterior fue aprobada: `tokens_revocados` y
+  `usuarios.hashed_password` deben retirarse mediante migraciones independientes,
+  en ese orden. Los migradores, contratos estaticos y perfiles de
+  backup/restore pre-cleanup, parcial y post-cleanup se implementan y validan
+  primero en `mitienda_stage97_test`. El apply sobre `mitienda`, su recovery
+  point fresco, postchecks y regresion final permanecen pendientes; por tanto
+  `AUTH-LEGACY-01` sigue abierto.
+
   `DEC-066` aprueba como direccion de producto pendiente el modelo `identidad
   primero -> verificacion -> resolucion de identidad -> datos minimos -> cuenta
   -> sesion`. El contrato neutral de B1 se preserva como baseline

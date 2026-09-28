@@ -67,7 +67,6 @@ class AuthenticationMethodsHttpTests(unittest.TestCase):
             id=1,
             email="google@example.com",
             email_canonical="google@example.com",
-            hashed_password=None,
         )
         db.add(user)
         db.flush()
@@ -139,7 +138,7 @@ class AuthenticationMethodsHttpTests(unittest.TestCase):
         self.assertNotIn("subject", serialized)
         self.assertNotIn("token", serialized)
         db = self.Session()
-        self.assertIsNone(db.get(Usuario, 1).hashed_password)
+        self.assertFalse(hasattr(db.get(Usuario, 1), "hashed_password"))
         self.assertIsNotNone(db.get(PasswordCredential, 1).password_hash)
         self.assertIsNone(db.get(FeedGoSession, "google-session").revoked_at)
         db.close()

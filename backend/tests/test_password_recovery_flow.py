@@ -30,9 +30,9 @@ class PasswordRecoveryFlowTests(unittest.TestCase):
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         with self.Session.begin() as db:
-            db.add(Usuario(id=1, email="Person@Example.com", email_canonical="person@example.com", hashed_password="legacy", email_verified_at=datetime(2026, 1, 1, tzinfo=timezone.utc)))
+            db.add(Usuario(id=1, email="Person@Example.com", email_canonical="person@example.com", email_verified_at=datetime(2026, 1, 1, tzinfo=timezone.utc)))
             db.add(PasswordCredential(usuario_id=1, password_hash="legacy", hash_version="bcrypt"))
-            db.add(Usuario(id=2, email="google@example.com", email_canonical="google@example.com", hashed_password="legacy"))
+            db.add(Usuario(id=2, email="google@example.com", email_canonical="google@example.com"))
         self.now = datetime(2026, 9, 5, 12, 0, tzinfo=timezone.utc)
         self.clock = lambda: self.now
         self.provider = FakeEmailProvider()
@@ -119,7 +119,6 @@ class PasswordRecoveryFlowTests(unittest.TestCase):
         self.assertIsNone(result)
         hasher.assert_called_once_with("Password1")
         with self.Session() as db:
-            self.assertEqual(db.get(Usuario, 1).hashed_password, "legacy")
             self.assertEqual(db.get(PasswordCredential, 1).password_hash, "new-hash")
             self.assertIsNotNone(db.get(AccountActionToken, issued.token_id).consumed_at)
             self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 0)
@@ -171,7 +170,6 @@ class PasswordRecoveryFlowTests(unittest.TestCase):
                 reset_password_with_token(db=db, secret=issued.secret, new_password="Password1", clock=self.clock)
         event.remove(db, "before_commit", fail_once); db.close()
         with self.Session() as check:
-            self.assertEqual(check.get(Usuario, 1).hashed_password, "legacy")
             self.assertEqual(check.get(PasswordCredential, 1).password_hash, "legacy")
             self.assertIsNone(check.get(AccountActionToken, issued.token_id).consumed_at)
             self.assertEqual(check.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 3)
@@ -188,7 +186,6 @@ class PasswordRecoveryFlowTests(unittest.TestCase):
                     db=db, secret=issued.secret, new_password="Password1", clock=self.clock
                 )
         with self.Session() as db:
-            self.assertEqual(db.get(Usuario, 1).hashed_password, "legacy")
             self.assertEqual(db.get(PasswordCredential, 1).password_hash, "legacy")
             self.assertIsNone(db.get(AccountActionToken, issued.token_id).consumed_at)
             self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 3)

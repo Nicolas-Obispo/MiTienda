@@ -66,7 +66,6 @@ class FeedGoSessionLifecycleMySQLE2E(unittest.TestCase):
             id=900001,
             email="session-e2e@example.com",
             email_canonical="session-e2e@example.com",
-            hashed_password=password_hash,
         ))
         db.commit()
         db.add(PasswordCredential(

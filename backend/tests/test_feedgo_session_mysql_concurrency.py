@@ -35,7 +35,7 @@ class FeedGoSessionMySQLConcurrencyTests(unittest.TestCase):
         Base.metadata.create_all(self.engine)
         self.now = datetime.now(timezone.utc)
         db = self.Session()
-        db.add(Usuario(id=1, email="one@example.com", hashed_password="$2b$one"))
+        db.add(Usuario(id=1, email="one@example.com"))
         db.commit()
         for sid in ("one", "two", "three"):
             create_feedgo_session(

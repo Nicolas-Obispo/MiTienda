@@ -113,6 +113,7 @@ class DatabaseBackupTests(unittest.TestCase):
                     counts_provider=_critical_counts,
                     engine_version_provider=lambda: "8.0-test",
                     schema_provider=lambda: {"ok": True},
+                    schema_profile_provider=lambda: "post_legacy_cleanup_v1",
                 )
 
             backup_path = Path(manifest.backup_file)
@@ -180,6 +181,7 @@ class DatabaseBackupTests(unittest.TestCase):
                         counts_provider=lambda: {"usuarios": 1},
                         engine_version_provider=lambda: "8.0-test",
                         schema_provider=lambda: {"ok": True},
+                        schema_profile_provider=lambda: "post_legacy_cleanup_v1",
                     )
 
             self.assertEqual(list((Path(tmpdir) / "backups").glob("*.sql.gz")), [])
@@ -202,6 +204,7 @@ class DatabaseBackupTests(unittest.TestCase):
                         schema_provider=lambda: (_ for _ in ()).throw(
                             RuntimeError("schema failed")
                         ),
+                        schema_profile_provider=lambda: "post_legacy_cleanup_v1",
                     )
 
             self.assertEqual(list((Path(tmpdir) / "backups").iterdir()), [])
@@ -227,7 +230,6 @@ class DatabaseBackupTests(unittest.TestCase):
             "password_credentials",
             "external_identities",
             "feedgo_sessions",
-            "tokens_revocados",
             "account_action_tokens",
             "account_action_rate_limits",
             "phone_verification_challenges",
@@ -237,6 +239,49 @@ class DatabaseBackupTests(unittest.TestCase):
         }
 
         self.assertTrue(expected_identity_tables.issubset(database_backup.CRITICAL_TABLES))
+        self.assertNotIn("tokens_revocados", database_backup.CRITICAL_TABLES)
+        self.assertEqual(
+            database_backup.BackupManifest.__dataclass_fields__["schema_profile"].default,
+            database_backup.POST_LEGACY_CLEANUP_SCHEMA_PROFILE,
+        )
+
+    def test_schema_profile_distingue_legacy_parcial_y_actual(self):
+        class Connection:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+        fake_engine = SimpleNamespace(connect=lambda: Connection())
+        cases = (
+            (
+                ["usuarios", "tokens_revocados"],
+                ["id", "hashed_password"],
+                database_backup.PRE_LEGACY_CLEANUP_SCHEMA_PROFILE,
+            ),
+            (
+                ["usuarios"],
+                ["id", "hashed_password"],
+                database_backup.PARTIAL_LEGACY_CLEANUP_SCHEMA_PROFILE,
+            ),
+            (
+                ["usuarios"],
+                ["id"],
+                database_backup.POST_LEGACY_CLEANUP_SCHEMA_PROFILE,
+            ),
+        )
+        for tables, columns, expected in cases:
+            inspector = SimpleNamespace(
+                get_table_names=lambda tables=tables: tables,
+                get_columns=lambda _table, columns=columns: [
+                    {"name": name} for name in columns
+                ],
+            )
+            with self.subTest(expected=expected), patch.object(
+                database_backup, "engine", fake_engine
+            ), patch.object(database_backup, "inspect", return_value=inspector):
+                self.assertEqual(database_backup.collect_schema_profile(), expected)
 
     def test_conteos_criticos_representan_tabla_faltante(self):
         class Result:

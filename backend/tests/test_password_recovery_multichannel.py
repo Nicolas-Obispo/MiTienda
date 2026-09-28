@@ -26,7 +26,7 @@ class PasswordRecoveryMultichannelTests(unittest.TestCase):
         self.engine=create_engine("sqlite://",connect_args={"check_same_thread":False},poolclass=StaticPool)
         Base.metadata.create_all(self.engine); self.Session=sessionmaker(bind=self.engine)
         with self.Session.begin() as db:
-            db.add(Usuario(id=1,email="person@example.com",email_canonical="person@example.com",email_verified_at=datetime(2026,1,1,tzinfo=timezone.utc),hashed_password="x",telefono_e164="+5491123456789",telefono_verified_at=datetime(2026,1,1,tzinfo=timezone.utc),telefono_verification_source="phone_otp"))
+            db.add(Usuario(id=1,email="person@example.com",email_canonical="person@example.com",email_verified_at=datetime(2026,1,1,tzinfo=timezone.utc),telefono_e164="+5491123456789",telefono_verified_at=datetime(2026,1,1,tzinfo=timezone.utc),telefono_verification_source="phone_otp"))
             db.add(PasswordCredential(usuario_id=1,password_hash="x",hash_version="bcrypt"))
         self.provider=FakeEmailProvider(); self.local=LocalPublicRateLimiter(secret="local-rate")
         self.patches=[

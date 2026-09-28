@@ -23,7 +23,6 @@ from app.modules.spaces.services.comercios_ownership_services import (
 from app.modules.stories.models.historias_likes_models import HistoriaLike
 from app.modules.stories.models.historias_models import Historia
 from app.modules.stories.models.historias_vistas_models import HistoriaVista
-from app.modules.users.models.tokens_models import TokenRevocado
 from app.modules.users.models.usuarios_models import Usuario
 
 
@@ -46,7 +45,6 @@ class ComerciosOwnershipServicesTests(unittest.TestCase):
         return Usuario(
             id=usuario_id,
             email=f"usuario{usuario_id}@example.com",
-            hashed_password="hash",
             modo_activo="publicador",
             onboarding_completo=True,
         )

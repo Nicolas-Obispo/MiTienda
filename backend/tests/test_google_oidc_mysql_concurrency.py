@@ -58,6 +58,13 @@ class GoogleOidcMySQLConcurrencyTests(unittest.TestCase):
         Base.metadata.create_all(self.engine)
         self.now = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)
 
+    @staticmethod
+    def _prepare_historical_identity_schema(connection):
+        """Recreate the legacy input expected by the historical migration."""
+        connection.exec_driver_sql(
+            "ALTER TABLE usuarios ADD COLUMN hashed_password VARCHAR(255) NULL"
+        )
+
     def test_callback_claim_has_exactly_one_winner(self):
         db = self.Session()
         material = create_oauth_authorization_transaction(
@@ -95,7 +102,7 @@ class GoogleOidcMySQLConcurrencyTests(unittest.TestCase):
 
     def test_link_callback_claim_has_exactly_one_winner(self):
         db = self.Session()
-        db.add(Usuario(id=1, email="link@test.local", hashed_password=None))
+        db.add(Usuario(id=1, email="link@test.local"))
         db.flush()
         session = create_feedgo_session(
             db,
@@ -147,7 +154,6 @@ class GoogleOidcMySQLConcurrencyTests(unittest.TestCase):
                 Usuario(
                     id=user_id,
                     email=f"link-{user_id}@test.local",
-                    hashed_password=None,
                 )
             )
             db.flush()
@@ -213,6 +219,7 @@ class GoogleOidcMySQLConcurrencyTests(unittest.TestCase):
 
     def test_migration_is_clean_and_idempotent(self):
         with self.engine.begin() as connection:
+            self._prepare_historical_identity_schema(connection)
             connection.exec_driver_sql("DROP TABLE oauth_session_delivery_handles")
             connection.exec_driver_sql(
                 "ALTER TABLE account_action_rate_limits "
@@ -238,6 +245,7 @@ class GoogleOidcMySQLConcurrencyTests(unittest.TestCase):
 
     def test_migration_recovers_empty_partial_result_table_idempotently(self):
         with self.engine.begin() as connection:
+            self._prepare_historical_identity_schema(connection)
             connection.exec_driver_sql("DROP TABLE oauth_session_delivery_handles")
             connection.exec_driver_sql(
                 "CREATE TABLE oauth_session_delivery_handles "
@@ -263,6 +271,7 @@ class GoogleOidcMySQLConcurrencyTests(unittest.TestCase):
 
     def test_migration_never_rebuilds_partial_result_table_with_data(self):
         with self.engine.begin() as connection:
+            self._prepare_historical_identity_schema(connection)
             connection.exec_driver_sql("DROP TABLE oauth_session_delivery_handles")
             connection.exec_driver_sql(
                 "CREATE TABLE oauth_session_delivery_handles "
@@ -280,7 +289,7 @@ class GoogleOidcMySQLConcurrencyTests(unittest.TestCase):
 
     def test_result_handle_has_exactly_one_consumer(self):
         db = self.Session()
-        db.add(Usuario(id=1, email="oauth@test.local", hashed_password=None))
+        db.add(Usuario(id=1, email="oauth@test.local"))
         material = create_oauth_authorization_transaction(
             db,
             provider="google",

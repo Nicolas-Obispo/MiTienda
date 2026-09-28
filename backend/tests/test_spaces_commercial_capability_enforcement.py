@@ -107,7 +107,6 @@ class SpacesCommercialCapabilityEnforcementTests(unittest.TestCase):
         values = {
             "email": f"space{unique}@example.com",
             "email_canonical": f"space{unique}@example.com",
-            "hashed_password": "hash",
             "modo_activo": "usuario",
             "onboarding_completo": False,
             "provincia": "Buenos Aires" if ready else None,

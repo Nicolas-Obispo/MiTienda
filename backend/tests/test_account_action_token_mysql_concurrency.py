@@ -39,7 +39,6 @@ class AccountActionTokenMySQLConcurrencyTests(unittest.TestCase):
                 id=1,
                 email="persona@example.com",
                 email_canonical="persona@example.com",
-                hashed_password="$2b$test",
             )
         )
         db.commit()

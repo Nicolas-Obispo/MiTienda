@@ -55,7 +55,6 @@ class AccountActionTokenEngineTests(unittest.TestCase):
                 id=1,
                 email="Persona@Example.com",
                 email_canonical="persona@example.com",
-                hashed_password="$2b$test",
             )
         )
         db.commit()

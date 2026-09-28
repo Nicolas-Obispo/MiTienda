@@ -42,7 +42,7 @@ class EmailVerificationFlowTests(unittest.TestCase):
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         with self.Session.begin() as db:
-            db.add(Usuario(id=1, email="person@example.com", email_canonical="person@example.com", hashed_password="hash"))
+            db.add(Usuario(id=1, email="person@example.com", email_canonical="person@example.com"))
         self.now = datetime(2026, 9, 5, 12, 0, tzinfo=timezone.utc)
         self.clock = lambda: self.now
         self.provider = FakeEmailProvider()

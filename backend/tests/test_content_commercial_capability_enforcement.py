@@ -73,7 +73,6 @@ class ContentCommercialCapabilityEnforcementTests(unittest.TestCase):
         values = {
             "email": f"content{self._sequence}@example.com",
             "email_canonical": f"content{self._sequence}@example.com",
-            "hashed_password": "hash",
             "modo_activo": "usuario",
             "onboarding_completo": False,
             "provincia": "Buenos Aires" if ready else None,

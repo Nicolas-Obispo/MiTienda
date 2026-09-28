@@ -38,10 +38,10 @@ class OperationalIncidentTests(unittest.TestCase):
         Base.metadata.create_all(engine)
         db = Session()
         db.add_all([
-            Usuario(id=1, email="operator@test.local", hashed_password="x", modo_activo="usuario", onboarding_completo=True),
-            Usuario(id=2, email="common@test.local", hashed_password="x", modo_activo="publicador", onboarding_completo=True),
-            Usuario(id=3, email="operator2@test.local", hashed_password="x", modo_activo="usuario", onboarding_completo=True),
-            Usuario(id=4, email="status@test.local", hashed_password="x", modo_activo="usuario", onboarding_completo=True),
+            Usuario(id=1, email="operator@test.local", modo_activo="usuario", onboarding_completo=True),
+            Usuario(id=2, email="common@test.local", modo_activo="publicador", onboarding_completo=True),
+            Usuario(id=3, email="operator2@test.local", modo_activo="usuario", onboarding_completo=True),
+            Usuario(id=4, email="status@test.local", modo_activo="usuario", onboarding_completo=True),
         ]); db.commit()
         for user, capability in ((1, OPERATIONS_INCIDENTS_MANAGE), (3, OPERATIONS_INCIDENTS_MANAGE), (4, OPERATIONS_STATUS_READ)):
             record_administrative_capability_change(db, usuario_id=user, capability=capability, action="grant", source="test", reason="97.4")

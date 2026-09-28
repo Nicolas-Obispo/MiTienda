@@ -806,6 +806,16 @@ gate aprobo 410/410 contratos locales y 8/8 MySQL aislados. La tabla/modelo
 fisicamente preservados. `AUTH-LEGACY-01` continua ABIERTO por la decision
 fisica, regresion final y cierre documental.
 
+La decision fisica ya fue aprobada y su implementacion quedo preparada en dos
+migraciones independientes: retiro de `tokens_revocados` y, a continuacion,
+retiro de `usuarios.hashed_password`. El HEAD objetivo elimina modelo, registry,
+inventario de backup y preflight L1 transitorio, pero conserva intactas las
+migraciones historicas y distingue manifests pre-cleanup, parciales y
+post-cleanup. La matriz de schemas, idempotencia y recovery se validan en
+`mitienda_stage97_test`; ningun DROP fue aplicado todavia sobre `mitienda`.
+`AUTH-LEGACY-01` continua ABIERTO hasta recovery point fresco, apply controlado,
+postchecks, regresion final y cierre documental.
+
 Restricciones:
 
 - no implementar el modelo identity-first dentro de ETAPA 99; su handoff

@@ -14,7 +14,6 @@ from app.core.database import Base, get_db
 from app.core.model_registry import import_all_models
 from app.core.security import hash_password
 from app.modules.users.models.identity_models import FeedGoSession, PasswordCredential
-from app.modules.users.models.tokens_models import TokenRevocado
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.routes.usuarios_routers import router
 from tests.auth_test_support import encode_legacy_test_token
@@ -50,15 +49,12 @@ class SidOnlyFeedGoSessionValidationTests(unittest.TestCase):
         )
         self.rate_secret_patch.start()
         db = SessionLocal()
-        self.legacy_hashes = {}
         for user_id in (1, 2):
             password_hash = hash_password("Password1")
-            self.legacy_hashes[user_id] = password_hash
             db.add(Usuario(
                 id=user_id,
                 email=f"user{user_id}@example.com",
                 email_canonical=f"user{user_id}@example.com",
-                hashed_password=password_hash,
             ))
             db.add(PasswordCredential(
                 usuario_id=user_id, password_hash=password_hash, hash_version="bcrypt"
@@ -153,18 +149,7 @@ class SidOnlyFeedGoSessionValidationTests(unittest.TestCase):
         db = SessionLocal(); db.get(FeedGoSession, claims["sid"]).revoked_at = datetime.utcnow(); db.commit(); db.close()
         self.assert_rejected(token)
 
-    def test_legacy_blacklist_does_not_own_versioned_token_after_transition(self):
-        token = self.login(); claims = self.claims(token)
-        db = SessionLocal()
-        db.add(TokenRevocado(
-            token=token,
-            usuario_id=1,
-            expira_en=datetime.utcfromtimestamp(claims["exp"]),
-        ))
-        db.commit(); db.close()
-        self.assertEqual(self.me(token).status_code, 200)
-
-    def test_current_logout_revokes_versioned_session_without_blacklisting_bearer(self):
+    def test_current_logout_revokes_versioned_session(self):
         token = self.login(); claims = self.claims(token)
         logout = client.post(
             "/usuarios/logout", headers={"Authorization": f"Bearer {token}"}
@@ -173,7 +158,6 @@ class SidOnlyFeedGoSessionValidationTests(unittest.TestCase):
         self.assertEqual(self.me(token).status_code, 401)
         db = SessionLocal()
         self.assertIsNotNone(db.get(FeedGoSession, claims["sid"]).revoked_at)
-        self.assertIsNone(db.query(TokenRevocado).filter_by(token=token).first())
         db.close()
 
     def test_versioned_logout_is_idempotent(self):
@@ -182,17 +166,13 @@ class SidOnlyFeedGoSessionValidationTests(unittest.TestCase):
         self.assertEqual(client.post("/usuarios/logout", headers=headers).status_code, 200)
         self.assertEqual(client.post("/usuarios/logout", headers=headers).status_code, 200)
         db = SessionLocal()
-        self.assertEqual(db.query(TokenRevocado).filter_by(token=token).count(), 0)
         self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_not(None)).count(), 1)
         db.close()
 
-    def test_legacy_logout_is_rejected_without_blacklist_write(self):
+    def test_legacy_logout_is_rejected(self):
         token = encode_legacy_test_token(usuario_id=1)
         headers = {"Authorization": f"Bearer {token}"}
         self.assertEqual(client.post("/usuarios/logout", headers=headers).status_code, 401)
-        db = SessionLocal()
-        self.assertIsNone(db.query(TokenRevocado).filter_by(token=token).first())
-        db.close()
 
     def test_logout_one_versioned_session_does_not_revoke_another(self):
         first = self.login(); second = self.login()
@@ -230,11 +210,7 @@ class SidOnlyFeedGoSessionValidationTests(unittest.TestCase):
         sessions = db.query(FeedGoSession).all()
         self.assertEqual(sum(item.revoked_at is None for item in sessions), 1)
         self.assertIsNone(db.get(FeedGoSession, self.claims(current)["sid"]).revoked_at)
-        self.assertEqual(db.get(Usuario, 1).hashed_password, self.legacy_hashes[1])
-        self.assertNotEqual(
-            db.get(Usuario, 1).hashed_password,
-            db.get(PasswordCredential, 1).password_hash,
-        )
+        self.assertTrue(db.get(PasswordCredential, 1).password_hash)
         db.close()
 
     def test_legacy_password_change_is_rejected_without_revoking_sessions(self):
@@ -252,11 +228,7 @@ class SidOnlyFeedGoSessionValidationTests(unittest.TestCase):
         db = SessionLocal()
         self.assertEqual(db.query(FeedGoSession).count(), 2)
         self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 2)
-        self.assertEqual(db.get(Usuario, 1).hashed_password, self.legacy_hashes[1])
-        self.assertEqual(
-            db.get(Usuario, 1).hashed_password,
-            db.get(PasswordCredential, 1).password_hash,
-        )
+        self.assertTrue(db.get(PasswordCredential, 1).password_hash)
         db.close()
 
 

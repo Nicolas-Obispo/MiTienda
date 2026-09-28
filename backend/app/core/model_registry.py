@@ -15,7 +15,6 @@ def import_all_models() -> None:
 
     # USERS
     from app.modules.users.models.usuarios_models import Usuario  # noqa: F401
-    from app.modules.users.models.tokens_models import TokenRevocado  # noqa: F401
     from app.modules.users.models.usuarios_documentos_aceptaciones_models import (  # noqa: F401
         UsuarioDocumentoAceptacion,
     )

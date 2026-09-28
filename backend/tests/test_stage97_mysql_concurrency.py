@@ -46,9 +46,9 @@ class Stage97MySQLConcurrencyTests(unittest.TestCase):
         Base.metadata.create_all(self.engine)
         db = self.Session()
         db.add_all([
-            Usuario(id=1, email="operator-stage97@test.local", hashed_password="x", modo_activo="usuario", onboarding_completo=True),
-            Usuario(id=2, email="reporter-stage97@test.local", hashed_password="x", modo_activo="usuario", onboarding_completo=True),
-            Usuario(id=3, email="owner-stage97@test.local", hashed_password="x", modo_activo="publicador", onboarding_completo=True),
+            Usuario(id=1, email="operator-stage97@test.local", modo_activo="usuario", onboarding_completo=True),
+            Usuario(id=2, email="reporter-stage97@test.local", modo_activo="usuario", onboarding_completo=True),
+            Usuario(id=3, email="owner-stage97@test.local", modo_activo="publicador", onboarding_completo=True),
             Rubro(id=1, nombre="Rubro", activo=True),
         ])
         db.flush()

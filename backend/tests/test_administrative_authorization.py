@@ -89,7 +89,6 @@ class AdministrativeAuthorizationTests(unittest.TestCase):
             Usuario(
                 id=usuario_id,
                 email=f"usuario-{usuario_id}@example.com",
-                hashed_password="hash",
                 modo_activo=modo_activo,
                 onboarding_completo=True,
             )

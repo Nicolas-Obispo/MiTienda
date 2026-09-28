@@ -104,7 +104,7 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
         credencial = db.query(PasswordCredential).one()
         evidencias = db.query(UsuarioDocumentoAceptacion).all()
         self.assertEqual(usuario.email_canonical, "persona@example.com")
-        self.assertIsNone(usuario.hashed_password)
+        self.assertFalse(hasattr(usuario, "hashed_password"))
         self.assertEqual(credencial.password_hash, "$2b$hash-unico")
         self.assertEqual(len(evidencias), 2)
         self.assertEqual(hasher.call_count, 1)
@@ -124,7 +124,6 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
         db = TestingSessionLocal()
         usuario = db.query(Usuario).one()
         credencial = db.query(PasswordCredential).one()
-        original_legacy_hash = usuario.hashed_password
         original_credential_hash = credencial.password_hash
         db.close()
 
@@ -162,7 +161,6 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
         self.assertEqual(db.query(AccountActionToken).count(), 0)
         usuario = db.query(Usuario).one()
         credencial = db.query(PasswordCredential).one()
-        self.assertEqual(usuario.hashed_password, original_legacy_hash)
         self.assertEqual(credencial.password_hash, original_credential_hash)
         db.close()
 
@@ -201,9 +199,6 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
             json=registration_payload("Persona@Example.com"),
         )
         db = TestingSessionLocal()
-        usuario = db.query(Usuario).one()
-        usuario.hashed_password = hash_password("legacy-divergente")
-        db.commit()
         db.close()
 
         response = client.post(
@@ -217,13 +212,12 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("token", response.json())
 
-    def test_login_no_usa_fallback_legacy_sin_canonical_ni_credential(self):
+    def test_login_rechaza_usuario_sin_canonical_ni_credential(self):
         db = TestingSessionLocal()
         db.add(
             Usuario(
                 email="Legacy@Example.com",
                 email_canonical=None,
-                hashed_password=hash_password("password-legacy"),
             )
         )
         db.commit()
@@ -243,13 +237,12 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
             {"detail": "Credenciales inv\u00e1lidas"},
         )
 
-    def test_usuario_canonico_sin_credencial_no_usa_hash_legacy(self):
+    def test_usuario_canonico_sin_credencial_es_rechazado(self):
         db = TestingSessionLocal()
         db.add(
             Usuario(
                 email="incompleto@example.com",
                 email_canonical="incompleto@example.com",
-                hashed_password=hash_password("password-legacy"),
             )
         )
         db.commit()

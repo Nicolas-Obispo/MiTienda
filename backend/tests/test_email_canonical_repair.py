@@ -32,22 +32,20 @@ class EmailCanonicalRepairTests(unittest.TestCase):
         email: str | None,
         *,
         canonical: str | None = None,
-        legacy_hash: str | None = None,
     ) -> None:
         with self.engine.begin() as connection:
             connection.execute(
                 text(
                     "INSERT INTO usuarios "
-                    "(id, email, email_canonical, hashed_password, "
+                    "(id, email, email_canonical, "
                     "modo_activo, onboarding_completo) "
-                    "VALUES (:id, :email, :canonical, :legacy_hash, "
+                    "VALUES (:id, :email, :canonical, "
                     "'usuario', 0)"
                 ),
                 {
                     "id": user_id,
                     "email": email,
                     "canonical": canonical,
-                    "legacy_hash": legacy_hash,
                 },
             )
 
@@ -66,7 +64,7 @@ class EmailCanonicalRepairTests(unittest.TestCase):
         with self.engine.connect() as connection:
             return connection.execute(
                 text(
-                    "SELECT id, email, email_canonical, hashed_password "
+                    "SELECT id, email, email_canonical "
                     "FROM usuarios ORDER BY id"
                 )
             ).all()
@@ -220,30 +218,24 @@ class EmailCanonicalRepairTests(unittest.TestCase):
             [None, None],
         )
 
-    def test_email_and_legacy_hash_are_preserved(self):
-        legacy_hash = "$2b$12$legacy-hash-value"
-        self.add_user(
-            1,
-            " Person@Example.COM ",
-            legacy_hash=legacy_hash,
-        )
+    def test_email_is_preserved(self):
+        self.add_user(1, " Person@Example.COM ")
 
         before = self.user_rows()
         self.apply()
         after = self.user_rows()
 
         self.assertEqual(after[0].email, before[0].email)
-        self.assertEqual(after[0].hashed_password, before[0].hashed_password)
 
     def test_does_not_create_password_credential(self):
-        self.add_user(1, "person@example.com", legacy_hash="$2b$12$legacy")
+        self.add_user(1, "person@example.com")
 
         self.apply()
 
         self.assertEqual(self.credential_rows(), [])
 
     def test_existing_password_credential_is_unchanged(self):
-        self.add_user(1, "person@example.com", legacy_hash="$2b$12$legacy")
+        self.add_user(1, "person@example.com")
         self.add_credential(1, "$2b$12$credential")
         before = self.credential_rows()
 
@@ -253,7 +245,7 @@ class EmailCanonicalRepairTests(unittest.TestCase):
 
     def test_safe_report_does_not_expose_pii_or_internal_plan(self):
         raw_email = "Sensitive.Person@Example.COM"
-        self.add_user(77, raw_email, legacy_hash="$2b$12$sensitive-hash")
+        self.add_user(77, raw_email)
 
         plan = self.preflight()
         output = json.dumps(plan.safe_summary())

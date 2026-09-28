@@ -77,7 +77,6 @@ class PasswordLoginHttpB3Tests(unittest.TestCase):
                     id=1,
                     email="existing@example.com",
                     email_canonical="existing@example.com",
-                    hashed_password=password_hash,
                 )
             )
             db.add(

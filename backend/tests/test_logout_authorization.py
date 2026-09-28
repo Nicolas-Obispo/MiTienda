@@ -7,7 +7,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
-from app.modules.users.models.tokens_models import TokenRevocado
 from app.modules.users.routes.usuarios_routers import router as usuarios_router
 
 
@@ -47,7 +46,7 @@ class LogoutAuthorizationTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 401)
 
-    def test_logout_con_token_invalido_devuelve_401_y_no_revoca(self):
+    def test_logout_con_token_invalido_devuelve_401(self):
         response = client.post(
             "/usuarios/logout",
             headers={"Authorization": "Bearer token-invalido"},
@@ -55,11 +54,6 @@ class LogoutAuthorizationTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 401)
 
-        db = TestingSessionLocal()
-        tokens_revocados = db.query(TokenRevocado).count()
-        db.close()
-
-        self.assertEqual(tokens_revocados, 0)
 
 
 if __name__ == "__main__":

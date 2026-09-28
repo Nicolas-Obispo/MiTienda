@@ -47,7 +47,6 @@ class ProductosLegacyAuthorizationTests(unittest.TestCase):
         return Usuario(
             id=usuario_id,
             email=f"usuario{usuario_id}@example.com",
-            hashed_password="hash",
             modo_activo="publicador",
             onboarding_completo=True,
         )

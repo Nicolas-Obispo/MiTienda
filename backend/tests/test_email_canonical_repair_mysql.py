@@ -37,28 +37,26 @@ class EmailCanonicalRepairMySQLTests(unittest.TestCase):
         email: str,
         *,
         canonical: str | None = None,
-        legacy_hash: str | None = None,
     ) -> None:
         with self.engine.begin() as connection:
             connection.execute(
                 text(
                     "INSERT INTO usuarios "
-                    "(id, email, email_canonical, hashed_password, "
+                    "(id, email, email_canonical, "
                     "modo_activo, onboarding_completo) "
-                    "VALUES (:id, :email, :canonical, :legacy_hash, "
+                    "VALUES (:id, :email, :canonical, "
                     "'usuario', 0)"
                 ),
                 {
                     "id": user_id,
                     "email": email,
                     "canonical": canonical,
-                    "legacy_hash": legacy_hash,
                 },
             )
 
     def test_apply_is_idempotent_and_preserves_credentials(self):
-        self.add_user(1, "One@Example.COM", legacy_hash="$2b$12$legacy-one")
-        self.add_user(2, "Two@Example.COM", legacy_hash="$2b$12$legacy-two")
+        self.add_user(1, "One@Example.COM")
+        self.add_user(2, "Two@Example.COM")
         with self.engine.begin() as connection:
             connection.execute(
                 text(
@@ -70,7 +68,7 @@ class EmailCanonicalRepairMySQLTests(unittest.TestCase):
             )
             users_before = connection.execute(
                 text(
-                    "SELECT id, email, hashed_password FROM usuarios ORDER BY id"
+                    "SELECT id, email FROM usuarios ORDER BY id"
                 )
             ).all()
             credentials_before = connection.execute(
@@ -95,7 +93,7 @@ class EmailCanonicalRepairMySQLTests(unittest.TestCase):
             ).scalars().all()
             users_after = connection.execute(
                 text(
-                    "SELECT id, email, hashed_password FROM usuarios ORDER BY id"
+                    "SELECT id, email FROM usuarios ORDER BY id"
                 )
             ).all()
             credentials_after = connection.execute(

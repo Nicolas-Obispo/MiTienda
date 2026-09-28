@@ -41,7 +41,6 @@ class CommercialCapabilitiesTests(unittest.TestCase):
     def _usuario(self, **overrides) -> Usuario:
         values = {
             "email": "commercial@example.com",
-            "hashed_password": "hash",
             "modo_activo": "usuario",
             "onboarding_completo": False,
             "provincia": "Buenos Aires",

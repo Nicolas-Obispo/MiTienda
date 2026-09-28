@@ -5,7 +5,6 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-import migrate_identity_foundation as identity_foundation_migration
 import migrate_google_identity_foundation as google_identity_migration
 from app.core.config import Settings
 from app.core.database import Base
@@ -45,13 +44,11 @@ class OAuthAuthorizationTransactionTests(unittest.TestCase):
                     id=1,
                     email="password@example.com",
                     email_canonical="password@example.com",
-                    hashed_password="legacy-hash",
                 ),
                 Usuario(
                     id=2,
                     email="google-only@example.com",
                     email_canonical="google-only@example.com",
-                    hashed_password=None,
                 ),
             ]
         )
@@ -74,7 +71,7 @@ class OAuthAuthorizationTransactionTests(unittest.TestCase):
     def test_google_only_user_is_valid_but_cannot_password_login(self):
         db = self.Session()
         google_only = db.get(Usuario, 2)
-        self.assertIsNone(google_only.hashed_password)
+        self.assertFalse(hasattr(google_only, "hashed_password"))
         self.assertIsNone(db.get(PasswordCredential, 2))
         self.assertIsNone(
             autenticar_usuario(
@@ -82,14 +79,6 @@ class OAuthAuthorizationTransactionTests(unittest.TestCase):
                 UsuarioLogin(email="google-only@example.com", password="anything"),
             )
         )
-        db.close()
-
-    def test_existing_identity_foundation_migration_tolerates_google_only_users(self):
-        db = self.Session()
-        with db.begin():
-            result = identity_foundation_migration.upgrade(db.connection())
-        self.assertEqual(result["backfill"]["password_credentials"], 0)
-        self.assertEqual(result["preflight"]["password_credentials_pendientes_ids"], [])
         db.close()
 
     def test_external_identity_has_one_provider_per_user_and_stable_subject_unique(self):

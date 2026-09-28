@@ -72,10 +72,10 @@ class OperationalStatusTests(unittest.TestCase):
         Base.metadata.create_all(engine)
         db = Session()
         db.add_all([
-            Usuario(id=1, email="status@test.local", hashed_password="x", modo_activo="usuario", onboarding_completo=True),
-            Usuario(id=2, email="common@test.local", hashed_password="x", modo_activo="publicador", onboarding_completo=True),
-            Usuario(id=3, email="owner@test.local", hashed_password="x", modo_activo="publicador", onboarding_completo=True),
-            Usuario(id=4, email="incident@test.local", hashed_password="x", modo_activo="usuario", onboarding_completo=True),
+            Usuario(id=1, email="status@test.local", modo_activo="usuario", onboarding_completo=True),
+            Usuario(id=2, email="common@test.local", modo_activo="publicador", onboarding_completo=True),
+            Usuario(id=3, email="owner@test.local", modo_activo="publicador", onboarding_completo=True),
+            Usuario(id=4, email="incident@test.local", modo_activo="usuario", onboarding_completo=True),
             Rubro(id=1, nombre="Rubro", activo=True),
         ])
         db.flush()

@@ -40,7 +40,6 @@ CRITICAL_TABLES = (
     "password_credentials",
     "external_identities",
     "feedgo_sessions",
-    "tokens_revocados",
     "account_action_tokens",
     "account_action_rate_limits",
     "phone_verification_challenges",
@@ -59,6 +58,9 @@ CRITICAL_TABLES = (
     "publicaciones_guardadas",
     "seguidores",
 )
+PRE_LEGACY_CLEANUP_SCHEMA_PROFILE = "pre_legacy_cleanup_v1"
+PARTIAL_LEGACY_CLEANUP_SCHEMA_PROFILE = "after_tokens_cleanup_v1"
+POST_LEGACY_CLEANUP_SCHEMA_PROFILE = "post_legacy_cleanup_v1"
 
 
 class BackupConfigurationError(RuntimeError):
@@ -116,6 +118,7 @@ class BackupManifest:
     external_copy: str
     result: str
     schema_check: dict[str, object] | None = None
+    schema_profile: str = POST_LEGACY_CLEANUP_SCHEMA_PROFILE
 
 
 class BackupProvider(Protocol):
@@ -345,6 +348,27 @@ def collect_schema_snapshot() -> dict[str, object]:
     return schema_result_to_dict(check_schema())
 
 
+def collect_schema_profile() -> str:
+    """Clasifica el schema respaldado sin invalidar perfiles históricos."""
+
+    with engine.connect() as connection:
+        inspector = inspect(connection)
+        tables = set(inspector.get_table_names())
+        if "usuarios" not in tables:
+            raise BackupExecutionError("El schema no contiene usuarios.")
+        has_tokens = "tokens_revocados" in tables
+        has_hash = "hashed_password" in {
+            column["name"] for column in inspector.get_columns("usuarios")
+        }
+    if has_tokens and has_hash:
+        return PRE_LEGACY_CLEANUP_SCHEMA_PROFILE
+    if not has_tokens and has_hash:
+        return PARTIAL_LEGACY_CLEANUP_SCHEMA_PROFILE
+    if not has_tokens and not has_hash:
+        return POST_LEGACY_CLEANUP_SCHEMA_PROFILE
+    raise BackupExecutionError("El schema legacy presenta una combinacion inesperada.")
+
+
 def _validate_critical_table_counts(counts: dict[str, int | None]) -> None:
     missing = sorted(set(CRITICAL_TABLES) - set(counts))
     if missing:
@@ -407,6 +431,7 @@ class BackupService:
         counts_provider: Callable[[], dict[str, int | None]] = collect_critical_table_counts,
         engine_version_provider: Callable[[], str] = _database_engine_version,
         schema_provider: Callable[[], dict[str, object]] = collect_schema_snapshot,
+        schema_profile_provider: Callable[[], str] = collect_schema_profile,
     ) -> BackupManifest:
         _validate_config(config)
         config.output_dir.mkdir(parents=True, exist_ok=True)
@@ -424,6 +449,7 @@ class BackupService:
             critical_table_counts = counts_provider()
             _validate_critical_table_counts(critical_table_counts)
             schema_snapshot = schema_provider()
+            schema_profile = schema_profile_provider()
 
             manifest = BackupManifest(
                 format_version=2,
@@ -462,6 +488,7 @@ class BackupService:
                 external_copy="prepared_not_implemented",
                 result="ok",
                 schema_check=schema_snapshot,
+                schema_profile=schema_profile,
             )
             self.storage.write_manifest(backup_path, manifest)
         except Exception:
@@ -496,6 +523,7 @@ def run_backup(
     counts_provider=collect_critical_table_counts,
     engine_version_provider=_database_engine_version,
     schema_provider=collect_schema_snapshot,
+    schema_profile_provider=collect_schema_profile,
 ) -> BackupManifest:
     service = BackupService(
         provider=get_backup_provider(config.provider),
@@ -508,6 +536,7 @@ def run_backup(
         counts_provider=counts_provider,
         engine_version_provider=engine_version_provider,
         schema_provider=schema_provider,
+        schema_profile_provider=schema_profile_provider,
     )
 
 

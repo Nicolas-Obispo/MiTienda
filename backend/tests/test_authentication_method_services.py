@@ -52,13 +52,11 @@ class AuthenticationMethodServicesTests(unittest.TestCase):
                         id=1,
                         email="one@example.com",
                         email_canonical="one@example.com",
-                        hashed_password=None,
                     ),
                     Usuario(
                         id=2,
                         email="two@example.com",
                         email_canonical="two@example.com",
-                        hashed_password=None,
                     ),
                 ]
             )
@@ -290,7 +288,7 @@ class AuthenticationMethodServicesTests(unittest.TestCase):
             clock=lambda: self.now,
         )
         db.commit()
-        self.assertIsNone(db.get(Usuario, 1).hashed_password)
+        self.assertFalse(hasattr(db.get(Usuario, 1), "hashed_password"))
         self.assertIsNotNone(credential.password_hash)
         self.assertIsNotNone(db.get(ExternalIdentity, identity.id))
         self.assertIsNone(db.get(FeedGoSession, session.id).revoked_at)
@@ -384,9 +382,8 @@ class AuthenticationMethodServicesTests(unittest.TestCase):
         self.assertIsNone(db.get(FeedGoSession, current.id).revoked_at)
         db.close()
 
-    def test_legacy_hash_is_not_a_usable_password_method(self):
+    def test_user_without_credential_has_no_password_method(self):
         db = self.Session()
-        db.get(Usuario, 1).hashed_password = hash_password("Password1")
         self.google_identity(db)
         db.commit()
         methods = derive_authentication_methods(db, usuario_id=1)
