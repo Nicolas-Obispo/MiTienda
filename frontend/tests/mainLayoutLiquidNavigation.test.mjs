@@ -29,7 +29,9 @@ test("nodos, destinos, textos, logo y condiciones permanecen", () => {
   for (const text of ["Feed", "Perfil administrador", "Tendencias", "Seguidos", "Explorar", "Ingresar"]) {
     assert.match(layout, new RegExp(text));
   }
-  assert.match(layout, /src="\/logo_Feedgo\.png"/);
+  assert.match(layout, /src="\/Logo-feedgo-localhost\.png"/);
+  assert.doesNotMatch(layout, /src="\/Logo-icono-celular\.png"/);
+  assert.doesNotMatch(layout, /src="\/logo_Feedgo\.png"/);
   assert.match(layout, /alt="FeedGo"/);
   assert.match(layout, /\{estaAutenticado && \(/);
   assert.match(layout, /\{!estaAutenticado && \(/);
@@ -41,6 +43,8 @@ test("nodos, destinos, textos, logo y condiciones permanecen", () => {
 
 test("geometría, responsive y color semántico se conservan", () => {
   assert.match(layout, /interactive-bubble--flush[\s\S]*shrink-0 items-center/);
+  assert.match(layout, /relative h-9 w-9 overflow-hidden rounded-full border border-border bg-surface-subtle sm:h-12 sm:w-12/);
+  assert.match(layout, /h-\[120%\] w-\[120%\] max-w-none -translate-x-1\/2 -translate-y-1\/2 object-contain/);
   assert.match(layout, /text-xs sm:text-sm/);
   assert.match(layout, /rounded-lg[\s\S]*px-1\.5 py-1[\s\S]*sm:rounded-xl sm:px-2 sm:text-xs/);
   assert.match(layout, /text-selected-text/);

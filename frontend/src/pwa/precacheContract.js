@@ -12,6 +12,7 @@ export const PWA_PRECACHE_GLOB_PATTERNS = Object.freeze([
   "icon-512.png",
   "icon-maskable-512.png",
   "logo_Feedgo.png",
+  "Logo-feedgo-localhost.png",
 ]);
 
 export const PWA_PRECACHE_GLOB_IGNORES = Object.freeze([
@@ -33,6 +34,7 @@ export const PWA_REQUIRED_PRECACHE_URLS = Object.freeze([
   "/icon-512.png",
   "/icon-maskable-512.png",
   "/logo_Feedgo.png",
+  "/Logo-feedgo-localhost.png",
 ]);
 
 export const PWA_FORBIDDEN_PRECACHE_URLS = Object.freeze([

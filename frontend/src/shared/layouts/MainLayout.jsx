@@ -31,11 +31,11 @@ export default function MainLayout() {
             to="/"
             className="interactive-bubble interactive-bubble--flush interactive-bubble--liquid shrink-0 items-center"
           >
-            <div className="h-9 w-9 overflow-hidden rounded-full border border-border bg-surface-subtle sm:h-12 sm:w-12">
+            <div className="relative h-9 w-9 overflow-hidden rounded-full border border-border bg-surface-subtle sm:h-12 sm:w-12">
               <img
-                src="/logo_Feedgo.png"
+                src="/Logo-feedgo-localhost.png"
                 alt="FeedGo"
-                className="h-full w-full object-contain p-1"
+                className="absolute left-1/2 top-1/2 h-[120%] w-[120%] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
               />
             </div>
             <InteractiveLiquidLayers />

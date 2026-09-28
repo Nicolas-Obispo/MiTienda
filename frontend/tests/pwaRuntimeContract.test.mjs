@@ -51,6 +51,7 @@ test("contrato de build limita el precache al shell aprobado", () => {
     "icon-512.png",
     "icon-maskable-512.png",
     "logo_Feedgo.png",
+    "Logo-feedgo-localhost.png",
   ]);
   assert.deepEqual(PWA_PRECACHE_GLOB_IGNORES, [
     "service-worker.js",
