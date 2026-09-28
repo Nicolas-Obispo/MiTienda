@@ -124,7 +124,10 @@ test("registro tiene owner y URL unicos y browser sin soporte queda controlado",
     readFile(new URL("src/main.jsx", frontendRoot), "utf8"),
     readFile(new URL("src/pwa/registerServiceWorker.js", frontendRoot), "utf8"),
   ]);
-  assert.match(main, /registerServiceWorker\(\)/);
+  assert.match(
+    main,
+    /const serviceWorkerRuntime = import\.meta\.env\.PROD\s*\?\s*registerServiceWorker\(\)\s*:\s*null;/,
+  );
   assert.doesNotMatch(main, /serviceWorker\.register/);
   assert.equal((owner.match(/\.register\(PWA_SERVICE_WORKER_URL\)/g) || []).length, 1);
   assert.match(owner, /export function repairServiceWorker\(\)/);

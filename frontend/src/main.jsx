@@ -42,7 +42,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   </React.StrictMode>
 );
 
-const serviceWorkerRuntime = registerServiceWorker();
+const serviceWorkerRuntime = import.meta.env.PROD
+  ? registerServiceWorker()
+  : null;
 
 if (__FEEDGO_PWA_E2E__) {
   void import("./pwa/e2eBridge").then(({ installPwaE2eBridge }) => {

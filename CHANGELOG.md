@@ -53,6 +53,19 @@ contractual de `AUTH-LEGACY-01`
   Google sigue OFF, FeedGo permanece NO-GO para Internet y no existe
   `SECURITY GO`.
 
+## PWA development - bootstrap sin registro en Vite dev
+
+**Estado:** Correccion implementada y validada; lifecycle productivo intacto
+
+- `vite dev` deja de registrar Service Worker; las builds productiva y
+  `pwa-e2e` conservan el runtime aprobado. Pasaron 48 contratos PWA y ambas
+  builds, con worker y precache validos y sin cambios a `clients.claim`,
+  `skipWaiting`, multitab, repair o Network-Only.
+- La PC muestra el working tree actual. La registration historica local Chrome
+  `#2191`, scope `http://localhost:5173/` y script `/service-worker.js`, sigue
+  pendiente de cleanup puntual y acotado. Es residuo de development, no defecto
+  demostrado del lifecycle productivo ni blocker de ET99.
+
 ## ET99.9-A - Inventario legacy y gate real de backup/restore
 
 **Estado:** Cerrada; ET99.9-B cerrada

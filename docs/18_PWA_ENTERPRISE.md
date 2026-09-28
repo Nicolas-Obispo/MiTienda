@@ -575,6 +575,28 @@ matriz instalada que requiere un origen productivo seguro permanece como gate
 de la futura auditoria de lanzamiento. La compatibilidad especifica de video en
 iOS/Safari/PWA pertenece exclusivamente a ETAPA 124.
 
+#### Continuidad de development posterior a ETAPA 96
+
+El bootstrap fue corregido para que `vite dev` no invoque el registro del
+Service Worker cuando `import.meta.env.PROD` es falso. Las builds productivas y
+`pwa-e2e` conservan el owner, worker, precache, firewall, lifecycle, waiting,
+activacion controlada, proteccion multitab y recovery aprobados. La validacion
+focal aprobo 48 contratos PWA, build normal y build `pwa-e2e`; el worker
+generado siguio siendo JavaScript valido, incluyo el inventario aprobado y no
+incorporo `clients.claim()`.
+
+En el perfil Chrome de desarrollo permanece una registration historica local
+`#2191`, con scope `http://localhost:5173/` y script
+`http://localhost:5173/service-worker.js`. La PC ya muestra el working tree
+actualizado, pero el cleanup puntual propuesto aun no se ejecuto.
+Ese residuo pertenece exclusivamente al origen local de development: no prueba
+un defecto del lifecycle productivo N -> N+1, no afecta el origen LAN/celular y
+no bloquea ET99 ni el handoff identity-first de `DEC-066`. Su futura remocion
+debe seleccionar exactamente esa registration y solo caches
+`feedgo-precache-*`, sin
+`Clear site data`, borrado de storage funcional ni cleanup productivo
+permanente.
+
 #### Decision 96.3-D - contexto geografico automatico y lectura anonima
 
 El permiso de geolocalizacion pertenece al navegador/dispositivo. FeedGo no
