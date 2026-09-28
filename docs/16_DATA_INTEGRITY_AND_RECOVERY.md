@@ -776,6 +776,42 @@ la evidencia. La base `mitienda` permanecio intacta. Esta evidencia demuestra
 un backup/restore local controlado; no cierra `RECOVERY-01`, que conserva sus
 requisitos de backup externo cifrado, retencion, recurrencia y RPO/RTO medidos.
 
+## 7.7 Recovery focal canonical-only de AUTH-LEGACY-01
+
+Antes de reparar `usuarios.email_canonical` se genero y valido el recovery
+point fresco
+`C:\FeedGoOps\backups\mysql\mitienda_20260928T154658Z.sql.gz`, de 176169
+bytes y SHA-256
+`150a1f1ca8f8cb23a5c1ec7acc6388827fa498259f7f06a447a610dbaf4c513a`.
+El manifest v2, gzip, checksum, ausencia de sentencias de base de datos,
+snapshot de schema y 22 conteos criticos fueron validos.
+
+El restore oficial reprodujo el snapshot y los conteos en
+`feedgo_restore_tmp_authlegacy_20260928_154900`. Sobre esa copia, el dry-run,
+apply de 2 filas, segunda ejecucion idempotente, L1 posterior y rollback logico
+condicional finalizaron correctamente; la temporal fue eliminada mediante el
+cleanup oficial y la evidencia quedo conservada fuera del repositorio.
+
+Con el backend detenido y sin writers activos, canonical-only se aplico una
+sola vez sobre `mitienda`: actualizo exactamente 2 `email_canonical`. El
+postcheck quedo sin pendientes y L1 finalizo PASS con 16 credenciales duales
+equivalentes, 2 legacy-only, cero divergencias y cero estados invalidos. Se
+preservaron usuarios, emails fuente, hashes, `PasswordCredential`, schema,
+constraints, indices y conteos criticos. `AUTH-LEGACY-01` permanece abierto y
+L2 no fue iniciado. Esta evidencia focal no cierra `RECOVERY-01`.
+
+Luego se audito y ensayo sobre restore la eliminacion de las cuentas ficticias
+legacy-only IDs 34 y 35. Con autorizacion humana especifica y el backend
+detenido, una transaccion unica elimino exclusivamente 6 filas de
+`tokens_revocados`, 4 de `usuarios_documentos_aceptaciones` y 2 de `usuarios`.
+Los rowcounts, conteos de todas las tablas, FKs, ausencia de huerfanos, schema,
+constraints, indices y preservacion de los otros 16 usuarios, hashes,
+`PasswordCredential` y sesiones fueron validados antes del commit. L1 posterior
+finalizo PASS con 16 credenciales duales equivalentes, cero legacy-only y cero
+canonical pendientes. El recovery point previo se conserva; por preceder al
+apply canonical, un restore completo exige repetir canonical-only. Esta
+eliminacion de datos ficticios no cierra `RECOVERY-01` ni `AUTH-LEGACY-01`.
+
 ## 8. Seguridad de secretos y artefactos
 
 Reglas:

@@ -47,8 +47,19 @@ contractual de `AUTH-LEGACY-01`
 - La reparacion focal canonical-only fue implementada y validada en aislamiento:
   17/17 contratos SQLite y 2/2 gates MySQL aislados demostraron preflight
   global, transaccion unica, rollback, idempotencia y preservacion de email,
-  hashes y `PasswordCredential`. Todavia no fue aplicada sobre `mitienda` y L2
-  no fue iniciado.
+  hashes y `PasswordCredential`. Tras validar un recovery point fresco y su
+  restore temporal, se aplico sobre `mitienda`: actualizo exactamente 2
+  `email_canonical`, el postcheck quedo sin pendientes y L1 finalizo PASS con 16
+  credenciales duales equivalentes y 2 legacy-only. `AUTH-LEGACY-01` permanece
+  abierto y L2 no fue iniciado.
+- Por decision humana explicita se eliminaron las cuentas ficticias de prueba
+  legacy-only IDs 34 y 35. Una transaccion unica elimino exclusivamente 2
+  usuarios, 6 `tokens_revocados` y 4
+  `usuarios_documentos_aceptaciones`; el ensayo previo sobre restore y los
+  controles finales confirmaron cero dependencias u huerfanos. L1 post-delete
+  finalizo PASS con 16 dual-equivalent y cero legacy-only, por lo que L2
+  backfill queda como no-op sin targets. El retiro runtime legacy permanece
+  pendiente y `AUTH-LEGACY-01` continua abierto.
 - `DEC-066` aprueba como direccion pendiente el modelo `identidad primero ->
   verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`.
   ET99 conserva solo un handoff de compatibilidad, primitivas reutilizables y

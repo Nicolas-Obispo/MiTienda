@@ -772,14 +772,22 @@ por la sola existencia de codigo unstaged.
 
 El preflight L1 read-only de credenciales legacy esta implementado y validado.
 Sobre los 18 usuarios de prueba clasifico 16 credenciales duales equivalentes y
-2 cuentas legacy-only, sin divergencias ni hashes invalidos. Las 2 cuentas
-legacy-only son exactamente las 2 filas con `email_canonical` pendiente, por lo
-que `AUTH-LEGACY-01` permanece ABIERTO y L2 no fue iniciado. El proximo bloque
-debe completar el recovery y pre-apply de la reparacion focal canonical-only,
-ya implementada y validada en aislamiento con 17/17 contratos SQLite, 2/2 gates
-MySQL aislados e idempotencia demostrada. La reparacion todavia no fue aplicada
-sobre `mitienda`; no crea `PasswordCredential`, no modifica hashes y L2 no fue
-iniciado.
+2 cuentas legacy-only, sin divergencias ni hashes invalidos. La reparacion
+canonical-only se aplico de forma controlada sobre `mitienda` despues de validar
+un recovery point fresco y su restore temporal: actualizo exactamente 2 filas y
+el postcheck dejo `missing_email_canonical = 0`. L1 finalizo PASS con las mismas
+16 credenciales duales equivalentes y 2 legacy-only; no se crearon
+`PasswordCredential` ni se modificaron hashes. `AUTH-LEGACY-01` permanece
+ABIERTO y L2 no fue iniciado.
+
+Los 2 usuarios legacy-only restantes, IDs 34 y 35, fueron confirmados por el
+usuario como cuentas ficticias de prueba y eliminados mediante una transaccion
+controlada. Se eliminaron exclusivamente 2 filas de `usuarios`, 6 de
+`tokens_revocados` y 4 de `usuarios_documentos_aceptaciones`, estas ultimas con
+autorizacion humana especifica. L1 post-delete finalizo PASS con 16 credenciales
+duales equivalentes, cero legacy-only y cero canonical pendientes. El backfill
+de datos L2 queda como no-op sin targets; `AUTH-LEGACY-01` continua ABIERTO por
+el retiro runtime legacy y sus gates finales.
 
 Restricciones:
 
