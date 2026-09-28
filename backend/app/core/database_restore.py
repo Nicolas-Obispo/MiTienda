@@ -145,11 +145,19 @@ def _runtime_database() -> str:
     return database
 
 
+def is_official_restore_database_name(target_database: str | None) -> bool:
+    """Return whether a database name belongs to the official restore namespace."""
+    return bool(
+        target_database
+        and RESTORE_DATABASE_PATTERN.fullmatch(target_database) is not None
+    )
+
+
 def _validate_target_database(target_database: str) -> None:
     if target_database.casefold() == _runtime_database().casefold():
         raise RestoreValidationError("El destino runtime esta prohibido.")
 
-    if not RESTORE_DATABASE_PATTERN.fullmatch(target_database):
+    if not is_official_restore_database_name(target_database):
         raise RestoreValidationError(
             "El destino debe ser una base temporal feedgo_restore_tmp_<nombre>."
         )

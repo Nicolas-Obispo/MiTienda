@@ -2,8 +2,10 @@ import ast
 from datetime import datetime, timedelta
 from pathlib import Path
 import unittest
+from unittest.mock import MagicMock, patch
 
 from sqlalchemy import create_engine, inspect
+from sqlalchemy.engine import make_url
 
 import migrate_drop_legacy_hashed_password as hash_cleanup
 import migrate_drop_tokens_revocados as token_cleanup
@@ -56,7 +58,8 @@ def create_legacy_schema(engine, *, divergent=False, future_token=False):
 class PhysicalLegacyCleanupTests(unittest.TestCase):
     def setUp(self):
         self.engine = create_engine("sqlite://")
-        create_legacy_schema(self.engine)
+        if not self._testMethodName.startswith("test_apply"):
+            create_legacy_schema(self.engine)
 
     def tearDown(self):
         self.engine.dispose()
@@ -128,6 +131,140 @@ class PhysicalLegacyCleanupTests(unittest.TestCase):
             token_cleanup.apply_cleanup(token_cleanup.APPLY_ACTION, target_engine=self.engine)
         with self.assertRaises(hash_cleanup.HashedPasswordCleanupError):
             hash_cleanup.apply_cleanup(hash_cleanup.APPLY_ACTION, target_engine=self.engine)
+
+    @staticmethod
+    def _guard_engine(
+        database,
+        *,
+        driver="mysql+pymysql",
+        host="localhost",
+        selected_database=None,
+    ):
+        database_suffix = f"/{database}" if database else ""
+        guarded_engine = MagicMock()
+        guarded_engine.url = make_url(f"{driver}://{host}{database_suffix}")
+        connection = MagicMock()
+        connection.exec_driver_sql.return_value.scalar_one.return_value = (
+            database if selected_database is None else selected_database
+        )
+        guarded_engine.begin.return_value.__enter__.return_value = connection
+        return guarded_engine, connection
+
+    def test_apply_target_policy_accepts_controlled_and_official_restore_names(self):
+        valid_databases = (
+            "mitienda",
+            "mitienda_stage97_test",
+            "feedgo_restore_tmp_test",
+            "feedgo_restore_tmp_20260928_203542",
+            "feedgo_restore_tmp_authlegacy_predrop_final_20260928_203542",
+        )
+        for module in (token_cleanup, hash_cleanup):
+            for database in valid_databases:
+                with self.subTest(module=module.__name__, database=database):
+                    guarded_engine, _ = self._guard_engine(database)
+                    self.assertEqual(
+                        module.validate_apply_target(guarded_engine), database
+                    )
+
+    def test_apply_target_policy_rejects_ambiguous_database_names(self):
+        invalid_databases = (
+            None,
+            "feedgo_restore",
+            "restore_tmp_x",
+            "feedgo_restore_test",
+            "mitienda_copy",
+            "mitienda_backup",
+            "feedgo_restore_tmp",
+            "feedgo_restore_tmp_",
+            "feedgo_restore_tmpx",
+            "foo_feedgo_restore_tmp_bar",
+            "feedgo_restore_tmp_UPPER",
+            "feedgo_restore_tmp_with-hyphen",
+        )
+        for module, error in (
+            (token_cleanup, token_cleanup.TokensRevocadosCleanupError),
+            (hash_cleanup, hash_cleanup.HashedPasswordCleanupError),
+        ):
+            for database in invalid_databases:
+                with self.subTest(module=module.__name__, database=database):
+                    guarded_engine, _ = self._guard_engine(database)
+                    with self.assertRaises(error):
+                        module.validate_apply_target(guarded_engine)
+
+    def test_apply_target_policy_rejects_remote_host_and_wrong_driver(self):
+        for module, error in (
+            (token_cleanup, token_cleanup.TokensRevocadosCleanupError),
+            (hash_cleanup, hash_cleanup.HashedPasswordCleanupError),
+        ):
+            for overrides in (
+                {"host": "db.example.test"},
+                {"driver": "mysql+mysqldb"},
+            ):
+                with self.subTest(module=module.__name__, overrides=overrides):
+                    guarded_engine, _ = self._guard_engine(
+                        "feedgo_restore_tmp_test", **overrides
+                    )
+                    with self.assertRaises(error):
+                        module.validate_apply_target(guarded_engine)
+
+    def test_apply_requires_exact_opt_in_before_opening_connection(self):
+        for module, error in (
+            (token_cleanup, token_cleanup.TokensRevocadosCleanupError),
+            (hash_cleanup, hash_cleanup.HashedPasswordCleanupError),
+        ):
+            for action in (None, "", "dry_run", "APPLY"):
+                with self.subTest(module=module.__name__, action=action):
+                    guarded_engine, _ = self._guard_engine(
+                        "feedgo_restore_tmp_test"
+                    )
+                    with self.assertRaises(error):
+                        module.apply_cleanup(action, target_engine=guarded_engine)
+                    guarded_engine.begin.assert_not_called()
+
+    def test_apply_rejects_selected_database_mismatch_before_cleanup(self):
+        cases = (
+            (
+                token_cleanup,
+                token_cleanup.TokensRevocadosCleanupError,
+                "drop_tokens_revocados",
+            ),
+            (
+                hash_cleanup,
+                hash_cleanup.HashedPasswordCleanupError,
+                "drop_legacy_hashed_password",
+            ),
+        )
+        for module, error, cleanup_name in cases:
+            with self.subTest(module=module.__name__):
+                guarded_engine, _ = self._guard_engine(
+                    "feedgo_restore_tmp_test",
+                    selected_database="feedgo_restore_tmp_other",
+                )
+                with patch.object(module, cleanup_name) as cleanup:
+                    with self.assertRaises(error):
+                        module.apply_cleanup(
+                            module.APPLY_ACTION, target_engine=guarded_engine
+                        )
+                    cleanup.assert_not_called()
+
+    def test_apply_accepts_matching_official_restore_target_without_real_ddl(self):
+        cases = (
+            (token_cleanup, "drop_tokens_revocados"),
+            (hash_cleanup, "drop_legacy_hashed_password"),
+        )
+        database = "feedgo_restore_tmp_authlegacy_predrop_final_20260928_203542"
+        for module, cleanup_name in cases:
+            with self.subTest(module=module.__name__):
+                guarded_engine, connection = self._guard_engine(database)
+                expected = object()
+                with patch.object(module, cleanup_name, return_value=expected) as cleanup:
+                    self.assertIs(
+                        module.apply_cleanup(
+                            module.APPLY_ACTION, target_engine=guarded_engine
+                        ),
+                        expected,
+                    )
+                    cleanup.assert_called_once_with(connection)
 
     def test_current_model_registry_and_backup_have_no_legacy_structures(self):
         import_all_models()

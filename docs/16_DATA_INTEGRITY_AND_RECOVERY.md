@@ -847,6 +847,14 @@ profile siguen siendo fail-closed. El backup y manifest afectados no se editan;
 la correccion debe validarlos read-only y luego repetir el PRE-DROP GATE con un
 nuevo recovery point fresco.
 
+Los migradores fisicos aceptan para ensayos destructivos exclusivamente los
+targets locales controlados `mitienda`, `mitienda_stage97_test` y nombres que
+cumplan el owner oficial `^feedgo_restore_tmp_[a-z0-9_]+$`. Admitir el namespace
+de restore no autoriza un apply real: cada migrador conserva su opt-in exacto,
+`mysql+pymysql`, host `localhost` y la igualdad estricta entre el nombre
+configurado y `SELECT DATABASE()`. Targets vacios, remotos, ambiguos o apenas
+similares permanecen bloqueados.
+
 ## 8. Seguridad de secretos y artefactos
 
 Reglas:

@@ -18,6 +18,7 @@ from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.database import engine
+from app.core.database_restore import is_official_restore_database_name
 
 
 ACTION_ENV = "FEEDGO_DROP_LEGACY_HASHED_PASSWORD"
@@ -91,7 +92,10 @@ def validate_apply_target(target_engine: Engine = engine) -> str:
     if (
         url.drivername != EXPECTED_DRIVER
         or url.host != EXPECTED_HOST
-        or url.database not in ALLOWED_DATABASES
+        or (
+            url.database not in ALLOWED_DATABASES
+            and not is_official_restore_database_name(url.database)
+        )
     ):
         raise HashedPasswordCleanupError("hashed_password_cleanup_target_invalid")
     return str(url.database)

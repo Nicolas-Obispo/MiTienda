@@ -87,6 +87,12 @@ contractual de `AUTH-LEGACY-01`
   normalizacion simetrica, idempotente y limitada por schema profile. El backup
   y manifest historicos permanecen inmutables, ningun schema fue alterado y el
   PRE-DROP GATE debe repetirse desde cero antes de autorizar los DROP reales.
+- Las guards de ambos migradores fisicos reutilizan ahora el owner exacto de
+  nombres `feedgo_restore_tmp_*`, lo que habilita ensayar el apply sobre un
+  restore oficial sin admitir bases arbitrarias. Driver `mysql+pymysql`, host
+  local, opt-in por migracion y `SELECT DATABASE()` exacto permanecen
+  obligatorios. El fix se valido sin ejecutar DDL sobre `mitienda` ni sobre la
+  temporal oficial; el PRE-DROP GATE completo sigue pendiente de repeticion.
 - `DEC-066` aprueba como direccion pendiente el modelo `identidad primero ->
   verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`.
   ET99 conserva solo un handoff de compatibilidad, primitivas reutilizables y
