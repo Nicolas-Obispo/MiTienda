@@ -99,6 +99,30 @@ identidad y no crean por si mismos cuentas funcionales paralelas. La decision
 arquitectonica y su etapa futura se registran en `DEC-048` y
 `docs/05_SEARCH_ROADMAP.md`.
 
+La evolucion aprobada del acceso adopta como direccion de producto un modelo
+`identidad primero -> verificacion -> resolucion de identidad -> datos minimos
+-> cuenta -> sesion`. Antes de demostrar control del email, FeedGo no revela si
+ese email pertenece a una cuenta. Despues de demostrarlo mediante un mecanismo
+backend verificable, puede conducir explicitamente a crear una cuenta con los
+datos minimos necesarios o a acceder/recuperar una identidad existente. La
+seguridad debe permanecer alta sin trasladar complejidad innecesaria a la
+persona ni obligarla a completar un alta extensa antes de resolver su
+identidad. Autocomplete y password managers deben conservar contratos web
+correctos.
+
+Google podra actuar como otro mecanismo de demostracion de identidad cuando su
+activacion sea autorizada, pero no habilita auto-link por coincidencia de email
+ni reemplaza la identidad o sesion FeedGo. Google permanece operativamente
+OFF. El contrato publico neutral incorporado durante el hardening de ET99.9-B
+es una base segura y compatible; no se presume por eso que su UX sea la
+experiencia definitiva. El diseno pendiente y su auditoria previa se gobiernan
+por `DEC-066` y `docs/05_SEARCH_ROADMAP.md`. ETAPA 99 solo debe entregar un
+handoff arquitectonico acotado que demuestre compatibilidad, inventarie
+primitivas reutilizables e identifique dependencias. El diseno detallado y la
+implementacion identity-first son posteriores a ETAPA 99 y requieren que
+Gobierno les asigne una etapa futura antes de iniciarlos. El owner funcional
+sera conjunto entre Producto e Identidad backend/frontend.
+
 La identidad privada incorpora `fecha_nacimiento` nullable y telefono E.164 en
 ETAPA 99. Backend calcula elegibilidad y expone capabilities sin que frontend
 infiera edad. Estos datos no son publicos ni forman parte inicial del Registro.
