@@ -562,6 +562,35 @@ No debe existir ningún otro flujo alternativo.
 
 CHANGELOG siempre ocurre antes del Commit.
 
+### Contrato permanente de CHANGELOG
+
+`CHANGELOG.md` registra el historial cronologico de hechos implementados. No
+reemplaza `04_CURRENT_STAGE`, `05_SEARCH_ROADMAP`, `07_DECISIONS` ni los
+documentos tecnicos owners, que conservan la fuente de verdad del estado,
+alcance y decisiones vigentes.
+
+El archivo completo mantiene cronologia inversa global: la etapa mas reciente
+se ubica arriba y la mas antigua abajo. Una etapa nueva se agrega arriba de la
+etapa inmediatamente anterior; una subetapa o sprint permanece dentro del
+bloque de su etapa padre. No se fragmenta una etapa en zonas distintas del
+archivo.
+
+Para etapas nuevas, cuando exista evidencia aplicable, el bloque usa el modelo
+`ETAPA -> Estado -> Objetivo -> Trabajo realizado -> Validacion -> Cierre`, sin
+crear secciones vacias. Registra solo hechos verificables derivados de sus
+owners: no inventa resultados, tests, decisiones, fechas, estados ni cierres.
+Puede actualizarse durante una etapa abierta con hitos reales, pero no declara
+cierre antes de su gate ni registra trabajo futuro como realizado.
+
+Antes de documentar o cerrar una etapa se verifica su ubicacion cronologica,
+la agrupacion de sus subetapas, la ausencia de fragmentacion de otras etapas,
+la revision estructural de `CHANGELOG.md` y `git diff --check`. Los snapshots
+historicos correctos no se reescriben porque haya cambiado el estado actual;
+errores objetivos pueden corregirse, mientras que cambios semanticos o
+reinterpretaciones requieren evidencia del owner correspondiente.
+
+Este contrato aplica al resto de ET99, ET100 y toda etapa futura.
+
 ## Reglas
 
 - Nunca modificar código sin auditoría.

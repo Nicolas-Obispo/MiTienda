@@ -742,59 +742,6 @@ sin cambios funcionales y sin `SECURITY GO`
 - Sprint 96.3 y ETAPA 99: refresh directo y deep links desplegados.
 - Sprint 96.2 queda como siguiente sprint y no fue iniciado.
 
-## ETAPA 95 - Experiencia de Lanzamiento y Design System Critico
-
-**Estado:** Cerrada tecnica y documentalmente
-
-### Resultado
-
-- Se completo el sistema de ubicacion: privacidad publica/privada, geocoding
-  desacoplado con Geoapify backend-only, Search territorial, contexto
-  geografico efimero y Cache-First por territorio/`positionRevision`.
-- Se consolidaron documentos y aceptaciones legales versionados, selector de
-  ubicacion seguro y compatibilidad historica de datos.
-- Se implementaron tema `dark/light/system`, bootstrap anti-flash, tokens
-  semanticos, primitives compartidas y cobertura visual completa del frontend.
-- Se cerraron accesibilidad transversal, ActiveLayer como owner de overlays,
-  responsive y consistencia de owners sin alterar negocio ni navegacion.
-- 95.7-A completo Frontend Ownership Audit y 95.7-B retiro siete residuos
-  categoria D, dejando cero residuos reales pendientes.
-
-### Gate final 95.7-C
-
-- 241 tests backend y 190 tests frontend correctos.
-- `compileall`, lint sin errores, build productivo y `git diff --check`
-  correctos; permanecen cuatro warnings historicos de hooks ya documentados.
-- Los requisitos institucionales, operativos y de revision profesional del
-  expediente legal siguen pendientes antes de produccion; no bloquean el
-  cierre tecnico de la etapa ni se declaran aprobados.
-- La siguiente etapa oficial es ETAPA 96 - Plataforma Instalable y PWA
-  Enterprise, pendiente y no iniciada. ETAPA 98 - Correccion y Pulido Visual
-  del Frontend permanece reservada como etapa futura independiente.
-
-## ETAPA 95.1 - Sistema de Ubicacion
-
-**Estado:** Cierre tecnico completado; ETAPA 95 continua abierta
-
-### Implementado
-
-- Contrato de ubicacion completa y visibilidad publica/privada compatible con
-  historicos.
-- Proyeccion backend segura, selector con borrador/confirmacion, geocoding
-  backend reemplazable y Geoapify aprobado con limitaciones.
-- Search territorial local/expandido, banda privada interna, ubicacion dinamica
-  de sesion y Cache-First por territorio/`positionRevision`.
-- Terminos y Politica publicos separados, versionados desde el owner backend,
-  control de privacidad en espacios y hardening final de presentacion/cache.
-
-### Gate
-
-- 95.1 queda tecnicamente cerrado con validaciones automatizadas A-G.
-- Produccion y lanzamiento continuan condicionados a completar datos
-  institucionales, derechos, retencion, reaceptacion, controles operativos y
-  formalizaciones documentadas en `docs/19_LOCATION_LEGAL_GATE.md`.
-- No se cierra ETAPA 95 ni se ejecuta aun la Frontend Ownership Audit.
-
 ## Sistema de Gobierno — Continuidad documental controlada
 
 ### Gobierno
@@ -848,6 +795,59 @@ sin cambios funcionales y sin `SECURITY GO`
 - No se implemento manifiesto, service worker, cache, offline ni instalacion.
 - No se incorporaron Capacitor, tiendas, Web Push, Background Sync, mutaciones
   offline, mapas offline ni funcionamiento offline completo.
+
+## ETAPA 95 - Experiencia de Lanzamiento y Design System Critico
+
+**Estado:** Cerrada tecnica y documentalmente
+
+### Resultado
+
+- Se completo el sistema de ubicacion: privacidad publica/privada, geocoding
+  desacoplado con Geoapify backend-only, Search territorial, contexto
+  geografico efimero y Cache-First por territorio/`positionRevision`.
+- Se consolidaron documentos y aceptaciones legales versionados, selector de
+  ubicacion seguro y compatibilidad historica de datos.
+- Se implementaron tema `dark/light/system`, bootstrap anti-flash, tokens
+  semanticos, primitives compartidas y cobertura visual completa del frontend.
+- Se cerraron accesibilidad transversal, ActiveLayer como owner de overlays,
+  responsive y consistencia de owners sin alterar negocio ni navegacion.
+- 95.7-A completo Frontend Ownership Audit y 95.7-B retiro siete residuos
+  categoria D, dejando cero residuos reales pendientes.
+
+### Gate final 95.7-C
+
+- 241 tests backend y 190 tests frontend correctos.
+- `compileall`, lint sin errores, build productivo y `git diff --check`
+  correctos; permanecen cuatro warnings historicos de hooks ya documentados.
+- Los requisitos institucionales, operativos y de revision profesional del
+  expediente legal siguen pendientes antes de produccion; no bloquean el
+  cierre tecnico de la etapa ni se declaran aprobados.
+- La siguiente etapa oficial es ETAPA 96 - Plataforma Instalable y PWA
+  Enterprise, pendiente y no iniciada. ETAPA 98 - Correccion y Pulido Visual
+  del Frontend permanece reservada como etapa futura independiente.
+
+## ETAPA 95.1 - Sistema de Ubicacion
+
+**Estado:** Cierre tecnico completado; ETAPA 95 continua abierta
+
+### Implementado
+
+- Contrato de ubicacion completa y visibilidad publica/privada compatible con
+  historicos.
+- Proyeccion backend segura, selector con borrador/confirmacion, geocoding
+  backend reemplazable y Geoapify aprobado con limitaciones.
+- Search territorial local/expandido, banda privada interna, ubicacion dinamica
+  de sesion y Cache-First por territorio/`positionRevision`.
+- Terminos y Politica publicos separados, versionados desde el owner backend,
+  control de privacidad en espacios y hardening final de presentacion/cache.
+
+### Gate
+
+- 95.1 queda tecnicamente cerrado con validaciones automatizadas A-G.
+- Produccion y lanzamiento continuan condicionados a completar datos
+  institucionales, derechos, retencion, reaceptacion, controles operativos y
+  formalizaciones documentadas en `docs/19_LOCATION_LEGAL_GATE.md`.
+- No se cierra ETAPA 95 ni se ejecuta aun la Frontend Ownership Audit.
 
 ## ETAPA 94 — QA Integral y Hardening Funcional
 
@@ -914,37 +914,1522 @@ de avanzar a experiencia de lanzamiento.
 
 ---
 
-## ETAPA 71 — Cierre Definitivo de Migración Enterprise
+## ETAPA 93 — Observabilidad y Operacion
 
-**Commit:** `0b5de97`  
 **Estado:** Cerrada
 
-### Agregado
+### Arquitectura operativa
 
-- Nuevo logo visual de FeedGo!: `frontend/public/logo_Feedgo.png`.
+- Se incorporo `docs/17_OBSERVABILITY_AND_OPERATIONS.md` como documento
+  tecnico-operativo dueno de observabilidad, diagnostico, logging, health,
+  metricas, alertas y runbooks.
+- Se aprobo una arquitectura operativa basada en contratos estables antes de
+  acoplarse a proveedores concretos.
+- Se separaron logs, metricas, alertas, auditoria, analytics y evidencia de
+  backup/restore.
+
+### Logging y errores
+
+- Se implemento logger central basado en `logging` estandar.
+- Se agregaron handlers globales para `HTTPException`,
+  `RequestValidationError` y errores no controlados.
+- Se sanitizaron respuestas de error para no exponer secretos, tokens,
+  passwords, payloads completos, `.env` ni stack traces al frontend.
+- El cliente HTTP frontend dejo de propagar cuerpos crudos del backend como
+  mensajes visibles al usuario.
+
+### Contexto, health y metricas
+
+- Se implemento Request Context con `request_id` y `correlation_id`.
+- Las respuestas incluyen `X-Request-ID` y `X-Correlation-ID`.
+- Se agregaron endpoints `GET /health/live` y `GET /health/ready`.
+- Readiness ejecuta checks read-only de API, base de datos, schema,
+  uploads/storage, embeddings, evidencia de backup y evidencia de restore.
+- Se implementaron metricas operativas minimas con `MetricSample`,
+  `MetricsRecorder` y `LocalMetricsSink`.
+- Se instrumentaron requests, latencia, respuestas `4xx` y `5xx`, errores no
+  controlados, autenticacion, autorizacion, readiness, backup, restore, uploads
+  y busquedas sin resultados.
+
+### Alertas y runbooks
+
+- Se implementaron contratos internos `AlertRule`, `AlertEvent`,
+  `AlertSeverity` y `AlertSink`.
+- Se agrego `AlertEngine` con deduplicacion, cooldown y sink local en memoria.
+- Se incorporaron reglas iniciales para readiness `unhealthy`, errores `5xx`
+  repetidos, backup fallido o evidencia no saludable, restore fallido y
+  rechazos repetidos de uploads.
+- Se documentaron runbooks iniciales para API no disponible, readiness
+  `unhealthy`, errores `5xx`, fallo de base de datos, backup/restore fallido y
+  uploads/storage degradado.
+
+### Validaciones
+
+- `unittest discover tests`: OK.
+- `compileall app`: OK.
+- ESLint de frontend modificado: OK.
+- `npm run build`: OK.
+- `git diff --check`: OK.
+
+### Diferidos
+
+- Proveedores externos de observabilidad, alertas o trazas.
+- Dashboards.
+- Endpoints de metricas o alertas.
+- Persistencia historica de metricas o alertas.
+- Politicas de guardia, escalamiento y resolucion manual.
+- Ownership y ciclo de vida persistente de uploads.
+
+### Cierre formal
+
+- ETAPA 93 queda cerrada tecnicamente.
+- ETAPA 94 - QA Integral y Hardening Funcional queda vigente.
+## ETAPA 92 — Integridad de Datos, Backups y Recuperacion
+
+**Estado:** Cerrada
+
+### Integridad y scripts operativos
+
+- `create_tables.py` queda protegido contra efectos laterales al importar.
+- `reset_db.py` queda protegido contra ejecucion destructiva accidental.
+- Se agrego `check_database_schema.py` como verificacion read-only profunda de
+  tablas, columnas, FKs, indices y restricciones unicas.
+- Se incorporo `model_registry` para registrar los modelos requeridos por
+  `Base.metadata`.
+- Se alineo metadata SQLAlchemy con el schema fisico de MySQL local.
+- Se agrego la FK fisica `comercios.rubro_id -> rubros.id` mediante script
+  controlado y confirmacion explicita.
+
+### Backup y restore
+
+- Se implemento arquitectura extensible de backup, restore y storage mediante
+  contracts/providers.
+- El provider inicial de backup usa `mysqldump` con `--single-transaction` y
+  `--quick`.
+- El provider inicial de restore usa cliente `mysql` con streaming por `stdin`
+  desde gzip, sin cargar el dump completo en memoria.
+- Se genero backup oficial posterior a la alineacion:
+  `C:\FeedGoOps\backups\mysql\mitienda_20260801T181443Z.sql.gz`.
+- El backup oficial quedo validado con gzip, SHA-256, manifiesto JSON, tamano y
+  conteos criticos.
+- Se ejecuto restore real en base temporal `feedgo_restore_tmp_*`.
+- Se validaron 27 tablas, columnas, FKs, indices, uniques, conteos criticos y
+  smoke checks de lectura.
+- Se conservo evidencia JSON del restore fuera del repositorio.
+- La base temporal fue eliminada con confirmacion explicita y `mitienda` quedo
+  intacta.
+
+### Producto y documentacion
+
+- Se incorporo el documento `docs/16_DATA_INTEGRITY_AND_RECOVERY.md` como
+  documento tecnico-operativo transversal.
+- Se registro la matriz de tablas criticas y matriz de borrado/integridad.
+- Se documentaron RPO/RTO como objetivos y se registro medicion real inicial.
+- Se agrego DEC-043 para arquitectura extensible de infraestructura.
+- Se amplio la vision de producto hacia presencia digital y administracion de
+  multiples espacios sin delegacion inicial.
+- Se ajustaron textos frontend de cuenta y espacios sin modificar ownership,
+  permisos ni contratos backend.
+
+### Validaciones
+
+- `unittest discover tests`: 119 tests OK.
+- `compileall app`: OK.
+- Checker profundo contra `mitienda`: 27 tablas metadata, 27 tablas fisicas,
+  cero diferencias estructurales.
+- Backup oficial: 0.444 s, 147405 bytes, SHA-256
+  `70c7bd53002c6ac646891a989b1da96181cc1cdde3bef9d5f6b47e9667119970`.
+- Restore real: RTO observado 3.336 s.
+- Antiguedad observada del punto recuperado: ~13 min, sin declararlo RPO
+  garantizado.
+- ESLint especifico de archivos frontend modificados: 0 errores, 1 warning
+  preexistente de `react-hooks/exhaustive-deps`.
+- `npm run build`: OK, con warnings preexistentes de Browserslist, assets
+  Leaflet y tamano de chunk.
+- `git diff --check`: OK.
+
+### Diferidos
+
+- Automatizacion periodica de backups.
+- Copia externa cifrada y verificada.
+- Retencion operativa real y monitoreada.
+- PITR/binlogs.
+- Providers RDS, Percona o cloud.
+- Pruebas recurrentes de restore.
+- Observabilidad, alertas y operacion productiva.
+
+### Cierre formal
+
+- ETAPA 92 queda cerrada.
+- ETAPA 93 - Observabilidad y Operacion queda vigente.
+
+---
+
+## ETAPA 91 — Cumplimiento Legal, Privacidad y Moderacion
+
+**Estado:** Cerrada
+
+### Seguridad y privacidad
+
+- Se separaron los contratos publicos y privados de Usuario.
+- `GET /usuarios/{usuario_id}` dejo de exponer `email` y datos privados.
+- `/usuarios/me` conserva el contrato privado necesario para el usuario
+  autenticado.
+- Se separaron contratos publicos y privados de Comercio.
+- Las respuestas publicas de Comercio dejaron de exponer `usuario_id`.
+- `es_propietario` queda calculado por backend como contrato contextual para el
+  propietario autenticado, usuario no propietario y visitante anonimo.
+- El frontend dejo de reconstruir ownership mediante identificadores publicos.
+
+### Consentimiento y evidencia
+
+- El registro exige aceptacion explicita separada de Terminos y Politica de
+  Privacidad.
+- El backend valida ambas aceptaciones y rechaza registros incompletos o con
+  valores `false`.
+- Se creo la entidad `usuarios_documentos_aceptaciones` para evidencia
+  versionada minima.
+- La creacion de usuario y las dos evidencias obligatorias ocurre en una unica
+  transaccion.
+- Las versiones y referencias documentales son controladas por backend.
+- La evidencia conserva `documento_referencia` como referencia logica de tipo y
+  version, sin presentarla como hash criptografico del texto legal definitivo.
+- Los usuarios existentes permanecen sin aceptacion retroactiva inventada.
+
+### Moderacion minima
+
+- Se creo el modulo `moderation`.
+- Se creo la entidad `contenido_denuncias`.
+- Se agrego `POST /moderacion/denuncias` como endpoint autenticado.
+- Se habilitaron denuncias sobre comercio, publicacion e historia.
+- Se implementaron motivos controlados e idempotencia por usuario, recurso y
+  motivo.
+- Se agrego un modal frontend reutilizable para enviar denuncias.
+- La denuncia no oculta contenido, no sanciona usuarios, no modifica estados
+  operativos y no expone al denunciante publicamente.
+
+### Validaciones
+
+- `unittest discover tests`: 75 tests OK.
+- `compileall app`: OK.
+- ESLint especifico de archivos frontend modificados: 0 errores, 1 warning
+  preexistente de `react-hooks/exhaustive-deps`.
+- `npm run build`: OK, con warnings preexistentes de Browserslist, assets
+  Leaflet y tamano de chunk.
+- `git diff --check`: OK.
+- Creacion fisica controlada de `usuarios_documentos_aceptaciones` y
+  `contenido_denuncias` completada sobre MySQL local `mitienda`.
+- Verificacion fisica de columnas, FKs, indices y uniques: OK.
+
+### Diferidos
+
+- Textos legales definitivos, Normas de Comunidad, Politica de Moderacion y
+  revision legal profesional.
+- Estrategia para usuarios existentes y reaceptacion por nuevas versiones.
+- Panel administrativo, decisiones de moderacion, sanciones, apelaciones y rate
+  limiting avanzado de denuncias.
+- Ownership y ciclo de vida persistente de uploads.
+- Hardening futuro de likes, guardados, seguidores y recursos inexistentes o
+  inactivos.
+
+### Cierre formal
+
+- ETAPA 91 queda cerrada tecnicamente.
+- ETAPA 92 - Integridad de Datos, Backups y Recuperacion queda vigente.
+
+---
+
+## ETAPA 90 — Seguridad, Ownership y Permisos
+
+**Estado:** Cerrada
+
+### Inicio documental
+
+- ETAPA 90 queda iniciada documentalmente como etapa vigente.
+- El inicio se limita a la transicion documental oficial desde ETAPA 89.
+
+### Seguridad y ownership
+
+- Se auditaron endpoints, mutaciones privadas, ownership y superficies
+  sensibles.
+- Se incorporo el contrato de ownership `Usuario -> Comercio -> Recurso` para
+  recursos derivados de comercio.
+- Se corrigio authorization backend en publicaciones, historias, secciones,
+  analytics, metricas sociales, snapshots, comparacion y score.
+- Se creo un helper central minimo para validar comercio propio sin conocer
+  HTTP, roles ni dominios consumidores.
+- Se endurecio logout para exigir token valido y evitar revocar tokens ausentes
+  o invalidos.
+- Se bloquearon mutaciones legacy de Productos hasta que ETAPA 103 defina el
+  ownership oficial del dominio.
+- Se agregaron tests automatizados de autorizacion para publicaciones,
+  historias, secciones, analytics, helper de ownership, logout y productos
+  legacy.
+
+### Documentacion
+
+- Se registro la decision permanente de ownership derivado desde Comercio.
+- Se incorporo el principio de ownership backend de recursos derivados.
+- Se asignaron pendientes residuales a ETAPA 91, ETAPA 93, ETAPA 94, ETAPA 95
+  y ETAPA 103.
+
+### Cierre formal
+
+- ETAPA 90 queda cerrada formalmente.
+- ETAPA 91 - Cumplimiento Legal, Privacidad y Moderacion queda vigente.
+- No se modifico backend fuera del alcance de seguridad y ownership de ETAPA
+  90.
+- No se modifico frontend.
+- No se modifico base de datos.
+- No se crearon tablas, modelos, relaciones ni funcionalidades nuevas.
+
+---
+
+## ETAPA 89 — Reorganización del Roadmap y Gobierno de Lanzamiento
+
+**Estado:** Cerrada
 
 ### Cambiado
 
-- Branding principal actualizado de `MiPlaza` a `FeedGo!`.
-- Login, Registro, Home, Feed y Layout principal actualizados para usar el logo FeedGo!.
-- DELETE de publicación en `PublicacionDetallePage.jsx` migrado a la capa HTTP centralizada mediante `httpDelete()`.
+- ETAPA 89 deja de ser Productos e Inventario y pasa a ser Reorganizacion del
+  Roadmap y Gobierno de Lanzamiento.
+- Productos e Inventario queda postergado a ETAPA 103 - Catalogo de Productos
+  y Disponibilidad Simple.
+- El lanzamiento controlado queda proyectado alrededor de ETAPA 98.
+- ETAPAS 90-97 quedan orientadas a seguridad, legalidad, datos, operacion,
+  calidad, experiencia de lanzamiento, plataforma PWA y administracion
+  operativa minima.
+- ETAPAS 99-111 quedan orientadas a evolucion posterior basada en uso real.
 
-### Eliminado
+### Agregado
 
-- `frontend/src/App.css`, archivo legacy sin uso.
-- `backend/app/utils/__init__.py`, archivo huérfano sin uso.
-- Variable muerta `API_BASE_URL` en `ProfilePage.jsx`.
+- Se crea `docs/15_LEGAL_AND_OPERATIONAL.md` como documento transversal del
+  Sistema de Gobierno.
+- Se registra el principio permanente de no implementar funcionalidades solo
+  porque sean tecnicamente posibles.
 
-### Validado
+### Consolidacion del Sistema de Gobierno v1.0
 
-- Build frontend de producción OK.
-- Arquitectura backend validada sobre `app/core` y `app/modules`.
-- Arquitectura frontend validada sobre `src/core`, `src/shared` y `src/features`.
-- Sin referencia legacy al DELETE hardcodeado `http://127.0.0.1:8000/publicaciones`.
+- Se consolida oficialmente el Sistema de Gobierno FeedGo v1.0.
+- Se homogeneiza el sistema documental con metadatos, autoridad, documento
+  dueno y criterios de consulta.
+- Se incorpora el Arbol de Autoridad del Sistema Documental.
+- Se establece la Fuente Unica de Verdad documental y la Consulta Obligatoria
+  antes de auditorias, disenos, propuestas, prompts, implementaciones,
+  validaciones o cierres.
+- Se incorpora la Estabilidad Documental como regla permanente para evitar
+  modificaciones por mejoras menores.
+- Se documenta el Flujo Oficial del Proyecto desde idea hasta push.
+- Se incorpora Compliance by Design en `docs/08_ENGINEERING_PRINCIPLES.md`.
+- Se oficializa `docs/15_LEGAL_AND_OPERATIONAL.md` como documento transversal
+  del Sistema de Gobierno FeedGo v1.0.
 
-### Pendiente no bloqueante
+### Cierre formal
 
-- Historias móvil: backend, upload, persistencia, `/historias/bar` e imágenes funcionan correctamente, pero el Feed móvil no renderiza historias. Queda para investigación futura.
+- ETAPA 89 queda cerrada oficialmente con alcance documental.
+- ETAPA 90 - Seguridad, Ownership y Permisos queda iniciada
+  documentalmente como etapa vigente.
+
+### Sin cambios de codigo
+
+- No se modifico backend.
+- No se modifico frontend.
+- No se modifico base de datos.
+- No se crearon tablas ni funcionalidades nuevas.
+
+---
+
+## ETAPA 88 — Agenda privada y Agenda general
+
+**Estado:** Cerrada
+
+### Avance técnico comprobado
+
+- Se implementó Agenda Core reutilizable e independiente de FeedGo en `backend/app/modules/agenda/`.
+- Se implementaron `ContextoAgendable` y `ElementoAgenda` como entidades propias de Agenda.
+- Se creó la integración separada `feedgo_agenda` para vincular `Comercio` con `ContextoAgendable`.
+- Se implementaron schemas, repositorios y servicios internos de Agenda con política UTC.
+- Se ajustó la política transaccional para que el caller u orquestador controle `commit` y `rollback`.
+- Se implementó control optimista de concurrencia con `version` y `version_esperada`.
+- Se implementó detección técnica informativa de solapamientos sin política bloqueante.
+- Se implementaron endpoints privados bajo `/feedgo-agenda`.
+- Se implementó endpoint agregado `GET /feedgo-agenda/mis/elementos` para Agenda general sin N requests por comercio.
+- Se implementó ownership backend para accesos privados.
+- Se implementó frontend privado de Agenda individual y Agenda general en `frontend/src/features/agenda/`.
+- Se agregaron accesos desde Perfil, tarjetas de espacios y Perfil de comercio.
+- Se corrigió navegación `Atrás`, `Cerrar` y `Cancelar` en la experiencia modal.
+- Se agregó protección local de cambios sin guardar en formularios de Agenda.
+
+### Preparación de cierre documental
+
+- Se definió el alcance final de cierre de ETAPA 88 alrededor de Agenda Core,
+  integración FeedGo-Agenda, Agenda privada por comercio y Agenda general del
+  propietario.
+- Se registró que Agenda permite crear, editar, completar y cancelar elementos,
+  filtrar por comercio, tipo, estado y rango temporal, validar ownership,
+  manejar conflictos optimistas `409`, informar solapamientos, normalizar UTC y
+  trabajar con elementos de todo el día.
+- Se corrigió la arquitectura por capas de Agenda general para mantener ORM,
+  joins, filtros y ordenamiento fuera del router HTTP.
+- Se validó el schema físico de MySQL contra los modelos de Agenda y
+  FeedGo-Agenda sin diferencias bloqueantes.
+- Se aprobó la validación funcional backend automatizada de Agenda con datos
+  temporales revertidos.
+- Se validó `compileall` de Agenda y FeedGo-Agenda, build frontend, ESLint
+  específico de Agenda y `git diff --check`.
+- Quedaron como observaciones no bloqueantes: lint global con errores ajenos a
+  ETAPA 88, ausencia de suite formal específica de Agenda y validación manual
+  en navegador no ejecutada.
+- Se difirieron fuera del cierre actual Reservas públicas, Notificaciones
+  locales, campana global, correo, WhatsApp, workers, colas, schedulers,
+  proveedores externos, Vista Semana, Vista Mes y persistencia de última vista,
+  filtros o contexto.
+
+### Cierre formal
+
+- ETAPA 88 queda cerrada formalmente con alcance Agenda.
+- El cierre incluye Agenda Core, integración FeedGo-Agenda, Agenda privada por
+  comercio, Agenda general del propietario, mutaciones privadas, filtros,
+  ownership, conflictos `409`, solapamientos informativos, UTC, elementos de
+  todo el día, cache TanStack Query, ActiveLayer y separación respecto de
+  Disponibilidad, visibilidad y estado del comercio.
+- Reservas públicas, Notificaciones locales, campana global, correo, WhatsApp,
+  workers, colas, schedulers, proveedores externos, Vista Semana, Vista Mes y
+  persistencia de última vista, filtros o contexto quedan diferidos.
+
+### Fuera de alcance aún no implementado
+
+- Reservas públicas.
+- Turnos públicos.
+- Servicios reservables.
+- Recursos y capacidad.
+- Prevención transaccional de doble reserva.
+- Flujo público de reservas.
+
+---
+
+## ETAPA 87 — Sistema de Disponibilidad
+
+**Estado:** Cerrada
+
+### Implementación
+
+- Módulo backend `availability` para horarios habituales semanales de comercios.
+- Tabla `comercios_horarios_atencion` registrada en metadata y creada mediante `create_tables.py`.
+- Endpoints `GET /comercios/{comercio_id}/horarios` y `PUT /comercios/{comercio_id}/horarios`.
+- Cálculo backend de estado horario y texto contextual.
+- Integración informativa en detalle, `/comercios/mis` y `/comercios/activos`.
+- Badge frontend reutilizable y editor privado de horarios.
+- Soporte de múltiples franjas por día, reemplazo completo y eliminación mediante `franjas=[]`.
+- Acceso al editor de horarios desde el flujo de edición del comercio.
+
+### Corrección de regresiones
+
+- Los endpoints históricos de Spaces degradan `horario_atencion` a `null` si Availability falla por infraestructura.
+- Los endpoints propios de Availability conservan sus errores normales.
+- Se corrigió un literal genérico de publicaciones del perfil para usar el nombre real del comercio.
+- Se sincronizó `Base.metadata` con MySQL para `comercios_horarios_atencion`.
+- Se corrigió la identidad estable del editor frontend para evitar que una franja modificara otra.
+- Se ocultó temporalmente el mapa de ubicación mientras el editor de horarios está abierto.
+
+### Gobierno
+
+- Se incorporaron reglas permanentes de compatibilidad hacia atrás.
+- Se incorporó auditoría obligatoria antes de crear tablas.
+- Se incorporó clasificación oficial del modelo de datos.
+- Se incorporó validación obligatoria de schema físico antes de cerrar etapas.
+- Se incorporó el Design System oficial para botones secundarios.
+
+### Validación de cierre
+
+- `python -m compileall app main.py create_tables.py reset_db.py` ejecutado con el venv backend.
+- `create_tables.py` ejecutado correctamente como mecanismo oficial no destructivo.
+- `Base.metadata` y MySQL sincronizados: 22 tablas en metadata, 22 tablas físicas, sin faltantes ni extras.
+- `comercios_horarios_atencion` existe en metadata y MySQL.
+- Schemas de Availability validados para día válido, día fuera de rango, apertura igual al cierre, cruce de medianoche y lista vacía.
+- Servicio de Availability validado para franjas contiguas, solapamientos, semana circular, datetimes aware y cálculo batch sin N+1.
+- API de Availability validada para configuración, edición, eliminación, horarios partidos, guardado y lectura posterior con restauración de datos originales.
+- Endpoints históricos validados: `/comercios/mis`, `/comercios/activos`, detalle de comercio, `/publicaciones/` e `/historias/bar`.
+- Frontend validado con build de producción, lint acotado sin errores y flujo local del editor con identidad estable.
+
+### Fuera de alcance
+
+- Agenda.
+- Reservas.
+- Turnos.
+- Servicios con horarios independientes.
+- Feriados.
+- Excepciones por fecha.
+- Cruces de medianoche.
+- Filtros o ranking por disponibilidad.
+
+### Deuda controlada
+
+- Queda diferida a ETAPA 95 la unificación visual completa del Design System: botones secundarios restantes, espaciados, alineaciones, iconografía, jerarquía visual, formularios y responsive.
+
+---
+
+## ETAPA 86 — Cierre técnico del Indexador
+
+### Resumen
+
+Se implementó el módulo inicial del Indexador de FeedGo:
+
+`backend/app/modules/indexer/`
+
+El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes oficiales, sin persistencia, endpoints, scheduler ni colas.
+
+### Implementación
+
+- Contratos de dominio del `CommerceIndexDocument`.
+- Contratos de bloques del documento.
+- `SourceSnapshots` como frontera entre fuentes y builders.
+- Contratos de evidencias, trazabilidad y resultado de validación.
+- Collectors de Comercio, Taxonomía, Contenido, Señales y Knowledge Graph.
+- Builders para los diez bloques del `CommerceIndexDocument`.
+- `IndexDocumentValidationService`.
+- `CommerceIndexerService` como orquestador del flujo completo.
+
+### Validación
+
+- Auditoría final de integración aprobada.
+- Se verificó separación entre Collectors, Builders, Validator y orquestador.
+- Se confirmó ausencia de persistencia, endpoints, scheduler, colas e integración runtime.
+- Se corrigió la duplicación de `TextNormalizationContract`.
+- `SearchRepresentationBuilder` depende exclusivamente del contrato compartido de normalización.
+
+---
+
+## ETAPA 85 — Knowledge Graph (Inicio de implementación)
+
+### Resumen
+
+Luego del diseño arquitectónico realizado entre las ETAPAS 81 y 84, comienza la implementación del nuevo núcleo del Buscador Inteligente de FeedGo.
+
+Esta etapa marca el nacimiento del Knowledge Graph, componente que servirá como base del Knowledge System, del Documento de Índice, del Indexador y del nuevo pipeline de búsqueda.
+
+## 85.1 — Gobierno y Arquitectura
+
+### Documentación oficial
+
+Se incorporó el nuevo sistema de documentación viva del proyecto mediante la carpeta `/docs`.
+
+Documentos creados:
+
+- 00_GOVERNANCE.md
+- 01_ENGINEERING.md
+- 02_PRODUCT.md
+- 03_SEARCH.md
+- 04_CURRENT_STAGE.md
+- 05_SEARCH_ROADMAP.md
+
+Posteriormente se agregaron los documentos de diseño:
+
+- 10_INDEX_DESIGN.md
+- 11_KNOWLEDGE_DESIGN.md
+
+Estos documentos pasan a constituir la fuente oficial de verdad para arquitectura, diseño y roadmap.
+
+---
+
+## 85.2 — Núcleo del Knowledge Graph
+
+Se creó el nuevo submódulo:
+
+backend/app/modules/knowledge/graph/
+
+Implementaciones iniciales:
+
+- Concept
+- Relation
+- KnowledgeGraphService
+
+Características:
+
+- contratos independientes de persistencia;
+- validaciones de dominio;
+- sin SQLAlchemy;
+- sin tablas;
+- sin endpoints;
+- sin integración con runtime;
+- arquitectura preparada para evolución futura.
+
+---
+
+## 85.3 — Integración inicial con Taxonomía
+
+Se implementó la primera proyección controlada:
+
+Taxonomía
+↓
+
+Knowledge Graph
+
+Componentes incorporados:
+
+- TaxonomyNodeToConceptMapper
+- TaxonomyAssignmentToRelationMapper
+- TaxonomyKnowledgeGraphProjectionService
+
+Características:
+
+- proyección unidireccional;
+- regenerable;
+- idempotente;
+- IDs determinísticos;
+- Taxonomía continúa siendo la fuente oficial;
+- Knowledge Graph representa una vista derivada.
+
+---
+
+## Estado al cierre
+
+Implementado:
+
+✔ Concept
+
+✔ Relation
+
+✔ KnowledgeGraphService
+
+✔ Proyección Taxonomía → Knowledge Graph
+
+Pendiente:
+
+- Documento de Índice de Comercio.
+- Indexador.
+- Integración Discovery.
+- Integración Candidate Engine.
+- Integración Ranking.
+
+## ETAPA 85 — Cierre
+
+### Gobierno
+
+- Sistema de Gobierno `00`–`08` consolidado.
+- Continuidad entre chats y generación de Prompt Maestro desde `/docs`.
+- Registro de decisiones y principios permanentes.
+- Security by Design, Secure by Default y Defense in Depth incorporados como principios permanentes.
+- Integraciones desacopladas y limpieza residual incorporadas como principios de ingeniería.
+
+### Implementación
+
+- `Concept`.
+- `Relation`.
+- `KnowledgeGraphService` en memoria.
+- Proyección Taxonomía → Knowledge Graph.
+- IDs determinísticos e idempotencia.
+
+### Diseño aprobado
+
+- Separación Taxonomía / Knowledge Graph.
+- Contrato conceptual de Concepto y Relación.
+- Commerce Index Document.
+- Diez bloques del documento.
+- Pipeline conceptual del Indexador.
+- Regeneración completa V1.
+- Futura regeneración parcial.
+- Invalidación y escalabilidad.
+
+### Próxima etapa
+
+ETAPA 86 — Implementación del Indexador.
+
+---
+
+## ETAPA 80 — Candidate Engine
+
+### Objetivo
+
+- Separar generación de candidatos del ranking.
+- Crear una arquitectura extensible para el buscador inteligente.
+
+### Cambios principales
+
+- Se creó Candidate Engine.
+- Se incorporó CandidateRegistry.
+- Se implementaron CandidateEvidence, CandidateSet y CandidateGenerationContext.
+- Se implementó CandidateGenerator.
+- Se implementó CandidateUnion.
+- Se implementaron las fuentes:
+  - ComercioNombreCandidateSource
+  - PublicacionCandidateSource
+  - EspecialidadCandidateSource
+  - AssignmentCandidateSource
+  - RubroCandidateSource
+  - DiscoveryCandidateSource
+- Discovery ahora utiliza también related_terms durante la búsqueda textual.
+- Se mejoró la resolución de rubros desde ancestros taxonómicos.
+- Cuando Candidate Engine no encuentra candidatos confiables el endpoint devuelve [] y ya no expande mediante embeddings débiles.
+- Cuando existen candidatos, el ranking solamente ordena ese pool sin incorporar comercios externos.
+
+### Validaciones realizadas
+
+Se validaron mediante baterías completas de búsqueda:
+
+- mascotas
+- gastronomía
+- indumentaria
+- tecnología
+- construcción
+- automotor
+- servicios
+- publicaciones
+- sinónimos
+- búsquedas sin cobertura
+
+Se verificó:
+
+- desaparición de falsos positivos producidos por embeddings débiles
+- integración correcta entre Discovery y Candidate Engine
+- búsquedas por publicaciones
+- búsquedas por especialidades
+- búsquedas por rubros
+- búsquedas por assignments
+- búsquedas mediante related_terms
+- comportamiento esperado cuando no existe cobertura (respuesta [])
+
+---
+
+## ETAPA 79.1 — Knowledge Core base
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el módulo interno `backend/app/modules/knowledge/`.
+- Se agregaron schemas internos:
+  - `KnowledgeQueryInput`
+  - `KnowledgeQueryInterpretation`
+- Se incorporó un adapter legacy de intención para encapsular la interpretación actual de queries.
+- Se creó `knowledge_legacy_intent_services.py` como fuente interna de intención legacy dentro de Knowledge.
+- `spaces/services/comercios_services.py` ahora delega intención y expansión en Knowledge.
+- Se mantuvo `_normalizar_texto` y `_tokenizar` local en `spaces` porque siguen participando en scoring/ranking.
+
+### Compatibilidad
+
+- No se tocaron frontend, modelos, migraciones, contratos API ni ranking.
+- No se modificó Discovery Retrieval.
+- Los hardcodes duplicados en `spaces` quedan temporalmente como fallback hasta una limpieza posterior.
+
+### Validación
+
+- Equivalencia de intención legacy validada para 16 queries representativas.
+- Endpoint `GET /comercios/activos` validado con `smart_semantic=true`.
+- Queries validadas:
+  - `pizza`
+  - `ropa`
+  - `calzado`
+  - `cerveza`
+  - `construcción`
+  - `revestimientos`
+  - `cubiertas`
+  - `abogado`
+  - `contador`
+  - `iphone`
+  - `lomitos`
+- Todas las consultas respondieron `200`, mantuvieron paginación y conservaron el shape de respuesta.
+
+### Pendiente
+
+- Eliminar hardcodes duplicados de `spaces` cuando Knowledge quede consolidado como fuente única.
+- Agregar pruebas automatizadas cuando exista estructura de tests backend.
+
+---
+
+## ETAPA 79.2 — SearchEvent V1
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el modelo `SearchEvent` y la tabla `search_events`.
+- Se agregó el registro de búsquedas reales desde `GET /comercios/activos`.
+- Se registra:
+  - query original y normalizada
+  - modo de búsqueda
+  - `result_count`
+  - `no_results`
+  - `taxonomy_node_ids_json`
+  - `rubro_ids_json`
+  - `comercio_result_ids_json`
+  - `metadata_json`
+- El registro es best-effort y no bloquea la respuesta del buscador si falla.
+- Se incorporó `backend/crear_search_events.py` como script idempotente para crear la tabla.
+- `create_tables.py` importa el modelo para el flujo manual existente de creación de tablas.
+
+### Privacidad
+
+- No se registra IP.
+- No se registra User-Agent.
+- No se guardan `lat`/`lng` exactos.
+- Solo se registra `has_location` y `radio_km` cuando corresponde.
+
+### Validación
+
+- Se creó la tabla `search_events` con el script idempotente.
+- Se validó el endpoint real `GET /comercios/activos` con `smart_semantic=true`.
+- Queries validadas:
+  - `pizza`
+  - `prendas`
+  - `cubiertas`
+  - `contador`
+- Todas respondieron `200` y generaron filas nuevas en `search_events`.
+- Se verificaron campos persistidos: query, modo, resultados, nodos, rubros, comercios y metadata.
+
+### Pendiente
+
+- Diseñar e implementar `SearchSession`.
+- Registrar clicks y conversiones.
+- Diseñar e implementar `KnowledgeProposal`.
+- Construir el futuro Knowledge Builder sobre eventos agregados.
+
+---
+
+## ETAPA 79.3 — Knowledge Analytics Base
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el submódulo interno `backend/app/modules/knowledge/analytics/`.
+- Se agregaron schemas internos para analytics read-only sobre `SearchEvent`.
+- Se implementaron servicios internos read-only:
+  - `top_queries`
+  - `top_queries_no_results`
+  - `discovery_failures`
+  - `query_summary`
+- Los servicios leen `SearchEvent` y devuelven agregados para alimentar futuro Knowledge Builder.
+
+### Alcance
+
+- No se agregaron endpoints públicos.
+- No se tocó frontend.
+- No se crearon modelos ni migraciones.
+- No se modificó `SearchEvent`.
+- No se modificó Discovery.
+- No se modificó ranking.
+
+### Validación
+
+- Se validaron los servicios contra datos reales existentes en `search_events`.
+- `top_queries` devolvió queries registradas como `pizza`, `contador`, `cubiertas` y búsquedas parciales.
+- `top_queries_no_results` y `discovery_failures` detectaron búsquedas sin resultados.
+- `query_summary` tolera queries existentes y queries sin eventos.
+
+### Pendiente
+
+- Analytics por `rubro_ids_json`.
+- Analytics por `taxonomy_node_ids_json`.
+- Snapshots diarios agregados.
+- Diseño e implementación de `KnowledgeProposal`.
+- Integración futura con Knowledge Builder.
+
+---
+
+## ETAPA 79.4 — Knowledge Evidence Base
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el módulo interno `backend/app/modules/knowledge/builder/`.
+- Se agregaron schemas internos para evidencia estructurada:
+  - `SearchTermEvidence`
+  - `SynonymEvidence`
+  - `RelatedTermEvidence`
+  - `SpecialtyEvidence`
+  - `CoverageGapEvidence`
+  - `RankingEvidence`
+- Se implementaron servicios read-only que transforman Knowledge Analytics en evidencia.
+- Se incorporó confidence explicable en rango `0.0..1.0`.
+- Se clasificó la fuerza de evidencia mediante:
+  - `noise`
+  - `weak`
+  - `candidate`
+  - `priority`
+
+### Alcance
+
+- No se agregaron endpoints públicos.
+- No se tocó frontend.
+- No se crearon modelos ni migraciones.
+- No se modificó Discovery.
+- No se modificó ranking.
+- No se creó `KnowledgeProposal`.
+
+### Diseño
+
+- `SearchEvent V1` genera evidencia de términos, especialidades y brechas de cobertura.
+- `CoverageGapEvidence` representa baja cobertura detectada desde búsquedas reales.
+- `RankingEvidence` queda reservado para una etapa futura con `SearchSession`, clicks y conversiones.
+- La evidencia es revisable y no aplica cambios automáticos.
+
+### Validación
+
+- Se validó con datos reales existentes en `search_events`.
+- Se generaron evidencias para queries con baja cobertura y no-results.
+- Se confirmó que los servicios no escriben en DB.
+- El conteo de `SearchEvent` antes y después de generar evidencia se mantuvo igual.
+
+### Pendiente
+
+- Crear `KnowledgeProposal` como entidad revisable.
+- Incorporar SearchSession.
+- Incorporar clicks y conversiones.
+- Convertir evidencia validada en propuestas revisables, nunca en cambios automáticos.
+
+---
+
+## ETAPA 79.5 — KnowledgeProposal V1
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el modelo `KnowledgeProposal` y la tabla `knowledge_proposals`.
+- Se agregó `proposal_services.py` para generar propuestas revisables desde Evidence.
+- Las propuestas se crean únicamente con `status="pending"`.
+- Se incorporó `dedupe_key` único para evitar propuestas duplicadas.
+- Estados definidos:
+  - `pending`
+  - `approved`
+  - `rejected`
+  - `applied`
+- Se agregó el script idempotente `backend/crear_knowledge_proposals.py`.
+- `create_tables.py` importa el modelo para el flujo manual existente de creación de tablas.
+
+### Alcance
+
+- No se agregaron endpoints públicos.
+- No se tocó frontend.
+- No se modificó Discovery.
+- No se modificó ranking.
+- No se modificó `TaxonomyNode`.
+- No se modificó `metadata_json`.
+- No se aplica ninguna propuesta automáticamente.
+
+### Decisión técnica
+
+- En V1, `taxonomy_node_id`, `reviewed_by_usuario_id` y `applied_by_usuario_id` quedan como IDs nullable sin constraints ORM.
+- Esta decisión evita dependencias laterales de mappers y mantiene Proposal V1 desacoplado para validación temprana.
+
+### Validación
+
+- Se creó la tabla `knowledge_proposals`.
+- Se generó 1 propuesta `pending` real desde Evidence:
+  - `proposal_type=add_search_term`
+  - `query=car`
+  - `dedupe_key=add_search_term:none:car`
+- Una segunda ejecución no generó duplicados.
+- Se verificó que `TaxonomyNode` y `metadata_json` permanecieron intactos.
+
+### Pendiente
+
+- Diseñar revisión/aprobación de propuestas.
+- Diseñar endpoints/admin internos de revisión.
+- Aplicación controlada de propuestas aprobadas en una etapa futura.
+
+---
+
+## ETAPA 79.6 — Knowledge Review V1
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó `review_services.py` para revisar propuestas de Knowledge.
+- Se creó `review_schemas.py` con schemas internos de resultado de revisión.
+- Se implementó `approve_proposal()`.
+- Se implementó `reject_proposal()`.
+- Solo propuestas con `status="pending"` pueden revisarse.
+- Aprobar cambia estado a `approved` y registra `reviewed_at`.
+- Rechazar cambia estado a `rejected`, registra `rejected_reason` y `reviewed_at`.
+
+### Alcance
+
+- No se agregaron endpoints públicos.
+- No se tocó frontend.
+- No se modificó Discovery.
+- No se modificó ranking.
+- No se modificó `TaxonomyNode`.
+- No se modificó `metadata_json`.
+- No se aplican propuestas todavía.
+
+### Validación
+
+- Se validó con la propuesta real `id=1`.
+- La propuesta fue aprobada correctamente.
+- Una segunda aprobación falló controladamente porque la propuesta ya no estaba `pending`.
+- Se confirmó que `TaxonomyNode` y `metadata_json` permanecieron intactos.
+
+### Pendiente
+
+- Diseñar e implementar `apply_services.py`.
+- Diseñar auditoría de aplicación.
+- Aplicar propuestas aprobadas solo en una etapa futura y controlada.
+
+---
+
+## ETAPA 79.7 — Knowledge Workspace Base
+
+**Estado:** Cerrada
+
+### Backend
+
+- Se creó el módulo interno `backend/app/modules/knowledge/workspace/`.
+- Se agregó `proposal_workspace_services.py` para consultar propuestas sin modificarlas.
+- Se agregaron schemas internos:
+  - `ProposalListItem`
+  - `ProposalDetail`
+  - `ProposalStats`
+- Se implementaron funciones read-only:
+  - `list_pending_proposals`
+  - `list_approved_proposals`
+  - `list_rejected_proposals`
+  - `list_applied_proposals`
+  - `proposal_detail`
+  - `proposal_stats`
+
+### Alcance
+
+- No se agregaron endpoints públicos.
+- No se tocó frontend.
+- No se modificó Discovery.
+- No se modificó ranking.
+- No se modificó `TaxonomyNode`.
+- No se modificó `metadata_json`.
+- El Workspace Base es solo lectura.
+
+### Validación
+
+- Se validó con la propuesta real `id=1`.
+- `proposal_detail` devolvió la propuesta aprobada.
+- `proposal_stats` informó:
+  - `approved=1`
+  - `pending=0`
+  - `rejected=0`
+  - `applied=0`
+- Se confirmó que la consulta no cambió estados ni escribió en DB.
+
+### Pendiente
+
+- Crear endpoints/admin internos para operar el workspace.
+- Diseñar e implementar `apply_services.py`.
+- Mantener aplicación de propuestas para una etapa futura y controlada.
+
+## ETAPA 79.8 — Catálogo Oficial de Rubros y Especialidades
+
+### Objetivo
+
+Completar el catálogo oficial de FeedGo incorporando el conjunto definitivo de rubros visibles y especialidades oficiales que alimentará Discovery, Knowledge Engine, Buscador Inteligente y futuras etapas del producto.
+
+### Cambios realizados
+
+- Se actualizó el catálogo oficial de rubros y especialidades.
+- Se implementaron las TANDAS A, B, C y D.
+- Se ampliaron las especialidades oficiales para los rubros existentes.
+- Se incorporaron cuatro nuevos rubros visibles:
+  - Estética y Cuidado Personal.
+  - Carpintería y Herrería.
+  - Seguridad y Vigilancia.
+  - Turismo, Viajes y Logística.
+- Se agregaron los correspondientes `TaxonomyNode` tipo `rubro`.
+- Se agregaron todas las especialidades oficiales asociadas.
+- Se actualizaron los mappings de `RUBRO_NOMBRE_A_TAXONOMY_SLUG`.
+- Se reutilizaron slugs e IDs existentes cuando existía equivalencia clara.
+- Se conservaron nodos legacy para mantener compatibilidad histórica.
+- No se eliminaron nodos existentes.
+
+### Validaciones realizadas
+
+Se ejecutó la actualización oficial de taxonomía.
+
+Se validó:
+
+- creación de rubros visibles;
+- creación y actualización de `TaxonomyNode`;
+- creación de `TaxonomyAssignment`;
+- endpoints `GET /rubros`;
+- endpoints `GET /rubros/{id}/especialidades`;
+- nombres oficiales;
+- shape de respuesta;
+- compatibilidad con rubros existentes.
+
+No se detectaron errores durante la actualización.
+
+### Archivos modificados
+
+- `backend/app/modules/discovery/services/taxonomy_seed_services.py`
+- `backend/app/modules/products/services/rubros_services.py`
+
+## ETAPA 78 — Buscador Explorar y cache consistente
+
+**Estado:** En curso
+
+### Avances realizados
+
+- Publicaciones públicas en Explorar incorporan búsqueda backend mediante parámetro `q` opcional.
+- `GET /publicaciones/` mantiene compatibilidad: sin `q` conserva el listado público paginado existente.
+- Backend filtra publicaciones antes de paginar por:
+  - `Publicacion.titulo`
+  - `Publicacion.descripcion`
+  - `Comercio.nombre`
+- Frontend `fetchPublicacionesPublicas()` acepta `q` y lo envía solo cuando hay búsqueda real.
+- `useExplorarPublicaciones()` acepta `q` y separa cache por búsqueda.
+- Se agrega `queryKeys.explore.posts({ q, limit, offset })`.
+- Explorar deja de aplicar filtrado final frontend sobre publicaciones; backend queda como fuente de verdad.
+- Se unifican las query options de espacios entre `useExplorarEspacios()` y `prefetchBusquedaEspacios()`.
+- Nuevo helper frontend `getExplorarEspaciosInfiniteQueryOptions(params)` comparte:
+  - `queryKey`
+  - `initialPageParam`
+  - `queryFn`
+  - `getNextPageParam`
+  - `staleTime`
+- Se conecta Discovery al endpoint `/comercios/activos`.
+- `smart_semantic` ahora usa `recuperar_nodos_discovery()`.
+- Se obtienen `node_ids` desde `TaxonomyNode`.
+- Se traducen nodos a `rubro_ids` vía `TaxonomyAssignment`.
+- Se traducen nodos a `comercio_ids` vía `TaxonomyAssignment` con `entity_type="comercio"`.
+- Los candidatos del buscador combinan rubro principal y especialidades asignadas.
+- Discovery evita el fallback al pool amplio cuando detecta una intención fuerte.
+- Si Discovery identifica una intención pero no encuentra candidatos, el backend devuelve una lista vacía.
+- Se evita mostrar comercios irrelevantes para preservar la confianza del buscador.
+- El buscador prioriza precisión sobre cantidad de resultados.
+- La UI mostrará simplemente: `No encontramos resultados para "<búsqueda>".`
+- Se agrega `metadata_json.search_terms` y `metadata_json.synonyms` a `TaxonomyNodeSeed`.
+- La búsqueda textual de Discovery ahora lee `search_terms` y `synonyms`.
+- Los embeddings de taxonomía ahora incluyen `search_terms` y `synonyms`.
+- Las especialidades entran en sugerencias y embeddings de taxonomía.
+- Se agregan especialidades gastronómicas:
+  - `comidas-rapidas`
+  - `bar-cocteleria`
+- Se protege `metadata_json` manual al actualizar seed: solo se pisa cuando el seed trae metadata explícita.
+- Se define Knowledge Base FeedGo:
+  - Rubro
+  - Especialidad
+  - `search_terms`
+  - `synonyms`
+
+### Pendiente
+
+- Ranking por Discovery (`confidence` y `principal`).
+- Knowledge Builder.
+- Prefetch inteligente.
+- Eliminación gradual de hardcodes.
+- Mejorar cobertura de `search_terms` y especialidades.
+
+### Objetivo técnico
+
+- Mantener cache TanStack consistente entre búsqueda visible y prefetch.
+- Evitar divergencias entre `useInfiniteQuery` y `prefetchInfiniteQuery`.
+- Reducir duplicación en query keys, query functions y paginado incremental.
+
+## ETAPA 78.4 — Especialidades por Rubro (Discovery)
+
+### Objetivo
+
+Reemplazar el antiguo concepto de "rubros secundarios" por un modelo basado en especialidades dependientes del rubro principal, mejorando la calidad del Discovery, el buscador y el ranking.
+
+### Backend
+
+- Se agregó `especialidad_ids` a `ComercioCreate`, `ComercioUpdate` y `ComercioResponse`.
+- Se implementó la sincronización de especialidades mediante `TaxonomyAssignment`.
+- Nueva fuente de asignación: `especialidad_manual`.
+- `confidence=1.0`.
+- `principal=False`.
+- La sincronización de rubros ya no elimina assignments creados manualmente para especialidades.
+- Se mantienen temporalmente `rubro_secundario_ids` por compatibilidad.
+
+### Frontend
+
+- Se eliminó del flujo de usuario el selector de rubros secundarios.
+- Se incorporó el hook cache-first `useRubroEspecialidades`.
+- Se agregó el service `GET /rubros/{id}/especialidades`.
+- Al cambiar el rubro principal se recargan automáticamente las especialidades correspondientes.
+- Se limpian las especialidades anteriores al cambiar de rubro.
+- El formulario ahora envía `especialidad_ids` al backend.
+- Al editar un espacio se restauran las especialidades guardadas.
+
+### Impacto
+
+- FeedGo deja de clasificar espacios mediante rubros secundarios.
+- La información queda estructurada como:
+
+---
+
+## ETAPA 78 — Discovery Enterprise (Cierre)
+
+**Estado:** Cerrada
+
+Discovery queda considerado arquitectónicamente estable. La etapa consolida el buscador de Explorar, la conexión con Taxonomy y la base inicial de conocimiento para que FeedGo pueda crecer desde datos y no desde hardcodes.
+
+## Arquitectura
+
+- Integración de Discovery dentro del pipeline de búsqueda `smart_semantic`.
+- Unificación de query options del buscador entre hook y prefetch.
+- Conexión entre Discovery y `TaxonomyAssignment`.
+- Incorporación de candidatos por rubros y comercios desde Discovery.
+- Protección contra resultados irrelevantes cuando Discovery detecta una intención fuerte.
+- El buscador devuelve "sin resultados" antes que resultados incorrectos.
+
+## Taxonomía
+
+- Reorganización de la jerarquía de especialidades.
+- Las especialidades pasan a depender directamente del rubro principal correspondiente.
+- Preparación de la estructura para abandonar definitivamente el concepto de rubros secundarios.
+
+## Creación de espacios
+
+- Incorporación de `especialidad_ids` en backend.
+- Incorporación del selector dinámico de especialidades por rubro en frontend.
+- Persistencia mediante `TaxonomyAssignment` con `source="especialidad_manual"`.
+- La creación de espacios comienza a alimentar directamente el motor Discovery.
+
+## Knowledge Base
+
+- Enriquecimiento de las 29 especialidades existentes.
+- Metadata estandarizada mediante:
+  - `search_terms`
+  - `synonyms`
+  - `related_terms`
+- Totales aproximados:
+  - 198 `search_terms`
+  - 59 `synonyms`
+  - 145 `related_terms`
+
+## Buscador
+
+- Discovery deja de depender únicamente de hardcodes.
+- El conocimiento comienza a vivir en la base de datos.
+- Preparación para reemplazar progresivamente `_INTENCIONES_BUSQUEDA_V2` por Knowledge.
+
+## Estado final
+
+- La arquitectura de Discovery queda considerada estable.
+- A partir de la ETAPA 79, el foco pasa a ser:
+  - ampliar el conocimiento,
+  - integrar datasets externos,
+  - incorporar Knowledge Builder,
+  - mejorar continuamente la inteligencia del buscador sin volver a modificar la arquitectura.
+
+---
+
+## ETAPA 77.2 — Discovery conectado al buscador predictivo
+
+- Discovery conectado al buscador predictivo.
+- Nuevo service taxonomy_search_services.py.
+- Cache interno lazy para TaxonomyNode.
+- Buscador prioriza texto nombre, Discovery fuerte, texto/Discovery débil y embeddings.
+- Fallback de embeddings para evitar 500 si local provider falla.
+- Frontend no modificado.
+- Schemas no modificados.
+- Validado endpoint /buscar/sugerencias con ropa, remera, indumentaria.
+
+---
+
+## ETAPA 77.3.x — Rubros secundarios con Discovery Assignments
+
+- Se agrega soporte backend para rubros secundarios mediante Discovery Assignments.
+- Comercio.rubro_id se mantiene como rubro principal por compatibilidad.
+- ComercioCreate acepta rubro_secundario_ids opcional.
+- ComercioUpdate acepta rubro_secundario_ids opcional.
+- rubro_secundario_ids ausente preserva secundarios.
+- rubro_secundario_ids=[] elimina secundarios.
+- rubro_secundario_ids=[...] reemplaza secundarios.
+- Validado con creación y actualización real de comercios.
+- Frontend todavía no modificado.
+
+---
+
+## ETAPA 74 — Cache-First Restante
+
+## Objetivo
+
+Completar la estrategia Cache-First en las pantallas que todavía conservaban fetches manuales, loaders bloqueantes o estados remotos fuera de TanStack Query.
+
+## Cambios realizados
+
+### ETAPA 74.1
+
+Commit: f14ff31
+
+- Se crea useMisComercios().
+- Se agrega queryKeys.spaces.mis().
+- ProfilePage migra GET /comercios/mis a TanStack Query.
+- Invalidaciones cache-first para crear, editar, desactivar y reactivar espacios.
+- Skeleton solo en carga inicial real.
+
+### ETAPA 74.2
+
+Commit: 0ea88ba
+
+- Se crea useMisEspaciosSeguidos().
+- Se agrega queryKeys.spaces.seguidos().
+- VerSeguidosPage migra espacios seguidos a TanStack Query.
+- Eliminado fetch manual principal.
+- Lista visible durante refetch.
+
+### ETAPA 74.3
+
+Commit: 32b4e17
+
+- RankingPage deja de usar fetch manual de guardadas.
+- Se reutiliza cache de usePublicacionesGuardadas().
+- Menos requests duplicados.
+
+### ETAPA 74.4
+
+Commit: c261a81
+
+- PublicacionDetallePage evita loading bloqueante.
+- Se introduce publicacionVisible.
+- Skeleton solo cuando no existe información visible.
+- Mejora experiencia al navegar desde listas.
+
+### ETAPA 74.5
+
+Commit: 12e2a0e
+
+- FeedPage deja de usar fetch manual de guardadas.
+- Se reutiliza cache de usePublicacionesGuardadas().
+- Menos requests duplicados.
+- Mantiene optimistic updates existentes.
+
+## Auditoría Arquitectónica
+
+Resultado:
+
+- Arquitectura Enterprise validada.
+- Backend continúa siendo fuente de verdad.
+- Frontend mantiene responsabilidades de UX, cache y presentación.
+- Sin hallazgos críticos.
+- Sin migraciones de lógica de negocio al frontend.
+
+## Estado final
+
+ETAPA 74 cerrada.
+
+Principios consolidados:
+
+- Cache visible primero.
+- Refetch en background.
+- Skeletons solo en primera carga real.
+- Menos fetches manuales.
+- Menos estados duplicados.
+- TanStack Query como estrategia principal de cache.
+
+---
+
+## ETAPA 73 — Evolución Funcional y Crecimiento del Producto
+
+**Estado:** Activa
+
+**Punto de partida:** `ca9e8b6`
+
+### Contexto
+
+ETAPA 73 inicia oficialmente después del cierre histórico de ETAPA 72.
+
+La arquitectura Enterprise permanece cerrada y no hay migración activa. El trabajo actual continúa sobre la base ya consolidada.
+
+### Foco
+
+- Evolución funcional del producto.
+- Mejoras UX incrementales.
+- Performance incremental.
+- Crecimiento del producto.
+- Consolidación de flujos existentes.
+- Nuevas capacidades sin refactor masivo.
+
+### Reglas de etapa
+
+- No reabrir migración Enterprise.
+- No introducir refactors masivos sin necesidad.
+- Mantener backend como fuente de verdad.
+- Priorizar cambios acotados, auditables y compatibles con la arquitectura actual.
+
+## ETAPA 73.1 — Historias, Retención y Evolución de Producto
+
+### 73.1.1 — Optimización de refresco de barra de historias
+**Commit:** `1c1129b`
+
+- Se evita refrescar `/historias/bar` al cerrar el viewer cuando no hubo nuevas vistas registradas.
+- Se reduce tráfico innecesario entre frontend y backend.
+- Sin cambios visuales.
+- Sin cambios de arquitectura.
+- Sin cambios de comportamiento funcional.
+
+### 73.1.2 — Optimización backend de /historias/bar
+**Commit:** `d0eef47`
+
+- Se elimina el principal N+1 detectado en la carga de la barra de historias.
+- Se reemplaza la carga por comercio por consultas agregadas en lote.
+- Se mantienen:
+  - response shape
+  - lógica de pendientes
+  - lógica de vistas
+  - lógica de likes
+  - orden actual de la barra
+- Mejora la escalabilidad y reduce significativamente la cantidad de consultas SQL.
+- Sin cambios en frontend.
+- Sin cambios en endpoints.
+- Sin cambios visuales.
+
+## ETAPA 73.3 – 73.4 | UX Cache-First + Hidratación Instantánea
+
+### Objetivo
+
+Mejorar la percepción de velocidad de la aplicación eliminando recargas visuales innecesarias, aprovechando TanStack Query como fuente de cache y realizando reconciliación de datos en segundo plano.
+
+### Principio adoptado
+
+Mostrar cache inmediatamente y reconciliar en segundo plano.
+
+Este patrón pasa a considerarse una regla de UX para futuras pantallas del sistema.
+
+---
+
+### PERF-73.3.1 — Feed Cache-First
+
+Commit: `fcda877`
+
+* Eliminado comportamiento que ocultaba contenido visible durante refetch.
+* El skeleton ahora solo aparece cuando no existen publicaciones renderizables.
+* Se evita vaciar el feed ante errores temporales.
+* Feed hidrata contenido desde cache antes de completar reconciliaciones secundarias.
+
+Resultado:
+
+* Al volver al Feed, las publicaciones aparecen instantáneamente.
+
+---
+
+### PERF-73.3.2 — Historias Cache-First
+
+Commit: `72d0e8c`
+
+* Creado hook `useHistoriasBar`.
+* Incorporado cache TanStack para `/historias/bar`.
+* Eliminada carga manual inicial de historias en Feed.
+* Refetch de historias al cerrar viewer cuando existen vistas nuevas.
+
+Resultado:
+
+* La barra de historias reaparece instantáneamente al volver al Feed.
+
+---
+
+### PERF-73.3.3 — Ranking Cache-First
+
+Commit: `357eabb`
+
+* Ranking hidrata contenido desde cache antes de completar reconciliación de likes y guardados.
+* Skeleton limitado a carga inicial real.
+* Conservación de contenido visible durante refetch.
+
+Resultado:
+
+* Ranking vuelve a mostrarse inmediatamente al regresar a la pantalla.
+
+---
+
+### FEAT-73.4.1 — Hooks de Cache para Perfil de Comercio
+
+Commit: `b0a06cd`
+
+Se incorporan nuevos hooks:
+
+* `useComercioDetalle`
+* `usePublicacionesComercio`
+* `useHistoriasComercio`
+
+Basados en TanStack Query y reutilizando servicios existentes.
+
+Resultado:
+
+* Infraestructura preparada para cache-first en PerfilComercio.
+
+---
+
+### PERF-73.4.2 — Perfil de Comercio Cache-First
+
+Commit: `29a5c4e`
+
+* PerfilComercio deja de depender de una carga global bloqueante.
+* Comercio, publicaciones e historias se hidratan desde cache.
+* Métricas, analytics y seguimiento pasan a segundo plano.
+* Se mantienen optimistic updates existentes.
+
+Resultado:
+
+* El perfil reaparece instantáneamente al volver a visitarlo.
+
+---
+
+### FIX-73.4.3 — Upload de Imagen en Publicaciones
+
+Commit: `0af8bdc`
+
+* Corregido envío de token en upload de imágenes desde PerfilComercio.
+* `/media/upload` vuelve a recibir Authorization correctamente.
+
+Resultado:
+
+* Creación de publicaciones con imagen restaurada.
+
+---
+
+### FEAT-73.4.4 — Feed Prioriza Recencia
+
+Commit: `be7d7ef`
+
+Ajustada fórmula de ranking del Feed:
+
+* Mayor peso para publicaciones recientes.
+* Interacciones limitadas mediante caps.
+* Afinidad IA mantenida.
+* Ranking permanece sin modificaciones.
+
+Resultado:
+
+* Feed más dinámico y actualizado.
+* Ranking continúa representando popularidad e interacción.
+
+---
+
+### PERF-73.4.5 — Estabilización de Seguimiento Visible
+
+Commit: `ec396a1`
+
+* Cache local de estado de seguimiento por comercio.
+* Conservación visual de seguidores y estado siguiendo.
+* Reconciliación posterior con backend.
+
+Resultado:
+
+* Eliminado el pestañeo visual del botón seguir/siguiendo y del contador de seguidores.
+
+---
+
+### Regla de Arquitectura UX Incorporada
+
+Para futuras pantallas:
+
+1. Mostrar cache inmediatamente.
+2. Reconciliar datos en segundo plano.
+3. Evitar loaders que oculten contenido ya disponible.
+4. Evitar requests manuales duplicados.
+5. Utilizar TanStack Query como fuente principal de cache.
+6. Mantener backend como fuente de verdad.
+7. Preservar optimistic updates cuando existan.
+
+Pantallas ya adaptadas:
+
+* Feed
+* Historias Bar
+* Ranking
+* PerfilComercio
 
 ---
 
@@ -1381,9 +2866,9 @@ Esta es una medida temporal de crecimiento temprano.
 
 Cuando exista mayor volumen de usuarios y publicaciones se evaluará restaurar el comportamiento original de historias efímeras de 24 horas.
 
-# CHANGELOG — ETAPA 72.11
+## ETAPA 72.11
 
-## Performance Frontend Incremental
+### Performance Frontend Incremental
 
 ### Estado
 
@@ -1393,7 +2878,7 @@ Objetivo: mejorar rendimiento percibido, reutilización de cache y reducción de
 
 ---
 
-## 72.11A — Auditoría Performance
+### 72.11A — Auditoría Performance
 
 ### Hallazgos iniciales
 
@@ -1406,7 +2891,7 @@ Objetivo: mejorar rendimiento percibido, reutilización de cache y reducción de
 
 ---
 
-## 72.11B — Guardadas + TanStack Query
+### 72.11B — Guardadas + TanStack Query
 
 ### Commit
 
@@ -1437,7 +2922,7 @@ Objetivo: mejorar rendimiento percibido, reutilización de cache y reducción de
 
 ---
 
-## 72.11C-1 — Cache Social Selectiva
+### 72.11C-1 — Cache Social Selectiva
 
 ### Commit
 
@@ -1460,7 +2945,7 @@ cce93cd — perf(social): acota cache e invalidacion de interacciones
 
 ---
 
-## 72.11C-2 — PerfilComercio Sincronizado
+### 72.11C-2 — PerfilComercio Sincronizado
 
 ### Commit
 
@@ -1489,7 +2974,7 @@ cce93cd — perf(social): acota cache e invalidacion de interacciones
 
 ---
 
-## 72.11D-1 — Media Loading Seguro
+### 72.11D-1 — Media Loading Seguro
 
 ### Commit
 
@@ -1525,7 +3010,7 @@ cce93cd — perf(social): acota cache e invalidacion de interacciones
 
 ---
 
-## 72.11E-1 — Cache Local Historias Feed
+### 72.11E-1 — Cache Local Historias Feed
 
 ### Commit
 
@@ -1554,7 +3039,7 @@ e55b5fc — perf(stories): cachea historias por comercio en feed
 
 ---
 
-# Resultado Global
+### Resultado Global
 
 ### Mejoras obtenidas
 
@@ -1577,7 +3062,7 @@ e55b5fc — perf(stories): cachea historias por comercio en feed
 
 ---
 
-# Deudas Técnicas Registradas
+### Deudas Técnicas Registradas
 
 ## PERF-BE-01
 
@@ -1630,1522 +3115,36 @@ No representa el cierre definitivo de performance del producto completo, pero s�
 
 ---
 
-## ETAPA 73 — Evolución Funcional y Crecimiento del Producto
+## ETAPA 71 — Cierre Definitivo de Migración Enterprise
 
-**Estado:** Activa
-
-**Punto de partida:** `ca9e8b6`
-
-### Contexto
-
-ETAPA 73 inicia oficialmente después del cierre histórico de ETAPA 72.
-
-La arquitectura Enterprise permanece cerrada y no hay migración activa. El trabajo actual continúa sobre la base ya consolidada.
-
-### Foco
-
-- Evolución funcional del producto.
-- Mejoras UX incrementales.
-- Performance incremental.
-- Crecimiento del producto.
-- Consolidación de flujos existentes.
-- Nuevas capacidades sin refactor masivo.
-
-### Reglas de etapa
-
-- No reabrir migración Enterprise.
-- No introducir refactors masivos sin necesidad.
-- Mantener backend como fuente de verdad.
-- Priorizar cambios acotados, auditables y compatibles con la arquitectura actual.
-
-## ETAPA 73.1 — Historias, Retención y Evolución de Producto
-
-### 73.1.1 — Optimización de refresco de barra de historias
-**Commit:** `1c1129b`
-
-- Se evita refrescar `/historias/bar` al cerrar el viewer cuando no hubo nuevas vistas registradas.
-- Se reduce tráfico innecesario entre frontend y backend.
-- Sin cambios visuales.
-- Sin cambios de arquitectura.
-- Sin cambios de comportamiento funcional.
-
-### 73.1.2 — Optimización backend de /historias/bar
-**Commit:** `d0eef47`
-
-- Se elimina el principal N+1 detectado en la carga de la barra de historias.
-- Se reemplaza la carga por comercio por consultas agregadas en lote.
-- Se mantienen:
-  - response shape
-  - lógica de pendientes
-  - lógica de vistas
-  - lógica de likes
-  - orden actual de la barra
-- Mejora la escalabilidad y reduce significativamente la cantidad de consultas SQL.
-- Sin cambios en frontend.
-- Sin cambios en endpoints.
-- Sin cambios visuales.
-
-## ETAPA 73.3 – 73.4 | UX Cache-First + Hidratación Instantánea
-
-### Objetivo
-
-Mejorar la percepción de velocidad de la aplicación eliminando recargas visuales innecesarias, aprovechando TanStack Query como fuente de cache y realizando reconciliación de datos en segundo plano.
-
-### Principio adoptado
-
-Mostrar cache inmediatamente y reconciliar en segundo plano.
-
-Este patrón pasa a considerarse una regla de UX para futuras pantallas del sistema.
-
----
-
-### PERF-73.3.1 — Feed Cache-First
-
-Commit: `fcda877`
-
-* Eliminado comportamiento que ocultaba contenido visible durante refetch.
-* El skeleton ahora solo aparece cuando no existen publicaciones renderizables.
-* Se evita vaciar el feed ante errores temporales.
-* Feed hidrata contenido desde cache antes de completar reconciliaciones secundarias.
-
-Resultado:
-
-* Al volver al Feed, las publicaciones aparecen instantáneamente.
-
----
-
-### PERF-73.3.2 — Historias Cache-First
-
-Commit: `72d0e8c`
-
-* Creado hook `useHistoriasBar`.
-* Incorporado cache TanStack para `/historias/bar`.
-* Eliminada carga manual inicial de historias en Feed.
-* Refetch de historias al cerrar viewer cuando existen vistas nuevas.
-
-Resultado:
-
-* La barra de historias reaparece instantáneamente al volver al Feed.
-
----
-
-### PERF-73.3.3 — Ranking Cache-First
-
-Commit: `357eabb`
-
-* Ranking hidrata contenido desde cache antes de completar reconciliación de likes y guardados.
-* Skeleton limitado a carga inicial real.
-* Conservación de contenido visible durante refetch.
-
-Resultado:
-
-* Ranking vuelve a mostrarse inmediatamente al regresar a la pantalla.
-
----
-
-### FEAT-73.4.1 — Hooks de Cache para Perfil de Comercio
-
-Commit: `b0a06cd`
-
-Se incorporan nuevos hooks:
-
-* `useComercioDetalle`
-* `usePublicacionesComercio`
-* `useHistoriasComercio`
-
-Basados en TanStack Query y reutilizando servicios existentes.
-
-Resultado:
-
-* Infraestructura preparada para cache-first en PerfilComercio.
-
----
-
-### PERF-73.4.2 — Perfil de Comercio Cache-First
-
-Commit: `29a5c4e`
-
-* PerfilComercio deja de depender de una carga global bloqueante.
-* Comercio, publicaciones e historias se hidratan desde cache.
-* Métricas, analytics y seguimiento pasan a segundo plano.
-* Se mantienen optimistic updates existentes.
-
-Resultado:
-
-* El perfil reaparece instantáneamente al volver a visitarlo.
-
----
-
-### FIX-73.4.3 — Upload de Imagen en Publicaciones
-
-Commit: `0af8bdc`
-
-* Corregido envío de token en upload de imágenes desde PerfilComercio.
-* `/media/upload` vuelve a recibir Authorization correctamente.
-
-Resultado:
-
-* Creación de publicaciones con imagen restaurada.
-
----
-
-### FEAT-73.4.4 — Feed Prioriza Recencia
-
-Commit: `be7d7ef`
-
-Ajustada fórmula de ranking del Feed:
-
-* Mayor peso para publicaciones recientes.
-* Interacciones limitadas mediante caps.
-* Afinidad IA mantenida.
-* Ranking permanece sin modificaciones.
-
-Resultado:
-
-* Feed más dinámico y actualizado.
-* Ranking continúa representando popularidad e interacción.
-
----
-
-### PERF-73.4.5 — Estabilización de Seguimiento Visible
-
-Commit: `ec396a1`
-
-* Cache local de estado de seguimiento por comercio.
-* Conservación visual de seguidores y estado siguiendo.
-* Reconciliación posterior con backend.
-
-Resultado:
-
-* Eliminado el pestañeo visual del botón seguir/siguiendo y del contador de seguidores.
-
----
-
-### Regla de Arquitectura UX Incorporada
-
-Para futuras pantallas:
-
-1. Mostrar cache inmediatamente.
-2. Reconciliar datos en segundo plano.
-3. Evitar loaders que oculten contenido ya disponible.
-4. Evitar requests manuales duplicados.
-5. Utilizar TanStack Query como fuente principal de cache.
-6. Mantener backend como fuente de verdad.
-7. Preservar optimistic updates cuando existan.
-
-Pantallas ya adaptadas:
-
-* Feed
-* Historias Bar
-* Ranking
-* PerfilComercio
-
----
-
-# ETAPA 74 — Cache-First Restante
-
-## Objetivo
-
-Completar la estrategia Cache-First en las pantallas que todavía conservaban fetches manuales, loaders bloqueantes o estados remotos fuera de TanStack Query.
-
-## Cambios realizados
-
-### ETAPA 74.1
-
-Commit: f14ff31
-
-- Se crea useMisComercios().
-- Se agrega queryKeys.spaces.mis().
-- ProfilePage migra GET /comercios/mis a TanStack Query.
-- Invalidaciones cache-first para crear, editar, desactivar y reactivar espacios.
-- Skeleton solo en carga inicial real.
-
-### ETAPA 74.2
-
-Commit: 0ea88ba
-
-- Se crea useMisEspaciosSeguidos().
-- Se agrega queryKeys.spaces.seguidos().
-- VerSeguidosPage migra espacios seguidos a TanStack Query.
-- Eliminado fetch manual principal.
-- Lista visible durante refetch.
-
-### ETAPA 74.3
-
-Commit: 32b4e17
-
-- RankingPage deja de usar fetch manual de guardadas.
-- Se reutiliza cache de usePublicacionesGuardadas().
-- Menos requests duplicados.
-
-### ETAPA 74.4
-
-Commit: c261a81
-
-- PublicacionDetallePage evita loading bloqueante.
-- Se introduce publicacionVisible.
-- Skeleton solo cuando no existe información visible.
-- Mejora experiencia al navegar desde listas.
-
-### ETAPA 74.5
-
-Commit: 12e2a0e
-
-- FeedPage deja de usar fetch manual de guardadas.
-- Se reutiliza cache de usePublicacionesGuardadas().
-- Menos requests duplicados.
-- Mantiene optimistic updates existentes.
-
-## Auditoría Arquitectónica
-
-Resultado:
-
-- Arquitectura Enterprise validada.
-- Backend continúa siendo fuente de verdad.
-- Frontend mantiene responsabilidades de UX, cache y presentación.
-- Sin hallazgos críticos.
-- Sin migraciones de lógica de negocio al frontend.
-
-## Estado final
-
-ETAPA 74 cerrada.
-
-Principios consolidados:
-
-- Cache visible primero.
-- Refetch en background.
-- Skeletons solo en primera carga real.
-- Menos fetches manuales.
-- Menos estados duplicados.
-- TanStack Query como estrategia principal de cache.
-
----
-
-## ETAPA 77.2 — Discovery conectado al buscador predictivo
-
-- Discovery conectado al buscador predictivo.
-- Nuevo service taxonomy_search_services.py.
-- Cache interno lazy para TaxonomyNode.
-- Buscador prioriza texto nombre, Discovery fuerte, texto/Discovery débil y embeddings.
-- Fallback de embeddings para evitar 500 si local provider falla.
-- Frontend no modificado.
-- Schemas no modificados.
-- Validado endpoint /buscar/sugerencias con ropa, remera, indumentaria.
-
----
-
-## ETAPA 77.3.x — Rubros secundarios con Discovery Assignments
-
-- Se agrega soporte backend para rubros secundarios mediante Discovery Assignments.
-- Comercio.rubro_id se mantiene como rubro principal por compatibilidad.
-- ComercioCreate acepta rubro_secundario_ids opcional.
-- ComercioUpdate acepta rubro_secundario_ids opcional.
-- rubro_secundario_ids ausente preserva secundarios.
-- rubro_secundario_ids=[] elimina secundarios.
-- rubro_secundario_ids=[...] reemplaza secundarios.
-- Validado con creación y actualización real de comercios.
-- Frontend todavía no modificado.
-
----
-
-## ETAPA 78 — Buscador Explorar y cache consistente
-
-**Estado:** En curso
-
-### Avances realizados
-
-- Publicaciones públicas en Explorar incorporan búsqueda backend mediante parámetro `q` opcional.
-- `GET /publicaciones/` mantiene compatibilidad: sin `q` conserva el listado público paginado existente.
-- Backend filtra publicaciones antes de paginar por:
-  - `Publicacion.titulo`
-  - `Publicacion.descripcion`
-  - `Comercio.nombre`
-- Frontend `fetchPublicacionesPublicas()` acepta `q` y lo envía solo cuando hay búsqueda real.
-- `useExplorarPublicaciones()` acepta `q` y separa cache por búsqueda.
-- Se agrega `queryKeys.explore.posts({ q, limit, offset })`.
-- Explorar deja de aplicar filtrado final frontend sobre publicaciones; backend queda como fuente de verdad.
-- Se unifican las query options de espacios entre `useExplorarEspacios()` y `prefetchBusquedaEspacios()`.
-- Nuevo helper frontend `getExplorarEspaciosInfiniteQueryOptions(params)` comparte:
-  - `queryKey`
-  - `initialPageParam`
-  - `queryFn`
-  - `getNextPageParam`
-  - `staleTime`
-- Se conecta Discovery al endpoint `/comercios/activos`.
-- `smart_semantic` ahora usa `recuperar_nodos_discovery()`.
-- Se obtienen `node_ids` desde `TaxonomyNode`.
-- Se traducen nodos a `rubro_ids` vía `TaxonomyAssignment`.
-- Se traducen nodos a `comercio_ids` vía `TaxonomyAssignment` con `entity_type="comercio"`.
-- Los candidatos del buscador combinan rubro principal y especialidades asignadas.
-- Discovery evita el fallback al pool amplio cuando detecta una intención fuerte.
-- Si Discovery identifica una intención pero no encuentra candidatos, el backend devuelve una lista vacía.
-- Se evita mostrar comercios irrelevantes para preservar la confianza del buscador.
-- El buscador prioriza precisión sobre cantidad de resultados.
-- La UI mostrará simplemente: `No encontramos resultados para "<búsqueda>".`
-- Se agrega `metadata_json.search_terms` y `metadata_json.synonyms` a `TaxonomyNodeSeed`.
-- La búsqueda textual de Discovery ahora lee `search_terms` y `synonyms`.
-- Los embeddings de taxonomía ahora incluyen `search_terms` y `synonyms`.
-- Las especialidades entran en sugerencias y embeddings de taxonomía.
-- Se agregan especialidades gastronómicas:
-  - `comidas-rapidas`
-  - `bar-cocteleria`
-- Se protege `metadata_json` manual al actualizar seed: solo se pisa cuando el seed trae metadata explícita.
-- Se define Knowledge Base FeedGo:
-  - Rubro
-  - Especialidad
-  - `search_terms`
-  - `synonyms`
-
-### Pendiente
-
-- Ranking por Discovery (`confidence` y `principal`).
-- Knowledge Builder.
-- Prefetch inteligente.
-- Eliminación gradual de hardcodes.
-- Mejorar cobertura de `search_terms` y especialidades.
-
-### Objetivo técnico
-
-- Mantener cache TanStack consistente entre búsqueda visible y prefetch.
-- Evitar divergencias entre `useInfiniteQuery` y `prefetchInfiniteQuery`.
-- Reducir duplicación en query keys, query functions y paginado incremental.
-
-## ETAPA 78.4 — Especialidades por Rubro (Discovery)
-
-### Objetivo
-
-Reemplazar el antiguo concepto de "rubros secundarios" por un modelo basado en especialidades dependientes del rubro principal, mejorando la calidad del Discovery, el buscador y el ranking.
-
-### Backend
-
-- Se agregó `especialidad_ids` a `ComercioCreate`, `ComercioUpdate` y `ComercioResponse`.
-- Se implementó la sincronización de especialidades mediante `TaxonomyAssignment`.
-- Nueva fuente de asignación: `especialidad_manual`.
-- `confidence=1.0`.
-- `principal=False`.
-- La sincronización de rubros ya no elimina assignments creados manualmente para especialidades.
-- Se mantienen temporalmente `rubro_secundario_ids` por compatibilidad.
-
-### Frontend
-
-- Se eliminó del flujo de usuario el selector de rubros secundarios.
-- Se incorporó el hook cache-first `useRubroEspecialidades`.
-- Se agregó el service `GET /rubros/{id}/especialidades`.
-- Al cambiar el rubro principal se recargan automáticamente las especialidades correspondientes.
-- Se limpian las especialidades anteriores al cambiar de rubro.
-- El formulario ahora envía `especialidad_ids` al backend.
-- Al editar un espacio se restauran las especialidades guardadas.
-
-### Impacto
-
-- FeedGo deja de clasificar espacios mediante rubros secundarios.
-- La información queda estructurada como:
-
----
-
-# ETAPA 78 — Discovery Enterprise (Cierre)
-
+**Commit:** `0b5de97`
 **Estado:** Cerrada
-
-Discovery queda considerado arquitectónicamente estable. La etapa consolida el buscador de Explorar, la conexión con Taxonomy y la base inicial de conocimiento para que FeedGo pueda crecer desde datos y no desde hardcodes.
-
-## Arquitectura
-
-- Integración de Discovery dentro del pipeline de búsqueda `smart_semantic`.
-- Unificación de query options del buscador entre hook y prefetch.
-- Conexión entre Discovery y `TaxonomyAssignment`.
-- Incorporación de candidatos por rubros y comercios desde Discovery.
-- Protección contra resultados irrelevantes cuando Discovery detecta una intención fuerte.
-- El buscador devuelve "sin resultados" antes que resultados incorrectos.
-
-## Taxonomía
-
-- Reorganización de la jerarquía de especialidades.
-- Las especialidades pasan a depender directamente del rubro principal correspondiente.
-- Preparación de la estructura para abandonar definitivamente el concepto de rubros secundarios.
-
-## Creación de espacios
-
-- Incorporación de `especialidad_ids` en backend.
-- Incorporación del selector dinámico de especialidades por rubro en frontend.
-- Persistencia mediante `TaxonomyAssignment` con `source="especialidad_manual"`.
-- La creación de espacios comienza a alimentar directamente el motor Discovery.
-
-## Knowledge Base
-
-- Enriquecimiento de las 29 especialidades existentes.
-- Metadata estandarizada mediante:
-  - `search_terms`
-  - `synonyms`
-  - `related_terms`
-- Totales aproximados:
-  - 198 `search_terms`
-  - 59 `synonyms`
-  - 145 `related_terms`
-
-## Buscador
-
-- Discovery deja de depender únicamente de hardcodes.
-- El conocimiento comienza a vivir en la base de datos.
-- Preparación para reemplazar progresivamente `_INTENCIONES_BUSQUEDA_V2` por Knowledge.
-
-## Estado final
-
-- La arquitectura de Discovery queda considerada estable.
-- A partir de la ETAPA 79, el foco pasa a ser:
-  - ampliar el conocimiento,
-  - integrar datasets externos,
-  - incorporar Knowledge Builder,
-  - mejorar continuamente la inteligencia del buscador sin volver a modificar la arquitectura.
-
----
-
-## ETAPA 79.1 — Knowledge Core base
-
-**Estado:** Cerrada
-
-### Backend
-
-- Se creó el módulo interno `backend/app/modules/knowledge/`.
-- Se agregaron schemas internos:
-  - `KnowledgeQueryInput`
-  - `KnowledgeQueryInterpretation`
-- Se incorporó un adapter legacy de intención para encapsular la interpretación actual de queries.
-- Se creó `knowledge_legacy_intent_services.py` como fuente interna de intención legacy dentro de Knowledge.
-- `spaces/services/comercios_services.py` ahora delega intención y expansión en Knowledge.
-- Se mantuvo `_normalizar_texto` y `_tokenizar` local en `spaces` porque siguen participando en scoring/ranking.
-
-### Compatibilidad
-
-- No se tocaron frontend, modelos, migraciones, contratos API ni ranking.
-- No se modificó Discovery Retrieval.
-- Los hardcodes duplicados en `spaces` quedan temporalmente como fallback hasta una limpieza posterior.
-
-### Validación
-
-- Equivalencia de intención legacy validada para 16 queries representativas.
-- Endpoint `GET /comercios/activos` validado con `smart_semantic=true`.
-- Queries validadas:
-  - `pizza`
-  - `ropa`
-  - `calzado`
-  - `cerveza`
-  - `construcción`
-  - `revestimientos`
-  - `cubiertas`
-  - `abogado`
-  - `contador`
-  - `iphone`
-  - `lomitos`
-- Todas las consultas respondieron `200`, mantuvieron paginación y conservaron el shape de respuesta.
-
-### Pendiente
-
-- Eliminar hardcodes duplicados de `spaces` cuando Knowledge quede consolidado como fuente única.
-- Agregar pruebas automatizadas cuando exista estructura de tests backend.
-
----
-
-## ETAPA 79.2 — SearchEvent V1
-
-**Estado:** Cerrada
-
-### Backend
-
-- Se creó el modelo `SearchEvent` y la tabla `search_events`.
-- Se agregó el registro de búsquedas reales desde `GET /comercios/activos`.
-- Se registra:
-  - query original y normalizada
-  - modo de búsqueda
-  - `result_count`
-  - `no_results`
-  - `taxonomy_node_ids_json`
-  - `rubro_ids_json`
-  - `comercio_result_ids_json`
-  - `metadata_json`
-- El registro es best-effort y no bloquea la respuesta del buscador si falla.
-- Se incorporó `backend/crear_search_events.py` como script idempotente para crear la tabla.
-- `create_tables.py` importa el modelo para el flujo manual existente de creación de tablas.
-
-### Privacidad
-
-- No se registra IP.
-- No se registra User-Agent.
-- No se guardan `lat`/`lng` exactos.
-- Solo se registra `has_location` y `radio_km` cuando corresponde.
-
-### Validación
-
-- Se creó la tabla `search_events` con el script idempotente.
-- Se validó el endpoint real `GET /comercios/activos` con `smart_semantic=true`.
-- Queries validadas:
-  - `pizza`
-  - `prendas`
-  - `cubiertas`
-  - `contador`
-- Todas respondieron `200` y generaron filas nuevas en `search_events`.
-- Se verificaron campos persistidos: query, modo, resultados, nodos, rubros, comercios y metadata.
-
-### Pendiente
-
-- Diseñar e implementar `SearchSession`.
-- Registrar clicks y conversiones.
-- Diseñar e implementar `KnowledgeProposal`.
-- Construir el futuro Knowledge Builder sobre eventos agregados.
-
----
-
-## ETAPA 79.3 — Knowledge Analytics Base
-
-**Estado:** Cerrada
-
-### Backend
-
-- Se creó el submódulo interno `backend/app/modules/knowledge/analytics/`.
-- Se agregaron schemas internos para analytics read-only sobre `SearchEvent`.
-- Se implementaron servicios internos read-only:
-  - `top_queries`
-  - `top_queries_no_results`
-  - `discovery_failures`
-  - `query_summary`
-- Los servicios leen `SearchEvent` y devuelven agregados para alimentar futuro Knowledge Builder.
-
-### Alcance
-
-- No se agregaron endpoints públicos.
-- No se tocó frontend.
-- No se crearon modelos ni migraciones.
-- No se modificó `SearchEvent`.
-- No se modificó Discovery.
-- No se modificó ranking.
-
-### Validación
-
-- Se validaron los servicios contra datos reales existentes en `search_events`.
-- `top_queries` devolvió queries registradas como `pizza`, `contador`, `cubiertas` y búsquedas parciales.
-- `top_queries_no_results` y `discovery_failures` detectaron búsquedas sin resultados.
-- `query_summary` tolera queries existentes y queries sin eventos.
-
-### Pendiente
-
-- Analytics por `rubro_ids_json`.
-- Analytics por `taxonomy_node_ids_json`.
-- Snapshots diarios agregados.
-- Diseño e implementación de `KnowledgeProposal`.
-- Integración futura con Knowledge Builder.
-
----
-
-## ETAPA 79.4 — Knowledge Evidence Base
-
-**Estado:** Cerrada
-
-### Backend
-
-- Se creó el módulo interno `backend/app/modules/knowledge/builder/`.
-- Se agregaron schemas internos para evidencia estructurada:
-  - `SearchTermEvidence`
-  - `SynonymEvidence`
-  - `RelatedTermEvidence`
-  - `SpecialtyEvidence`
-  - `CoverageGapEvidence`
-  - `RankingEvidence`
-- Se implementaron servicios read-only que transforman Knowledge Analytics en evidencia.
-- Se incorporó confidence explicable en rango `0.0..1.0`.
-- Se clasificó la fuerza de evidencia mediante:
-  - `noise`
-  - `weak`
-  - `candidate`
-  - `priority`
-
-### Alcance
-
-- No se agregaron endpoints públicos.
-- No se tocó frontend.
-- No se crearon modelos ni migraciones.
-- No se modificó Discovery.
-- No se modificó ranking.
-- No se creó `KnowledgeProposal`.
-
-### Diseño
-
-- `SearchEvent V1` genera evidencia de términos, especialidades y brechas de cobertura.
-- `CoverageGapEvidence` representa baja cobertura detectada desde búsquedas reales.
-- `RankingEvidence` queda reservado para una etapa futura con `SearchSession`, clicks y conversiones.
-- La evidencia es revisable y no aplica cambios automáticos.
-
-### Validación
-
-- Se validó con datos reales existentes en `search_events`.
-- Se generaron evidencias para queries con baja cobertura y no-results.
-- Se confirmó que los servicios no escriben en DB.
-- El conteo de `SearchEvent` antes y después de generar evidencia se mantuvo igual.
-
-### Pendiente
-
-- Crear `KnowledgeProposal` como entidad revisable.
-- Incorporar SearchSession.
-- Incorporar clicks y conversiones.
-- Convertir evidencia validada en propuestas revisables, nunca en cambios automáticos.
-
----
-
-## ETAPA 79.5 — KnowledgeProposal V1
-
-**Estado:** Cerrada
-
-### Backend
-
-- Se creó el modelo `KnowledgeProposal` y la tabla `knowledge_proposals`.
-- Se agregó `proposal_services.py` para generar propuestas revisables desde Evidence.
-- Las propuestas se crean únicamente con `status="pending"`.
-- Se incorporó `dedupe_key` único para evitar propuestas duplicadas.
-- Estados definidos:
-  - `pending`
-  - `approved`
-  - `rejected`
-  - `applied`
-- Se agregó el script idempotente `backend/crear_knowledge_proposals.py`.
-- `create_tables.py` importa el modelo para el flujo manual existente de creación de tablas.
-
-### Alcance
-
-- No se agregaron endpoints públicos.
-- No se tocó frontend.
-- No se modificó Discovery.
-- No se modificó ranking.
-- No se modificó `TaxonomyNode`.
-- No se modificó `metadata_json`.
-- No se aplica ninguna propuesta automáticamente.
-
-### Decisión técnica
-
-- En V1, `taxonomy_node_id`, `reviewed_by_usuario_id` y `applied_by_usuario_id` quedan como IDs nullable sin constraints ORM.
-- Esta decisión evita dependencias laterales de mappers y mantiene Proposal V1 desacoplado para validación temprana.
-
-### Validación
-
-- Se creó la tabla `knowledge_proposals`.
-- Se generó 1 propuesta `pending` real desde Evidence:
-  - `proposal_type=add_search_term`
-  - `query=car`
-  - `dedupe_key=add_search_term:none:car`
-- Una segunda ejecución no generó duplicados.
-- Se verificó que `TaxonomyNode` y `metadata_json` permanecieron intactos.
-
-### Pendiente
-
-- Diseñar revisión/aprobación de propuestas.
-- Diseñar endpoints/admin internos de revisión.
-- Aplicación controlada de propuestas aprobadas en una etapa futura.
-
----
-
-## ETAPA 79.6 — Knowledge Review V1
-
-**Estado:** Cerrada
-
-### Backend
-
-- Se creó `review_services.py` para revisar propuestas de Knowledge.
-- Se creó `review_schemas.py` con schemas internos de resultado de revisión.
-- Se implementó `approve_proposal()`.
-- Se implementó `reject_proposal()`.
-- Solo propuestas con `status="pending"` pueden revisarse.
-- Aprobar cambia estado a `approved` y registra `reviewed_at`.
-- Rechazar cambia estado a `rejected`, registra `rejected_reason` y `reviewed_at`.
-
-### Alcance
-
-- No se agregaron endpoints públicos.
-- No se tocó frontend.
-- No se modificó Discovery.
-- No se modificó ranking.
-- No se modificó `TaxonomyNode`.
-- No se modificó `metadata_json`.
-- No se aplican propuestas todavía.
-
-### Validación
-
-- Se validó con la propuesta real `id=1`.
-- La propuesta fue aprobada correctamente.
-- Una segunda aprobación falló controladamente porque la propuesta ya no estaba `pending`.
-- Se confirmó que `TaxonomyNode` y `metadata_json` permanecieron intactos.
-
-### Pendiente
-
-- Diseñar e implementar `apply_services.py`.
-- Diseñar auditoría de aplicación.
-- Aplicar propuestas aprobadas solo en una etapa futura y controlada.
-
----
-
-## ETAPA 79.7 — Knowledge Workspace Base
-
-**Estado:** Cerrada
-
-### Backend
-
-- Se creó el módulo interno `backend/app/modules/knowledge/workspace/`.
-- Se agregó `proposal_workspace_services.py` para consultar propuestas sin modificarlas.
-- Se agregaron schemas internos:
-  - `ProposalListItem`
-  - `ProposalDetail`
-  - `ProposalStats`
-- Se implementaron funciones read-only:
-  - `list_pending_proposals`
-  - `list_approved_proposals`
-  - `list_rejected_proposals`
-  - `list_applied_proposals`
-  - `proposal_detail`
-  - `proposal_stats`
-
-### Alcance
-
-- No se agregaron endpoints públicos.
-- No se tocó frontend.
-- No se modificó Discovery.
-- No se modificó ranking.
-- No se modificó `TaxonomyNode`.
-- No se modificó `metadata_json`.
-- El Workspace Base es solo lectura.
-
-### Validación
-
-- Se validó con la propuesta real `id=1`.
-- `proposal_detail` devolvió la propuesta aprobada.
-- `proposal_stats` informó:
-  - `approved=1`
-  - `pending=0`
-  - `rejected=0`
-  - `applied=0`
-- Se confirmó que la consulta no cambió estados ni escribió en DB.
-
-### Pendiente
-
-- Crear endpoints/admin internos para operar el workspace.
-- Diseñar e implementar `apply_services.py`.
-- Mantener aplicación de propuestas para una etapa futura y controlada.
-
-## ETAPA 79.8 — Catálogo Oficial de Rubros y Especialidades
-
-### Objetivo
-
-Completar el catálogo oficial de FeedGo incorporando el conjunto definitivo de rubros visibles y especialidades oficiales que alimentará Discovery, Knowledge Engine, Buscador Inteligente y futuras etapas del producto.
-
-### Cambios realizados
-
-- Se actualizó el catálogo oficial de rubros y especialidades.
-- Se implementaron las TANDAS A, B, C y D.
-- Se ampliaron las especialidades oficiales para los rubros existentes.
-- Se incorporaron cuatro nuevos rubros visibles:
-  - Estética y Cuidado Personal.
-  - Carpintería y Herrería.
-  - Seguridad y Vigilancia.
-  - Turismo, Viajes y Logística.
-- Se agregaron los correspondientes `TaxonomyNode` tipo `rubro`.
-- Se agregaron todas las especialidades oficiales asociadas.
-- Se actualizaron los mappings de `RUBRO_NOMBRE_A_TAXONOMY_SLUG`.
-- Se reutilizaron slugs e IDs existentes cuando existía equivalencia clara.
-- Se conservaron nodos legacy para mantener compatibilidad histórica.
-- No se eliminaron nodos existentes.
-
-### Validaciones realizadas
-
-Se ejecutó la actualización oficial de taxonomía.
-
-Se validó:
-
-- creación de rubros visibles;
-- creación y actualización de `TaxonomyNode`;
-- creación de `TaxonomyAssignment`;
-- endpoints `GET /rubros`;
-- endpoints `GET /rubros/{id}/especialidades`;
-- nombres oficiales;
-- shape de respuesta;
-- compatibilidad con rubros existentes.
-
-No se detectaron errores durante la actualización.
-
-### Archivos modificados
-
-- `backend/app/modules/discovery/services/taxonomy_seed_services.py`
-- `backend/app/modules/products/services/rubros_services.py`
-
-## ETAPA 80 — Candidate Engine
-
-### Objetivo
-
-- Separar generación de candidatos del ranking.
-- Crear una arquitectura extensible para el buscador inteligente.
-
-### Cambios principales
-
-- Se creó Candidate Engine.
-- Se incorporó CandidateRegistry.
-- Se implementaron CandidateEvidence, CandidateSet y CandidateGenerationContext.
-- Se implementó CandidateGenerator.
-- Se implementó CandidateUnion.
-- Se implementaron las fuentes:
-  - ComercioNombreCandidateSource
-  - PublicacionCandidateSource
-  - EspecialidadCandidateSource
-  - AssignmentCandidateSource
-  - RubroCandidateSource
-  - DiscoveryCandidateSource
-- Discovery ahora utiliza también related_terms durante la búsqueda textual.
-- Se mejoró la resolución de rubros desde ancestros taxonómicos.
-- Cuando Candidate Engine no encuentra candidatos confiables el endpoint devuelve [] y ya no expande mediante embeddings débiles.
-- Cuando existen candidatos, el ranking solamente ordena ese pool sin incorporar comercios externos.
-
-### Validaciones realizadas
-
-Se validaron mediante baterías completas de búsqueda:
-
-- mascotas
-- gastronomía
-- indumentaria
-- tecnología
-- construcción
-- automotor
-- servicios
-- publicaciones
-- sinónimos
-- búsquedas sin cobertura
-
-Se verificó:
-
-- desaparición de falsos positivos producidos por embeddings débiles
-- integración correcta entre Discovery y Candidate Engine
-- búsquedas por publicaciones
-- búsquedas por especialidades
-- búsquedas por rubros
-- búsquedas por assignments
-- búsquedas mediante related_terms
-- comportamiento esperado cuando no existe cobertura (respuesta [])
-
----
-
-## ETAPA 85 — Knowledge Graph (Inicio de implementación)
-
-### Resumen
-
-Luego del diseño arquitectónico realizado entre las ETAPAS 81 y 84, comienza la implementación del nuevo núcleo del Buscador Inteligente de FeedGo.
-
-Esta etapa marca el nacimiento del Knowledge Graph, componente que servirá como base del Knowledge System, del Documento de Índice, del Indexador y del nuevo pipeline de búsqueda.
-
-## 85.1 — Gobierno y Arquitectura
-
-### Documentación oficial
-
-Se incorporó el nuevo sistema de documentación viva del proyecto mediante la carpeta `/docs`.
-
-Documentos creados:
-
-- 00_GOVERNANCE.md
-- 01_ENGINEERING.md
-- 02_PRODUCT.md
-- 03_SEARCH.md
-- 04_CURRENT_STAGE.md
-- 05_SEARCH_ROADMAP.md
-
-Posteriormente se agregaron los documentos de diseño:
-
-- 10_INDEX_DESIGN.md
-- 11_KNOWLEDGE_DESIGN.md
-
-Estos documentos pasan a constituir la fuente oficial de verdad para arquitectura, diseño y roadmap.
-
----
-
-## 85.2 — Núcleo del Knowledge Graph
-
-Se creó el nuevo submódulo:
-
-backend/app/modules/knowledge/graph/
-
-Implementaciones iniciales:
-
-- Concept
-- Relation
-- KnowledgeGraphService
-
-Características:
-
-- contratos independientes de persistencia;
-- validaciones de dominio;
-- sin SQLAlchemy;
-- sin tablas;
-- sin endpoints;
-- sin integración con runtime;
-- arquitectura preparada para evolución futura.
-
----
-
-## 85.3 — Integración inicial con Taxonomía
-
-Se implementó la primera proyección controlada:
-
-Taxonomía
-↓
-
-Knowledge Graph
-
-Componentes incorporados:
-
-- TaxonomyNodeToConceptMapper
-- TaxonomyAssignmentToRelationMapper
-- TaxonomyKnowledgeGraphProjectionService
-
-Características:
-
-- proyección unidireccional;
-- regenerable;
-- idempotente;
-- IDs determinísticos;
-- Taxonomía continúa siendo la fuente oficial;
-- Knowledge Graph representa una vista derivada.
-
----
-
-## Estado al cierre
-
-Implementado:
-
-✔ Concept
-
-✔ Relation
-
-✔ KnowledgeGraphService
-
-✔ Proyección Taxonomía → Knowledge Graph
-
-Pendiente:
-
-- Documento de Índice de Comercio.
-- Indexador.
-- Integración Discovery.
-- Integración Candidate Engine.
-- Integración Ranking.
-
-## ETAPA 85 — Cierre
-
-### Gobierno
-
-- Sistema de Gobierno `00`–`08` consolidado.
-- Continuidad entre chats y generación de Prompt Maestro desde `/docs`.
-- Registro de decisiones y principios permanentes.
-- Security by Design, Secure by Default y Defense in Depth incorporados como principios permanentes.
-- Integraciones desacopladas y limpieza residual incorporadas como principios de ingeniería.
-
-### Implementación
-
-- `Concept`.
-- `Relation`.
-- `KnowledgeGraphService` en memoria.
-- Proyección Taxonomía → Knowledge Graph.
-- IDs determinísticos e idempotencia.
-
-### Diseño aprobado
-
-- Separación Taxonomía / Knowledge Graph.
-- Contrato conceptual de Concepto y Relación.
-- Commerce Index Document.
-- Diez bloques del documento.
-- Pipeline conceptual del Indexador.
-- Regeneración completa V1.
-- Futura regeneración parcial.
-- Invalidación y escalabilidad.
-
-### Próxima etapa
-
-ETAPA 86 — Implementación del Indexador.
-
----
-
-## ETAPA 86 — Cierre técnico del Indexador
-
-### Resumen
-
-Se implementó el módulo inicial del Indexador de FeedGo:
-
-`backend/app/modules/indexer/`
-
-El módulo construye en memoria el `CommerceIndexDocument` a partir de fuentes oficiales, sin persistencia, endpoints, scheduler ni colas.
-
-### Implementación
-
-- Contratos de dominio del `CommerceIndexDocument`.
-- Contratos de bloques del documento.
-- `SourceSnapshots` como frontera entre fuentes y builders.
-- Contratos de evidencias, trazabilidad y resultado de validación.
-- Collectors de Comercio, Taxonomía, Contenido, Señales y Knowledge Graph.
-- Builders para los diez bloques del `CommerceIndexDocument`.
-- `IndexDocumentValidationService`.
-- `CommerceIndexerService` como orquestador del flujo completo.
-
-### Validación
-
-- Auditoría final de integración aprobada.
-- Se verificó separación entre Collectors, Builders, Validator y orquestador.
-- Se confirmó ausencia de persistencia, endpoints, scheduler, colas e integración runtime.
-- Se corrigió la duplicación de `TextNormalizationContract`.
-- `SearchRepresentationBuilder` depende exclusivamente del contrato compartido de normalización.
-
----
-
-## ETAPA 87 — Sistema de Disponibilidad
-
-**Estado:** Cerrada
-
-### Implementación
-
-- Módulo backend `availability` para horarios habituales semanales de comercios.
-- Tabla `comercios_horarios_atencion` registrada en metadata y creada mediante `create_tables.py`.
-- Endpoints `GET /comercios/{comercio_id}/horarios` y `PUT /comercios/{comercio_id}/horarios`.
-- Cálculo backend de estado horario y texto contextual.
-- Integración informativa en detalle, `/comercios/mis` y `/comercios/activos`.
-- Badge frontend reutilizable y editor privado de horarios.
-- Soporte de múltiples franjas por día, reemplazo completo y eliminación mediante `franjas=[]`.
-- Acceso al editor de horarios desde el flujo de edición del comercio.
-
-### Corrección de regresiones
-
-- Los endpoints históricos de Spaces degradan `horario_atencion` a `null` si Availability falla por infraestructura.
-- Los endpoints propios de Availability conservan sus errores normales.
-- Se corrigió un literal genérico de publicaciones del perfil para usar el nombre real del comercio.
-- Se sincronizó `Base.metadata` con MySQL para `comercios_horarios_atencion`.
-- Se corrigió la identidad estable del editor frontend para evitar que una franja modificara otra.
-- Se ocultó temporalmente el mapa de ubicación mientras el editor de horarios está abierto.
-
-### Gobierno
-
-- Se incorporaron reglas permanentes de compatibilidad hacia atrás.
-- Se incorporó auditoría obligatoria antes de crear tablas.
-- Se incorporó clasificación oficial del modelo de datos.
-- Se incorporó validación obligatoria de schema físico antes de cerrar etapas.
-- Se incorporó el Design System oficial para botones secundarios.
-
-### Validación de cierre
-
-- `python -m compileall app main.py create_tables.py reset_db.py` ejecutado con el venv backend.
-- `create_tables.py` ejecutado correctamente como mecanismo oficial no destructivo.
-- `Base.metadata` y MySQL sincronizados: 22 tablas en metadata, 22 tablas físicas, sin faltantes ni extras.
-- `comercios_horarios_atencion` existe en metadata y MySQL.
-- Schemas de Availability validados para día válido, día fuera de rango, apertura igual al cierre, cruce de medianoche y lista vacía.
-- Servicio de Availability validado para franjas contiguas, solapamientos, semana circular, datetimes aware y cálculo batch sin N+1.
-- API de Availability validada para configuración, edición, eliminación, horarios partidos, guardado y lectura posterior con restauración de datos originales.
-- Endpoints históricos validados: `/comercios/mis`, `/comercios/activos`, detalle de comercio, `/publicaciones/` e `/historias/bar`.
-- Frontend validado con build de producción, lint acotado sin errores y flujo local del editor con identidad estable.
-
-### Fuera de alcance
-
-- Agenda.
-- Reservas.
-- Turnos.
-- Servicios con horarios independientes.
-- Feriados.
-- Excepciones por fecha.
-- Cruces de medianoche.
-- Filtros o ranking por disponibilidad.
-
-### Deuda controlada
-
-- Queda diferida a ETAPA 95 la unificación visual completa del Design System: botones secundarios restantes, espaciados, alineaciones, iconografía, jerarquía visual, formularios y responsive.
-
----
-
-## ETAPA 88 — Agenda privada y Agenda general
-
-**Estado:** Cerrada
-
-### Avance técnico comprobado
-
-- Se implementó Agenda Core reutilizable e independiente de FeedGo en `backend/app/modules/agenda/`.
-- Se implementaron `ContextoAgendable` y `ElementoAgenda` como entidades propias de Agenda.
-- Se creó la integración separada `feedgo_agenda` para vincular `Comercio` con `ContextoAgendable`.
-- Se implementaron schemas, repositorios y servicios internos de Agenda con política UTC.
-- Se ajustó la política transaccional para que el caller u orquestador controle `commit` y `rollback`.
-- Se implementó control optimista de concurrencia con `version` y `version_esperada`.
-- Se implementó detección técnica informativa de solapamientos sin política bloqueante.
-- Se implementaron endpoints privados bajo `/feedgo-agenda`.
-- Se implementó endpoint agregado `GET /feedgo-agenda/mis/elementos` para Agenda general sin N requests por comercio.
-- Se implementó ownership backend para accesos privados.
-- Se implementó frontend privado de Agenda individual y Agenda general en `frontend/src/features/agenda/`.
-- Se agregaron accesos desde Perfil, tarjetas de espacios y Perfil de comercio.
-- Se corrigió navegación `Atrás`, `Cerrar` y `Cancelar` en la experiencia modal.
-- Se agregó protección local de cambios sin guardar en formularios de Agenda.
-
-### Preparación de cierre documental
-
-- Se definió el alcance final de cierre de ETAPA 88 alrededor de Agenda Core,
-  integración FeedGo-Agenda, Agenda privada por comercio y Agenda general del
-  propietario.
-- Se registró que Agenda permite crear, editar, completar y cancelar elementos,
-  filtrar por comercio, tipo, estado y rango temporal, validar ownership,
-  manejar conflictos optimistas `409`, informar solapamientos, normalizar UTC y
-  trabajar con elementos de todo el día.
-- Se corrigió la arquitectura por capas de Agenda general para mantener ORM,
-  joins, filtros y ordenamiento fuera del router HTTP.
-- Se validó el schema físico de MySQL contra los modelos de Agenda y
-  FeedGo-Agenda sin diferencias bloqueantes.
-- Se aprobó la validación funcional backend automatizada de Agenda con datos
-  temporales revertidos.
-- Se validó `compileall` de Agenda y FeedGo-Agenda, build frontend, ESLint
-  específico de Agenda y `git diff --check`.
-- Quedaron como observaciones no bloqueantes: lint global con errores ajenos a
-  ETAPA 88, ausencia de suite formal específica de Agenda y validación manual
-  en navegador no ejecutada.
-- Se difirieron fuera del cierre actual Reservas públicas, Notificaciones
-  locales, campana global, correo, WhatsApp, workers, colas, schedulers,
-  proveedores externos, Vista Semana, Vista Mes y persistencia de última vista,
-  filtros o contexto.
-
-### Cierre formal
-
-- ETAPA 88 queda cerrada formalmente con alcance Agenda.
-- El cierre incluye Agenda Core, integración FeedGo-Agenda, Agenda privada por
-  comercio, Agenda general del propietario, mutaciones privadas, filtros,
-  ownership, conflictos `409`, solapamientos informativos, UTC, elementos de
-  todo el día, cache TanStack Query, ActiveLayer y separación respecto de
-  Disponibilidad, visibilidad y estado del comercio.
-- Reservas públicas, Notificaciones locales, campana global, correo, WhatsApp,
-  workers, colas, schedulers, proveedores externos, Vista Semana, Vista Mes y
-  persistencia de última vista, filtros o contexto quedan diferidos.
-
-### Fuera de alcance aún no implementado
-
-- Reservas públicas.
-- Turnos públicos.
-- Servicios reservables.
-- Recursos y capacidad.
-- Prevención transaccional de doble reserva.
-- Flujo público de reservas.
-
----
-
-## ETAPA 89 — Reorganización del Roadmap y Gobierno de Lanzamiento
-
-**Estado:** Cerrada
-
-### Cambiado
-
-- ETAPA 89 deja de ser Productos e Inventario y pasa a ser Reorganizacion del
-  Roadmap y Gobierno de Lanzamiento.
-- Productos e Inventario queda postergado a ETAPA 103 - Catalogo de Productos
-  y Disponibilidad Simple.
-- El lanzamiento controlado queda proyectado alrededor de ETAPA 98.
-- ETAPAS 90-97 quedan orientadas a seguridad, legalidad, datos, operacion,
-  calidad, experiencia de lanzamiento, plataforma PWA y administracion
-  operativa minima.
-- ETAPAS 99-111 quedan orientadas a evolucion posterior basada en uso real.
 
 ### Agregado
 
-- Se crea `docs/15_LEGAL_AND_OPERATIONAL.md` como documento transversal del
-  Sistema de Gobierno.
-- Se registra el principio permanente de no implementar funcionalidades solo
-  porque sean tecnicamente posibles.
+- Nuevo logo visual de FeedGo!: `frontend/public/logo_Feedgo.png`.
 
-### Consolidacion del Sistema de Gobierno v1.0
+### Cambiado
 
-- Se consolida oficialmente el Sistema de Gobierno FeedGo v1.0.
-- Se homogeneiza el sistema documental con metadatos, autoridad, documento
-  dueno y criterios de consulta.
-- Se incorpora el Arbol de Autoridad del Sistema Documental.
-- Se establece la Fuente Unica de Verdad documental y la Consulta Obligatoria
-  antes de auditorias, disenos, propuestas, prompts, implementaciones,
-  validaciones o cierres.
-- Se incorpora la Estabilidad Documental como regla permanente para evitar
-  modificaciones por mejoras menores.
-- Se documenta el Flujo Oficial del Proyecto desde idea hasta push.
-- Se incorpora Compliance by Design en `docs/08_ENGINEERING_PRINCIPLES.md`.
-- Se oficializa `docs/15_LEGAL_AND_OPERATIONAL.md` como documento transversal
-  del Sistema de Gobierno FeedGo v1.0.
+- Branding principal actualizado de `MiPlaza` a `FeedGo!`.
+- Login, Registro, Home, Feed y Layout principal actualizados para usar el logo FeedGo!.
+- DELETE de publicación en `PublicacionDetallePage.jsx` migrado a la capa HTTP centralizada mediante `httpDelete()`.
 
-### Cierre formal
+### Eliminado
 
-- ETAPA 89 queda cerrada oficialmente con alcance documental.
-- ETAPA 90 - Seguridad, Ownership y Permisos queda iniciada
-  documentalmente como etapa vigente.
+- `frontend/src/App.css`, archivo legacy sin uso.
+- `backend/app/utils/__init__.py`, archivo huérfano sin uso.
+- Variable muerta `API_BASE_URL` en `ProfilePage.jsx`.
 
-### Sin cambios de codigo
+### Validado
 
-- No se modifico backend.
-- No se modifico frontend.
-- No se modifico base de datos.
-- No se crearon tablas ni funcionalidades nuevas.
+- Build frontend de producción OK.
+- Arquitectura backend validada sobre `app/core` y `app/modules`.
+- Arquitectura frontend validada sobre `src/core`, `src/shared` y `src/features`.
+- Sin referencia legacy al DELETE hardcodeado `http://127.0.0.1:8000/publicaciones`.
+
+### Pendiente no bloqueante
+
+- Historias móvil: backend, upload, persistencia, `/historias/bar` e imágenes funcionan correctamente, pero el Feed móvil no renderiza historias. Queda para investigación futura.
 
 ---
-
-## ETAPA 90 — Seguridad, Ownership y Permisos
-
-**Estado:** Cerrada
-
-### Inicio documental
-
-- ETAPA 90 queda iniciada documentalmente como etapa vigente.
-- El inicio se limita a la transicion documental oficial desde ETAPA 89.
-
-### Seguridad y ownership
-
-- Se auditaron endpoints, mutaciones privadas, ownership y superficies
-  sensibles.
-- Se incorporo el contrato de ownership `Usuario -> Comercio -> Recurso` para
-  recursos derivados de comercio.
-- Se corrigio authorization backend en publicaciones, historias, secciones,
-  analytics, metricas sociales, snapshots, comparacion y score.
-- Se creo un helper central minimo para validar comercio propio sin conocer
-  HTTP, roles ni dominios consumidores.
-- Se endurecio logout para exigir token valido y evitar revocar tokens ausentes
-  o invalidos.
-- Se bloquearon mutaciones legacy de Productos hasta que ETAPA 103 defina el
-  ownership oficial del dominio.
-- Se agregaron tests automatizados de autorizacion para publicaciones,
-  historias, secciones, analytics, helper de ownership, logout y productos
-  legacy.
-
-### Documentacion
-
-- Se registro la decision permanente de ownership derivado desde Comercio.
-- Se incorporo el principio de ownership backend de recursos derivados.
-- Se asignaron pendientes residuales a ETAPA 91, ETAPA 93, ETAPA 94, ETAPA 95
-  y ETAPA 103.
-
-### Cierre formal
-
-- ETAPA 90 queda cerrada formalmente.
-- ETAPA 91 - Cumplimiento Legal, Privacidad y Moderacion queda vigente.
-- No se modifico backend fuera del alcance de seguridad y ownership de ETAPA
-  90.
-- No se modifico frontend.
-- No se modifico base de datos.
-- No se crearon tablas, modelos, relaciones ni funcionalidades nuevas.
-
----
-
-## ETAPA 91 — Cumplimiento Legal, Privacidad y Moderacion
-
-**Estado:** Cerrada
-
-### Seguridad y privacidad
-
-- Se separaron los contratos publicos y privados de Usuario.
-- `GET /usuarios/{usuario_id}` dejo de exponer `email` y datos privados.
-- `/usuarios/me` conserva el contrato privado necesario para el usuario
-  autenticado.
-- Se separaron contratos publicos y privados de Comercio.
-- Las respuestas publicas de Comercio dejaron de exponer `usuario_id`.
-- `es_propietario` queda calculado por backend como contrato contextual para el
-  propietario autenticado, usuario no propietario y visitante anonimo.
-- El frontend dejo de reconstruir ownership mediante identificadores publicos.
-
-### Consentimiento y evidencia
-
-- El registro exige aceptacion explicita separada de Terminos y Politica de
-  Privacidad.
-- El backend valida ambas aceptaciones y rechaza registros incompletos o con
-  valores `false`.
-- Se creo la entidad `usuarios_documentos_aceptaciones` para evidencia
-  versionada minima.
-- La creacion de usuario y las dos evidencias obligatorias ocurre en una unica
-  transaccion.
-- Las versiones y referencias documentales son controladas por backend.
-- La evidencia conserva `documento_referencia` como referencia logica de tipo y
-  version, sin presentarla como hash criptografico del texto legal definitivo.
-- Los usuarios existentes permanecen sin aceptacion retroactiva inventada.
-
-### Moderacion minima
-
-- Se creo el modulo `moderation`.
-- Se creo la entidad `contenido_denuncias`.
-- Se agrego `POST /moderacion/denuncias` como endpoint autenticado.
-- Se habilitaron denuncias sobre comercio, publicacion e historia.
-- Se implementaron motivos controlados e idempotencia por usuario, recurso y
-  motivo.
-- Se agrego un modal frontend reutilizable para enviar denuncias.
-- La denuncia no oculta contenido, no sanciona usuarios, no modifica estados
-  operativos y no expone al denunciante publicamente.
-
-### Validaciones
-
-- `unittest discover tests`: 75 tests OK.
-- `compileall app`: OK.
-- ESLint especifico de archivos frontend modificados: 0 errores, 1 warning
-  preexistente de `react-hooks/exhaustive-deps`.
-- `npm run build`: OK, con warnings preexistentes de Browserslist, assets
-  Leaflet y tamano de chunk.
-- `git diff --check`: OK.
-- Creacion fisica controlada de `usuarios_documentos_aceptaciones` y
-  `contenido_denuncias` completada sobre MySQL local `mitienda`.
-- Verificacion fisica de columnas, FKs, indices y uniques: OK.
-
-### Diferidos
-
-- Textos legales definitivos, Normas de Comunidad, Politica de Moderacion y
-  revision legal profesional.
-- Estrategia para usuarios existentes y reaceptacion por nuevas versiones.
-- Panel administrativo, decisiones de moderacion, sanciones, apelaciones y rate
-  limiting avanzado de denuncias.
-- Ownership y ciclo de vida persistente de uploads.
-- Hardening futuro de likes, guardados, seguidores y recursos inexistentes o
-  inactivos.
-
-### Cierre formal
-
-- ETAPA 91 queda cerrada tecnicamente.
-- ETAPA 92 - Integridad de Datos, Backups y Recuperacion queda vigente.
-
----
-
-## ETAPA 92 — Integridad de Datos, Backups y Recuperacion
-
-**Estado:** Cerrada
-
-### Integridad y scripts operativos
-
-- `create_tables.py` queda protegido contra efectos laterales al importar.
-- `reset_db.py` queda protegido contra ejecucion destructiva accidental.
-- Se agrego `check_database_schema.py` como verificacion read-only profunda de
-  tablas, columnas, FKs, indices y restricciones unicas.
-- Se incorporo `model_registry` para registrar los modelos requeridos por
-  `Base.metadata`.
-- Se alineo metadata SQLAlchemy con el schema fisico de MySQL local.
-- Se agrego la FK fisica `comercios.rubro_id -> rubros.id` mediante script
-  controlado y confirmacion explicita.
-
-### Backup y restore
-
-- Se implemento arquitectura extensible de backup, restore y storage mediante
-  contracts/providers.
-- El provider inicial de backup usa `mysqldump` con `--single-transaction` y
-  `--quick`.
-- El provider inicial de restore usa cliente `mysql` con streaming por `stdin`
-  desde gzip, sin cargar el dump completo en memoria.
-- Se genero backup oficial posterior a la alineacion:
-  `C:\FeedGoOps\backups\mysql\mitienda_20260801T181443Z.sql.gz`.
-- El backup oficial quedo validado con gzip, SHA-256, manifiesto JSON, tamano y
-  conteos criticos.
-- Se ejecuto restore real en base temporal `feedgo_restore_tmp_*`.
-- Se validaron 27 tablas, columnas, FKs, indices, uniques, conteos criticos y
-  smoke checks de lectura.
-- Se conservo evidencia JSON del restore fuera del repositorio.
-- La base temporal fue eliminada con confirmacion explicita y `mitienda` quedo
-  intacta.
-
-### Producto y documentacion
-
-- Se incorporo el documento `docs/16_DATA_INTEGRITY_AND_RECOVERY.md` como
-  documento tecnico-operativo transversal.
-- Se registro la matriz de tablas criticas y matriz de borrado/integridad.
-- Se documentaron RPO/RTO como objetivos y se registro medicion real inicial.
-- Se agrego DEC-043 para arquitectura extensible de infraestructura.
-- Se amplio la vision de producto hacia presencia digital y administracion de
-  multiples espacios sin delegacion inicial.
-- Se ajustaron textos frontend de cuenta y espacios sin modificar ownership,
-  permisos ni contratos backend.
-
-### Validaciones
-
-- `unittest discover tests`: 119 tests OK.
-- `compileall app`: OK.
-- Checker profundo contra `mitienda`: 27 tablas metadata, 27 tablas fisicas,
-  cero diferencias estructurales.
-- Backup oficial: 0.444 s, 147405 bytes, SHA-256
-  `70c7bd53002c6ac646891a989b1da96181cc1cdde3bef9d5f6b47e9667119970`.
-- Restore real: RTO observado 3.336 s.
-- Antiguedad observada del punto recuperado: ~13 min, sin declararlo RPO
-  garantizado.
-- ESLint especifico de archivos frontend modificados: 0 errores, 1 warning
-  preexistente de `react-hooks/exhaustive-deps`.
-- `npm run build`: OK, con warnings preexistentes de Browserslist, assets
-  Leaflet y tamano de chunk.
-- `git diff --check`: OK.
-
-### Diferidos
-
-- Automatizacion periodica de backups.
-- Copia externa cifrada y verificada.
-- Retencion operativa real y monitoreada.
-- PITR/binlogs.
-- Providers RDS, Percona o cloud.
-- Pruebas recurrentes de restore.
-- Observabilidad, alertas y operacion productiva.
-
-### Cierre formal
-
-- ETAPA 92 queda cerrada.
-- ETAPA 93 - Observabilidad y Operacion queda vigente.
-
----
-
-## ETAPA 93 — Observabilidad y Operacion
-
-**Estado:** Cerrada
-
-### Arquitectura operativa
-
-- Se incorporo `docs/17_OBSERVABILITY_AND_OPERATIONS.md` como documento
-  tecnico-operativo dueno de observabilidad, diagnostico, logging, health,
-  metricas, alertas y runbooks.
-- Se aprobo una arquitectura operativa basada en contratos estables antes de
-  acoplarse a proveedores concretos.
-- Se separaron logs, metricas, alertas, auditoria, analytics y evidencia de
-  backup/restore.
-
-### Logging y errores
-
-- Se implemento logger central basado en `logging` estandar.
-- Se agregaron handlers globales para `HTTPException`,
-  `RequestValidationError` y errores no controlados.
-- Se sanitizaron respuestas de error para no exponer secretos, tokens,
-  passwords, payloads completos, `.env` ni stack traces al frontend.
-- El cliente HTTP frontend dejo de propagar cuerpos crudos del backend como
-  mensajes visibles al usuario.
-
-### Contexto, health y metricas
-
-- Se implemento Request Context con `request_id` y `correlation_id`.
-- Las respuestas incluyen `X-Request-ID` y `X-Correlation-ID`.
-- Se agregaron endpoints `GET /health/live` y `GET /health/ready`.
-- Readiness ejecuta checks read-only de API, base de datos, schema,
-  uploads/storage, embeddings, evidencia de backup y evidencia de restore.
-- Se implementaron metricas operativas minimas con `MetricSample`,
-  `MetricsRecorder` y `LocalMetricsSink`.
-- Se instrumentaron requests, latencia, respuestas `4xx` y `5xx`, errores no
-  controlados, autenticacion, autorizacion, readiness, backup, restore, uploads
-  y busquedas sin resultados.
-
-### Alertas y runbooks
-
-- Se implementaron contratos internos `AlertRule`, `AlertEvent`,
-  `AlertSeverity` y `AlertSink`.
-- Se agrego `AlertEngine` con deduplicacion, cooldown y sink local en memoria.
-- Se incorporaron reglas iniciales para readiness `unhealthy`, errores `5xx`
-  repetidos, backup fallido o evidencia no saludable, restore fallido y
-  rechazos repetidos de uploads.
-- Se documentaron runbooks iniciales para API no disponible, readiness
-  `unhealthy`, errores `5xx`, fallo de base de datos, backup/restore fallido y
-  uploads/storage degradado.
-
-### Validaciones
-
-- `unittest discover tests`: OK.
-- `compileall app`: OK.
-- ESLint de frontend modificado: OK.
-- `npm run build`: OK.
-- `git diff --check`: OK.
-
-### Diferidos
-
-- Proveedores externos de observabilidad, alertas o trazas.
-- Dashboards.
-- Endpoints de metricas o alertas.
-- Persistencia historica de metricas o alertas.
-- Politicas de guardia, escalamiento y resolucion manual.
-- Ownership y ciclo de vida persistente de uploads.
-
-### Cierre formal
-
-- ETAPA 93 queda cerrada tecnicamente.
-- ETAPA 94 - QA Integral y Hardening Funcional queda vigente.
