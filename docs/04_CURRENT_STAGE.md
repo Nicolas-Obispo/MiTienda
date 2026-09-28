@@ -770,6 +770,14 @@ Completar `AUTH-LEGACY-01`: contract legacy, migraciones y recovery focales,
 regresion final y cierre documental. B1-B3.1 no se reabren ni cambian findings
 por la sola existencia de codigo unstaged.
 
+El preflight L1 read-only de credenciales legacy esta implementado y validado.
+Sobre los 18 usuarios de prueba clasifico 16 credenciales duales equivalentes y
+2 cuentas legacy-only, sin divergencias ni hashes invalidos. Las 2 cuentas
+legacy-only son exactamente las 2 filas con `email_canonical` pendiente, por lo
+que `AUTH-LEGACY-01` permanece ABIERTO y L2 no fue iniciado. El proximo bloque
+debe preparar y validar en aislamiento una reparacion focal canonical-only, sin
+backfill de credenciales.
+
 Restricciones:
 
 - no implementar el modelo identity-first dentro de ETAPA 99; su handoff

@@ -37,6 +37,13 @@ contractual de `AUTH-LEGACY-01`
 - B1, B2, B3 y B3.1 quedan cerrados. `AUTH-ABUSE-01` y
   `AUTH-POLICY-01` quedan cerrados en el alcance aprobado de ET99.9-B;
   `AUTH-LEGACY-01` permanece abierto.
+- El preflight L1 read-only de `AUTH-LEGACY-01` clasifica en forma agregada y
+  fail-closed las credenciales sin exponer PII. Aprobo 15/15 contratos L1, 2/2
+  de model registry y 19/19 regresiones de identity foundation/transicion. La
+  lectura autorizada de `mitienda` encontro 16 credenciales duales equivalentes
+  y 2 legacy-only; estas ultimas coinciden exactamente con las 2 filas con
+  `email_canonical` pendiente. No hubo divergencias, hashes invalidos,
+  reparacion ni backfill; L2 no fue iniciado.
 - `DEC-066` aprueba como direccion pendiente el modelo `identidad primero ->
   verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`.
   ET99 conserva solo un handoff de compatibilidad, primitivas reutilizables y
