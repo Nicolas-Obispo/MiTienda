@@ -1416,20 +1416,48 @@ y no crean ni renumeran etapas.
   altas y vinculaciones conservando identidades existentes y sus metodos
   alternativos.
 - 99.9 - Contract, limpieza legacy y cierre. 99.9-A - Inventario y gates de
-  datos legacy queda cerrada; 99.9-B es el siguiente bloque y no fue iniciado.
+  datos legacy y 99.9-B quedan cerrados; B1, B2, B3 y B3.1 completaron su
+  gate tecnico y cierre documental.
   Debe retirar emision y aceptacion de JWT legacy, ramas
   `contract == "legacy"`, `_validar_contrato_legacy` y `TokenRevocado` cuando
   quede sin consumidores; completar el gate/backfill de `email_canonical`;
   garantizar `PasswordCredential` para usuarios password y dejarlo como unica
   autoridad; retirar fallback y dual-write de `usuarios.hashed_password` y
-  decidir su eliminacion fisica. Tambien debe cerrar rate limiting persistente
-  del login, revision final de password policy y el oracle de disponibilidad de
-  email. Incluye migraciones, tests, restore, rollback, auditoria final de APIs
+  decidir su eliminacion fisica. El rate limiting persistente del login, la
+  politica de password y el oracle de disponibilidad de email quedaron cerrados
+  en 99.9-B. Incluye migraciones, tests, restore, rollback, auditoria final de APIs
   privadas, PWA/cache, seguridad y cierre documental. Depende de 99.2 a 99.8
   cerrados. Rollback: cada contract es independiente, respaldado y posterior a
   dejar de usar el elemento; ningun retiro se fuerza por calendario. Es owner
-  temporal de `AUTH-LEGACY-01`, `AUTH-ABUSE-01` y `AUTH-POLICY-01`; los
+  temporal de `AUTH-LEGACY-01`; `AUTH-ABUSE-01` y `AUTH-POLICY-01` quedaron
+  cerrados en el alcance aprobado de 99.9-B. Los
   criterios de cierre permanentes viven en `15_LEGAL_AND_OPERATIONAL` 27.8.1.
+
+  `DEC-066` aprueba como direccion de producto pendiente el modelo `identidad
+  primero -> verificacion -> resolucion de identidad -> datos minimos -> cuenta
+  -> sesion`. El contrato neutral de B1 se preserva como baseline
+  anti-enumeracion, pero no se declara UX definitiva. Dentro de ET99 solo
+  corresponde un handoff arquitectonico acotado: demostrar compatibilidad,
+  inventariar `AccountActionToken`, verificacion de email,
+  `AccountActionRateLimit`, recovery, `PasswordCredential`, `ExternalIdentity`,
+  `FeedGoSession` y Google/OIDC reutilizables, identificar dependencias y dejar
+  definido el owner funcional conjunto Producto e Identidad backend/frontend.
+  No existe etapa adecuada asignada y Gobierno debe crear o asignar ese owner
+  de roadmap antes de continuar. El diseno detallado y la
+  implementacion de identity-first, codigo/magic-link pre-account, UX y nuevos
+  controles de envio, verificacion o resend son posteriores a ET99. No se crea
+  infraestructura duplicada, Google permanece OFF y no existe auto-link por
+  email.
+
+  La frontera rebaselined de ET99 ya cuenta con B1-B3.1,
+  `AUTH-ABUSE-01` y `AUTH-POLICY-01` cerrados; resta `AUTH-LEGACY-01`:
+  establecer `PasswordCredential` como autoridad unica; migrar usuarios legacy-only;
+  retirar runtime de JWT sin SID, fallbacks, dual-write y consumidores legacy;
+  probar migraciones, recovery focal y regresion final; y cerrar la
+  documentacion. No absorbe delivery productivo, Google ON, hardening
+  edge/preproduccion, DAST, pentest ni backups productivos externos. Cerrar
+  ET99 no equivale a `SECURITY GO`, Internet GO ni Google ON; todos sus gates
+  posteriores conservan owner y vigencia.
 
 Reglas transversales de ejecucion:
 
@@ -1480,13 +1508,14 @@ Evidencia de cierre de 99.2:
 
 Siguiente bloque:
 
-99.9-B - Contract, limpieza legacy y cierre. ET99.9-A - Inventario y gates de
-datos legacy queda cerrada; 99.9-B no fue iniciado y requiere orden expresa
-para comenzar.
+ET99.9 - Contract legacy, migraciones y recovery focal de `AUTH-LEGACY-01`.
+El handoff identity-first de `DEC-066` es acotado y no sustituye el retiro
+legacy ni autoriza implementar el nuevo journey dentro de ET99.
 
 Estado:
 
-En curso. 99.1 a 99.8 y 99.9-A tecnicamente cerrados; ET99.9-B no iniciado.
+En curso. 99.1 a 99.8 y 99.9-A/B cerrados; ET99.9 y ETAPA 99 permanecen
+abiertas por el cleanup contractual de `AUTH-LEGACY-01`.
 
 Evidencia de cierre de 99.4:
 

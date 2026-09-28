@@ -82,7 +82,8 @@ test("Login y Registro preservan solamente el returnTo validado", async () => {
   assert.match(login, /navigate\(returnTo, \{ replace: true \}\)/);
   assert.match(login, /state=\{\{ message: mensajeContextual, returnTo \}\}/);
   assert.match(registration, /state=\{\{ message: mensajeContextual, returnTo \}\}/);
-  assert.match(registration, /registrationEmailStatus:[\s\S]{0,100}returnTo/);
+  assert.match(registration, /purpose: "signup"[\s\S]{0,180}returnTo/);
+  assert.doesNotMatch(registration, /registrationEmailStatus/);
   assert.match(internalReturnTo, /url\.searchParams\.delete\(key\)/);
   assert.doesNotMatch(internalReturnTo, /url\.hash/);
 });

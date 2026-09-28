@@ -20,9 +20,10 @@ from app.modules.users.services.phone_normalization import (
     InvalidPhoneError,
     canonicalize_phone,
 )
+from app.modules.users.services.password_policy import validate_new_password
 
 # Funciones de seguridad
-from app.core.security import hash_password, verificar_password
+from app.core.security import hash_password, verificar_password_o_dummy
 
 COLOR_FONDO_HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
@@ -31,6 +32,9 @@ COLOR_FONDO_HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 
 def crear_usuario(db: Session, usuario: UsuarioCreate) -> Usuario | None:
+    # El schema rechaza temprano, pero el owner tambien debe proteger toda
+    # invocacion directa del servicio que establece una contrasena nueva.
+    validate_new_password(usuario.password)
     email = str(usuario.email)
     email_canonical = canonicalize_email(email)
     existente = (
@@ -39,6 +43,10 @@ def crear_usuario(db: Session, usuario: UsuarioCreate) -> Usuario | None:
         .first()
     )
     if existente:
+        # El contrato publico no distingue una cuenta existente. Consumimos el
+        # mismo costo bcrypt del alta real, pero el resultado es efimero: no se
+        # crea ni modifica ninguna credencial, usuario, token o entrega.
+        hash_password(usuario.password)
         return None
 
     documentos_aceptacion_services.validar_aceptaciones_obligatorias_registro(
@@ -89,8 +97,13 @@ def crear_usuario(db: Session, usuario: UsuarioCreate) -> Usuario | None:
     return nuevo_usuario
 
 
-def autenticar_usuario(db: Session, data: UsuarioLogin) -> Usuario | None:
-    email_canonical = canonicalize_email(str(data.email))
+def autenticar_usuario(
+    db: Session,
+    data: UsuarioLogin,
+    *,
+    email_canonical: str | None = None,
+) -> Usuario | None:
+    email_canonical = email_canonical or canonicalize_email(str(data.email))
     usuario = (
         db.query(Usuario)
         .filter(Usuario.email_canonical == email_canonical)
@@ -112,20 +125,19 @@ def autenticar_usuario(db: Session, data: UsuarioLogin) -> Usuario | None:
                 coincide = False
             if coincide:
                 coincidencias.append(candidato)
-        if len(coincidencias) != 1:
-            return None
-        usuario = coincidencias[0]
+        if len(coincidencias) == 1:
+            usuario = coincidencias[0]
 
-    credencial = db.get(PasswordCredential, usuario.id)
+    credencial = db.get(PasswordCredential, usuario.id) if usuario is not None else None
     password_hash = (
         credencial.password_hash
         if credencial is not None
         else usuario.hashed_password
-        if usuario.email_canonical is None
+        if usuario is not None and usuario.email_canonical is None
         else None
     )
 
-    if password_hash is None or not verificar_password(data.password, password_hash):
+    if not verificar_password_o_dummy(data.password, password_hash):
         return None
 
     return usuario

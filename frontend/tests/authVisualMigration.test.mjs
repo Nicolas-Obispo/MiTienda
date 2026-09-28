@@ -37,7 +37,7 @@ test("formularios Auth delegan contraccion responsive en primitives", () => {
 
 test("submits conservan accion, loading y variantes visuales aprobadas", () => {
   assert.match(registro, /onSubmit=\{manejarSubmitRegistro\}/);
-  assert.match(registro, /disabled=\{cargando \|\| estadoDisponibilidad === "unavailable"\}[\s\S]*variant="primary"/);
+  assert.match(registro, /disabled=\{cargando\}[\s\S]*variant="primary"/);
   assert.match(registro, /cargando \? "Creando cuenta\.\.\." : "Crear cuenta"/);
 
   assert.match(login, /onSubmit=\{manejarSubmitLogin\}/);

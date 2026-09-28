@@ -8,6 +8,13 @@ from passlib.context import CryptContext
 # Configuración del hash bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# Hash bcrypt valido y precomputado para igualar el trabajo criptografico
+# cuando no existe una credencial utilizable. No corresponde a una cuenta ni
+# contiene material secreto y nunca se persiste.
+DUMMY_BCRYPT_HASH = (
+    "$2b$12$7TKafIulPAEyHN1k54/2YuIORtHQjfr8i6IBTj7aWp.7ZAIJst2te"
+)
+
 
 def verificar_password(password_plano: str, password_hashed: str) -> bool:
     """
@@ -35,3 +42,15 @@ def password_hash_is_usable(password_hashed: str | None) -> bool:
     except (TypeError, ValueError):
         return False
     return True
+
+
+def verificar_password_o_dummy(
+    password_plano: str,
+    password_hashed: str | None,
+) -> bool:
+    """Ejecuta exactamente un bcrypt y solo acepta un hash real utilizable."""
+
+    usable = password_hash_is_usable(password_hashed)
+    selected_hash = password_hashed if usable else DUMMY_BCRYPT_HASH
+    verified = verificar_password(password_plano, selected_hash)
+    return bool(usable and verified)

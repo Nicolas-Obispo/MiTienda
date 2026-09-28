@@ -43,12 +43,11 @@ test("UX cubre estados humanos sin codigos tecnicos", async () => {
   assert.match(source, /!estaAutenticado.*Iniciar sesión para pedir otro enlace/s);
 });
 
-test("registro conserva alta y navega al estado de verificacion", async () => {
+test("registro no inicia sesion ni navega al estado de verificacion", async () => {
   const source = await readFile(registrationPath, "utf8");
-  assert.match(source, /const registro = await registrarUsuario/);
-  assert.match(source, /postAuthDestination/);
-  assert.match(source, /pathname: "\/verificar-email"/);
-  assert.match(source, /registrationEmailStatus: registro\.email_verification_status/);
+  assert.match(source, /await registrarUsuario/);
+  assert.match(source, /Si pudimos crear la cuenta/);
+  assert.doesNotMatch(source, /postAuthDestination|registrationEmailStatus|loginUsuario/);
 });
 
 test("superficie estable usa usuarios me y ofrece reenvio mientras no esta verificado", async () => {

@@ -907,8 +907,8 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-060
 - Titulo: Descomposicion ejecutable de ETAPA 99
-- Estado: Aprobada documentalmente; 99.1 a 99.8 cerradas tecnicamente; 99.9 es
-  el siguiente sprint oficial y no fue iniciado.
+- Estado: Aprobada documentalmente; 99.1 a 99.8 y 99.9-A/B cerradas. ET99.9 y
+  ETAPA 99 permanecen abiertas por el cleanup contractual legacy.
 - Decision: ETAPA 99 se ejecuta mediante los nueve sprints oficiales 99.1 a
   99.9 definidos por `docs/05_SEARCH_ROADMAP.md`, en orden obligatorio
   `expand -> backfill -> transicion -> contract`. La cantidad excede la guia
@@ -926,8 +926,10 @@ No reemplaza la documentación oficial existente.
 - Gate inmediato cumplido: 99.2 cerro luego de convertir
   `email_canonical` y `PasswordCredential` en owners efectivos de Registro y
   Login, reparar filas transitorias, preservar rollback legacy y aprobar tests y
-  validacion manual. 99.3 a 99.8 cumplieron sus gates tecnicos y quedan
-  cerradas; 99.9 permanece no iniciado y requiere orden expresa.
+  validacion manual. 99.3 a 99.8 y 99.9-A/B cumplieron sus gates y quedan
+  cerradas.
+- Rebaseline: `DEC-067` congela la frontera final de ET99 sin renumerar los
+  sprints ni bloques ya ejecutados.
 
 ## DEC-061
 
@@ -1096,5 +1098,113 @@ No reemplaza la documentación oficial existente.
   activados y no son blocker de lanzamiento. Ningun provider externo posee
   identidad, sesiones, OTP, recovery o autorizacion FeedGo.
 - Continuidad: ET99.8 queda cerrada tecnicamente; ETAPA 99 global continua
-  abierta. ET99.9 es el siguiente sprint oficial y no fue iniciado. El cierre
-  tecnico de Google no autoriza su activacion operativa.
+  abierta. ET99.9-A/B estan cerradas. El cierre tecnico de
+  Google no autoriza su activacion operativa.
+
+## DEC-065
+
+- ID: DEC-065
+- Titulo: Contrato publico de registro anti-enumeracion y politica de password
+  de ET99.9-B
+- Estado: Aprobada; implementada, validada y cerrada mediante ET99.9-B1/B2/B3/B3.1.
+  `AUTH-ABUSE-01` y `AUTH-POLICY-01` quedan cerrados en su alcance aprobado;
+  ET99.9 y ETAPA 99 permanecen abiertas por `AUTH-LEGACY-01`.
+- Politica: toda password nueva conserva exactamente ocho caracteres minimos,
+  mayuscula Unicode, minuscula Unicode, digito decimal Unicode, ausencia de
+  whitespace Unicode y maximo de 72 bytes UTF-8 por bcrypt. El backend es el
+  owner unico; schemas y frontend solo rechazan temprano o comunican el
+  contrato. Login y reautenticacion no reaplican esa politica a credenciales
+  existentes.
+- Registro: un alta valida nueva y un email ya existente responden ambos HTTP
+  `202`, cuerpo `{"status":"registration_received"}` y
+  `Cache-Control: no-store`. No se devuelve conflicto publico por existencia,
+  no hay auto-login posterior al registro y el frontend comunica una siguiente
+  accion neutral.
+- Availability: `/usuarios/email-disponibilidad` queda solo como compatibilidad
+  transitoria, no consulta existencia y responde el contrato neutro
+  `{"status":"check_on_submit"}` con `Cache-Control: no-store`. El frontend
+  no lo consume.
+- Evidencia posterior: B2 implemento limites persistentes de login por subject
+  (5/15 minutos) y cliente (20/hora), configurables, pseudonimizados y
+  fail-closed, con gates MySQL reales. B3 integro el limiter y equivalencia
+  bcrypt al login; B3.1 mitigo el timing de registro duplicado. Google
+  permanece OFF. Gate final: B1 backend 6/6, frontend 30/30, compilacion
+  10/10, B2 28/28, B3 9/9, regresiones previas 46 PASS,
+  `test_authentication_method_services` 13/13 y
+  `test_runtime_model_registry` 2/2; `git diff --check` PASS. El bootstrap
+  preexistente del primer test se corrigio con `import_all_models()` sin
+  modificar produccion.
+
+## DEC-066
+
+- ID: DEC-066
+- Titulo: Entrada identity-first y resolucion de identidad verificada
+- Estado: Direccion de producto aprobada; auditoria read-only obligatoria
+  pendiente antes de diseno final o implementacion futura. ET99.9-B esta
+  cerrada; este nuevo journey no fue implementado ni bloquea dicho cierre.
+- Objetivo: evolucionar Registro y acceso hacia `identidad primero ->
+  verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`,
+  con seguridad alta y minima friccion. La persona no debe completar un alta
+  extensa antes de resolver su identidad ni adivinar si ya posee una cuenta.
+- Revelacion: antes de demostrar control del email, ningun contrato publico
+  informa si existe una cuenta. Despues de una prueba backend valida y vigente,
+  FeedGo puede indicar y conducir al flujo correcto: completar los datos
+  minimos de una identidad nueva o acceder/recuperar una existente.
+- Baseline: availability neutral, registro nuevo/duplicado uniforme, frontend
+  sin consulta anticipada y ausencia de auto-login permanecen como defensa
+  segura. No se declaran automaticamente UX definitiva ni se revierten sin un
+  contrato igual o mas seguro. Autocomplete y password managers deben
+  conservar semantica web correcta.
+- Reutilizacion obligatoria: antes de crear modelos, tokens, rate limits o
+  servicios nuevos se auditan `AccountActionToken`/`account_action_tokens`,
+  verificacion de email, `AccountActionRateLimit`/
+  `account_action_rate_limits`, recovery, `PasswordCredential`,
+  `ExternalIdentity`, `FeedGoSession` y Google/OIDC existentes. No se duplica
+  una capacidad sin demostrar que no cubre el requisito.
+- Handoff ET99: ETAPA 99 solo demuestra compatibilidad de su arquitectura,
+  inventaria primitivas reutilizables, identifica dependencias y preserva B1 a
+  B3.1 como baseline. El owner funcional futuro es conjunto entre Producto e
+  Identidad backend/frontend; no existe una etapa adecuada asignada y Gobierno
+  debe definirla antes de autorizar diseno detallado o implementacion.
+- Gate futuro de diseno: la auditoria posterior debe resolver mecanismo de
+  codigo/link, envio, verificacion, resend, expiracion, one-use, replay,
+  intentos, rate limiting, anti-enumeracion, timing, PII, abandono, multitab,
+  cambio de dispositivo, carreras de alta y emision de sesion. Backend conserva
+  identidad, seguridad y reglas; frontend solo interaccion y presentacion.
+- Google: podra integrarse conceptualmente como prueba externa de identidad
+  bajo OIDC existente cuando sea autorizado. La coincidencia de email nunca
+  produce auto-link; vinculacion exige el contrato explicito vigente. Google
+  permanece OFF.
+- Limites: esta decision no implementa el flujo, no bloquea el cierre de ET99
+  mas alla de su handoff acotado, no activa providers, no declara `SECURITY GO`
+  o Internet GO y no desplaza `AUTH-LEGACY-01` ni el cleanup contract
+  obligatorio de ET99.9.
+
+## DEC-067
+
+- ID: DEC-067
+- Titulo: Rebaseline y frontera de cierre de ETAPA 99
+- Estado: Aprobada documentalmente; ET99.9-B esta cerrada y ETAPA 99 permanece abierta.
+- Decision: ET99 cierra la arquitectura/base segura de identidad comprometida,
+  no toda evolucion futura de onboarding. B1-B3.1, `AUTH-ABUSE-01` y
+  `AUTH-POLICY-01` ya estan cerrados; resta `AUTH-LEGACY-01`: consolidar
+  `PasswordCredential` como autoridad unica; migrar usuarios legacy-only;
+  retirar del runtime JWT sin SID, fallbacks, dual-write y consumidores legacy;
+  probar migraciones y recovery focal; aprobar regresion final y cierre
+  documental.
+- Fuera de ET99: implementacion identity-first, codigo o magic-link pre-account,
+  su UX y controles nuevos de resend/verificacion, delivery productivo, Google
+  ON, hardening edge/preproduccion, DAST, pentest y backups productivos externos.
+  Conservan o requieren owners posteriores y no pueden ocultar findings.
+- Handoff: `DEC-066` permanece aprobada. ET99 demuestra compatibilidad,
+  inventaria reutilizacion y dependencias, preserva B1-B3.1 y la prohibicion de
+  auto-link por email. Producto e Identidad backend/frontend son owners
+  funcionales; Gobierno debe asignarles una etapa futura antes del diseno
+  detallado o implementacion. No se inventa una etapa durante este rebaseline.
+- Independencia de gates: cerrar ET99 no declara `SECURITY GO`, Internet GO ni
+  Google ON. Los findings y gates preproduccion conservan estado y owner hasta
+  satisfacer sus criterios formales; el codigo unstaged no cambia estados por
+  si solo.
+- Trazabilidad: no se renumera trabajo cerrado. La expansion observada se
+  resuelve congelando este contrato de salida y aplicando la regla de scope
+  creep de `docs/00_GOVERNANCE.md` a etapas futuras.

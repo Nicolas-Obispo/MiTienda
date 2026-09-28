@@ -559,8 +559,8 @@ Estado de continuidad:
 
 - Ultima etapa cerrada: ETAPA 98 - Correccion y Pulido Visual del Frontend.
 - Etapa vigente: ETAPA 99 - Identidad, Registro y Autenticacion. Sus bloques
-  99.1 a 99.8 y ET99.9-A quedan cerrados. El siguiente bloque oficial es
-  ET99.9-B; ET99.9 global y ETAPA 99 permanecen abiertas.
+  99.1 a 99.8 y ET99.9-A/B quedan cerrados; B1, B2, B3 y B3.1 estan cerrados.
+  ET99.9 global y ETAPA 99 permanecen abiertas por el contract legacy.
 - Checkpoint intermedio aprobado: sistema visual Liquid consolidado y bloque
   correctivo incidental de publicaciones e interacciones validado. Este
   checkpoint no constituyo por si solo el cierre posterior de ETAPA 98.
@@ -586,8 +586,7 @@ Estado de continuidad:
   capacidad para crear o administrar espacios y publicar contenido asociado.
   La cuenta basica no excluye automaticamente a menores de 18 anos; la politica
   vigente exige 18 anos o mas para esas capacidades de Espacios. ETAPA 99,
-  ahora vigente con 99.1 a 99.8 y ET99.9-A tecnicamente cerrados; ET99.9-B es
-  el siguiente bloque no iniciado,
+  ahora vigente con 99.1 a 99.8 y ET99.9-A/B tecnicamente cerrados,
   incorporo `fecha_nacimiento` privada y nullable, perfil y capabilities
   backend, borrador seguro de Registro y flujo Google conforme a `DEC-048`; el
   backend de Espacios conserva el enforcement. No se implemento ninguna de
@@ -743,8 +742,8 @@ Estado de continuidad:
   en `frontend/.pwa-fixtures/story-video-case-b.html` y la investigacion pasa a
   ETAPA 124 - Compatibilidad Multimedia iOS/Safari/PWA.
 - ETAPA 99 - Identidad, Registro y Autenticacion se encuentra en curso con 99.1
-  a 99.8 tecnicamente cerrados. El sprint 99.9 es el siguiente oficial, no
-  iniciado; la compatibilidad JWT legacy permanece hasta su retiro gobernado.
+  a 99.8 y 99.9-A/B tecnicamente cerrados. La
+  compatibilidad JWT legacy permanece hasta su retiro gobernado.
 - FeedGo Clasificados queda incorporado documentalmente como vertical futura
   de primer nivel en ETAPAS 101 a 105; ETAPAS 106 y 107 preparan Plataforma
   Comercial, Advertising, Payments y Billing transversal. Ninguna fue iniciada.
@@ -762,17 +761,19 @@ En curso.
 
 Bloque vigente:
 
-99.9 - Contract, limpieza legacy y cierre. Siguiente sprint oficial, no
-iniciado.
+ET99.9 - Contract legacy, migraciones y recovery focal de identidad. ET99.9-B
+esta cerrada: B1, B2, B3 y B3.1 completaron su gate tecnico y cierre documental.
 
 Objetivo inmediato:
 
-ET99.8 queda tecnicamente cerrada y validada. El siguiente trabajo es ET99.9:
-contract, limpieza legacy y cierre; este sprint no fue iniciado.
+Completar `AUTH-LEGACY-01`: contract legacy, migraciones y recovery focales,
+regresion final y cierre documental. B1-B3.1 no se reabren ni cambian findings
+por la sola existencia de codigo unstaged.
 
 Restricciones:
 
-- no iniciar ET99.9 sin orden expresa;
+- no implementar el modelo identity-first dentro de ETAPA 99; su handoff
+  acotado no sustituye ni desplaza el contract legacy;
 - no convertir Google en owner de identidad, sesion o autorizacion;
 - no aplicar auto-link por coincidencia de email;
 - no persistir edad ni inferir capabilities en frontend;
@@ -898,7 +899,7 @@ telefono E.164 validos, mas email verificado. `telefono_verified_at` no bloquea
 perfil ni capabilities; la infraestructura OTP queda future-ready y Twilio no
 es requisito ni provider activo. La cuenta basica continua disponible con
 perfil incompleto, sin grandfathering. ETAPA 99 global sigue abierta y 99.9 es
-el siguiente sprint oficial, no iniciado.
+el sprint vigente: 99.9-A/B cerradas y contract legacy pendiente.
 
 Estado de cierre tecnico de 99.8:
 
@@ -964,18 +965,64 @@ conservo fuera del repositorio; schema y 22 conteos criticos coincidieron entre
 origen, manifest y temporal; `mitienda` no tuvo mutaciones y la base temporal
 fue eliminada despues de validar la evidencia.
 
-ET99.9-A esta cerrada; ET99.9-B es el siguiente bloque y no esta iniciado.
+ET99.9-A y ET99.9-B estan CERRADAS. B1, B2, B3 y B3.1 completaron su gate tecnico
+y cierre documental. B1 consolido la politica backend de password, el
+contrato publico neutral de availability/registro y elimino el auto-login. B2
+incorporo el rate limit persistente de login por subject y cliente, con gates
+MySQL reales 28/28, migracion local controlada e idempotente y recovery point
+previo validado. B3 integro el limiter fail-closed al login y equiparo el costo
+bcrypt de credenciales invalidas; B3.1 equiparo el costo criptografico del
+registro duplicado sin sleeps, credenciales ficticias ni mutacion de la cuenta.
+Los probes clasificaron Login y Registro como mitigados; Recovery permanece
+mitigado con riesgo residual para revalidacion preproduccion en una red
+representativa.
+
+El gate final de B registro: B1 backend 6/6, contratos frontend 30/30,
+compilacion sintactica 10/10, B2 28/28, B3 9/9, regresiones backend previas
+46 PASS, `test_authentication_method_services` 13/13 y
+`test_runtime_model_registry` 2/2, con `git diff --check` PASS. El unico
+bloqueo encontrado fue un bootstrap preexistente de
+`backend/tests/test_authentication_method_services.py`, corregido alli con
+`app.core.model_registry.import_all_models()` sin modificar produccion.
+
+La disponibilidad neutral, el resultado uniforme de registro, la ausencia de
+consulta anticipada desde frontend y la eliminacion del auto-login son una
+base defensiva que debe preservarse, no una declaracion de UX definitiva. La
+direccion de producto pendiente, denominada informalmente `trabajo pinche`, es
+el modelo `identidad primero -> verificacion -> resolucion de identidad ->
+datos minimos -> cuenta -> sesion` aprobado por `DEC-066`.
+
+Dentro de ET99 solo corresponde un handoff arquitectonico acotado de ese
+modelo: demostrar que la base es compatible, inventariar las primitivas
+reutilizables (`AccountActionToken`, verificacion de email,
+`AccountActionRateLimit`, recovery, `PasswordCredential`, `ExternalIdentity`,
+`FeedGoSession` y Google/OIDC), identificar dependencias y dejar asentado el
+owner futuro. El diseno detallado de codigo/link, envio, resend, expiracion,
+one-use, replay, intentos, timing, PII, multitab, cambio de dispositivo y UX,
+asi como su implementacion, son posteriores a ET99. No existe hoy un owner de
+etapa adecuado: su owner funcional es Producto e Identidad backend/frontend y
+Gobierno debe asignarle etapa antes de comenzar. No se autorizan
+sistemas duplicados, Google sigue OFF y la coincidencia de email nunca autoriza
+auto-link. `AUTH-LEGACY-01` conserva su cleanup obligatorio dentro de ET99.9.
+
+La frontera de cierre de ET99 ya cuenta con B1-B3.1 y
+`AUTH-ABUSE-01`/`AUTH-POLICY-01` cerrados; resta `PasswordCredential` como autoridad unica;
+migracion de usuarios legacy-only; retiro runtime de JWT sin SID, fallbacks,
+dual-write y consumidores legacy; migraciones y recovery focal probados;
+regresion final y cierre documental de `AUTH-LEGACY-01`. No incluye implementar
+identity-first, codigo/magic-link pre-account, su UX o nuevos controles de
+resend/verificacion, delivery productivo, Google ON, hardening edge, DAST,
+pentest ni backups productivos externos.
+
 ET99.9 y ETAPA 99 siguen abiertas. Google permanece OFF, FeedGo continua
 NO-GO para Internet y `SECURITY GO` no esta declarado. Los findings de
-preproduccion, incluidos `AUTH-LEGACY-01`, `AUTH-ABUSE-01`,
-`AUTH-POLICY-01`, `UPLOAD-01`, `RECOVERY-01`, `SUPPLY-01` y
-`GOOGLE-OPS-01`, conservan sus owners, estados y gates.
+preproduccion, incluidos `AUTH-LEGACY-01`, `UPLOAD-01`, `RECOVERY-01`, `SUPPLY-01` y
+`GOOGLE-OPS-01`, conservan sus owners, estados y gates hasta su cierre formal.
 
 La auditoria profesional preproduccion posterior no confirmo vulnerabilidades
 `CRITICAL`, pero FeedGo permanece `NO-GO` para Internet. El registro central
 vive en `15_LEGAL_AND_OPERATIONAL` `27.8.1` y la checklist unica en `28.6`.
-Antes de cerrar ET99 deben resolverse `AUTH-LEGACY-01`, `AUTH-ABUSE-01` y
-`AUTH-POLICY-01` mediante ET99.9. Los findings `UPLOAD-01`, `RECOVERY-01` y
+Antes de cerrar ET99 debe resolverse `AUTH-LEGACY-01` mediante ET99.9. Los findings `UPLOAD-01`, `RECOVERY-01` y
 `SUPPLY-01` permanecen `HIGH` abiertos; el resto de gates preproduccion sigue
 `FAIL` o `BLOCKED` hasta evidencia real. Google ON conserva su gate separado
 `GOOGLE-OPS-01`; el cierre tecnico de 99.8 no declara `SECURITY GO`.
@@ -1133,7 +1180,7 @@ Pendientes derivados:
 - ETAPA 98: correccion y pulido visual completo del frontend, posterior a PWA
   y operacion minima y previo al lanzamiento controlado.
 - ETAPA 99: identidad, registro y autenticacion, vigente con 99.1 a 99.8 y
-  ET99.9-A tecnicamente cerrados; ET99.9-B es el siguiente bloque no iniciado.
+  ET99.9-A/B cerrados; permanece abierto el contract legacy de ET99.9.
 - ETAPA 100: fundacion de validacion y staging aislado.
 - ETAPAS 101 a 105: FeedGo Clasificados, desde dominio y experiencia hasta
   Search, IA multimodal, Historias, promocion y beneficios.
@@ -1174,8 +1221,8 @@ El trabajo previo a ETAPA 97 queda formalmente cerrado. ETAPA 96 permanece
 cerrada. ETAPA 97 - Administracion Operativa Minima queda formalmente cerrada
 con 97.1, 97.2, 97.3, 97.4, 97.5 y 97.6 cerradas. ETAPA 98 - Correccion y
 Pulido Visual del Frontend queda formalmente cerrada. ETAPA 99 es la etapa
-oficial vigente con 99.1 a 99.8 tecnicamente cerrados y 99.9 como siguiente
-sprint, no iniciado.
+oficial vigente con 99.1 a 99.8 tecnicamente cerrados y 99.9 en curso:
+99.9-A/B cerradas; el contract legacy de 99.9 permanece abierto.
 
 ## Estado ETAPA 92
 

@@ -25,7 +25,10 @@ test("service worker conserva solo logging operativo de error", async () => {
     readSource("src/pwa/service-worker.js"),
   ]);
 
-  assert.match(main, /registerServiceWorker\(\)/);
+  assert.match(
+    main,
+    /const serviceWorkerRuntime = import\.meta\.env\.PROD\s*\?\s*registerServiceWorker\(\)\s*:\s*null;/,
+  );
   assert.doesNotMatch(main, /serviceWorker\.register/);
   assert.match(registrationOwner, /\.register\(PWA_SERVICE_WORKER_URL\)/);
   assert.match(registrationOwner, /logger\.error\("Error SW:"/);

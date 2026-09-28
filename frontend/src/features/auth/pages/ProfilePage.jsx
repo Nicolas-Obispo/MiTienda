@@ -1535,9 +1535,9 @@ export default function ProfilePage() {
                           required
                         />
                         <p className="mt-1 text-xs text-secondary">
-                          {addPasswordRequirements.longitud && addPasswordRequirements.mayuscula && addPasswordRequirements.minuscula && addPasswordRequirements.numero && addPasswordRequirements.sinEspacios
+                          {addPasswordRequirements.longitud && addPasswordRequirements.mayuscula && addPasswordRequirements.minuscula && addPasswordRequirements.numero && addPasswordRequirements.sinEspacios && addPasswordRequirements.limiteBcrypt
                             ? "La contraseña cumple los requisitos."
-                            : "Usá al menos 8 caracteres, mayúscula, minúscula, número y sin espacios."}
+                            : "Usá al menos 8 caracteres, mayúscula, minúscula, número, sin espacios y hasta 72 bytes UTF-8."}
                         </p>
                       </FormControl>
                       <FormControl

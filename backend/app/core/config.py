@@ -106,6 +106,12 @@ class Settings(BaseSettings):
     # No puede reutilizar JWT ni credenciales de providers.
     ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET: str | None = None
     PHONE_VERIFICATION_HMAC_SECRET: str | None = None
+    PASSWORD_LOGIN_SUBJECT_LIMIT: int = Field(default=5, ge=1)
+    PASSWORD_LOGIN_SUBJECT_WINDOW_SECONDS: int = Field(default=900, ge=1)
+    PASSWORD_LOGIN_CLIENT_LIMIT: int = Field(default=20, ge=1)
+    PASSWORD_LOGIN_CLIENT_WINDOW_SECONDS: int = Field(default=3600, ge=1)
+    PASSWORD_LOGIN_CLEANUP_RETENTION_SECONDS: int = Field(default=86400, ge=1)
+    PASSWORD_LOGIN_CLEANUP_BATCH_SIZE: int = Field(default=500, ge=1, le=1000)
 
     # Fundacion OAuth de ET99.8. Permanece fail-closed hasta que la integracion
     # Google/OIDC, sus secretos y redirects exactos sean habilitados expresamente.
@@ -185,6 +191,16 @@ class Settings(BaseSettings):
             self.GOOGLE_OIDC_FRONTEND_REAUTH_RESULT_PATH
         ):
             raise ValueError("google_oidc_frontend_result_path_invalid")
+        return self
+
+    @model_validator(mode="after")
+    def validate_password_login_rate_limit_configuration(self):
+        longest_window = max(
+            self.PASSWORD_LOGIN_SUBJECT_WINDOW_SECONDS,
+            self.PASSWORD_LOGIN_CLIENT_WINDOW_SECONDS,
+        )
+        if self.PASSWORD_LOGIN_CLEANUP_RETENTION_SECONDS < longest_window:
+            raise ValueError("password_login_cleanup_retention_too_short")
         return self
 
     class Config:

@@ -372,7 +372,7 @@ class AccountActionRateLimit(Base):
     __table_args__ = (
         CheckConstraint(
             "action IN ('email_verification', 'password_reset', 'current_password', "
-            "'phone_verification', 'google_oauth')",
+            "'phone_verification', 'google_oauth', 'password_login')",
             name="ck_account_action_rate_limits_action",
         ),
         CheckConstraint(
@@ -388,6 +388,11 @@ class AccountActionRateLimit(Base):
             "ix_account_action_rate_limits_action_blocked",
             "action",
             "blocked_until",
+        ),
+        Index(
+            "ix_account_action_rate_limits_action_updated",
+            "action",
+            "updated_at",
         ),
     )
 

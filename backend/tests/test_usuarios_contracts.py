@@ -296,7 +296,7 @@ class UsuariosContractsTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
 
-    def test_registrar_usuario_conserva_contrato_privado_actual(self):
+    def test_registrar_usuario_expone_solo_contrato_publico_neutro(self):
         response = client.post(
             "/usuarios/registrar",
             json={
@@ -307,16 +307,10 @@ class UsuariosContractsTests(unittest.TestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.headers["cache-control"], "no-store")
         data = response.json()
-        self.assertIn("id", data)
-        self.assertEqual(data["email"], "nuevo@example.com")
-        self.assertIn("avatar_url", data)
-        self.assertIn("color_fondo", data)
-        self.assertIn("modo_activo", data)
-        self.assertIn("onboarding_completo", data)
-        self.assertIn("provincia", data)
-        self.assertIn("ciudad", data)
+        self.assertEqual(data, {"status": "registration_received"})
 
 
 if __name__ == "__main__":

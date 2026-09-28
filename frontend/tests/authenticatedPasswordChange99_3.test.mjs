@@ -14,7 +14,7 @@ test("Perfil integra el cambio en su superficie privada", async () => {
 test("formulario contiene campos y checklist exactos", async () => {
   const source = await read("../src/features/auth/components/CambiarPasswordForm.jsx");
   for (const text of ["Contraseña actual", "Nueva contraseña", "Confirmar nueva contraseña",
-    "Al menos 8 caracteres", "Una mayúscula", "Una minúscula", "Un número", "Sin espacios"])
+    "Al menos 8 caracteres", "Una mayúscula", "Una minúscula", "Un número", "Sin espacios", "Hasta 72 bytes UTF-8"])
     assert.match(source, new RegExp(text));
   assert.match(source, /passwordRegistroValida/);
   assert.match(source, /Las contraseñas no coinciden\./);
@@ -47,5 +47,5 @@ test("servicio es único consumidor HTTP y formulario limpia secretos tras éxit
 
 test("frontend no implementa hashing, rate limiting ni revocación", async () => {
   const source = await read("../src/features/auth/components/CambiarPasswordForm.jsx");
-  assert.doesNotMatch(source, /bcrypt|hashPassword|attempt_count|blocked_until|FeedGoSession|revocar/i);
+  assert.doesNotMatch(source, /hashPassword|attempt_count|blocked_until|FeedGoSession|revocar/i);
 });

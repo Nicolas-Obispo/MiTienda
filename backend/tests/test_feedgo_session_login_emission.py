@@ -2,7 +2,7 @@ import unittest
 from datetime import timedelta, timezone
 from unittest.mock import patch
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.testclient import TestClient
 from jose import jwt
 from sqlalchemy import create_engine, event
@@ -44,6 +44,12 @@ client = TestClient(app)
 class FeedGoSessionLoginEmissionTests(unittest.TestCase):
     def setUp(self):
         Base.metadata.create_all(engine)
+        self.rate_secret_patch = patch(
+            "app.modules.users.services.account_action_rate_limit_services."
+            "settings.ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET",
+            "login-emission-rate-secret",
+        )
+        self.rate_secret_patch.start()
         password_hash = hash_password("Password1")
         db = SessionLocal()
         db.add(Usuario(
@@ -58,6 +64,7 @@ class FeedGoSessionLoginEmissionTests(unittest.TestCase):
         db.commit(); db.close()
 
     def tearDown(self):
+        self.rate_secret_patch.stop()
         Base.metadata.drop_all(engine)
 
     def login(self, email="user@example.com", password="Password1"):
@@ -126,13 +133,32 @@ class FeedGoSessionLoginEmissionTests(unittest.TestCase):
 
     def test_transaction_failure_returns_no_token_and_leaves_no_session(self):
         db = SessionLocal()
+        commits = 0
+
         def fail_commit(session):
-            raise RuntimeError("forced commit failure")
+            nonlocal commits
+            commits += 1
+            if commits == 3:
+                raise RuntimeError("forced commit failure")
+
         event.listen(db, "before_commit", fail_commit)
-        with self.assertRaises(RuntimeError):
+        request = Request(
+            {
+                "type": "http",
+                "method": "POST",
+                "path": "/usuarios/login",
+                "headers": [],
+                "client": ("testclient", 50000),
+            }
+        )
+        with self.assertRaises(HTTPException) as raised:
             login_endpoint(
-                UsuarioLogin(email="user@example.com", password="Password1"), db
+                UsuarioLogin(email="user@example.com", password="Password1"),
+                request,
+                Response(),
+                db,
             )
+        self.assertEqual(raised.exception.status_code, 503)
         event.remove(db, "before_commit", fail_commit)
         db.close()
         verification = SessionLocal()
@@ -149,7 +175,7 @@ class FeedGoSessionLoginEmissionTests(unittest.TestCase):
                 "acepta_privacidad": True,
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 202)
         db = SessionLocal(); self.assertEqual(db.query(FeedGoSession).count(), 0); db.close()
         self.assertEqual(self.login("new@example.com", "Password2").status_code, 200)
         db = SessionLocal(); self.assertEqual(db.query(FeedGoSession).count(), 1); db.close()

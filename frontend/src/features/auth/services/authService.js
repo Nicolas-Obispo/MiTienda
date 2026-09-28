@@ -7,7 +7,6 @@
 
 import { httpDelete, httpGet, httpPatch, httpPost } from "@core";
 
-export const REGISTRATION_EMAIL_UNAVAILABLE = "registration_email_unavailable";
 export const EMAIL_VERIFICATION_INVALID = "email_verification_invalid";
 export const EMAIL_VERIFICATION_RATE_LIMITED = "email_verification_rate_limited";
 export const PASSWORD_RESET_INVALID = "password_reset_invalid";
@@ -87,15 +86,6 @@ export async function startGoogleReauthentication(tokenJWT, { returnTo }) {
 
 export async function exchangeGoogleReauthenticationSession(handle) {
   return httpPost("/usuarios/google/reauth/session", { handle });
-}
-
-export async function comprobarDisponibilidadEmail(email, options = {}) {
-  return httpPost(
-    "/usuarios/email-disponibilidad",
-    { email },
-    null,
-    { signal: options.signal }
-  );
 }
 
 export async function loginUsuario({ email, password }) {
@@ -196,21 +186,12 @@ export async function registrarUsuario({
   aceptaTerminos,
   aceptaPrivacidad,
 }) {
-  try {
-    return await httpPost("/usuarios/registrar", {
-      email,
-      password,
-      acepta_terminos: aceptaTerminos,
-      acepta_privacidad: aceptaPrivacidad,
-    });
-  } catch (error) {
-    if (error?.status === 409) {
-      const conflict = new Error("Este correo ya está registrado en FeedGo.");
-      conflict.code = REGISTRATION_EMAIL_UNAVAILABLE;
-      throw conflict;
-    }
-    throw new Error(error.message || "Error al registrar usuario");
-  }
+  return httpPost("/usuarios/registrar", {
+    email,
+    password,
+    acepta_terminos: aceptaTerminos,
+    acepta_privacidad: aceptaPrivacidad,
+  });
 }
 
 export async function confirmarEmail(token) {

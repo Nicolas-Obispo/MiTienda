@@ -45,7 +45,9 @@ class EmailAvailabilityRequest(BaseModel):
 
 
 class EmailAvailabilityResponse(BaseModel):
-    disponible: bool
+    """Contrato transitorio sin señal de existencia de cuenta."""
+
+    status: Literal["check_on_submit"]
 
 
 class EmailVerificationConfirmRequest(BaseModel):
@@ -162,8 +164,10 @@ class UsuarioResponse(BaseModel):
     }
 
 
-class UsuarioRegistrationResponse(UsuarioResponse):
-    email_verification_status: Literal["sent", "delivery_failed"]
+class RegistrationReceivedResponse(BaseModel):
+    """Respuesta publica uniforme para un intento valido de registro."""
+
+    status: Literal["registration_received"]
 
 
 class CommercialCapabilitiesResponse(BaseModel):

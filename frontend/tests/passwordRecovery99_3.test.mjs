@@ -33,7 +33,7 @@ test("reset elimina fragmento antes de cualquier submit y no persiste secreto", 
 
 test("reset reutiliza checklist exacto y valida coincidencia", async () => {
   const page = await read("../src/features/auth/pages/RestablecerPassword.jsx");
-  for (const text of ["Al menos 8 caracteres", "Una mayúscula", "Una minúscula", "Un número", "Sin espacios"])
+  for (const text of ["Al menos 8 caracteres", "Una mayúscula", "Una minúscula", "Un número", "Sin espacios", "Hasta 72 bytes UTF-8"])
     assert.match(page, new RegExp(text));
   assert.match(page, /passwordRegistroValida/);
   assert.match(page, /Las contraseñas no coinciden\./);

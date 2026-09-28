@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base
+from app.core.model_registry import import_all_models
 from app.core.security import hash_password
 from app.modules.users.models.identity_models import (
     AccountActionRateLimit,
@@ -33,6 +34,9 @@ from app.modules.users.services.oauth_authorization_transaction_services import 
 from app.modules.users.services.reauthentication_services import (
     reauthenticate_with_password,
 )
+
+
+import_all_models()
 
 
 class AuthenticationMethodServicesTests(unittest.TestCase):
@@ -166,6 +170,35 @@ class AuthenticationMethodServicesTests(unittest.TestCase):
         db.expire_all()
         self.assertIsNone(db.get(FeedGoSession, "original").revoked_at)
         self.assertIsNone(db.get(FeedGoSession, replacement_id))
+        db.close()
+
+    def test_reauthentication_accepts_an_existing_legacy_password_without_reapplying_policy(self):
+        db = self.Session()
+        legacy_hash = hash_password("abc")
+        db.add(
+            PasswordCredential(
+                usuario_id=1,
+                password_hash=legacy_hash,
+                hash_version="bcrypt",
+            )
+        )
+        db.get(Usuario, 1).hashed_password = legacy_hash
+        self.password_session(db, sid="legacy-password-session")
+        db.commit()
+        with patch(
+            "app.modules.users.services.account_action_rate_limit_services.settings."
+            "ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET",
+            "reauth-test-secret",
+        ):
+            replacement = reauthenticate_with_password(
+                db,
+                usuario_id=1,
+                feedgo_session_id="legacy-password-session",
+                current_password="abc",
+                session_ttl=timedelta(hours=2),
+                clock=lambda: self.now,
+            )
+        self.assertEqual(replacement.authentication_method, "password")
         db.close()
 
     def test_link_uses_subject_and_explicit_session_not_email_ownership(self):

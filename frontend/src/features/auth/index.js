@@ -18,8 +18,6 @@ export {
   getMe,
   actualizarPerfilUsuario,
   registrarUsuario,
-  comprobarDisponibilidadEmail,
-  REGISTRATION_EMAIL_UNAVAILABLE,
   EMAIL_VERIFICATION_INVALID,
   EMAIL_VERIFICATION_RATE_LIMITED,
   confirmarEmail,

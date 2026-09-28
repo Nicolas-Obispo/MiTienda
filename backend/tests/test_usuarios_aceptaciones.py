@@ -73,8 +73,15 @@ class UsuariosAceptacionesTests(unittest.TestCase):
     def setUp(self):
         Base.metadata.create_all(bind=engine)
         app.dependency_overrides = {get_db: override_get_db}
+        self.rate_secret_patch = patch(
+            "app.modules.users.services.account_action_rate_limit_services."
+            "settings.ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET",
+            "acceptance-login-rate-secret",
+        )
+        self.rate_secret_patch.start()
 
     def tearDown(self):
+        self.rate_secret_patch.stop()
         app.dependency_overrides = {get_db: override_get_db}
         Base.metadata.drop_all(bind=engine)
 
@@ -150,11 +157,12 @@ class UsuariosAceptacionesTests(unittest.TestCase):
     def test_registro_valido_persiste_dos_evidencias_separadas(self):
         response = self._registrar_usuario_valido()
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 202)
         db = TestingSessionLocal()
+        usuario_id = db.query(Usuario.id).filter(Usuario.email == "nuevo@example.com").scalar()
         evidencias = (
             db.query(UsuarioDocumentoAceptacion)
-            .filter(UsuarioDocumentoAceptacion.usuario_id == response.json()["id"])
+            .filter(UsuarioDocumentoAceptacion.usuario_id == usuario_id)
             .order_by(UsuarioDocumentoAceptacion.documento_tipo)
             .all()
         )
@@ -170,7 +178,7 @@ class UsuariosAceptacionesTests(unittest.TestCase):
     def test_evidencias_registran_metadatos_controlados_por_backend(self):
         response = self._registrar_usuario_valido()
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 202)
         db = TestingSessionLocal()
         evidencias = db.query(UsuarioDocumentoAceptacion).all()
         db.close()
@@ -204,12 +212,13 @@ class UsuariosAceptacionesTests(unittest.TestCase):
         self.assertEqual(db.query(UsuarioDocumentoAceptacion).count(), 0)
         db.close()
 
-    def test_usuario_duplicado_mantiene_conflicto_actual(self):
-        self._registrar_usuario_valido(email="duplicado@example.com")
-
+    def test_usuario_duplicado_mantiene_contrato_publico_uniforme(self):
+        first = self._registrar_usuario_valido(email="duplicado@example.com")
         response = self._registrar_usuario_valido(email="duplicado@example.com")
 
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(first.status_code, 202)
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.json(), first.json())
 
     def test_login_continua_funcionando(self):
         self._registrar_usuario_valido(email="login@example.com")
@@ -248,9 +257,10 @@ class UsuariosAceptacionesTests(unittest.TestCase):
 
     def test_unicidad_usuario_documento_version(self):
         response = self._registrar_usuario_valido()
-        usuario_id = response.json()["id"]
+        self.assertEqual(response.status_code, 202)
 
         db = TestingSessionLocal()
+        usuario_id = db.query(Usuario.id).filter(Usuario.email == "nuevo@example.com").scalar()
         duplicada = UsuarioDocumentoAceptacion(
             usuario_id=usuario_id,
             documento_tipo=DOCUMENTO_TERMINOS_CONDICIONES,
@@ -272,8 +282,9 @@ class UsuariosAceptacionesTests(unittest.TestCase):
 
     def test_owner_legal_detecta_aceptaciones_vigentes_y_ausentes(self):
         response = self._registrar_usuario_valido()
-        usuario_id = response.json()["id"]
+        self.assertEqual(response.status_code, 202)
         db = TestingSessionLocal()
+        usuario_id = db.query(Usuario.id).filter(Usuario.email == "nuevo@example.com").scalar()
         self.assertTrue(tiene_aceptaciones_obligatorias_vigentes(db, usuario_id))
 
         evidencia = (

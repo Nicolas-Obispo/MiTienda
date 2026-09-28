@@ -83,7 +83,7 @@ export default function RestablecerPassword() {
               <p>La contraseña debe tener:</p>
               {[["longitud", "Al menos 8 caracteres"], ["mayuscula", "Una mayúscula"],
                 ["minuscula", "Una minúscula"], ["numero", "Un número"],
-                ["sinEspacios", "Sin espacios"]].map(([key, label]) => (
+                ["sinEspacios", "Sin espacios"], ["limiteBcrypt", "Hasta 72 bytes UTF-8"]].map(([key, label]) => (
                 <p key={key} className={requirements[key] ? "text-success-text" : passwordTouched ? "text-danger-text" : undefined}>
                   <span aria-hidden="true">{requirements[key] ? "✓" : "○"}</span> {label}
                 </p>

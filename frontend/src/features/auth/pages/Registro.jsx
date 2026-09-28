@@ -1,13 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getInternalReturnTo } from "@core/navigation/internalReturnTo";
 import {
-  REGISTRATION_EMAIL_UNAVAILABLE,
-  comprobarDisponibilidadEmail,
   registrarUsuario,
-  loginUsuario,
   startGoogleAuthorization,
-  useAuth,
   useGoogleIdentityAvailability,
 } from "@features/auth";
 import { Alert, Button, FormControl, Input, PasswordInput, Surface } from "@shared";
@@ -26,8 +22,7 @@ import {
  * - Capturar email y password
  * - Validar confirmación de password en frontend
  * - Registrar usuario en backend
- * - Hacer login automático después del registro
- * - Redirigir al feed
+ * - Comunicar un resultado neutral sin revelar existencia de cuenta
  */
 export default function Registro() {
   const location = useLocation();
@@ -42,50 +37,16 @@ export default function Registro() {
   const [confirmacionTocada, setConfirmacionTocada] = useState(false);
   const [emailTocado, setEmailTocado] = useState(false);
   const [emailFormatoValido, setEmailFormatoValido] = useState(true);
-  const [estadoDisponibilidad, setEstadoDisponibilidad] = useState("idle");
-
   const [errorMensaje, setErrorMensaje] = useState("");
+  const [mensajeRegistro, setMensajeRegistro] = useState("");
   const [cargando, setCargando] = useState(false);
   const [cargandoGoogle, setCargandoGoogle] = useState(false);
   const emailRef = useRef(null);
-  const solicitudEmailRef = useRef(0);
   const googleAuthorizationInFlightRef = useRef(false);
 
-  const { login } = useAuth();
   const { isAvailable: googleIdentityAvailable } = useGoogleIdentityAvailability();
   const requisitosPassword = evaluarPasswordRegistro(password);
   const passwordValida = passwordRegistroValida(password);
-
-  useEffect(() => {
-    const solicitudId = solicitudEmailRef.current + 1;
-    solicitudEmailRef.current = solicitudId;
-    setEstadoDisponibilidad("idle");
-
-    if (!email || !emailRef.current?.checkValidity()) return undefined;
-
-    const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      setEstadoDisponibilidad("checking");
-      try {
-        const resultado = await comprobarDisponibilidadEmail(email, {
-          signal: controller.signal,
-        });
-        if (solicitudEmailRef.current !== solicitudId) return;
-        const siguienteEstado = resultado.disponible ? "available" : "unavailable";
-        setEstadoDisponibilidad(siguienteEstado);
-      } catch (error) {
-        if (error?.name === "AbortError") return;
-        if (solicitudEmailRef.current === solicitudId) {
-          setEstadoDisponibilidad("error");
-        }
-      }
-    }, 500);
-
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [email]);
 
   async function manejarSubmitRegistro(event) {
     event.preventDefault();
@@ -93,10 +54,6 @@ export default function Registro() {
     setEmailTocado(true);
     setPasswordTocado(true);
     setConfirmacionTocada(true);
-
-    if (estadoDisponibilidad === "unavailable") {
-      return;
-    }
 
     if (!passwordValida) {
       return;
@@ -121,37 +78,19 @@ export default function Registro() {
     setCargando(true);
 
     try {
-      // 1. Registramos el usuario en backend.
-      const registro = await registrarUsuario({
+      await registrarUsuario({
         email,
         password,
         aceptaTerminos,
         aceptaPrivacidad,
       });
-
-      // 2. Iniciamos sesión automáticamente.
-      const token = await loginUsuario({ email, password });
-
-      // 3. Publicamos la sesion junto con su destino post-auth. El guard de
-      // rutas publicas resuelve asi un unico destino deterministico.
-      login(token, {
-        postAuthDestination: {
-          pathname: "/verificar-email",
-          state: {
-            registrationEmailStatus: registro.email_verification_status,
-            returnTo,
-          },
-        },
-      });
-
-      // 4. Activamos onboarding.
-      sessionStorage.setItem("show_miplaza_welcome", "true");
+      setMensajeRegistro(
+        "Si pudimos crear la cuenta, ya podés ingresar. Si ya existía, ingresá o recuperá el acceso."
+      );
+      setPassword("");
+      setConfirmarPassword("");
     } catch (error) {
-      if (error.code === REGISTRATION_EMAIL_UNAVAILABLE) {
-        setEstadoDisponibilidad("unavailable");
-      } else {
-        setErrorMensaje(error.message || "Error al registrar usuario.");
-      }
+      setErrorMensaje(error.message || "Error al registrar usuario.");
     } finally {
       setCargando(false);
     }
@@ -228,51 +167,24 @@ export default function Registro() {
               onChange={(e) => {
                 setEmail(e.target.value);
                 setEmailFormatoValido(e.target.validity.valid);
-                setEstadoDisponibilidad("idle");
               }}
               onBlur={(e) => {
                 setEmailTocado(true);
                 setEmailFormatoValido(e.target.validity.valid);
               }}
               required
-              invalid={
-                estadoDisponibilidad === "unavailable" ||
-                (emailTocado && !emailFormatoValido)
-              }
-              aria-describedby="registro-email-disponibilidad"
+              invalid={emailTocado && !emailFormatoValido}
+              aria-describedby="registro-email-feedback"
               placeholder="nombre@correo.com"
               className="text-sm"
             />
-            <div id="registro-email-disponibilidad" aria-live="polite">
+            <div id="registro-email-feedback" aria-live="polite">
               {emailTocado && email && !emailFormatoValido && (
                 <p className="mt-2 text-sm text-danger-text" role="alert">
                   Ingresá un correo electrónico válido.
                 </p>
               )}
 
-              {estadoDisponibilidad === "unavailable" && (
-                <p className="mt-2 text-sm text-danger-text" role="status">
-                  Este usuario ya está registrado. Ingresá otro.
-                </p>
-              )}
-
-              {estadoDisponibilidad === "checking" && (
-                <p className="mt-2 text-sm text-secondary" role="status">
-                  Comprobando correo...
-                </p>
-              )}
-
-              {estadoDisponibilidad === "available" && (
-                <p className="mt-2 text-sm text-success-text" role="status">
-                  Usuario disponible.
-                </p>
-              )}
-
-              {estadoDisponibilidad === "error" && (
-                <p className="mt-2 text-sm text-warning-text" role="status">
-                  No pudimos comprobarlo ahora. Se verificará al crear la cuenta.
-                </p>
-              )}
             </div>
           </FormControl>
 
@@ -308,6 +220,7 @@ export default function Registro() {
                 ["minuscula", "Una minúscula"],
                 ["numero", "Un número"],
                 ["sinEspacios", "Sin espacios"],
+                ["limiteBcrypt", "Hasta 72 bytes UTF-8"],
               ].map(([requisito, texto]) => (
                 <p
                   key={requisito}
@@ -325,11 +238,6 @@ export default function Registro() {
                   {texto}
                 </p>
               ))}
-              {password.length > 0 && !requisitosPassword.limiteBcrypt && (
-                <p className="text-danger-text" role="alert">
-                  La contraseña es demasiado larga.
-                </p>
-              )}
             </div>
           </FormControl>
 
@@ -422,11 +330,16 @@ export default function Registro() {
               {errorMensaje}
             </Alert>
           )}
+          {mensajeRegistro && (
+            <Alert role="status" variant="success" className="break-words">
+              {mensajeRegistro}
+            </Alert>
+          )}
 
           {/* Botón */}
           <Button
             type="submit"
-            disabled={cargando || estadoDisponibilidad === "unavailable"}
+            disabled={cargando}
             variant="primary"
             className="w-full px-4 py-2 text-sm font-bold"
           >

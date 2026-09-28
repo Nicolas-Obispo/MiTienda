@@ -9,11 +9,11 @@ from __future__ import annotations
 import hashlib
 import hmac
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Callable
 
-from sqlalchemy import select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.dialects.mysql import insert as mysql_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
@@ -26,8 +26,16 @@ PASSWORD_RESET = "password_reset"
 CURRENT_PASSWORD = "current_password"
 PHONE_VERIFICATION = "phone_verification"
 GOOGLE_OAUTH = "google_oauth"
+PASSWORD_LOGIN = "password_login"
 ALLOWED_ACTIONS = frozenset(
-    {EMAIL_VERIFICATION, PASSWORD_RESET, CURRENT_PASSWORD, PHONE_VERIFICATION, GOOGLE_OAUTH}
+    {
+        EMAIL_VERIFICATION,
+        PASSWORD_RESET,
+        CURRENT_PASSWORD,
+        PHONE_VERIFICATION,
+        GOOGLE_OAUTH,
+        PASSWORD_LOGIN,
+    }
 )
 
 
@@ -45,8 +53,86 @@ class _Policy:
     limit: int
 
 
+@dataclass(frozen=True)
+class PasswordLoginRateLimitConfig:
+    subject_limit: int
+    subject_window_seconds: int
+    client_limit: int
+    client_window_seconds: int
+    cleanup_retention_seconds: int
+    cleanup_batch_size: int
+
+    def validate(self) -> None:
+        values = (
+            self.subject_limit,
+            self.subject_window_seconds,
+            self.client_limit,
+            self.client_window_seconds,
+            self.cleanup_retention_seconds,
+            self.cleanup_batch_size,
+        )
+        if any(value <= 0 for value in values):
+            raise ValueError("password_login_rate_limit_configuration_invalid")
+        if self.cleanup_batch_size > 1000:
+            raise ValueError("password_login_cleanup_batch_too_large")
+        if self.cleanup_retention_seconds < max(
+            self.subject_window_seconds,
+            self.client_window_seconds,
+        ):
+            raise ValueError("password_login_cleanup_retention_too_short")
+
+
+@dataclass(frozen=True)
+class PasswordLoginReservation:
+    subject_digest: str = field(repr=False)
+    subject_window_started_at: datetime
+    client_digest: str = field(repr=False)
+    client_window_started_at: datetime
+
+
+@dataclass(frozen=True)
+class PasswordLoginReservationResult:
+    status: str
+    retry_after_seconds: int | None = None
+    reservation: PasswordLoginReservation | None = field(default=None, repr=False)
+
+
+@dataclass(frozen=True)
+class PasswordLoginSuccessResult:
+    status: str
+    subject_cleared: bool = False
+    client_released: bool = False
+
+
+@dataclass(frozen=True)
+class PasswordLoginCleanupResult:
+    status: str
+    deleted_count: int = 0
+
+
+@dataclass(frozen=True)
+class _LoginBucket:
+    dimension: str
+    digest: str
+    duration: timedelta
+    limit: int
+
+
 def _utcnow() -> datetime:
     return datetime.utcnow()
+
+
+def password_login_rate_limit_config() -> PasswordLoginRateLimitConfig:
+    config = PasswordLoginRateLimitConfig(
+        subject_limit=settings.PASSWORD_LOGIN_SUBJECT_LIMIT,
+        subject_window_seconds=settings.PASSWORD_LOGIN_SUBJECT_WINDOW_SECONDS,
+        client_limit=settings.PASSWORD_LOGIN_CLIENT_LIMIT,
+        client_window_seconds=settings.PASSWORD_LOGIN_CLIENT_WINDOW_SECONDS,
+        cleanup_retention_seconds=settings.PASSWORD_LOGIN_CLEANUP_RETENTION_SECONDS,
+        cleanup_batch_size=settings.PASSWORD_LOGIN_CLEANUP_BATCH_SIZE,
+    )
+    config.validate()
+    return config
 
 
 def _secret_bytes(secret: str | None = None) -> bytes:
@@ -85,6 +171,16 @@ def client_subject(client_host: str) -> str:
     if not client_host:
         raise ValueError("account_action_client_missing")
     return f"client:{client_host}"
+
+
+def direct_client_host(request) -> str:
+    """Resuelve sólo el peer TCP; no confía en headers de proxies."""
+
+    client = getattr(request, "client", None)
+    host = getattr(client, "host", None)
+    if not isinstance(host, str) or not host.strip():
+        raise ValueError("account_action_client_missing")
+    return host.strip()
 
 
 def _ensure_bucket(db: Session, *, action: str, digest: str, now: datetime) -> None:
@@ -153,6 +249,244 @@ def _lock_buckets(
 
 def _seconds(until: datetime, now: datetime) -> int:
     return max(1, int((until - now).total_seconds() + 0.999))
+
+
+def _rollback_safely(db: Session) -> None:
+    try:
+        db.rollback()
+    except Exception:
+        # La indisponibilidad del store sigue siendo un resultado fail-closed.
+        pass
+
+
+def _password_login_buckets(
+    *,
+    email_canonical: str,
+    client_host: str,
+    config: PasswordLoginRateLimitConfig,
+    secret: str | None,
+) -> tuple[_LoginBucket, _LoginBucket]:
+    config.validate()
+    subject = canonical_destination_subject(email_canonical)
+    client = client_subject(client_host)
+    return (
+        _LoginBucket(
+            dimension="subject",
+            digest=subject_digest(
+                action=PASSWORD_LOGIN,
+                scope="subject",
+                subject=subject,
+                secret=secret,
+            ),
+            duration=timedelta(seconds=config.subject_window_seconds),
+            limit=config.subject_limit,
+        ),
+        _LoginBucket(
+            dimension="client",
+            digest=subject_digest(
+                action=PASSWORD_LOGIN,
+                scope="client",
+                subject=client,
+                secret=secret,
+            ),
+            duration=timedelta(seconds=config.client_window_seconds),
+            limit=config.client_limit,
+        ),
+    )
+
+
+def _lock_password_login_buckets(
+    db: Session,
+    *,
+    buckets: tuple[_LoginBucket, _LoginBucket],
+    now: datetime,
+) -> dict[str, tuple[_LoginBucket, AccountActionRateLimit]]:
+    ordered = sorted(buckets, key=lambda bucket: bucket.digest)
+    for bucket in ordered:
+        _ensure_bucket(db, action=PASSWORD_LOGIN, digest=bucket.digest, now=now)
+
+    locked: dict[str, tuple[_LoginBucket, AccountActionRateLimit]] = {}
+    for bucket in ordered:
+        row = db.execute(
+            select(AccountActionRateLimit)
+            .where(
+                AccountActionRateLimit.action == PASSWORD_LOGIN,
+                AccountActionRateLimit.subject_digest == bucket.digest,
+            )
+            .with_for_update()
+        ).scalar_one()
+        if now >= row.window_started_at + bucket.duration:
+            row.window_started_at = now
+            row.attempt_count = 0
+            row.blocked_until = None
+        locked[bucket.dimension] = (bucket, row)
+    return locked
+
+
+def reserve_password_login_attempt(
+    db: Session,
+    *,
+    email_canonical: str,
+    client_host: str,
+    config: PasswordLoginRateLimitConfig | None = None,
+    now: datetime | None = None,
+    secret: str | None = None,
+) -> PasswordLoginReservationResult:
+    """Reserva subject+client y confirma el consumo antes del futuro bcrypt.
+
+    Esta operación constituye deliberadamente una frontera transaccional: el
+    caller no puede devolver capacidad mediante un rollback posterior.
+    """
+
+    current = (now or _utcnow()).replace(microsecond=0)
+    try:
+        effective_config = config or password_login_rate_limit_config()
+        buckets = _password_login_buckets(
+            email_canonical=email_canonical,
+            client_host=client_host,
+            config=effective_config,
+            secret=secret,
+        )
+        locked = _lock_password_login_buckets(db, buckets=buckets, now=current)
+        retry_after: list[int] = []
+        for bucket, row in locked.values():
+            if row.blocked_until and current < row.blocked_until:
+                retry_after.append(_seconds(row.blocked_until, current))
+            elif row.attempt_count >= bucket.limit:
+                until = row.window_started_at + bucket.duration
+                row.blocked_until = until
+                retry_after.append(_seconds(until, current))
+
+        if retry_after:
+            db.flush()
+            db.commit()
+            return PasswordLoginReservationResult(
+                status="rate_limited",
+                retry_after_seconds=max(retry_after),
+            )
+
+        for _, row in locked.values():
+            row.attempt_count += 1
+        db.flush()
+        reservation = PasswordLoginReservation(
+            subject_digest=locked["subject"][1].subject_digest,
+            subject_window_started_at=locked["subject"][1].window_started_at,
+            client_digest=locked["client"][1].subject_digest,
+            client_window_started_at=locked["client"][1].window_started_at,
+        )
+        db.commit()
+        return PasswordLoginReservationResult(
+            status="reserved",
+            reservation=reservation,
+        )
+    except Exception:
+        _rollback_safely(db)
+        return PasswordLoginReservationResult(status="unavailable")
+
+
+def complete_password_login_success(
+    db: Session,
+    *,
+    reservation: PasswordLoginReservation,
+    now: datetime | None = None,
+) -> PasswordLoginSuccessResult:
+    """Limpia subject y devuelve sólo la reserva client de la misma ventana."""
+
+    current = (now or _utcnow()).replace(microsecond=0)
+    keys = sorted(
+        (
+            ("subject", reservation.subject_digest),
+            ("client", reservation.client_digest),
+        ),
+        key=lambda item: item[1],
+    )
+    try:
+        rows: dict[str, AccountActionRateLimit] = {}
+        for dimension, digest in keys:
+            row = db.execute(
+                select(AccountActionRateLimit)
+                .where(
+                    AccountActionRateLimit.action == PASSWORD_LOGIN,
+                    AccountActionRateLimit.subject_digest == digest,
+                )
+                .with_for_update()
+            ).scalar_one_or_none()
+            if row is None:
+                raise RuntimeError("password_login_reservation_missing")
+            rows[dimension] = row
+
+        subject_cleared = (
+            rows["subject"].window_started_at
+            == reservation.subject_window_started_at
+            and rows["subject"].attempt_count > 0
+        )
+        if subject_cleared:
+            rows["subject"].window_started_at = current
+            rows["subject"].attempt_count = 0
+            rows["subject"].blocked_until = None
+
+        client_released = (
+            subject_cleared
+            and rows["client"].window_started_at
+            == reservation.client_window_started_at
+            and rows["client"].attempt_count > 0
+        )
+        if client_released:
+            rows["client"].attempt_count -= 1
+        db.flush()
+        db.commit()
+        return PasswordLoginSuccessResult(
+            status="completed",
+            subject_cleared=subject_cleared,
+            client_released=client_released,
+        )
+    except Exception:
+        _rollback_safely(db)
+        return PasswordLoginSuccessResult(status="unavailable")
+
+
+def cleanup_expired_password_login_buckets(
+    db: Session,
+    *,
+    config: PasswordLoginRateLimitConfig | None = None,
+    now: datetime | None = None,
+) -> PasswordLoginCleanupResult:
+    """Elimina por lote buckets inactivos; su scheduling es responsabilidad operativa."""
+
+    current = (now or _utcnow()).replace(microsecond=0)
+    try:
+        effective_config = config or password_login_rate_limit_config()
+        effective_config.validate()
+        cutoff = current - timedelta(
+            seconds=effective_config.cleanup_retention_seconds
+        )
+        ids = list(
+            db.scalars(
+                select(AccountActionRateLimit.id)
+                .where(
+                    AccountActionRateLimit.action == PASSWORD_LOGIN,
+                    AccountActionRateLimit.updated_at < cutoff,
+                    or_(
+                        AccountActionRateLimit.blocked_until.is_(None),
+                        AccountActionRateLimit.blocked_until <= current,
+                    ),
+                )
+                .order_by(AccountActionRateLimit.updated_at, AccountActionRateLimit.id)
+                .limit(effective_config.cleanup_batch_size)
+                .with_for_update(skip_locked=True)
+            )
+        )
+        if ids:
+            db.execute(
+                delete(AccountActionRateLimit).where(
+                    AccountActionRateLimit.id.in_(ids)
+                )
+            )
+        db.commit()
+        return PasswordLoginCleanupResult(status="completed", deleted_count=len(ids))
+    except Exception:
+        _rollback_safely(db)
+        return PasswordLoginCleanupResult(status="unavailable")
 
 
 def _record(

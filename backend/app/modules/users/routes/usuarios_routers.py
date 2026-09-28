@@ -27,7 +27,7 @@ from app.modules.users.schemas.usuarios_schemas import (
     EmailAvailabilityResponse,
     EmailVerificationConfirmRequest,
     EmailVerificationResponse,
-    UsuarioRegistrationResponse,
+    RegistrationReceivedResponse,
     PasswordRecoveryRequest,
     PasswordRecoveryResponse,
     PasswordResetRequest,
@@ -70,6 +70,7 @@ from app.core.auth import (
 )
 from datetime import datetime, timedelta
 from app.core.config import settings
+from app.core.operation_metrics import METRIC_AUTH_LOGIN_COUNT, increment_counter
 
 # Modelo para logout
 from app.modules.users.models.identity_models import PasswordCredential
@@ -83,10 +84,6 @@ from app.modules.users.services.usuarios_services import (
     actualizar_perfil_usuario,
     completar_onboarding_usuario,
     cambiar_modo_usuario,
-)
-from app.modules.users.services.email_availability import (
-    email_availability_rate_limiter,
-    is_email_available,
 )
 from app.modules.users.services.email_verification_services import (
     EmailVerificationError,
@@ -105,8 +102,12 @@ from app.modules.users.services.authenticated_password_services import (
     change_authenticated_password,
 )
 from app.modules.users.services.account_action_rate_limit_services import (
+    complete_password_login_success,
+    direct_client_host,
     record_authentication_method_management,
+    reserve_password_login_attempt,
 )
+from app.modules.users.services.email_normalization import canonicalize_email
 from app.modules.users.services.authentication_method_services import (
     AuthenticationMethodError,
     add_password_credential,
@@ -133,6 +134,14 @@ router = APIRouter(
 )
 
 AUTH_METHOD_NO_STORE = {"Cache-Control": "private, no-store"}
+LOGIN_NO_STORE = {"Cache-Control": "no-store"}
+
+
+def _record_login_outcome(outcome: str) -> None:
+    increment_counter(
+        METRIC_AUTH_LOGIN_COUNT,
+        tags={"route": "/usuarios/login", "outcome": outcome},
+    )
 
 
 def _authentication_method_http_error(exc: AuthenticationMethodError) -> HTTPException:
@@ -185,7 +194,11 @@ def _authorize_authentication_method_mutation(
 # =============================================================
 #  REGISTRAR USUARIO
 # =============================================================
-@router.post("/registrar", response_model=UsuarioRegistrationResponse)
+@router.post(
+    "/registrar",
+    response_model=RegistrationReceivedResponse,
+    status_code=202,
+)
 def registrar_usuario_endpoint(
     payload: UsuarioCreate,
     response: Response,
@@ -193,14 +206,12 @@ def registrar_usuario_endpoint(
 ):
     usuario = crear_usuario(db, payload)
 
-    if usuario is None:
-        raise HTTPException(status_code=409, detail="No se pudo completar el registro")
-
-    delivery = send_registration_verification(db=db, usuario=usuario)
+    # La existencia previa no altera el contrato publico. La entrega de
+    # verificacion sigue siendo best-effort y solo aplica a una cuenta creada.
+    if usuario is not None:
+        send_registration_verification(db=db, usuario=usuario)
     response.headers["Cache-Control"] = "no-store"
-    return UsuarioResponse.model_validate(usuario).model_dump() | {
-        "email_verification_status": delivery.status,
-    }
+    return RegistrationReceivedResponse(status="registration_received")
 
 
 @router.post(
@@ -458,11 +469,81 @@ def desvincular_google_endpoint(
 #  LOGIN (AUTENTICACIÓN)
 # =============================================================
 @router.post("/login")
-def login_endpoint(payload: UsuarioLogin, db: Session = Depends(get_db)):
-    usuario = autenticar_usuario(db, payload)
+def login_endpoint(
+    payload: UsuarioLogin,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    email_canonical = canonicalize_email(str(payload.email))
+    _record_login_outcome("attempt")
+    try:
+        client_host = direct_client_host(request)
+    except ValueError:
+        _record_login_outcome("limiter_unavailable")
+        raise HTTPException(
+            status_code=503,
+            detail="Inicio de sesión temporalmente no disponible",
+            headers=LOGIN_NO_STORE,
+        ) from None
+
+    reservation_result = reserve_password_login_attempt(
+        db,
+        email_canonical=email_canonical,
+        client_host=client_host,
+    )
+    if reservation_result.status == "rate_limited":
+        _record_login_outcome("rate_limited")
+        raise HTTPException(
+            status_code=429,
+            detail="Demasiados intentos. Intentá nuevamente más tarde",
+            headers=LOGIN_NO_STORE
+            | {"Retry-After": str(reservation_result.retry_after_seconds or 1)},
+        )
+    if (
+        reservation_result.status != "reserved"
+        or reservation_result.reservation is None
+    ):
+        _record_login_outcome("limiter_unavailable")
+        raise HTTPException(
+            status_code=503,
+            detail="Inicio de sesión temporalmente no disponible",
+            headers=LOGIN_NO_STORE,
+        )
+
+    try:
+        usuario = autenticar_usuario(
+            db,
+            payload,
+            email_canonical=email_canonical,
+        )
+    except Exception:
+        _record_login_outcome("authentication_unavailable")
+        raise HTTPException(
+            status_code=503,
+            detail="Inicio de sesión temporalmente no disponible",
+            headers=LOGIN_NO_STORE,
+        ) from None
 
     if not usuario:
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        _record_login_outcome("invalid_credentials")
+        raise HTTPException(
+            status_code=401,
+            detail="Credenciales inválidas",
+            headers=LOGIN_NO_STORE,
+        )
+
+    completion = complete_password_login_success(
+        db,
+        reservation=reservation_result.reservation,
+    )
+    if completion.status != "completed":
+        _record_login_outcome("limiter_unavailable")
+        raise HTTPException(
+            status_code=503,
+            detail="Inicio de sesión temporalmente no disponible",
+            headers=LOGIN_NO_STORE,
+        )
 
     try:
         feedgo_session = create_feedgo_session(
@@ -481,12 +562,19 @@ def login_endpoint(payload: UsuarioLogin, db: Session = Depends(get_db)):
         db.commit()
     except Exception:
         db.rollback()
-        raise
+        _record_login_outcome("authentication_unavailable")
+        raise HTTPException(
+            status_code=503,
+            detail="Inicio de sesión temporalmente no disponible",
+            headers=LOGIN_NO_STORE,
+        ) from None
 
+    _record_login_outcome("success")
+    response.headers["Cache-Control"] = "no-store"
     return {
         "mensaje": "Inicio de sesión exitoso ✅",
         "token": token,
-        "usuario_id": usuario.id
+        "usuario_id": usuario.id,
     }
 
 
@@ -621,25 +709,17 @@ def confirmar_verificacion_telefono(
 @router.post(
     "/email-disponibilidad",
     response_model=EmailAvailabilityResponse,
-    summary="Comprobar disponibilidad de email para registro",
+    summary="Compatibilidad transitoria: decidir el registro al enviar",
 )
 def email_disponibilidad_endpoint(
     payload: EmailAvailabilityRequest,
-    request: Request,
-    db: Session = Depends(get_db),
+    response: Response,
 ):
-    # No se aceptan headers reenviados como identidad del cliente sin un proxy
-    # confiable configurado. Tampoco se registra el email consultado.
-    client_key = request.client.host if request.client else "unknown"
-    if not email_availability_rate_limiter.allow(client_key):
-        raise HTTPException(
-            status_code=429,
-            detail="Demasiadas solicitudes. Intenta nuevamente mas tarde.",
-            headers={"Retry-After": "60"},
-        )
-    return EmailAvailabilityResponse(
-        disponible=is_email_available(db, str(payload.email))
-    )
+    # El payload conserva validacion sintactica para clientes compatibles, pero
+    # no se consulta ni persiste su email. El submit es la unica autoridad.
+    del payload
+    response.headers["Cache-Control"] = "no-store"
+    return EmailAvailabilityResponse(status="check_on_submit")
 
 
 # =============================================================

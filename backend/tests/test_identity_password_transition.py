@@ -13,7 +13,10 @@ from sqlalchemy.pool import StaticPool
 from app.core.database import Base, get_db
 from app.core.model_registry import import_all_models
 from app.core.security import hash_password
-from app.modules.users.models.identity_models import PasswordCredential
+from app.modules.users.models.identity_models import (
+    AccountActionToken,
+    PasswordCredential,
+)
 from app.modules.users.models.usuarios_documentos_aceptaciones_models import (
     UsuarioDocumentoAceptacion,
 )
@@ -21,10 +24,6 @@ from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.routes.usuarios_routers import router as usuarios_router
 from app.modules.users.schemas.usuarios_schemas import UsuarioCreate
 from app.modules.users.services.usuarios_services import crear_usuario
-from app.modules.users.services.email_availability import (
-    EmailAvailabilityRateLimiter,
-    email_availability_rate_limiter,
-)
 
 
 import_all_models()
@@ -63,9 +62,15 @@ def registration_payload(email: str, password: str = "Password1-segura") -> dict
 class IdentityPasswordTransitionTests(unittest.TestCase):
     def setUp(self):
         Base.metadata.create_all(bind=engine)
-        email_availability_rate_limiter.reset()
+        self.rate_secret_patch = patch(
+            "app.modules.users.services.account_action_rate_limit_services."
+            "settings.ACCOUNT_ACTION_RATE_LIMIT_HMAC_SECRET",
+            "identity-transition-rate-secret",
+        )
+        self.rate_secret_patch.start()
 
     def tearDown(self):
+        self.rate_secret_patch.stop()
         Base.metadata.drop_all(bind=engine)
 
     def test_registro_atomico_usa_canonical_y_un_solo_hash(self):
@@ -78,7 +83,9 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
                 json=registration_payload("  Persona@Example.COM  "),
             )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.json(), {"status": "registration_received"})
+        self.assertEqual(response.headers["cache-control"], "no-store")
         db = TestingSessionLocal()
         usuario = db.query(Usuario).one()
         credencial = db.query(PasswordCredential).one()
@@ -90,23 +97,89 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
         self.assertEqual(hasher.call_count, 1)
         db.close()
 
-    def test_duplicado_canonico_conserva_conflicto_generico(self):
-        first = client.post(
-            "/usuarios/registrar",
-            json=registration_payload("Persona@Example.com"),
-        )
-        second = client.post(
-            "/usuarios/registrar",
-            json=registration_payload("persona@example.COM"),
-        )
+    def test_registro_nuevo_y_duplicado_comparten_contrato_publico(self):
+        with patch(
+            "app.modules.users.routes.usuarios_routers."
+            "send_registration_verification",
+        ) as delivery:
+            first = client.post(
+                "/usuarios/registrar",
+                json=registration_payload("Persona@Example.com"),
+            )
+        self.assertEqual(delivery.call_count, 1)
 
-        self.assertEqual(first.status_code, 200)
-        self.assertEqual(second.status_code, 409)
-        self.assertEqual(second.json(), {"detail": "No se pudo completar el registro"})
+        db = TestingSessionLocal()
+        usuario = db.query(Usuario).one()
+        credencial = db.query(PasswordCredential).one()
+        original_legacy_hash = usuario.hashed_password
+        original_credential_hash = credencial.password_hash
+        db.close()
+
+        with (
+            patch(
+                "app.modules.users.services.usuarios_services.hash_password",
+                wraps=hash_password,
+            ) as duplicate_hasher,
+            patch(
+                "app.modules.users.routes.usuarios_routers."
+                "send_registration_verification",
+            ) as duplicate_delivery,
+        ):
+            second = client.post(
+                "/usuarios/registrar",
+                json=registration_payload(
+                    "persona@example.COM",
+                    "Different2-secure",
+                ),
+            )
+
+        self.assertEqual(duplicate_hasher.call_count, 1)
+        duplicate_delivery.assert_not_called()
+
+        self.assertEqual(first.status_code, 202)
+        self.assertEqual(second.status_code, 202)
+        self.assertEqual(first.json(), {"status": "registration_received"})
+        self.assertEqual(second.json(), first.json())
+        self.assertEqual(first.headers["cache-control"], "no-store")
+        self.assertEqual(second.headers["cache-control"], "no-store")
         db = TestingSessionLocal()
         self.assertEqual(db.query(Usuario).count(), 1)
         self.assertEqual(db.query(PasswordCredential).count(), 1)
         self.assertEqual(db.query(UsuarioDocumentoAceptacion).count(), 2)
+        self.assertEqual(db.query(AccountActionToken).count(), 0)
+        usuario = db.query(Usuario).one()
+        credencial = db.query(PasswordCredential).one()
+        self.assertEqual(usuario.hashed_password, original_legacy_hash)
+        self.assertEqual(credencial.password_hash, original_credential_hash)
+        db.close()
+
+    def test_registro_duplicado_con_password_invalida_conserva_422(self):
+        with patch(
+            "app.modules.users.routes.usuarios_routers."
+            "send_registration_verification",
+        ):
+            created = client.post(
+                "/usuarios/registrar",
+                json=registration_payload("existing-policy@example.com"),
+            )
+        self.assertEqual(created.status_code, 202)
+
+        with patch(
+            "app.modules.users.services.usuarios_services.hash_password",
+        ) as hasher:
+            rejected = client.post(
+                "/usuarios/registrar",
+                json=registration_payload(
+                    "existing-policy@example.com",
+                    "weak",
+                ),
+            )
+
+        self.assertEqual(rejected.status_code, 422)
+        hasher.assert_not_called()
+        db = TestingSessionLocal()
+        self.assertEqual(db.query(Usuario).count(), 1)
+        self.assertEqual(db.query(PasswordCredential).count(), 1)
         db.close()
 
     def test_login_canonical_usa_password_credential_como_owner(self):
@@ -204,18 +277,42 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
             "/usuarios/registrar",
             json=registration_payload("long@example.com", "Aa1" + "x" * 70),
         )
+        unicode_boundary = client.post(
+            "/usuarios/registrar",
+            json=registration_payload("unicode@example.com", "Áa١" + "x" * 67),
+        )
+        unicode_too_long = client.post(
+            "/usuarios/registrar",
+            json=registration_payload("unicode-long@example.com", "Áa١" + "x" * 68),
+        )
 
-        self.assertEqual(valid.status_code, 200)
-        self.assertEqual(boundary.status_code, 200)
+        self.assertEqual(valid.status_code, 202)
+        self.assertEqual(boundary.status_code, 202)
         self.assertEqual(too_long.status_code, 422)
+        self.assertEqual(unicode_boundary.status_code, 202)
+        self.assertEqual(unicode_too_long.status_code, 422)
 
-    def test_disponibilidad_email_es_minima_y_canonica(self):
+    def test_servicio_de_alta_revalida_la_politica_al_omitir_el_schema(self):
+        payload = UsuarioCreate.model_construct(
+            email="direct@example.com",
+            password="weak",
+            acepta_terminos=True,
+            acepta_privacidad=True,
+        )
+        db = TestingSessionLocal()
+        with self.assertRaises(ValueError):
+            crear_usuario(db, payload)
+        self.assertEqual(db.query(Usuario).count(), 0)
+        db.close()
+
+    def test_disponibilidad_email_es_neutra_y_no_revela_existencia(self):
         available = client.post(
             "/usuarios/email-disponibilidad",
             json={"email": "  Persona@Example.COM  "},
         )
         self.assertEqual(available.status_code, 200)
-        self.assertEqual(available.json(), {"disponible": True})
+        self.assertEqual(available.json(), {"status": "check_on_submit"})
+        self.assertEqual(available.headers["cache-control"], "no-store")
 
         client.post(
             "/usuarios/registrar",
@@ -226,41 +323,24 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
             json={"email": " PERSONA@example.COM "},
         )
         self.assertEqual(occupied.status_code, 200)
-        self.assertEqual(occupied.json(), {"disponible": False})
-        self.assertEqual(set(occupied.json()), {"disponible"})
+        self.assertEqual(occupied.json(), available.json())
+        self.assertEqual(occupied.headers["cache-control"], "no-store")
 
-    def test_disponibilidad_rechaza_email_invalido_y_limita_abuso(self):
+    def test_disponibilidad_conserva_validacion_sintactica_sin_rate_limiter_local(self):
         invalid = client.post(
             "/usuarios/email-disponibilidad",
             json={"email": "no-es-email"},
         )
         self.assertEqual(invalid.status_code, 422)
 
-        clock = [0.0]
-        limiter = EmailAvailabilityRateLimiter(
-            limit=2,
-            window_seconds=60,
-            clock=lambda: clock[0],
+        neutral = client.post(
+            "/usuarios/email-disponibilidad",
+            json={"email": "persona@example.com"},
         )
-        self.assertTrue(limiter.allow("client"))
-        self.assertTrue(limiter.allow("client"))
-        self.assertFalse(limiter.allow("client"))
-        clock[0] = 61.0
-        self.assertTrue(limiter.allow("client"))
+        self.assertEqual(neutral.status_code, 200)
+        self.assertEqual(neutral.json(), {"status": "check_on_submit"})
 
-        with patch.object(email_availability_rate_limiter, "allow", return_value=False):
-            limited = client.post(
-                "/usuarios/email-disponibilidad",
-                json={"email": "persona@example.com"},
-            )
-        self.assertEqual(limited.status_code, 429)
-        self.assertEqual(limited.headers["retry-after"], "60")
-        self.assertEqual(
-            limited.json(),
-            {"detail": "Demasiadas solicitudes. Intenta nuevamente mas tarde."},
-        )
-
-    def test_disponibilidad_no_reemplaza_constraint_del_submit(self):
+    def test_submit_conserva_constraint_y_contrato_uniforme(self):
         available = client.post(
             "/usuarios/email-disponibilidad",
             json={"email": "race@example.com"},
@@ -274,9 +354,10 @@ class IdentityPasswordTransitionTests(unittest.TestCase):
             json=registration_payload("race@EXAMPLE.com"),
         )
 
-        self.assertEqual(available.json(), {"disponible": True})
-        self.assertEqual(first.status_code, 200)
-        self.assertEqual(raced.status_code, 409)
+        self.assertEqual(available.json(), {"status": "check_on_submit"})
+        self.assertEqual(first.status_code, 202)
+        self.assertEqual(raced.status_code, 202)
+        self.assertEqual(first.json(), raced.json())
 
     def test_altas_canonicas_concurrentes_crean_una_sola_identidad(self):
         with tempfile.TemporaryDirectory() as directory:

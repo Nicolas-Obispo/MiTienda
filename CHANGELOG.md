@@ -9,9 +9,53 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ET99.9 - Rebaseline de cierre y continuidad de hardening
+
+**Estado:** ET99.9-B cerrada; ET99.9 y ETAPA 99 abiertas por el cleanup
+contractual de `AUTH-LEGACY-01`
+
+- B1 consolido la politica backend unica de password, neutralizo availability
+  y el resultado publico de registro, retiro su consumo frontend y elimino el
+  auto-login. Estos contratos son baseline segura, no UX definitiva.
+- B2 incorporo rate limit persistente de login por subject y cliente, fail-
+  closed, cleanup e indice; aprobo 28/28 gates sobre MySQL aislado. La migracion
+  focal local se ejecuto de forma controlada e idempotente con recovery point
+  previo validado.
+- B3 integro el limiter al login, equivalencia bcrypt para credenciales
+  invalidas y contratos 429/no-store. B3.1 equiparo el costo de registro
+  duplicado sin sleeps ni mutaciones; el probe de 30 muestras por camino redujo
+  el ratio de medianas a 1.056 con rangos superpuestos. Login y Registro se
+  clasificaron mitigados; Recovery conserva un riesgo residual de validacion
+  preproduccion representativa.
+- El gate final aprobo B1 backend 6/6, frontend B 30/30, compilacion 10/10,
+  B2 28/28, B3 9/9, regresiones backend previas 46 PASS,
+  `test_authentication_method_services` 13/13 y
+  `test_runtime_model_registry` 2/2, con `git diff --check` PASS. El unico
+  bloqueo fue un bootstrap preexistente de
+  `backend/tests/test_authentication_method_services.py`, corregido con
+  `app.core.model_registry.import_all_models()` sin modificar produccion.
+- B1, B2, B3 y B3.1 quedan cerrados. `AUTH-ABUSE-01` y
+  `AUTH-POLICY-01` quedan cerrados en el alcance aprobado de ET99.9-B;
+  `AUTH-LEGACY-01` permanece abierto.
+- `DEC-066` aprueba como direccion pendiente el modelo `identidad primero ->
+  verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`.
+  ET99 conserva solo un handoff de compatibilidad, primitivas reutilizables y
+  dependencias; Producto e Identidad son owners funcionales, pero la etapa
+  futura aun no esta asignada. Su diseno detallado e implementacion no bloquean
+  el cierre de ET99.
+- `DEC-067` fija la frontera: B1-B3.1, `AUTH-ABUSE-01` y
+  `AUTH-POLICY-01` ya estan cerrados; ET99 debe completar `AUTH-LEGACY-01`,
+  incluida autoridad `PasswordCredential`, migracion legacy, retiro runtime de JWT/fallbacks,
+  recovery focal, regresion y documentacion. Identity-first completo, delivery,
+  Google ON y gates integrales de preproduccion quedan posteriores.
+- ET99.9-A y ET99.9-B permanecen cerradas. ET99.9 y ETAPA 99 permanecen
+  abiertas; `AUTH-LEGACY-01` y los findings oficiales conservan sus owners y gates.
+  Google sigue OFF, FeedGo permanece NO-GO para Internet y no existe
+  `SECURITY GO`.
+
 ## ET99.9-A - Inventario legacy y gate real de backup/restore
 
-**Estado:** Cerrada; ET99.9-B siguiente bloque, no iniciado
+**Estado:** Cerrada; ET99.9-B cerrada
 
 - A2 endurecio las herramientas de backup, restore y schema en `d506d81`;
   56 tests quedaron OK.
