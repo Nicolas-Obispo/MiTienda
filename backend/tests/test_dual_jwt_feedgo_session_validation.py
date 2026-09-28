@@ -9,7 +9,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.auth import crear_token_jwt
 from app.core.config import settings
 from app.core.database import Base, get_db
 from app.core.model_registry import import_all_models
@@ -18,6 +17,7 @@ from app.modules.users.models.identity_models import FeedGoSession, PasswordCred
 from app.modules.users.models.tokens_models import TokenRevocado
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.routes.usuarios_routers import router
+from tests.auth_test_support import encode_legacy_test_token
 
 
 import_all_models()
@@ -41,7 +41,7 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 
-class DualJwtFeedGoSessionValidationTests(unittest.TestCase):
+class SidOnlyFeedGoSessionValidationTests(unittest.TestCase):
     def setUp(self):
         Base.metadata.create_all(engine)
         self.rate_secret_patch = patch(
@@ -91,16 +91,16 @@ class DualJwtFeedGoSessionValidationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"detail": "Token inválido o expirado"})
 
-    def test_versioned_and_legacy_tokens_are_both_valid(self):
+    def test_versioned_token_is_valid_and_legacy_token_is_rejected(self):
         versioned = self.login()
-        legacy = crear_token_jwt({"sub": "1", "legacy_context": "preserved"})
+        legacy = encode_legacy_test_token(usuario_id=1)
         self.assertEqual(self.me(versioned).status_code, 200)
-        self.assertEqual(self.me(legacy).status_code, 200)
+        self.assert_rejected(legacy)
 
     def test_incomplete_new_and_hybrid_contracts_cannot_downgrade(self):
         claims = self.claims(self.login())
         without_sid = dict(claims); without_sid.pop("sid")
-        hybrid = self.claims(crear_token_jwt({"sub": "1"})); hybrid["sid"] = "attempt"
+        hybrid = self.claims(encode_legacy_test_token(usuario_id=1)); hybrid["sid"] = "attempt"
         extended = dict(claims); extended["perfil_completo"] = True
         self.assert_rejected(self.encode(without_sid))
         self.assert_rejected(self.encode(hybrid))
@@ -186,13 +186,12 @@ class DualJwtFeedGoSessionValidationTests(unittest.TestCase):
         self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_not(None)).count(), 1)
         db.close()
 
-    def test_legacy_logout_and_replay_keep_blacklist_contract(self):
-        token = crear_token_jwt({"sub": "1"})
+    def test_legacy_logout_is_rejected_without_blacklist_write(self):
+        token = encode_legacy_test_token(usuario_id=1)
         headers = {"Authorization": f"Bearer {token}"}
-        self.assertEqual(client.post("/usuarios/logout", headers=headers).status_code, 200)
-        self.assertEqual(self.me(token).status_code, 401)
+        self.assertEqual(client.post("/usuarios/logout", headers=headers).status_code, 401)
         db = SessionLocal()
-        self.assertIsNotNone(db.query(TokenRevocado).filter_by(token=token).first())
+        self.assertIsNone(db.query(TokenRevocado).filter_by(token=token).first())
         db.close()
 
     def test_logout_one_versioned_session_does_not_revoke_another(self):
@@ -238,22 +237,23 @@ class DualJwtFeedGoSessionValidationTests(unittest.TestCase):
         )
         db.close()
 
-    def test_legacy_password_change_revokes_feedgo_sessions_without_creating_one(self):
+    def test_legacy_password_change_is_rejected_without_revoking_sessions(self):
         first = self.login(); second = self.login()
-        legacy = crear_token_jwt({"sub": "1"})
+        legacy = encode_legacy_test_token(usuario_id=1)
         response = client.patch(
             "/usuarios/me/password",
             headers={"Authorization": f"Bearer {legacy}"},
             json={"current_password": "Password1", "new_password": "Password2"},
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.me(legacy).status_code, 200)
-        self.assert_rejected(first); self.assert_rejected(second)
+        self.assertEqual(response.status_code, 401)
+        self.assert_rejected(legacy)
+        self.assertEqual(self.me(first).status_code, 200)
+        self.assertEqual(self.me(second).status_code, 200)
         db = SessionLocal()
         self.assertEqual(db.query(FeedGoSession).count(), 2)
-        self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 0)
+        self.assertEqual(db.query(FeedGoSession).filter(FeedGoSession.revoked_at.is_(None)).count(), 2)
         self.assertEqual(db.get(Usuario, 1).hashed_password, self.legacy_hashes[1])
-        self.assertNotEqual(
+        self.assertEqual(
             db.get(Usuario, 1).hashed_password,
             db.get(PasswordCredential, 1).password_hash,
         )

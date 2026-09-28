@@ -68,13 +68,12 @@ from app.core.auth import (
     bearer_scheme,
     validar_token_para_logout,
 )
-from datetime import datetime, timedelta
+from datetime import timedelta
 from app.core.config import settings
 from app.core.operation_metrics import METRIC_AUTH_LOGIN_COUNT, increment_counter
 
 # Modelo para logout
 from app.modules.users.models.identity_models import PasswordCredential
-from app.modules.users.models.tokens_models import TokenRevocado
 
 # Services
 from app.modules.users.services.usuarios_services import (
@@ -324,8 +323,6 @@ def cambiar_password_autenticado_endpoint(
             new_password=payload.new_password,
             current_session_sid=(
                 auth_context.token.sid
-                if auth_context.token.contract == "versioned"
-                else None
             ),
         )
     except AuthenticatedPasswordChangeError as exc:
@@ -351,7 +348,7 @@ def agregar_password_endpoint(
 ):
     response.headers.update(AUTH_METHOD_NO_STORE)
     usuario_id = auth_context.usuario.id
-    sid = auth_context.token.sid if auth_context.token.contract == "versioned" else None
+    sid = auth_context.token.sid
     try:
         _authorize_authentication_method_mutation(
             db,
@@ -394,7 +391,7 @@ def reautenticar_password_endpoint(
 
     response.headers.update(AUTH_METHOD_NO_STORE)
     usuario_id = auth_context.usuario.id
-    sid = auth_context.token.sid if auth_context.token.contract == "versioned" else None
+    sid = auth_context.token.sid
     try:
         replacement = reauthenticate_with_password(
             db,
@@ -441,7 +438,7 @@ def desvincular_google_endpoint(
 ):
     response.headers.update(AUTH_METHOD_NO_STORE)
     usuario_id = auth_context.usuario.id
-    sid = auth_context.token.sid if auth_context.token.contract == "versioned" else None
+    sid = auth_context.token.sid
     try:
         _authorize_authentication_method_mutation(
             db,
@@ -592,21 +589,11 @@ def logout_endpoint(
     token = credenciales.credentials
     context = validar_token_para_logout(token, db)
     try:
-        if context.contract == "versioned":
-            revoke_feedgo_session(
-                db,
-                sid=context.sid,
-                usuario_id=context.usuario_id,
-            )
-        else:
-            db.add(TokenRevocado(
-                token=token,
-                usuario_id=context.usuario_id,
-                expira_en=(
-                    datetime.utcfromtimestamp(context.expires_at)
-                    if context.expires_at is not None else None
-                ),
-            ))
+        revoke_feedgo_session(
+            db,
+            sid=context.sid,
+            usuario_id=context.usuario_id,
+        )
         db.commit()
     except Exception:
         db.rollback()

@@ -7,8 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.auth import crear_token_jwt
 from app.core.database import Base, get_db
+from tests.auth_test_support import issue_versioned_test_token
 from app.core.model_registry import import_all_models
 from app.modules.administration.capabilities import MODERATION_DECISIONS_WRITE, MODERATION_REPORTS_READ
 from app.modules.administration.services.administrative_authorization_services import record_administrative_capability_change
@@ -58,7 +58,9 @@ class ModerationDecisionsTests(unittest.TestCase):
         db.close()
 
     def tearDown(self): Base.metadata.drop_all(engine)
-    def headers(self, user=1): return {"Authorization": f"Bearer {crear_token_jwt({'sub': str(user)})}"}
+    def headers(self, user=1):
+        token = issue_versioned_test_token(Session, usuario_id=user)
+        return {"Authorization": f"Bearer {token}"}
     def payload(self, action="ocultar_recurso", key="decision-key-1", report_version=1, resource_revision=0, reverse=None):
         key = f"decision-{key}" if len(key) < 8 else key
         value = {"accion": action, "motivo_codigo": "incumplimiento_confirmado" if action == "ocultar_recurso" else "correccion_operativa", "fundamento": "Fundamento", "evidencia_resumen": "Evidencia", "expected_denuncia_version": report_version, "idempotency_key": key}

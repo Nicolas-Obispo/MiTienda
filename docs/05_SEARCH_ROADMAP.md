@@ -1436,8 +1436,16 @@ y no crean ni renumeran etapas.
   L3A queda tecnicamente aprobado: `PasswordCredential` es la unica autoridad
   runtime de password y ya no existen fallback ni dual-write productivos hacia
   `usuarios.hashed_password`. La columna permanece fisicamente preservada hasta
-  su decision contractual posterior. Resta L3B para retirar JWT sin SID y los
-  consumidores runtime de `TokenRevocado`; `AUTH-LEGACY-01` continua abierto.
+  su decision contractual posterior. Este gate dejo habilitado L3B, completado
+  a continuacion.
+
+  L3B queda tecnicamente aprobado: todo JWT runtime exige el contrato versionado
+  exacto, SID y `FeedGoSession` vigente; se retiraron emision, aceptacion y
+  downgrade legacy, asi como todos los readers/writers runtime de
+  `TokenRevocado`. Logout opera exclusivamente sobre `FeedGoSession`. El gate
+  aprobo 410/410 contratos locales y 8/8 MySQL aislados. Las estructuras fisicas
+  legacy se preservan hasta su decision posterior y `AUTH-LEGACY-01` continua
+  abierto por esa decision, regresion final y cierre documental.
 
   `DEC-066` aprueba como direccion de producto pendiente el modelo `identidad
   primero -> verificacion -> resolucion de identidad -> datos minimos -> cuenta
@@ -1456,11 +1464,10 @@ y no crean ni renumeran etapas.
   email.
 
   La frontera rebaselined de ET99 ya cuenta con B1-B3.1,
-  `AUTH-ABUSE-01` y `AUTH-POLICY-01` cerrados; resta `AUTH-LEGACY-01`:
-  establecer `PasswordCredential` como autoridad unica; migrar usuarios legacy-only;
-  retirar runtime de JWT sin SID, fallbacks, dual-write y consumidores legacy;
-  probar migraciones, recovery focal y regresion final; y cerrar la
-  documentacion. No absorbe delivery productivo, Google ON, hardening
+  `AUTH-ABUSE-01` y `AUTH-POLICY-01` cerrados, L1/L2 completados y L3A/L3B
+  tecnicamente aprobados. Resta decidir la eliminacion fisica de estructuras
+  legacy, aprobar la regresion final y cerrar `AUTH-LEGACY-01`. No absorbe
+  delivery productivo, Google ON, hardening
   edge/preproduccion, DAST, pentest ni backups productivos externos. Cerrar
   ET99 no equivale a `SECURITY GO`, Internet GO ni Google ON; todos sus gates
   posteriores conservan owner y vigencia.

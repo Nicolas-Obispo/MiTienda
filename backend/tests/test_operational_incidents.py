@@ -7,8 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.auth import crear_token_jwt
 from app.core.database import Base, get_db
+from tests.auth_test_support import issue_versioned_test_token
 from app.core.model_registry import import_all_models
 from app.core.operation_alerts import local_alert_sink
 from app.modules.administration.capabilities import OPERATIONS_INCIDENTS_MANAGE, OPERATIONS_STATUS_READ
@@ -48,7 +48,9 @@ class OperationalIncidentTests(unittest.TestCase):
         db.close(); local_alert_sink.clear()
 
     def tearDown(self): Base.metadata.drop_all(engine)
-    def headers(self, user=1): return {"Authorization": f"Bearer {crear_token_jwt({'sub': str(user)})}"}
+    def headers(self, user=1):
+        token = issue_versioned_test_token(Session, usuario_id=user)
+        return {"Authorization": f"Bearer {token}"}
     def create_payload(self, key="incident-key-1", severity="sev2_high", owner=1, source=None):
         value = {"title":"API degradada", "summary":"Incidente operativo sanitizado", "incident_type":"availability", "severity":severity, "owner_usuario_id":owner, "idempotency_key":key}
         if source is not None: value["source"] = source

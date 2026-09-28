@@ -7,8 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.auth import crear_token_jwt
 from app.core.database import Base, get_db
+from tests.auth_test_support import issue_versioned_test_token
 from app.core.model_registry import import_all_models
 from app.modules.ai.models.comercios_embeddings_models import ComercioEmbedding
 from app.modules.analytics.models.comercios_metricas_sociales_models import (
@@ -91,7 +91,9 @@ class SocialHardeningTests(unittest.TestCase):
         Base.metadata.drop_all(bind=engine)
 
     def _auth_headers(self, usuario_id: int = 1) -> dict:
-        token = crear_token_jwt({"sub": str(usuario_id)})
+        token = issue_versioned_test_token(
+            TestingSessionLocal, usuario_id=usuario_id
+        )
         return {"Authorization": f"Bearer {token}"}
 
     def _crear_usuario(self, db, usuario_id: int = 1) -> Usuario:

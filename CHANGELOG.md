@@ -66,6 +66,12 @@ contractual de `AUTH-LEGACY-01`
   historicas permanecen preservadas. El gate focal aprobo 184/184 contratos
   locales y 2/2 de concurrencia MySQL aislada. JWT legacy y `TokenRevocado`
   continúan pendientes de L3B; `AUTH-LEGACY-01` sigue abierto.
+- L3B dejo `FeedGoSession` y el JWT versionado con SID obligatorio como unica
+  autoridad runtime de sesion. Se retiraron la emision y aceptacion legacy, las
+  ramas de downgrade y todos los readers/writers runtime de `TokenRevocado`;
+  su tabla/modelo y las migraciones historicas permanecen fisicamente
+  preservados. El gate aprobo 410/410 contratos locales y 8/8 MySQL aislados.
+  `AUTH-LEGACY-01` sigue abierto por la decision fisica y regresion final.
 - `DEC-066` aprueba como direccion pendiente el modelo `identidad primero ->
   verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`.
   ET99 conserva solo un handoff de compatibilidad, primitivas reutilizables y

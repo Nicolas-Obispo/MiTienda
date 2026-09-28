@@ -2,11 +2,12 @@ import unittest
 
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
+from jose import jwt
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.auth import crear_token_jwt
+from app.core.config import settings
 from app.core.database import Base, get_db
 from app.core.database_backup import CRITICAL_TABLES
 from app.core.model_registry import import_all_models
@@ -31,6 +32,7 @@ from app.modules.administration.services.administrative_authorization_services i
     record_administrative_capability_change,
 )
 from app.modules.users.models.usuarios_models import Usuario
+from tests.auth_test_support import issue_versioned_test_token
 
 import_all_models()
 
@@ -96,7 +98,20 @@ class AdministrativeAuthorizationTests(unittest.TestCase):
         db.close()
 
     def _headers(self, usuario_id: int = 1, **extra_claims):
-        token = crear_token_jwt({"sub": str(usuario_id), **extra_claims})
+        token = issue_versioned_test_token(
+            TestingSessionLocal, usuario_id=usuario_id
+        )
+        if extra_claims:
+            claims = jwt.decode(
+                token,
+                settings.SECRET_KEY,
+                algorithms=[settings.ALGORITHM],
+            )
+            token = jwt.encode(
+                claims | extra_claims,
+                settings.SECRET_KEY,
+                algorithm=settings.ALGORITHM,
+            )
         return {"Authorization": f"Bearer {token}"}
 
     def _change(self, capability: str, action: str, *, usuario_id: int = 1):
@@ -198,13 +213,13 @@ class AdministrativeAuthorizationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"usuario_id": 1})
 
-    def test_capability_claim_in_jwt_is_ignored(self):
+    def test_capability_claim_in_jwt_is_rejected_as_extended_contract(self):
         self._create_user()
         response = client.get(
             "/administration-test/moderation",
             headers=self._headers(capabilities=[MODERATION_REPORTS_READ]),
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 401)
 
     def test_revocation_applies_without_reissuing_token(self):
         self._create_user()

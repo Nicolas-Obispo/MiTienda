@@ -10,8 +10,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.auth import crear_token_jwt
 from app.core.database import Base, get_db
+from tests.auth_test_support import issue_versioned_test_token
 from app.core.error_handlers import register_exception_handlers
 from app.core.model_registry import import_all_models
 from app.modules.availability.routes.horarios_atencion_routers import (
@@ -141,7 +141,8 @@ class SpacesCommercialCapabilityEnforcementTests(unittest.TestCase):
 
     @staticmethod
     def _headers(usuario: Usuario) -> dict[str, str]:
-        return {"Authorization": f"Bearer {crear_token_jwt({'sub': str(usuario.id)})}"}
+        token = issue_versioned_test_token(SessionLocal, usuario_id=usuario.id)
+        return {"Authorization": f"Bearer {token}"}
 
     def _comercio(self, usuario: Usuario, *, activo: bool = True) -> Comercio:
         comercio = Comercio(

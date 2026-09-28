@@ -9,7 +9,6 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.auth import crear_token_jwt
 from app.core.config import settings
 from app.core.database import Base, get_db
 from app.core.model_registry import import_all_models
@@ -17,6 +16,7 @@ from app.core.security import hash_password
 from app.modules.users.models.identity_models import FeedGoSession, PasswordCredential
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.routes.usuarios_routers import login_endpoint, router
+from tests.auth_test_support import encode_legacy_test_token
 from app.modules.users.schemas.usuarios_schemas import UsuarioLogin
 
 
@@ -180,12 +180,12 @@ class FeedGoSessionLoginEmissionTests(unittest.TestCase):
         self.assertEqual(self.login("new@example.com", "Password2").status_code, 200)
         db = SessionLocal(); self.assertEqual(db.query(FeedGoSession).count(), 1); db.close()
 
-    def test_legacy_fixture_remains_accepted_during_transition(self):
-        legacy = crear_token_jwt({"sub": "1"})
+    def test_legacy_fixture_is_rejected_after_transition(self):
+        legacy = encode_legacy_test_token(usuario_id=1)
         response = client.get(
             "/usuarios/me", headers={"Authorization": f"Bearer {legacy}"}
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 401)
 
 
 if __name__ == "__main__":

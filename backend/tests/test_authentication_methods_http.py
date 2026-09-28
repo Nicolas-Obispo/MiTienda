@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.auth import crear_token_jwt, crear_token_jwt_versionado
+from app.core.auth import crear_token_jwt_versionado
 from app.core.config import settings
 from app.core.database import Base, get_db
 from app.core.error_handlers import register_exception_handlers
@@ -21,6 +21,7 @@ from app.modules.users.models.identity_models import (
 from app.modules.users.models.usuarios_models import Usuario
 from app.modules.users.routes.usuarios_routers import router as usuarios_router
 from app.modules.users.services.feedgo_session_services import create_feedgo_session
+from tests.auth_test_support import encode_legacy_test_token
 
 
 class AuthenticationMethodsHttpTests(unittest.TestCase):
@@ -235,16 +236,15 @@ class AuthenticationMethodsHttpTests(unittest.TestCase):
             "private, no-store",
         )
 
-    def test_legacy_jwt_cannot_satisfy_recent_reauthentication(self):
+    def test_legacy_jwt_is_rejected_before_recent_reauthentication(self):
         self.google_user_token()
-        legacy = crear_token_jwt({"sub": "1"})
+        legacy = encode_legacy_test_token(usuario_id=1)
         response = self.client.post(
             "/usuarios/me/authentication-methods/password",
             headers=self.headers(legacy),
             json={"confirm": True, "new_password": "Password1"},
         )
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.json()["code"], "recent_reauthentication_required")
+        self.assertEqual(response.status_code, 401)
 
     def test_google_only_cannot_unlink_last_method(self):
         token = self.google_user_token()

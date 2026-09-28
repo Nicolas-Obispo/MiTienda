@@ -21,7 +21,6 @@ RUNTIME_PROBE = textwrap.dedent(
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy.pool import StaticPool
 
-    from app.core.auth import crear_token_jwt
     from app.core.database import Base, get_db
     from app.core.model_registry import import_all_models
     from app.modules.posts.models.publicaciones_models import Publicacion
@@ -30,6 +29,7 @@ RUNTIME_PROBE = textwrap.dedent(
     from app.modules.social.models.publicaciones_guardadas_models import PublicacionGuardada
     from app.modules.spaces.models.comercios_models import Comercio
     from app.modules.users.models.usuarios_models import Usuario
+    from tests.auth_test_support import issue_versioned_test_token
 
     assert "moderation_decisions" in Base.metadata.tables
     for table in Base.metadata.tables.values():
@@ -95,7 +95,7 @@ RUNTIME_PROBE = textwrap.dedent(
     db.commit()
     db.close()
 
-    token = crear_token_jwt({"sub": "1"})
+    token = issue_versioned_test_token(Session, usuario_id=1)
     headers = {"Authorization": f"Bearer {token}"}
     client = TestClient(main.app, raise_server_exceptions=False)
 

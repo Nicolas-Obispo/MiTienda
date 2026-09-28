@@ -204,11 +204,7 @@ async def start_google_link_authorization(
 ):
     response.headers.update(NO_STORE)
     usuario_id = auth_context.usuario.id
-    sid = (
-        auth_context.token.sid
-        if auth_context.token.contract == "versioned"
-        else None
-    )
+    sid = auth_context.token.sid
     try:
         google_oidc_configuration()
         owner = build_google_oidc_owner()
@@ -279,7 +275,7 @@ async def start_google_reauthentication_authorization(
 ):
     response.headers.update(NO_STORE)
     usuario_id = auth_context.usuario.id
-    sid = auth_context.token.sid if auth_context.token.contract == "versioned" else None
+    sid = auth_context.token.sid
     material = None
     try:
         google_oidc_configuration()

@@ -8,8 +8,8 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.auth import crear_token_jwt
 from app.core.database import Base, get_db
+from tests.auth_test_support import issue_versioned_test_token
 from app.core.health import HealthCheckResult, HealthRegistry
 from app.core.model_registry import import_all_models
 from app.core.operation_alerts import AlertEvent, local_alert_sink
@@ -100,7 +100,8 @@ class OperationalStatusTests(unittest.TestCase):
         Base.metadata.drop_all(engine)
 
     def headers(self, user=1):
-        return {"Authorization": f"Bearer {crear_token_jwt({'sub': str(user)})}"}
+        token = issue_versioned_test_token(Session, usuario_id=user)
+        return {"Authorization": f"Bearer {token}"}
 
     def get_status(self, user=1):
         return client.get("/administracion/operaciones/estado", headers=self.headers(user))
@@ -206,9 +207,15 @@ class OperationalStatusTests(unittest.TestCase):
 
     def test_29_reads_issue_no_insert_update_or_delete(self):
         statements=[]
+        headers = self.headers()
         def observe(_conn, _cursor, statement, _parameters, _context, _many): statements.append(statement.strip().lower())
         event.listen(engine,"before_cursor_execute",observe)
-        try: self.get_status(); self.inspect("historia",30)
+        try:
+            client.get("/administracion/operaciones/estado", headers=headers)
+            client.get(
+                "/administracion/operaciones/recursos/historia/30/integridad",
+                headers=headers,
+            )
         finally: event.remove(engine,"before_cursor_execute",observe)
         self.assertFalse(any(item.startswith(("insert ","update ","delete ")) for item in statements), statements)
 

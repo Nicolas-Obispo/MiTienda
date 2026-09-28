@@ -742,8 +742,8 @@ Estado de continuidad:
   en `frontend/.pwa-fixtures/story-video-case-b.html` y la investigacion pasa a
   ETAPA 124 - Compatibilidad Multimedia iOS/Safari/PWA.
 - ETAPA 99 - Identidad, Registro y Autenticacion se encuentra en curso con 99.1
-  a 99.8 y 99.9-A/B tecnicamente cerrados. La
-  compatibilidad JWT legacy permanece hasta su retiro gobernado.
+  a 99.8 y 99.9-A/B tecnicamente cerrados. El runtime JWT legacy fue retirado;
+  sus estructuras fisicas permanecen hasta la decision gobernada posterior.
 - FeedGo Clasificados queda incorporado documentalmente como vertical futura
   de primer nivel en ETAPAS 101 a 105; ETAPAS 106 y 107 preparan Plataforma
   Comercial, Advertising, Payments y Billing transversal. Ninguna fue iniciada.
@@ -786,16 +786,25 @@ controlada. Se eliminaron exclusivamente 2 filas de `usuarios`, 6 de
 `tokens_revocados` y 4 de `usuarios_documentos_aceptaciones`, estas ultimas con
 autorizacion humana especifica. L1 post-delete finalizo PASS con 16 credenciales
 duales equivalentes, cero legacy-only y cero canonical pendientes. El backfill
-de datos L2 queda como no-op sin targets; `AUTH-LEGACY-01` continua ABIERTO por
-el retiro runtime legacy y sus gates finales.
+de datos L2 queda como no-op sin targets; este resultado habilito L3A/L3B, que
+se registran a continuacion.
 
 L3A quedo tecnicamente validado: `PasswordCredential` es la unica autoridad
 runtime para Registro, Login, cambio autenticado, reset, alta y reautenticacion
 por password. Se retiraron el fallback de Login y todos los dual-write hacia
 `usuarios.hashed_password`; la columna fisica, el preflight L1 y las migraciones
 historicas permanecen sin cambios. El gate aprobo 184/184 contratos locales y
-2/2 de concurrencia MySQL aislada. `AUTH-LEGACY-01` continua ABIERTO: el
-siguiente trabajo es L3B, retiro runtime de JWT sin SID y `TokenRevocado`.
+2/2 de concurrencia MySQL aislada. Este gate dejo habilitado L3B, completado a
+continuacion.
+
+L3B quedo tecnicamente validado: todo bearer autenticable exige el contrato JWT
+versionado exacto, SID y una `FeedGoSession` vigente. Se retiraron el emisor y
+la aceptacion JWT legacy, las ramas SID opcional y todos los readers/writers
+runtime de `TokenRevocado`; logout revoca exclusivamente `FeedGoSession`. El
+gate aprobo 410/410 contratos locales y 8/8 MySQL aislados. La tabla/modelo
+`TokenRevocado`, `usuarios.hashed_password` y migraciones historicas permanecen
+fisicamente preservados. `AUTH-LEGACY-01` continua ABIERTO por la decision
+fisica, regresion final y cierre documental.
 
 Restricciones:
 
@@ -1032,11 +1041,11 @@ Gobierno debe asignarle etapa antes de comenzar. No se autorizan
 sistemas duplicados, Google sigue OFF y la coincidencia de email nunca autoriza
 auto-link. `AUTH-LEGACY-01` conserva su cleanup obligatorio dentro de ET99.9.
 
-La frontera de cierre de ET99 ya cuenta con B1-B3.1 y
-`AUTH-ABUSE-01`/`AUTH-POLICY-01` cerrados; resta `PasswordCredential` como autoridad unica;
-migracion de usuarios legacy-only; retiro runtime de JWT sin SID, fallbacks,
-dual-write y consumidores legacy; migraciones y recovery focal probados;
-regresion final y cierre documental de `AUTH-LEGACY-01`. No incluye implementar
+La frontera de cierre de ET99 ya cuenta con B1-B3.1,
+`AUTH-ABUSE-01`/`AUTH-POLICY-01` cerrados, la autoridad runtime exclusiva de
+`PasswordCredential`, L2 sin targets y el runtime de sesion SID-only. Restan la
+decision fisica sobre estructuras legacy, la regresion final y el cierre
+documental de `AUTH-LEGACY-01`. No incluye implementar
 identity-first, codigo/magic-link pre-account, su UX o nuevos controles de
 resend/verificacion, delivery productivo, Google ON, hardening edge, DAST,
 pentest ni backups productivos externos.

@@ -6,6 +6,7 @@ nunca imprime autenticacion, payloads ni cuerpos de error.
 
 import argparse
 import json
+import os
 import sys
 import uuid
 from dataclasses import dataclass
@@ -14,10 +15,8 @@ from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-from app.core.auth import crear_token_jwt
-
-
 DEFAULT_BASE_URL = "http://127.0.0.1:8000"
+TOKEN_ENV = "FEEDGO_INCIDENT_PROBE_TOKEN"
 
 
 class ProbeTransport(Protocol):
@@ -152,7 +151,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     try:
         transport = LocalHttpTransport(args.base_url)
-        token = crear_token_jwt({"sub": str(args.usuario_id)})
+        token = os.environ.get(TOKEN_ENV)
+        if not token:
+            raise ValueError("incident_probe_versioned_token_required")
         result = run_stale_version_probe(
             transport=transport,
             token=token,

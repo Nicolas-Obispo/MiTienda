@@ -7,8 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.auth import crear_token_jwt
 from app.core.database import Base, get_db
+from tests.auth_test_support import issue_versioned_test_token
 from app.core.model_registry import import_all_models
 from app.modules.administration.capabilities import (
     MODERATION_REPORTS_READ,
@@ -85,7 +85,9 @@ class ModerationAdminReportsTests(unittest.TestCase):
         db.close()
 
     def _headers(self, usuario_id: int):
-        token = crear_token_jwt({"sub": str(usuario_id)})
+        token = issue_versioned_test_token(
+            TestingSessionLocal, usuario_id=usuario_id
+        )
         return {"Authorization": f"Bearer {token}"}
 
     def _change_capability(self, usuario_id: int, capability: str, action: str):

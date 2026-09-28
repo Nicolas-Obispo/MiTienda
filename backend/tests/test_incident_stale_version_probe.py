@@ -64,7 +64,9 @@ class IncidentStaleVersionProbeTests(unittest.TestCase):
 
     def test_cli_output_is_sanitized(self):
         output, errors = io.StringIO(), io.StringIO()
-        with patch("probe_incident_stale_version.crear_token_jwt", return_value="private-jwt"), patch(
+        with patch.dict(
+            "os.environ", {"FEEDGO_INCIDENT_PROBE_TOKEN": "private-jwt"}
+        ), patch(
             "probe_incident_stale_version.LocalHttpTransport",
         ), patch(
             "probe_incident_stale_version.run_stale_version_probe",
@@ -84,6 +86,13 @@ class IncidentStaleVersionProbeTests(unittest.TestCase):
                 "rejected_event_absent=true",
             ],
         )
+
+    def test_cli_requires_versioned_bearer_from_environment(self):
+        output, errors = io.StringIO(), io.StringIO()
+        with patch.dict("os.environ", {}, clear=True), redirect_stdout(output), redirect_stderr(errors):
+            result = main(["--run", "--usuario-id", "32"])
+        self.assertEqual(result, 1)
+        self.assertEqual(errors.getvalue().strip(), "probe=failed result=sanitized")
 
 
 if __name__ == "__main__":
