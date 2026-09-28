@@ -44,6 +44,11 @@ contractual de `AUTH-LEGACY-01`
   y 2 legacy-only; estas ultimas coinciden exactamente con las 2 filas con
   `email_canonical` pendiente. No hubo divergencias, hashes invalidos,
   reparacion ni backfill; L2 no fue iniciado.
+- La reparacion focal canonical-only fue implementada y validada en aislamiento:
+  17/17 contratos SQLite y 2/2 gates MySQL aislados demostraron preflight
+  global, transaccion unica, rollback, idempotencia y preservacion de email,
+  hashes y `PasswordCredential`. Todavia no fue aplicada sobre `mitienda` y L2
+  no fue iniciado.
 - `DEC-066` aprueba como direccion pendiente el modelo `identidad primero ->
   verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`.
   ET99 conserva solo un handoff de compatibilidad, primitivas reutilizables y

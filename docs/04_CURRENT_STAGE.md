@@ -775,8 +775,11 @@ Sobre los 18 usuarios de prueba clasifico 16 credenciales duales equivalentes y
 2 cuentas legacy-only, sin divergencias ni hashes invalidos. Las 2 cuentas
 legacy-only son exactamente las 2 filas con `email_canonical` pendiente, por lo
 que `AUTH-LEGACY-01` permanece ABIERTO y L2 no fue iniciado. El proximo bloque
-debe preparar y validar en aislamiento una reparacion focal canonical-only, sin
-backfill de credenciales.
+debe completar el recovery y pre-apply de la reparacion focal canonical-only,
+ya implementada y validada en aislamiento con 17/17 contratos SQLite, 2/2 gates
+MySQL aislados e idempotencia demostrada. La reparacion todavia no fue aplicada
+sobre `mitienda`; no crea `PasswordCredential`, no modifica hashes y L2 no fue
+iniciado.
 
 Restricciones:
 
