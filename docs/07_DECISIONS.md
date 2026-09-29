@@ -1155,33 +1155,41 @@ No reemplaza la documentación oficial existente.
   segura. No se declaran automaticamente UX definitiva ni se revierten sin un
   contrato igual o mas seguro. Autocomplete y password managers deben
   conservar semantica web correcta.
-- Reutilizacion obligatoria: antes de crear modelos, tokens, rate limits o
-  servicios nuevos se auditan `AccountActionToken`/`account_action_tokens`,
-  verificacion de email, `AccountActionRateLimit`/
-  `account_action_rate_limits`, recovery, `PasswordCredential`,
-  `ExternalIdentity`, `FeedGoSession` y Google/OIDC existentes. No se duplica
-  una capacidad sin demostrar que no cubre el requisito.
+- Reutilizacion obligatoria: ET100A.1 comienza bajo `REUTILIZAR -> NO RECREAR
+  -> EXTENDER SOLO DONDE DEC-066 LO REQUIERA`. Antes de crear capacidad nueva
+  audita `PasswordCredential`, `FeedGoSession`, JWT versionado con SID
+  obligatorio, `AccountActionToken`/`account_action_tokens`,
+  `AccountActionRateLimit`/`account_action_rate_limits`, `ExternalIdentity`,
+  canonicalizacion vigente, baseline anti-enumeracion B1-B3.1, recovery y
+  ownership backend de resolucion de identidad. Toda nueva entidad, token,
+  rate limiter, sesion, recovery o infraestructura equivalente debe demostrar
+  y documentar por que esas primitivas son insuficientes.
 - Handoff ET99: ETAPA 99 demostro compatibilidad de su arquitectura, inventario
   primitivas reutilizables, identifico dependencias y preservo B1 a B3.1 como
   baseline. Gobierno asigna su continuidad a ETAPA 100A, posterior al cierre de
   ETAPA 100 y anterior a ETAPA 101. El owner funcional es conjunto entre
   Producto e Identidad backend/frontend. Esta asignacion no inicia ET100A ni
-  reabre ET99.
+  reabre ET99. ETAPA 101 no puede iniciarse hasta el cierre formal de ET100A.
 - Gate futuro de diseno: la auditoria posterior debe resolver mecanismo de
   codigo/link, envio, verificacion, resend, expiracion, one-use, replay,
   intentos, rate limiting, anti-enumeracion, timing, PII, abandono, multitab,
   cambio de dispositivo, carreras de alta y emision de sesion. Backend conserva
   identidad, seguridad y reglas; frontend solo interaccion y presentacion.
-- Google: podra integrarse conceptualmente como prueba externa de identidad
-  bajo OIDC existente cuando sea autorizado. La coincidencia de email nunca
-  produce auto-link; vinculacion exige el contrato explicito vigente. Google
-  permanece OFF.
+- Prueba de control: el contrato es `identidad -> mecanismo de prueba -> control
+  demostrado -> resolucion`; no queda acoplado a email o codigo. Email puede ser
+  el primer mecanismo. Google/OIDC podra converger posteriormente sobre el
+  mismo resolver como prueba externa cuando sea autorizado. La coincidencia de
+  email nunca produce auto-link; vinculacion exige el contrato explicito
+  vigente. Google permanece OFF y no forma parte del GO de ET100A.
 - Cierre ET100A: exige prueba de control neutral, resolucion backend sin cuentas
   paralelas, ramas segura de identidad existente y atomica de identidad nueva,
   datos minimos, sesion FeedGo, proteccion de PII, concurrencia, rollback,
-  regresion backend/frontend/E2E en staging y validacion manual. Su cierre no
-  declara Google ON, Internet GO o `SECURITY GO` ni sustituye ET108, ET109,
-  ET110, ET114 o sus gates.
+  regresion backend/frontend/E2E en staging y validacion manual. ET100A.8 no se
+  cierra con happy paths: debe demostrar inexistencia de identidades paralelas,
+  atomicidad de resolucion/creacion, one-use, replay, concurrencia, resend
+  concurrente, rollback, ausencia de auto-link inseguro y proteccion de PII,
+  tokens y codigos. Su cierre no declara Google ON, Internet GO o `SECURITY GO`
+  ni sustituye ET108, ET109, ET110, ET114 o sus gates.
 - Limites: esta decision no implementa el flujo, no bloquea el cierre de ET99
   mas alla de su handoff acotado, no activa providers, no declara `SECURITY GO`
   o Internet GO y no desplaza `AUTH-LEGACY-01` ni el cleanup contract

@@ -1724,23 +1724,36 @@ resolucion de identidad -> datos minimos -> cuenta -> sesion`, con alta
 seguridad y minima friccion, sin revelar existencia de cuenta antes de una
 prueba backend valida de control de la identidad.
 
+La prueba de control es independiente del mecanismo concreto: `identidad ->
+mecanismo de prueba -> control demostrado -> resolucion`. Email puede ser el
+primer mecanismo. Google/OIDC podra converger posteriormente sobre el mismo
+resolver como prueba externa, pero Google permanece OFF y no forma parte del GO
+de ET100A.
+
 Posicion y dependencias:
 
 - etapa futura independiente, posterior al cierre de ETAPA 100 y anterior a
   ETAPA 101;
 - depende de la fundacion reproducible, staging aislado, datos sinteticos y
   observabilidad de ETAPA 100 y de la autoridad de identidad cerrada en ET99;
-- ETAPA 101 la consume como dependencia previa; ET108 y ET109 consumen su
-  evidencia de calidad, Auth, privacidad y seguridad;
+- ETAPA 101 la consume como dependencia previa y no puede iniciarse hasta que
+  ET100A este formalmente cerrada; ET108 y ET109 consumen su evidencia de
+  calidad, Auth, privacidad y seguridad;
 - ETAPA 114 conserva la infraestructura general de comunicaciones. ET100A solo
   reutiliza el adapter de identidad y providers fake/sandbox; no activa delivery
   productivo ni crea una plataforma paralela.
 
 Alcance:
 
-- auditoria obligatoria de reutilizacion de `AccountActionToken`, verificacion
-  de email, `AccountActionRateLimit`, recovery, `PasswordCredential`,
-  `ExternalIdentity`, `FeedGoSession` y Google/OIDC;
+- ET100A.1 comienza bajo la regla `REUTILIZAR -> NO RECREAR -> EXTENDER SOLO
+  DONDE DEC-066 LO REQUIERA` y audita obligatoriamente `PasswordCredential`,
+  `FeedGoSession`, JWT versionado con SID obligatorio, `AccountActionToken`,
+  `AccountActionRateLimit`, `ExternalIdentity`, canonicalizacion vigente,
+  baseline anti-enumeracion B1-B3.1, recovery existente y ownership backend de
+  resolucion de identidad;
+- toda nueva entidad, token, rate limiter, sesion, mecanismo de recovery o
+  infraestructura equivalente debe demostrar y documentar por que las
+  primitivas existentes son insuficientes;
 - prueba de control pre-account mediante codigo o link, con expiracion,
   one-use, replay, resend, intentos, rate limiting y timing neutral;
 - resolucion backend hacia identidad existente o nueva, sin duplicados ni
@@ -1762,8 +1775,9 @@ Fuera de alcance:
 
 Sprints y orden obligatorio:
 
-- 100A.1 - auditoria de primitivas, modelo, privacidad, legalidad, amenazas y
-  contrato final;
+- 100A.1 - auditoria de reutilizacion obligatoria bajo `REUTILIZAR -> NO
+  RECREAR -> EXTENDER SOLO DONDE DEC-066 LO REQUIERA`, modelo, privacidad,
+  legalidad, amenazas y contrato final;
 - 100A.2 - prueba de control pre-account, envio fake/sandbox, expiracion,
   one-use, replay, resend, intentos y rate limiting;
 - 100A.3 - resolucion backend de identidad y branching neutral;
@@ -1773,8 +1787,9 @@ Sprints y orden obligatorio:
 - 100A.6 - journey frontend, accesibilidad, autocomplete, password managers,
   abandono, multitab y cambio de dispositivo;
 - 100A.7 - hardening, concurrencia, timing, PII, logs y observabilidad;
-- 100A.8 - E2E en staging ET100, regresion, rollback, validacion manual y cierre
-  documental.
+- 100A.8 - E2E adversarial y funcional en staging ET100, regresion, rollback,
+  validacion manual y cierre documental; no puede cerrarse solo con happy
+  paths.
 
 Gate de cierre:
 
@@ -1785,7 +1800,11 @@ Gate de cierre:
   preservan; backend conserva identidad, reglas y sesion;
 - codigo/link, expiracion, one-use, replay, resend, intentos, rate limits,
   carreras, abandono, multitab y cambio de dispositivo quedan probados;
-- PII y secretos no alcanzan URLs, logs, caches ni storage indebido;
+- staging demuestra inexistencia de identidades paralelas, atomicidad de
+  resolucion/creacion, one-use, replay, concurrencia, resend concurrente,
+  rollback y ausencia de auto-link inseguro;
+- PII, tokens, codigos y secretos no alcanzan URLs, logs, caches ni storage
+  indebido;
 - regresiones backend, frontend, DB/concurrencia y E2E de staging, rollback y
   validacion manual quedan aprobadas;
 - Google permanece OFF. El cierre no declara Google ON, Internet GO ni
