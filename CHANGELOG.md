@@ -9,6 +9,27 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 100 - Cierre de ET100.1 y planificacion de ETAPA 100A
+
+**Estado:** ETAPA 100 en curso; ET100.1 cerrada; ningun otro sprint activo
+
+- ET100.1 cerro la auditoria de reproducibilidad, manifests, dependencias
+  implicitas, comandos y herramientas. Confirmo que backend no es reproducible
+  desde su `requirements.txt` de cuatro paquetes, no existe lock Python
+  transitivo ni runtimes Python/Node/npm fijados y faltan configuracion
+  sanitizada y baseline autorizada de SCA, SAST, secrets y SBOM.
+- Frontend conserva `package-lock.json` v3 coherente y `npm ci` como base
+  reproducible. El handoff de ET100.2 exige completar manifest/lock backend,
+  fijar runtimes, inventariar dependencias de host, definir comandos y
+  configuracion y autorizar el conjunto minimo de herramientas. ET100.2 no fue
+  iniciado y no se instalaron dependencias o herramientas.
+- Se formaliza ETAPA 100A - Identity-First y Resolucion de Identidad Verificada
+  como etapa futura independiente, posterior a ET100 y anterior a ET101, con
+  ocho sprints y gate de cierre gobernados por `DEC-066`. ET100A queda pendiente
+  y no iniciada; ET101 a ET124 no se renumeran.
+- ETAPA 99 permanece cerrada. Google continua OFF, Internet NO-GO y
+  `SECURITY GO` no esta declarado.
+
 ## ETAPA 99 - Cierre formal definitivo
 
 **Estado:** Cerrada

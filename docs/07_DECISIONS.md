@@ -1138,9 +1138,10 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-066
 - Titulo: Entrada identity-first y resolucion de identidad verificada
-- Estado: Direccion de producto aprobada; auditoria read-only obligatoria
-  pendiente antes de diseno final o implementacion futura. ET99.9-B esta
-  cerrada; este nuevo journey no fue implementado ni bloquea dicho cierre.
+- Estado: Direccion de producto aprobada y asignada a la futura ETAPA 100A -
+  Identity-First y Resolucion de Identidad Verificada. ET100A permanece
+  pendiente y no iniciada; su auditoria read-only 100A.1 es obligatoria antes
+  de diseno final o implementacion. ET99.9-B y ETAPA 99 permanecen cerradas.
 - Objetivo: evolucionar Registro y acceso hacia `identidad primero ->
   verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`,
   con seguridad alta y minima friccion. La persona no debe completar un alta
@@ -1160,11 +1161,12 @@ No reemplaza la documentación oficial existente.
   `account_action_rate_limits`, recovery, `PasswordCredential`,
   `ExternalIdentity`, `FeedGoSession` y Google/OIDC existentes. No se duplica
   una capacidad sin demostrar que no cubre el requisito.
-- Handoff ET99: ETAPA 99 solo demuestra compatibilidad de su arquitectura,
-  inventaria primitivas reutilizables, identifica dependencias y preserva B1 a
-  B3.1 como baseline. El owner funcional futuro es conjunto entre Producto e
-  Identidad backend/frontend; no existe una etapa adecuada asignada y Gobierno
-  debe definirla antes de autorizar diseno detallado o implementacion.
+- Handoff ET99: ETAPA 99 demostro compatibilidad de su arquitectura, inventario
+  primitivas reutilizables, identifico dependencias y preservo B1 a B3.1 como
+  baseline. Gobierno asigna su continuidad a ETAPA 100A, posterior al cierre de
+  ETAPA 100 y anterior a ETAPA 101. El owner funcional es conjunto entre
+  Producto e Identidad backend/frontend. Esta asignacion no inicia ET100A ni
+  reabre ET99.
 - Gate futuro de diseno: la auditoria posterior debe resolver mecanismo de
   codigo/link, envio, verificacion, resend, expiracion, one-use, replay,
   intentos, rate limiting, anti-enumeracion, timing, PII, abandono, multitab,
@@ -1174,6 +1176,12 @@ No reemplaza la documentación oficial existente.
   bajo OIDC existente cuando sea autorizado. La coincidencia de email nunca
   produce auto-link; vinculacion exige el contrato explicito vigente. Google
   permanece OFF.
+- Cierre ET100A: exige prueba de control neutral, resolucion backend sin cuentas
+  paralelas, ramas segura de identidad existente y atomica de identidad nueva,
+  datos minimos, sesion FeedGo, proteccion de PII, concurrencia, rollback,
+  regresion backend/frontend/E2E en staging y validacion manual. Su cierre no
+  declara Google ON, Internet GO o `SECURITY GO` ni sustituye ET108, ET109,
+  ET110, ET114 o sus gates.
 - Limites: esta decision no implementa el flujo, no bloquea el cierre de ET99
   mas alla de su handoff acotado, no activa providers, no declara `SECURITY GO`
   o Internet GO y no desplaza `AUTH-LEGACY-01` ni el cleanup contract
@@ -1196,11 +1204,12 @@ No reemplaza la documentación oficial existente.
   su UX y controles nuevos de resend/verificacion, delivery productivo, Google
   ON, hardening edge/preproduccion, DAST, pentest y backups productivos externos.
   Conservan o requieren owners posteriores y no pueden ocultar findings.
-- Handoff: `DEC-066` permanece aprobada. ET99 demuestra compatibilidad,
-  inventaria reutilizacion y dependencias, preserva B1-B3.1 y la prohibicion de
-  auto-link por email. Producto e Identidad backend/frontend son owners
-  funcionales; Gobierno debe asignarles una etapa futura antes del diseno
-  detallado o implementacion. No se inventa una etapa durante este rebaseline.
+- Handoff: `DEC-066` permanece aprobada. ET99 demostro compatibilidad,
+  inventario reutilizacion y dependencias, preservo B1-B3.1 y la prohibicion de
+  auto-link por email. Con posterioridad al rebaseline, Gobierno asigno ese
+  trabajo futuro a ETAPA 100A, con Producto e Identidad backend/frontend como
+  owners funcionales. Esta trazabilidad no reabre ni modifica la frontera
+  cerrada de ET99 y ET100A permanece pendiente.
 - Independencia de gates: cerrar ET99 no declara `SECURITY GO`, Internet GO ni
   Google ON. Los findings y gates preproduccion conservan estado y owner hasta
   satisfacer sus criterios formales; el codigo unstaged no cambia estados por

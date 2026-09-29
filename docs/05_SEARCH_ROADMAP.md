@@ -1469,12 +1469,12 @@ y no crean ni renumeran etapas.
   `AccountActionRateLimit`, recovery, `PasswordCredential`, `ExternalIdentity`,
   `FeedGoSession` y Google/OIDC reutilizables, identificar dependencias y dejar
   definido el owner funcional conjunto Producto e Identidad backend/frontend.
-  No existe etapa adecuada asignada y Gobierno debe crear o asignar ese owner
-  de roadmap antes de continuar. El diseno detallado y la
+  Al cerrar ET99 no existia etapa adecuada asignada; Gobierno formalizo despues
+  ETAPA 100A, posterior a ET100 y anterior a ET101. El diseno detallado y la
   implementacion de identity-first, codigo/magic-link pre-account, UX y nuevos
-  controles de envio, verificacion o resend son posteriores a ET99. No se crea
-  infraestructura duplicada, Google permanece OFF y no existe auto-link por
-  email.
+  controles de envio, verificacion o resend pertenecen a esa etapa futura, que
+  permanece pendiente. No se crea infraestructura duplicada, Google permanece
+  OFF y no existe auto-link por email.
 
   La frontera rebaselined de ET99 ya cuenta con B1-B3.1,
   `AUTH-ABUSE-01` y `AUTH-POLICY-01` cerrados, L1/L2 completados, L3A/L3B
@@ -1535,7 +1535,8 @@ Evidencia de cierre de 99.2:
 Siguiente bloque:
 
 Ninguno dentro de ETAPA 99. El handoff identity-first de `DEC-066` permanece
-acotado y Gobierno debe asignar y autorizar su trabajo futuro antes de iniciarlo.
+acotado y fue asignado posteriormente a ETAPA 100A, que requiere autorizacion
+propia antes de iniciarse y no reabre ET99.
 
 Estado:
 
@@ -1618,7 +1619,7 @@ Evidencia de cierre tecnico de 99.8:
   matriz completa y sus gates pertenecen a un bloque documental posterior; no
   se presentan como resueltos por el cierre de 99.8.
 
-### ☐ ETAPA 100
+### ◐ ETAPA 100
 
 Fundacion de Validacion y Staging Aislado.
 
@@ -1658,7 +1659,8 @@ carga extrema, corrupcion ni simulacion de fallos.
 
 Division maxima sugerida:
 
-- 100.1 - auditoria de reproducibilidad, matriz de herramientas y ejecucion;
+- 100.1 - auditoria de reproducibilidad, matriz de herramientas y ejecucion
+  (cerrada);
 - 100.2 - dependencias, build, inventario, secrets baseline y SBOM;
 - 100.3 - datos sinteticos deterministas y perfiles representativos;
 - 100.4 - staging aislado, reset, accesos y providers de prueba;
@@ -1671,7 +1673,128 @@ duplicar la matriz central de `15_LEGAL_AND_OPERATIONAL`.
 
 Estado:
 
-Pendiente.
+En curso. ET100.1 esta cerrada. ET100.2 a ET100.6 permanecen pendientes; no
+existe otro sprint activo ni se implementan por anticipado.
+
+Resultado ET100.1:
+
+La auditoria de manifests, dependencias implicitas, comandos reales y
+herramientas queda cerrada con esta evidencia:
+
+- backend no es reproducible desde `backend/requirements.txt`: declara solo
+  cuatro paquetes y omite dependencias runtime, operativas y opcionales que hoy
+  aporta un `venv` local ignorado;
+- no existe lock Python transitivo, version soportada de Python ni separacion
+  versionada de dependencias runtime, test y opcionales;
+- Node y npm no estan fijados, aunque frontend conserva como base reproducible
+  `package-lock.json` v3 coherente con `package.json` y el comando `npm ci`;
+- falta contrato sanitizado de configuracion; `.env`, binarios MySQL, browsers
+  E2E y el modelo local opcional dependen del host;
+- no existe comando backend agregado canonico, CI versionado, artefacto runtime
+  reproducible ni baseline configurada de SCA, SAST, secrets o SBOM;
+- permanecen disponibles y deben reutilizarse `unittest`, `compileall`, Vite,
+  ESLint, Playwright, `npm ci`, `npm audit`, los harnesses MySQL aislados y
+  `git diff --check`;
+- el conjunto minimo recomendado sujeto a autorizacion posterior comprende un
+  manifest/lock Python completo, runtimes fijados, configuracion sanitizada,
+  `pip-audit`, `npm audit`, Gitleaks, Semgrep CE, SBOM, Coverage.py y una base
+  frontend Vitest/React Testing Library con cobertura;
+- Schemathesis se evaluara por beneficio contractual; k6 pertenece a capacidad
+  sobre staging; OWASP ZAP a validacion de seguridad desplegada; Trivy solo
+  cuando exista un artefacto o infraestructura compatible.
+
+Handoff ET100.2:
+
+Antes de iniciar debe existir autorizacion humana para seleccionar o instalar
+herramientas. El bloque debera fijar runtimes, clasificar dependencias, completar
+manifest y lock backend, preservar el lock frontend, inventariar binarios y
+artefactos externos, definir configuracion sanitizada y comandos canonicos,
+establecer SCA/SAST/secrets/SBOM y demostrar instalacion y build/test limpios.
+ET100.1 no instalo dependencias, no ejecuto scanners externos ni construyo
+staging.
+
+### ☐ ETAPA 100A
+
+Identity-First y Resolucion de Identidad Verificada.
+
+Objetivo:
+
+Implementar y cerrar el journey `identidad primero -> verificacion ->
+resolucion de identidad -> datos minimos -> cuenta -> sesion`, con alta
+seguridad y minima friccion, sin revelar existencia de cuenta antes de una
+prueba backend valida de control de la identidad.
+
+Posicion y dependencias:
+
+- etapa futura independiente, posterior al cierre de ETAPA 100 y anterior a
+  ETAPA 101;
+- depende de la fundacion reproducible, staging aislado, datos sinteticos y
+  observabilidad de ETAPA 100 y de la autoridad de identidad cerrada en ET99;
+- ETAPA 101 la consume como dependencia previa; ET108 y ET109 consumen su
+  evidencia de calidad, Auth, privacidad y seguridad;
+- ETAPA 114 conserva la infraestructura general de comunicaciones. ET100A solo
+  reutiliza el adapter de identidad y providers fake/sandbox; no activa delivery
+  productivo ni crea una plataforma paralela.
+
+Alcance:
+
+- auditoria obligatoria de reutilizacion de `AccountActionToken`, verificacion
+  de email, `AccountActionRateLimit`, recovery, `PasswordCredential`,
+  `ExternalIdentity`, `FeedGoSession` y Google/OIDC;
+- prueba de control pre-account mediante codigo o link, con expiracion,
+  one-use, replay, resend, intentos, rate limiting y timing neutral;
+- resolucion backend hacia identidad existente o nueva, sin duplicados ni
+  auto-link por coincidencia de email;
+- acceso o recovery de identidad existente y alta atomica con datos minimos,
+  aceptaciones aplicables y sesion FeedGo para identidad nueva;
+- journey frontend accesible, con autocomplete/password managers correctos y
+  contratos de abandono, multitab y cambio de dispositivo;
+- concurrencia, carreras de alta, privacidad, observabilidad minimizada,
+  rollback y regresion backend/frontend/E2E sobre staging aislado.
+
+Fuera de alcance:
+
+- Google ON, proveedores reales no aprobados, delivery transversal de ET114,
+  `SECURITY GO`, Internet GO, hardening integral de ET109 o infraestructura
+  productiva;
+- auto-link por email, identidad paralela, sesion emitida por un provider o
+  duplicacion de tokens, rate limits, recovery o servicios existentes.
+
+Sprints y orden obligatorio:
+
+- 100A.1 - auditoria de primitivas, modelo, privacidad, legalidad, amenazas y
+  contrato final;
+- 100A.2 - prueba de control pre-account, envio fake/sandbox, expiracion,
+  one-use, replay, resend, intentos y rate limiting;
+- 100A.3 - resolucion backend de identidad y branching neutral;
+- 100A.4 - rama de identidad existente: acceso, recovery, reauth y sesion;
+- 100A.5 - rama de identidad nueva: datos minimos, aceptaciones, cuenta y
+  sesion atomicas;
+- 100A.6 - journey frontend, accesibilidad, autocomplete, password managers,
+  abandono, multitab y cambio de dispositivo;
+- 100A.7 - hardening, concurrencia, timing, PII, logs y observabilidad;
+- 100A.8 - E2E en staging ET100, regresion, rollback, validacion manual y cierre
+  documental.
+
+Gate de cierre:
+
+- antes de verificar control, las respuestas y tiempos no revelan existencia;
+- despues de verificar, una identidad existente accede o recupera y una nueva
+  completa solo datos minimos, sin cuentas paralelas ni estados parciales;
+- B1-B3.1, PasswordCredential, FeedGoSession, SID y prohibicion de auto-link se
+  preservan; backend conserva identidad, reglas y sesion;
+- codigo/link, expiracion, one-use, replay, resend, intentos, rate limits,
+  carreras, abandono, multitab y cambio de dispositivo quedan probados;
+- PII y secretos no alcanzan URLs, logs, caches ni storage indebido;
+- regresiones backend, frontend, DB/concurrencia y E2E de staging, rollback y
+  validacion manual quedan aprobadas;
+- Google permanece OFF. El cierre no declara Google ON, Internet GO ni
+  `SECURITY GO`, ni cierra `AUTH-BEARER-01` o gates de infraestructura real.
+
+Estado:
+
+Pendiente. Planificada y no iniciada. Producto e Identidad backend/frontend son
+owners funcionales conjuntos conforme a `DEC-066`.
 
 ### ☐ ETAPA 101
 
@@ -1698,7 +1821,7 @@ backend-owned, auditables y compatibles con navegacion publica anonima.
 Clasificados se implementa como dominio del monolito modular FeedGo; no crea
 backend, repositorio ni DB independientes.
 
-Dependencias: ETAPAS 97, 99 y 100.
+Dependencias: ETAPAS 97, 99, 100 y 100A.
 
 Estado: Pendiente. No iniciada.
 
@@ -1910,6 +2033,9 @@ Alcance:
 
 La matriz debe incluir contratos de providers y fallos externos: timeout,
 rechazo, respuesta invalida, duplicacion, retry e indisponibilidad.
+Tambien debe consumir las regresiones y evidencia E2E de ET100A para registro,
+verificacion, resolucion de identidad, recovery, creacion de cuenta y sesion,
+sin reconstruir el journey ni reabrir su decision de producto.
 
 Division maxima sugerida:
 
@@ -1967,7 +2093,9 @@ Esta etapa consume el registro `15_LEGAL_AND_OPERATIONAL` 27.8.1. En
 particular, 109.2 cubre `AUTH-SENSITIVE-01`, `AUTH-BEARER-01` y `AUTHZ-01`;
 109.3 cubre `UPLOAD-01`, abuso y APIs costosas; 109.4 cubre `SUPPLY-01` y
 `SUPPLY-02`; 109.5-109.6 cubren `EXTERNAL-VAL-01` y el retest de todos los
-findings aplicables.
+findings aplicables. ET109.2 debe consumir y someter a hardening la evidencia
+de identity-first producida por ET100A; no implementa ese journey por primera
+vez ni activa Google.
 
 Estado:
 

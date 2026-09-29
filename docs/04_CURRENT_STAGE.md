@@ -560,8 +560,11 @@ Estado de continuidad:
 - Ultima etapa cerrada: ETAPA 99 - Identidad, Registro y Autenticacion. Sus
   bloques 99.1 a 99.8 y ET99.9, B1, B2, B3 y B3.1 y los findings
   `AUTH-ABUSE-01`, `AUTH-POLICY-01` y `AUTH-LEGACY-01` estan cerrados.
-- Etapa activa: ninguna. Gobierno debe definir y autorizar el trabajo siguiente
-  sin inferir una nueva etapa por numeracion.
+- Etapa activa: ETAPA 100 - Fundacion de Validacion y Staging Aislado.
+- ET100.1 - auditoria de reproducibilidad, herramientas y ejecucion: cerrada.
+  No existe otro sprint activo; ET100.2 a ET100.6 requieren autorizacion.
+- ETAPA 100A - Identity-First y Resolucion de Identidad Verificada: etapa futura
+  planificada, posterior a ET100 y anterior a ET101; pendiente y no iniciada.
 - Checkpoint intermedio aprobado: sistema visual Liquid consolidado y bloque
   correctivo incidental de publicaciones e interacciones validado. Este
   checkpoint no constituyo por si solo el cierre posterior de ETAPA 98.
@@ -763,12 +766,43 @@ Cerrada.
 
 Bloque vigente:
 
-Ninguno. ETAPA 99 esta CERRADA y no se abre una etapa nueva por inferencia.
+ETAPA 100 permanece en curso. ET100.1 - Auditoria de reproducibilidad,
+herramientas y ejecucion queda cerrada. No existe otro sprint activo.
 
 Objetivo inmediato:
 
-Gobierno debe definir y autorizar el trabajo posterior. ET99.9, B1-B3.1 y sus
-findings cerrados no se reabren por la sola existencia de codigo unstaged.
+Revisar y autorizar por separado ET100.2 - dependencias, build, inventario,
+secrets baseline y SBOM. ET100.2 no fue iniciado.
+
+Resultado ET100.1:
+
+- `backend/requirements.txt` declara solo cuatro paquetes y no reproduce el
+  backend actual; el entorno funciona con dependencias implicitas aportadas por
+  un `venv` local ignorado;
+- no existe lock Python transitivo ni version fijada de Python, Node o npm;
+- frontend conserva como base reproducible `package-lock.json` v3 coherente con
+  `package.json` y el mecanismo `npm ci`;
+- faltan contrato sanitizado de configuracion, inventario de binarios y
+  artefactos de host, comando backend agregado y baseline autorizada de SCA,
+  SAST, secrets y SBOM;
+- el conjunto minimo recomendado y los diferimientos quedan registrados en el
+  owner `docs/05_SEARCH_ROADMAP.md`; ninguna herramienta o dependencia nueva
+  fue instalada.
+
+Planificacion futura aprobada:
+
+ETAPA 100A - Identity-First y Resolucion de Identidad Verificada queda
+formalizada como etapa independiente posterior al cierre de ET100 y anterior a
+ET101. Permanece pendiente y no iniciada; no altera el alcance de ET100.
+
+Restricciones vigentes:
+
+- ETAPA 99 y ET99.1 a ET99.9 permanecen cerradas;
+- Google permanece OFF, Internet permanece NO-GO y `SECURITY GO` no esta
+  declarado;
+- no se implementa identity-first hasta que Gobierno autorice ET100A ni se
+  adelanta infraestructura productiva;
+- no se modifican DB ni migraciones y no se activan SaaS o servicios externos.
 
 El preflight L1 read-only de credenciales legacy esta implementado y validado.
 Sobre los 18 usuarios de prueba clasifico 16 credenciales duales equivalentes y
@@ -1049,9 +1083,9 @@ reutilizables (`AccountActionToken`, verificacion de email,
 `FeedGoSession` y Google/OIDC), identificar dependencias y dejar asentado el
 owner futuro. El diseno detallado de codigo/link, envio, resend, expiracion,
 one-use, replay, intentos, timing, PII, multitab, cambio de dispositivo y UX,
-asi como su implementacion, son posteriores a ET99. No existe hoy un owner de
-etapa adecuado: su owner funcional es Producto e Identidad backend/frontend y
-Gobierno debe asignarle etapa antes de comenzar. No se autorizan
+asi como su implementacion, son posteriores a ET99. Gobierno los asigno
+posteriormente a ETAPA 100A, con Producto e Identidad backend/frontend como
+owners funcionales; la etapa permanece pendiente y no iniciada. No se autorizan
 sistemas duplicados, Google sigue OFF y la coincidencia de email nunca autoriza
 auto-link. El cleanup obligatorio de `AUTH-LEGACY-01` quedo completado y el
 finding esta cerrado.
@@ -1234,6 +1268,8 @@ Pendientes derivados:
 - ETAPA 99: identidad, registro y autenticacion, formalmente cerrada con 99.1 a
   99.8 y ET99.9 cerrados.
 - ETAPA 100: fundacion de validacion y staging aislado.
+- ETAPA 100A: identity-first y resolucion de identidad verificada, planificada
+  despues de ET100 y antes de ET101; pendiente y no iniciada.
 - ETAPAS 101 a 105: FeedGo Clasificados, desde dominio y experiencia hasta
   Search, IA multimodal, Historias, promocion y beneficios.
 - ETAPA 106: plataforma comercial base y Advertising.

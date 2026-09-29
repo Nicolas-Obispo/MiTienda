@@ -116,12 +116,13 @@ ni reemplaza la identidad o sesion FeedGo. Google permanece operativamente
 OFF. El contrato publico neutral incorporado durante el hardening de ET99.9-B
 es una base segura y compatible; no se presume por eso que su UX sea la
 experiencia definitiva. El diseno pendiente y su auditoria previa se gobiernan
-por `DEC-066` y `docs/05_SEARCH_ROADMAP.md`. ETAPA 99 solo debe entregar un
-handoff arquitectonico acotado que demuestre compatibilidad, inventarie
-primitivas reutilizables e identifique dependencias. El diseno detallado y la
-implementacion identity-first son posteriores a ETAPA 99 y requieren que
-Gobierno les asigne una etapa futura antes de iniciarlos. El owner funcional
-sera conjunto entre Producto e Identidad backend/frontend.
+por `DEC-066` y `docs/05_SEARCH_ROADMAP.md`. ETAPA 99 solo entrego un handoff
+arquitectonico acotado que demostro compatibilidad, inventario primitivas
+reutilizables e identifico dependencias. Gobierno asigno el diseno detallado y
+la implementacion futura a ETAPA 100A - Identity-First y Resolucion de
+Identidad Verificada, posterior a ETAPA 100 y previa a ETAPA 101. ET100A
+permanece pendiente y no iniciada; su owner funcional es conjunto entre
+Producto e Identidad backend/frontend.
 
 La identidad privada incorpora `fecha_nacimiento` nullable y telefono E.164 en
 ETAPA 99. Backend calcula elegibilidad y expone capabilities sin que frontend
