@@ -907,8 +907,8 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-060
 - Titulo: Descomposicion ejecutable de ETAPA 99
-- Estado: Aprobada documentalmente; 99.1 a 99.8 y 99.9-A/B cerradas. ET99.9 y
-  ETAPA 99 permanecen abiertas por el cleanup contractual legacy.
+- Estado: Aprobada documentalmente e implementada; 99.1 a 99.8, ET99.9 y
+  ETAPA 99 estan cerradas.
 - Decision: ETAPA 99 se ejecuta mediante los nueve sprints oficiales 99.1 a
   99.9 definidos por `docs/05_SEARCH_ROADMAP.md`, en orden obligatorio
   `expand -> backfill -> transicion -> contract`. La cantidad excede la guia
@@ -1097,9 +1097,8 @@ No reemplaza la documentación oficial existente.
   permanecen future-ready. Twilio, SMS y WhatsApp reales no estan contratados ni
   activados y no son blocker de lanzamiento. Ningun provider externo posee
   identidad, sesiones, OTP, recovery o autorizacion FeedGo.
-- Continuidad: ET99.8 queda cerrada tecnicamente; ETAPA 99 global continua
-  abierta. ET99.9-A/B estan cerradas. El cierre tecnico de
-  Google no autoriza su activacion operativa.
+- Continuidad: ET99.8, ET99.9-A/B y ETAPA 99 quedan cerradas. El cierre tecnico
+  de Google no autoriza su activacion operativa.
 
 ## DEC-065
 
@@ -1108,7 +1107,7 @@ No reemplaza la documentación oficial existente.
   de ET99.9-B
 - Estado: Aprobada; implementada, validada y cerrada mediante ET99.9-B1/B2/B3/B3.1.
   `AUTH-ABUSE-01` y `AUTH-POLICY-01` quedan cerrados en su alcance aprobado;
-  ET99.9 y ETAPA 99 permanecen abiertas por `AUTH-LEGACY-01`.
+  `AUTH-LEGACY-01`, ET99.9 y ETAPA 99 tambien estan cerrados.
 - Politica: toda password nueva conserva exactamente ocho caracteres minimos,
   mayuscula Unicode, minuscula Unicode, digito decimal Unicode, ausencia de
   whitespace Unicode y maximo de 72 bytes UTF-8 por bcrypt. El backend es el
@@ -1184,14 +1183,15 @@ No reemplaza la documentación oficial existente.
 
 - ID: DEC-067
 - Titulo: Rebaseline y frontera de cierre de ETAPA 99
-- Estado: Aprobada documentalmente; ET99.9-B esta cerrada y ETAPA 99 permanece abierta.
+- Estado: Aprobada e implementada; `AUTH-LEGACY-01`, ET99.9 y ETAPA 99 estan
+  cerrados. La frontera y los gates posteriores permanecen sin cambios.
 - Decision: ET99 cierra la arquitectura/base segura de identidad comprometida,
   no toda evolucion futura de onboarding. B1-B3.1, `AUTH-ABUSE-01` y
-  `AUTH-POLICY-01` ya estan cerrados; resta `AUTH-LEGACY-01`: consolidar
-  `PasswordCredential` como autoridad unica; migrar usuarios legacy-only;
-  retirar del runtime JWT sin SID, fallbacks, dual-write y consumidores legacy;
-  probar migraciones y recovery focal; aprobar regresion final y cierre
-  documental.
+  `AUTH-POLICY-01` y `AUTH-LEGACY-01` estan cerrados. Este ultimo consolido
+  `PasswordCredential` como autoridad unica, dejo L2 sin targets, retiro del
+  runtime JWT sin SID, fallbacks, dual-write y consumidores legacy, elimino las
+  estructuras fisicas y aprobo migraciones, recovery, rollback, regresion final
+  y cierre documental.
 - Fuera de ET99: implementacion identity-first, codigo o magic-link pre-account,
   su UX y controles nuevos de resend/verificacion, delivery productivo, Google
   ON, hardening edge/preproduccion, DAST, pentest y backups productivos externos.

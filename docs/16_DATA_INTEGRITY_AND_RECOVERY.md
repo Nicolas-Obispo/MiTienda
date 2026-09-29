@@ -174,8 +174,8 @@ verificables y restaurables.
 
 | Dominio | Tabla | Criticidad | Dueno natural | Tipo de dato | Borrado | Dependencias | Prioridad de backup | Observaciones |
 | ------- | ----- | ---------- | ------------- | ------------ | ------- | ------------ | ------------------- | ------------- |
-| Usuarios | `usuarios` | critica | Usuario | identidad, credenciales, perfil privado | fisico restringido por dependencias y cascadas | comercios, social, embeddings, aceptaciones, denuncias | critica | No regenerable. Contiene datos personales y credenciales hasheadas. |
-| Identidad | `password_credentials` | critica | Credencial de password | hash y version de credencial | cascada subordinada al usuario | usuarios | critica | No regenerable. Backfill inicial copia exactamente el hash legacy; no almacena password plano. |
+| Usuarios | `usuarios` | critica | Usuario | identidad y perfil privado | fisico restringido por dependencias y cascadas | comercios, social, embeddings, aceptaciones, denuncias | critica | No regenerable. La credencial de password pertenece exclusivamente a `password_credentials`. |
+| Identidad | `password_credentials` | critica | Credencial de password | hash y version de credencial | cascada subordinada al usuario | usuarios | critica | No regenerable. Es la autoridad exclusiva de password y no almacena password plano. |
 | Identidad | `external_identities` | critica | Identidad externa | provider, subject y snapshots minimos | cascada subordinada al usuario | usuarios | critica | No regenerable. `(provider, provider_subject)` es unico y `(usuario_id, provider)` impide dos identidades Google para el mismo Usuario. |
 | Identidad | `oauth_authorization_transactions` | alta | Correlacion OAuth FeedGo | purpose, digests, verifier PKCE, binding legal/Usuario/SID, expiracion y consumo | terminal y expirable; hija del usuario/sesion cuando aplica | usuarios, feedgo_sessions | alta | No contiene tokens Google. `state`, `nonce`, purpose y consumo one-use protegen el flujo. |
 | Identidad | `oauth_session_delivery_handles` | alta | Entrega de resultado OAuth | digest del handle, purpose, resultado referenciado, expiracion y consumo | terminal y expirable; subordinada a transaccion/sesion | oauth_authorization_transactions, feedgo_sessions | alta | No persiste JWT ni payload OIDC; los handles son opacos, breves, atomicos y no intercambiables entre purposes. |
@@ -854,6 +854,41 @@ de restore no autoriza un apply real: cada migrador conserva su opt-in exacto,
 `mysql+pymysql`, host `localhost` y la igualdad estricta entre el nombre
 configurado y `SELECT DATABASE()`. Targets vacios, remotos, ambiguos o apenas
 similares permanecen bloqueados.
+
+El apply real se ejecuto con backend detenido y sin writers sobre `mitienda`.
+El recovery point pre-cleanup preservado es
+`C:\FeedGoOps\backups\mysql\mitienda_20260928T204947Z.sql.gz`, SHA-256
+`35101e11f0d0fd531effa4085fc624784c8dc6b6a89e588dfbe022bf2cf81b0b`.
+Su manifest v2, profile `pre_legacy_cleanup_v1`, snapshot, 21 conteos criticos
+y dos restores independientes finalizaron PASS; el segundo restore demostro el
+rollback completo.
+
+La migracion A elimino exclusivamente `tokens_revocados` y produjo el profile
+`after_tokens_cleanup_v1`; la migracion B elimino exclusivamente
+`usuarios.hashed_password` y produjo `post_legacy_cleanup_v1`. Ambas segundas
+ejecuciones fueron idempotentes. Se preservaron 16 usuarios, 16
+`PasswordCredential`, 53 `FeedGoSession`, constraints e indices; 54 FKs
+quedaron sin huerfanos y no hubo DML. La regresion final aprobo 240/240
+contratos. Las dos tablas OAuth ausentes permanecen como drift previo conocido
+y no fueron alteradas.
+
+El recovery point post-cleanup es
+`C:\FeedGoOps\backups\mysql\mitienda_20260928T210328Z.sql.gz`, de 137306 bytes,
+SHA-256 `7d533b76494bb88ebf68734d19c11184db51b2b89928ecc9690330047629d24a`;
+su manifest v2 tiene SHA-256
+`6db832c94ddc98f3b36449f84623f996a67609f256e4c69204efe1898ba89753`,
+profile `post_legacy_cleanup_v1`, snapshot y 21 conteos criticos validos. El
+recovery pre-cleanup no se elimina: conserva la via de rollback historico.
+
+Con esta evidencia, la revision formal comprobo todos los criterios del owner
+central `docs/15_LEGAL_AND_OPERATIONAL.md` y cerro `AUTH-LEGACY-01`. Este cierre
+no cierra `RECOVERY-01`, no declara `SECURITY GO` y no sustituye los backups
+externos, la recurrencia ni los RPO/RTO del gate preproduccion.
+
+La auditoria documental final incorporo esta evidencia al cierre formal de
+ET99.9 y la auditoria global posterior cerro formalmente ETAPA 99. Los recovery
+points, profiles y evidencia pre/post-cleanup permanecen preservados; los gates
+operativos posteriores conservan sus owners y estados.
 
 ## 8. Seguridad de secretos y artefactos
 

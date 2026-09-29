@@ -9,10 +9,23 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 99 - Cierre formal definitivo
+
+**Estado:** Cerrada
+
+- ET99.1 a ET99.9 quedan formalmente cerradas, con cero blockers reales dentro
+  del contrato congelado de la etapa.
+- `PasswordCredential` es la autoridad exclusiva de password y
+  `FeedGoSession`, JWT versionado y SID obligatorio son la autoridad exclusiva
+  de sesion; la deuda runtime y fisica legacy fue retirada.
+- Recovery pre/post-cleanup, restore, rollback e integridad finalizaron PASS y
+  la regresion final aprobo 240/240 contratos.
+- No se inicia una etapa nueva. Google permanece OFF, FeedGo continua NO-GO
+  para Internet y `SECURITY GO` no esta declarado.
+
 ## ET99.9 - Rebaseline de cierre y continuidad de hardening
 
-**Estado:** ET99.9-B cerrada; ET99.9 y ETAPA 99 abiertas por el cleanup
-contractual de `AUTH-LEGACY-01`
+**Estado:** Cerrada; ETAPA 99 cerrada posteriormente
 
 - B1 consolido la politica backend unica de password, neutralizo availability
   y el resultado publico de registro, retiro su consumo frontend y elimino el
@@ -93,20 +106,35 @@ contractual de `AUTH-LEGACY-01`
   local, opt-in por migracion y `SELECT DATABASE()` exacto permanecen
   obligatorios. El fix se valido sin ejecutar DDL sobre `mitienda` ni sobre la
   temporal oficial; el PRE-DROP GATE completo sigue pendiente de repeticion.
+- El PRE-DROP GATE definitivo genero recovery fresco, certifico dos restores y
+  demostro migraciones e idempotencia sobre copia antes del apply real. Con el
+  backend detenido se eliminaron exclusivamente `tokens_revocados` y
+  `usuarios.hashed_password`, sin DML; quedaron 16 usuarios, 16
+  `PasswordCredential`, 53 `FeedGoSession` y cero huerfanos. La regresion final
+  aprobo 240/240 contratos y el backup post-cleanup quedo valido con profile
+  `post_legacy_cleanup_v1`. La revision formal comprobo todos los criterios del
+  owner central y cerro `AUTH-LEGACY-01`; ET99 permanecio abierta para una
+  auditoria global separada.
 - `DEC-066` aprueba como direccion pendiente el modelo `identidad primero ->
   verificacion -> resolucion de identidad -> datos minimos -> cuenta -> sesion`.
   ET99 conserva solo un handoff de compatibilidad, primitivas reutilizables y
   dependencias; Producto e Identidad son owners funcionales, pero la etapa
   futura aun no esta asignada. Su diseno detallado e implementacion no bloquean
   el cierre de ET99.
-- `DEC-067` fija la frontera: B1-B3.1, `AUTH-ABUSE-01` y
-  `AUTH-POLICY-01` ya estan cerrados; ET99 debe completar `AUTH-LEGACY-01`,
-  incluida autoridad `PasswordCredential`, migracion legacy, retiro runtime de JWT/fallbacks,
-  recovery focal, regresion y documentacion. Identity-first completo, delivery,
-  Google ON y gates integrales de preproduccion quedan posteriores.
-- ET99.9-A y ET99.9-B permanecen cerradas. ET99.9 y ETAPA 99 permanecen
-  abiertas; `AUTH-LEGACY-01` y los findings oficiales conservan sus owners y gates.
-  Google sigue OFF, FeedGo permanece NO-GO para Internet y no existe
+- `DEC-067` fija la frontera: B1-B3.1, `AUTH-ABUSE-01`,
+  `AUTH-POLICY-01` y `AUTH-LEGACY-01` estan cerrados. Este ultimo completo
+  autoridad `PasswordCredential`, L2 sin targets, retiro runtime de
+  JWT/fallbacks, cleanup fisico, recovery focal, regresion y documentacion.
+  Identity-first completo, delivery, Google ON y gates integrales de
+  preproduccion quedan posteriores.
+- ET99.9 queda CERRADA con ET99.9-A/B, B1-B3.1, `AUTH-ABUSE-01`,
+  `AUTH-POLICY-01` y `AUTH-LEGACY-01` cerrados. L1 completo el diagnostico, L2
+  quedo sin targets, L3A/L3B retiraron el runtime legacy y el cleanup elimino
+  fisicamente sus estructuras. `PasswordCredential` y `FeedGoSession` son las
+  autoridades exclusivas; recovery pre/post, rollback, integridad y regresion
+  final 240/240 quedaron aprobados, con cero blockers reales de ET99.9. ETAPA
+  99 permanece abierta para su auditoria global. Los gates posteriores no se
+  absorben: Google sigue OFF, FeedGo permanece NO-GO para Internet y no existe
   `SECURITY GO`.
 
 ## PWA development - bootstrap sin registro en Vite dev

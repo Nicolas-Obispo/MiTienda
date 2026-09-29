@@ -1194,7 +1194,7 @@ Cierre formal:
   440 tests frontend, 440 tests backend con 1 omitido, build productivo/PWA y
   `git diff --check` correctos.
 
-### ◐ ETAPA 99
+### ☑ ETAPA 99
 
 Identidad, Registro y Autenticacion.
 
@@ -1415,15 +1415,14 @@ y no crean ni renumeran etapas.
   11/11 OK. Google permanece operativamente OFF; rollback: deshabilitar nuevas
   altas y vinculaciones conservando identidades existentes y sus metodos
   alternativos.
-- 99.9 - Contract, limpieza legacy y cierre. 99.9-A - Inventario y gates de
-  datos legacy y 99.9-B quedan cerrados; B1, B2, B3 y B3.1 completaron su
-  gate tecnico y cierre documental.
-  Debe retirar emision y aceptacion de JWT legacy, ramas
+- 99.9 - Contract, limpieza legacy y cierre. CERRADA. 99.9-A - Inventario y
+  gates de datos legacy, 99.9-B, B1, B2, B3 y B3.1 completaron su gate tecnico
+  y cierre documental. ET99.9 retiro emision y aceptacion de JWT legacy, ramas
   `contract == "legacy"`, `_validar_contrato_legacy` y `TokenRevocado` cuando
-  quede sin consumidores; completar el gate/backfill de `email_canonical`;
-  garantizar `PasswordCredential` para usuarios password y dejarlo como unica
-  autoridad; retirar fallback y dual-write de `usuarios.hashed_password` y
-  decidir su eliminacion fisica. El rate limiting persistente del login, la
+  quedo sin consumidores; completo el gate de `email_canonical`; garantizo
+  `PasswordCredential` para usuarios password y lo dejo como unica autoridad;
+  retiro fallback y dual-write de `usuarios.hashed_password` y ejecuto su
+  eliminacion fisica. El rate limiting persistente del login, la
   politica de password y el oracle de disponibilidad de email quedaron cerrados
   en 99.9-B. Incluye migraciones, tests, restore, rollback, auditoria final de APIs
   privadas, PWA/cache, seguridad y cierre documental. Depende de 99.2 a 99.8
@@ -1447,13 +1446,19 @@ y no crean ni renumeran etapas.
   legacy se preservan hasta su decision posterior y `AUTH-LEGACY-01` continua
   abierto por esa decision, regresion final y cierre documental.
 
-  La decision fisica posterior fue aprobada: `tokens_revocados` y
-  `usuarios.hashed_password` deben retirarse mediante migraciones independientes,
-  en ese orden. Los migradores, contratos estaticos y perfiles de
-  backup/restore pre-cleanup, parcial y post-cleanup se implementan y validan
-  primero en `mitienda_stage97_test`. El apply sobre `mitienda`, su recovery
-  point fresco, postchecks y regresion final permanecen pendientes; por tanto
-  `AUTH-LEGACY-01` sigue abierto.
+  La decision fisica posterior fue aplicada: `tokens_revocados` y
+  `usuarios.hashed_password` se retiraron mediante migraciones independientes,
+  en ese orden. Recovery pre-cleanup, dos restores, profiles parcial/final,
+  idempotencia, rollback, postchecks e integridad finalizaron PASS; la regresion
+  final aprobo 240/240 contratos y existe recovery post-cleanup valido. No hubo
+  DML ni perdida de usuarios, credenciales o sesiones. Tras revisar todos los
+  criterios de su owner, `AUTH-LEGACY-01` queda CERRADO formalmente.
+
+  Estado final: ET99.9 CERRADA, con cero blockers reales. La autoridad final de
+  password es `PasswordCredential`; la autoridad de sesion es `FeedGoSession`
+  con JWT versionado y SID obligatorio. Las estructuras legacy fueron retiradas
+  fisicamente con recovery pre/post, rollback e integridad demostrados y
+  regresion final 240/240 PASS.
 
   `DEC-066` aprueba como direccion de producto pendiente el modelo `identidad
   primero -> verificacion -> resolucion de identidad -> datos minimos -> cuenta
@@ -1472,10 +1477,10 @@ y no crean ni renumeran etapas.
   email.
 
   La frontera rebaselined de ET99 ya cuenta con B1-B3.1,
-  `AUTH-ABUSE-01` y `AUTH-POLICY-01` cerrados, L1/L2 completados y L3A/L3B
-  tecnicamente aprobados. Resta decidir la eliminacion fisica de estructuras
-  legacy, aprobar la regresion final y cerrar `AUTH-LEGACY-01`. No absorbe
-  delivery productivo, Google ON, hardening
+  `AUTH-ABUSE-01` y `AUTH-POLICY-01` cerrados, L1/L2 completados, L3A/L3B
+  tecnicamente aprobados, cleanup fisico/regresion final PASS y
+  `AUTH-LEGACY-01` cerrado. ET99.9 y ETAPA 99 estan cerradas tras su auditoria
+  formal global. El cierre no absorbe delivery productivo, Google ON, hardening
   edge/preproduccion, DAST, pentest ni backups productivos externos. Cerrar
   ET99 no equivale a `SECURITY GO`, Internet GO ni Google ON; todos sus gates
   posteriores conservan owner y vigencia.
@@ -1529,14 +1534,13 @@ Evidencia de cierre de 99.2:
 
 Siguiente bloque:
 
-ET99.9 - Contract legacy, migraciones y recovery focal de `AUTH-LEGACY-01`.
-El handoff identity-first de `DEC-066` es acotado y no sustituye el retiro
-legacy ni autoriza implementar el nuevo journey dentro de ET99.
+Ninguno dentro de ETAPA 99. El handoff identity-first de `DEC-066` permanece
+acotado y Gobierno debe asignar y autorizar su trabajo futuro antes de iniciarlo.
 
 Estado:
 
-En curso. 99.1 a 99.8 y 99.9-A/B cerrados; ET99.9 y ETAPA 99 permanecen
-abiertas por el cleanup contractual de `AUTH-LEGACY-01`.
+Cerrada. 99.1 a 99.8, ET99.9 y sus findings estan cerrados. No se inicia ni se
+infiere una nueva etapa.
 
 Evidencia de cierre de 99.4:
 
