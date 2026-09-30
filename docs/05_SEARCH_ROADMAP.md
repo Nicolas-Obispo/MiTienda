@@ -1661,7 +1661,7 @@ Division maxima sugerida:
 
 - 100.1 - auditoria de reproducibilidad, matriz de herramientas y ejecucion
   (cerrada);
-- 100.2 - dependencias, build, inventario, secrets baseline y SBOM;
+- 100.2 - dependencias, build, inventario, secrets baseline y SBOM (cerrada);
 - 100.3 - datos sinteticos deterministas y perfiles representativos;
 - 100.4 - staging aislado, reset, accesos y providers de prueba;
 - 100.5 - observabilidad base y correlacion de evidencia;
@@ -1673,8 +1673,8 @@ duplicar la matriz central de `15_LEGAL_AND_OPERATIONAL`.
 
 Estado:
 
-En curso. ET100.1 esta cerrada. ET100.2 a ET100.6 permanecen pendientes; no
-existe otro sprint activo ni se implementan por anticipado.
+En curso. ET100.1 y ET100.2 estan cerradas. ET100.3 a ET100.6 permanecen
+pendientes y no se implementan por anticipado; no hay otro sprint activo.
 
 Resultado ET100.1:
 
@@ -1705,13 +1705,42 @@ herramientas queda cerrada con esta evidencia:
 
 Handoff ET100.2:
 
-Antes de iniciar debe existir autorizacion humana para seleccionar o instalar
-herramientas. El bloque debera fijar runtimes, clasificar dependencias, completar
-manifest y lock backend, preservar el lock frontend, inventariar binarios y
-artefactos externos, definir configuracion sanitizada y comandos canonicos,
-establecer SCA/SAST/secrets/SBOM y demostrar instalacion y build/test limpios.
-ET100.1 no instalo dependencias, no ejecuto scanners externos ni construyo
-staging.
+La autorizacion humana fue otorgada para iniciar ET100.2 con CPython 3.13.15,
+Node 24.21.0, npm 12.1.0, `uv`, lock universal Windows/Linux x86-64, embeddings
+opcionales y el conjunto minimo local aprobado de SCA/SAST/secrets/SBOM y
+coverage informativa. El bloque debe completar manifest y lock backend,
+preservar el lock frontend, inventariar binarios y artefactos externos, definir
+configuracion sanitizada y comandos canonicos y demostrar instalacion y
+build/test limpios. No autoriza SaaS, staging, autofix, ET100.3 ni cierre
+automatico del sprint.
+
+Evidencia de cierre ET100.2:
+
+- manifest/lock backend, pins de runtime, contrato sanitizado y runner canonico
+  implementados; instalacion limpia runtime (36 componentes) y embeddings (68)
+  PASS, sin reutilizar `backend/venv`;
+- regresion backend 830/830 PASS con 37 skips MySQL declarados, regresion focal
+  auth/session/recovery 85/85 PASS; frontend `npm ci`, lint (0 errores, 4
+  warnings preexistentes) y build PASS;
+- SCA frontend y Python quedan sin findings. `python-jose`/`ecdsa` se retiran
+  mediante PyJWT 2.15.1 sin cambiar HS256, claims, SID, expiracion o autoridad
+  `FeedGoSession`, y sin excepcion Critical/High;
+- Gitleaks PASS con canario y dos falsos positivos historicos trazados. Semgrep
+  CE 1.178.0 completa localmente 4 reglas sobre 506 targets, con metricas OFF,
+  0 errores y 0 findings; la falla anterior queda atribuida a la frontera de
+  acceso al certificate store del sandbox, no al scanner ni al repo;
+- los tres SBOM son evidencia no versionada y validan CycloneDX JSON 1.6. El
+  frontend usa el generador oficial `@cyclonedx/cyclonedx-npm` 6.0.1; su
+  dependencia nativa opcional no ejecuta lifecycle. Los blockers tecnicos del
+  sprint quedan en cero y ET100.2 queda CERRADA por autorizacion humana expresa.
+- el modelo opcional `all-MiniLM-L6-v2` fue inventariado en cache local, pero
+  carece de revision/checksum inmutable. `MODEL-LOCK-001` se transfiere como
+  precondicion no bloqueante de ET100.2: antes de usar embeddings en staging se
+  deben aprobar revision exacta y origen, SHA-256 y procedimiento reproducible
+  de obtencion/verificacion.
+
+Cerrar ET100.2 no declara `SECURITY GO`, Internet GO, Google ON ni staging
+construido. ET100.3 permanece pendiente y no iniciada.
 
 ### ☐ ETAPA 100A
 

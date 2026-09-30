@@ -1,0 +1,39 @@
+version: 1
+generated_for: ET100.2
+findings:
+  - id: SCA-PY-001
+    severity: high
+    status: resolved
+    evidence: python-jose 3.5.0 was replaced by maintained PyJWT 2.15.1 for the existing HS256 contract; ecdsa, rsa and pyasn1 disappeared from uv.lock, and pip-audit reports zero vulnerabilities for runtime and embeddings profiles.
+    owner: Identity Backend and Security
+    resolved_on: 2026-09-29
+    resolution: Full backend 830/830 and focused auth/session/recovery 85/85 pass without a security exception or public-contract change.
+  - id: TOOL-SAST-001
+    severity: medium
+    status: resolved
+    evidence: Semgrep CE 1.178.0 is the current upstream Windows wheel. The failure was reproduced only inside the managed sandbox, whose process could not access the Windows certificate store; the same pinned binary completed a local scan outside that boundary with metrics off, four versioned rules, 506 tracked targets, zero errors and zero findings.
+    owner: Engineering and DevSecOps
+    resolved_on: 2026-09-29
+    resolution: Native Windows execution is valid when the local scanner process has read access to the system certificate store; no Docker, WSL, cloud, login or code upload is used.
+  - id: SBOM-FE-001
+    severity: medium
+    status: resolved
+    evidence: The official maintained @cyclonedx/cyclonedx-npm 6.0.1 dev tool generates and validates the frontend production SBOM as reproducible CycloneDX JSON 1.6. Its transitive libxmljs2 lifecycle is explicitly denied.
+    owner: Engineering and DevSecOps
+    resolved_on: 2026-09-29
+    resolution: Generated SBOM remains an ignored evidence artifact; only the exact tool and lock are versioned.
+  - id: MODEL-LOCK-001
+    severity: medium
+    status: transferred_non_blocking
+    evidence: all-MiniLM-L6-v2 exists in the host Hugging Face cache, but no immutable model revision or artifact checksum is versioned.
+    owner: AI and Build Engineering
+    review_by: before_embeddings_in_isolated_staging
+    blocks_ET100_2: false
+    remediation: Before embeddings are used in staging, approve the exact model revision and origin, record SHA-256, and version a reproducible fetch-and-verify procedure. Do not redownload merely to close ET100.2.
+  - id: FRONTEND-LINT-001
+    severity: low
+    status: informational
+    evidence: ESLint passes with four pre-existing exhaustive-deps warnings and zero errors.
+    owner: Frontend Engineering
+    review_by: 2026-10-31
+    remediation: Triage with the owning components without broadening ET100.2.

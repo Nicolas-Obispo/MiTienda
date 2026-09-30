@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Callable
 
-from jose import jwt
+import jwt
 from sqlalchemy.orm import Session
 
 from app.core.auth import crear_token_jwt_versionado

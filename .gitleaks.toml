@@ -1,0 +1,10 @@
+title = "FeedGo local secret scanning policy"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "feedgo-synthetic-canary"
+description = "Deterministic local canary for the FeedGo secret-scanning gate"
+regex = '''FEEDGO_GITLEAKS_CANARY_[A-Z0-9]{16}'''
+keywords = ["FEEDGO_GITLEAKS_CANARY_"]

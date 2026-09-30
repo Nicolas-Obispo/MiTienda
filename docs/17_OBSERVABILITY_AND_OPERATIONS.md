@@ -960,6 +960,18 @@ No hacer:
 - ejecutar `create_tables.py` como respuesta automatica;
 - exponer trazas internas al frontend.
 
+Un `ConnectionResetError` aislado con `WinError 10054` en
+`_ProactorBasePipeTransport._call_connection_lost()` puede representar un
+cliente Windows que aborto la conexion. Esto es especialmente plausible en
+video, donde `FileResponse` satisface `Range` mediante `206 Partial Content` y
+el navegador puede cancelar un rango al buscar o cambiar de recurso. ET100.2
+verifico el mismo stack canonico Starlette/Uvicorn con un `.mov`: rango `206`,
+`Accept-Ranges: bytes`, cliente RST deliberado, proceso vivo y cero traceback.
+Dos eventos aislados seguidos por respuestas normales no constituyen finding.
+Escalar a owner Backend/Observabilidad solo si hay repeticion, `5xx`, caida,
+fuga de recursos o correlacion con una ruta propia; no agregar catches
+genericos que oculten errores del transporte.
+
 ### 23.2 Readiness `unhealthy`
 
 Senales:

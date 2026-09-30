@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from jose import jwt
+import jwt
 
 from app.core.auth import _utc_epoch_seconds
 from app.core.config import settings

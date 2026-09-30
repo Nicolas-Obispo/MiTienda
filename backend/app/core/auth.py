@@ -7,7 +7,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import calendar
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from jose import jwt, JWTError
+import jwt
+from jwt.exceptions import InvalidTokenError
 
 from sqlalchemy.orm import Session
 
@@ -177,7 +178,13 @@ def _decodificar_contexto_token(
             allow_revoked_session=allow_revoked_versioned_session,
         )
         return AuthTokenContext(usuario_id, sid)
-    except (JWTError, FeedGoSessionInvalidError, TypeError, ValueError, OverflowError):
+    except (
+        InvalidTokenError,
+        FeedGoSessionInvalidError,
+        TypeError,
+        ValueError,
+        OverflowError,
+    ):
         raise HTTPException(
             status_code=401, detail="Token inválido o expirado"
         ) from None

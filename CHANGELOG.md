@@ -9,6 +9,33 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 100 - Cierre de ET100.2
+
+**Estado:** ETAPA 100 en curso; ET100.1 y ET100.2 cerradas; ET100.3 pendiente
+
+- Se inicia ET100.2 por autorizacion humana expresa bajo `DEC-068`, con baseline
+  reproducible CPython 3.13.15, Node 24.21.0 y npm 12.1.0, `uv` como owner del
+  manifest/lock Python y perfiles runtime, tooling/test y embeddings opcionales.
+- Se autoriza exclusivamente tooling local y egress tecnico allowlisted para
+  manifests, SCA, SAST, secrets, SBOM CycloneDX y coverage informativa; no se
+  autoriza SaaS, autofix, staging, Google, Internet GO o `SECURITY GO`.
+- ET100.2 queda CERRADA por autorizacion humana expresa. ET100.3 a ET100.6 y
+  ET100A permanecen pendientes y no iniciadas; staging no fue construido.
+- La ejecucion produjo manifests/locks y perfiles reproducibles, instalaciones
+  limpias, backend 830/830 PASS (37 skips MySQL), regresion focal
+  auth/session/recovery 85/85 PASS, frontend lint/build PASS, `npm audit` y
+  `pip-audit` sin findings, Gitleaks PASS, Semgrep CE local PASS y coverage
+  backend informativa de 82 % combinado.
+- `python-jose` fue sustituido por PyJWT 2.15.1 sin cambiar el contrato JWT
+  HS256, SID ni `FeedGoSession`; `ecdsa` y sus transitivas fueron retiradas sin
+  excepcion High. Los tres SBOM cumplen CycloneDX JSON 1.6, incluido frontend
+  mediante `@cyclonedx/cyclonedx-npm` 6.0.1 con lifecycle nativo no requerido
+  explicitamente denegado.
+- Los tres blockers tecnicos quedan resueltos. `MODEL-LOCK-001` se transfiere
+  como precondicion no bloqueante anterior al uso de embeddings en staging.
+  Este cierre no declara `SECURITY GO`, Internet GO, Google ON ni staging
+  construido; no se uso DB real, SaaS, Google ni autofix.
+
 ## ETAPA 100 - Cierre de ET100.1 y planificacion de ETAPA 100A
 
 **Estado:** ETAPA 100 en curso; ET100.1 cerrada; ningun otro sprint activo

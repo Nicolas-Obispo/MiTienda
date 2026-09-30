@@ -1,0 +1,50 @@
+[project]
+name = "feedgo-backend"
+version = "0.0.0"
+description = "FeedGo backend application"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "Authlib==1.7.2",
+    "PyMySQL==1.1.2",
+    "SQLAlchemy==2.0.44",
+    "bcrypt==4.0.1",
+    "email-validator==2.3.0",
+    "fastapi==0.142.0",
+    "httpx==0.28.1",
+    "passlib==1.7.4",
+    "phonenumbers==9.0.38",
+    "pydantic==2.12.4",
+    "pydantic-settings==2.15.0",
+    "python-dotenv==1.2.3",
+    "PyJWT==2.15.1",
+    "python-multipart==0.0.32",
+    "starlette==1.7.0",
+    "tzdata==2025.2",
+    "uvicorn==0.38.0",
+]
+
+[project.optional-dependencies]
+embeddings = [
+    "sentence-transformers==5.2.3",
+]
+
+[dependency-groups]
+test = [
+    "coverage==7.16.2",
+]
+security = [
+    "cyclonedx-bom==7.4.0",
+    "pip-audit==2.10.1",
+]
+
+[tool.uv]
+package = false
+required-version = "==0.12.19"
+default-groups = []
+environments = [
+    "implementation_name == 'cpython' and python_version == '3.13' and (sys_platform == 'win32' or (sys_platform == 'linux' and platform_machine == 'x86_64'))",
+]
+required-environments = [
+    "sys_platform == 'win32' and platform_machine == 'AMD64'",
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]

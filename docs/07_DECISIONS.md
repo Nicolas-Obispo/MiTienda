@@ -1225,3 +1225,40 @@ No reemplaza la documentación oficial existente.
 - Trazabilidad: no se renumera trabajo cerrado. La expansion observada se
   resuelve congelando este contrato de salida y aplicando la regla de scope
   creep de `docs/00_GOVERNANCE.md` a etapas futuras.
+
+## DEC-068
+
+- ID: DEC-068
+- Titulo: Baseline reproducible y tooling local de ET100.2
+- Estado: Aplicada y cerrada en ET100.2 por autorizacion humana expresa. No es
+  una decision permanente de producto y toda actualizacion exige evidencia,
+  validacion y rollback.
+- Runtimes: CPython x64 3.13.15, Node 24.21.0 y npm 12.1.0 son el baseline
+  inicial versionado.
+- Python: `uv` es owner de `pyproject.toml` y `uv.lock`; el lock universal queda
+  limitado inicialmente a CPython 3.13 en Windows x86-64 y Linux x86-64.
+  `uv` es tooling de build, no dependencia runtime. `pip-tools` no se incorpora.
+- Perfiles: backend separa runtime, test/tooling y embeddings opcionales.
+  `sentence-transformers` y su stack quedan fuera del runtime minimo sin retirar
+  el provider local.
+- Seguridad local: se autorizan `pip-audit`, `npm audit`, Gitleaks con canario,
+  Semgrep CE local con reglas controladas y metricas OFF, `cyclonedx-py`,
+  `npm sbom`, `@cyclonedx/cyclonedx-npm` 6.0.1 para cumplir JSON 1.6 y
+  Coverage.py como baseline informativa. No hay autofix ni SaaS. PyJWT 2.15.1
+  sustituye `python-jose` para retirar `ecdsa` sin cambiar el contrato HS256.
+- Findings: Critical y High bloquean; Medium requiere triage, owner y
+  vencimiento; Low/Info es informativo salvo evidencia superior. Toda excepcion
+  conserva finding, justificacion, owner y caducidad.
+- SBOM: CycloneDX JSON 1.6 separado para backend runtime, embeddings opcionales
+  y frontend production. Los resultados no se versionan; scripts y
+  configuracion si, y los artefactos conservan SHA-256.
+- Egress: se limita a registries y releases oficiales autorizados. No modifica
+  Internet NO-GO, no habilita telemetria innecesaria, login, upload de codigo,
+  mirrors, Google, staging o `SECURITY GO`.
+- Diferimientos: Vitest, React Testing Library, `@vitest/coverage-v8`,
+  Schemathesis, k6, OWASP ZAP y Trivy permanecen fuera de ET100.2.
+- Cierre: manifests y locks, perfiles, instalaciones limpias, SCA, SAST,
+  secrets, SBOM CycloneDX JSON 1.6, coverage informativa y regresiones quedan
+  aprobados. `MODEL-LOCK-001` se transfiere como precondicion antes de usar
+  embeddings en staging. El cierre no declara `SECURITY GO`, Internet GO,
+  Google ON ni staging construido, y no inicia ET100.3.

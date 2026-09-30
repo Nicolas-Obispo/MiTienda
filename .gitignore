@@ -11,6 +11,7 @@ Thumbs.db
 .env
 .env.*
 *.env
+!backend/.env.example
 
 # =========================
 # PYTHON (BACKEND)
@@ -58,3 +59,12 @@ backend/uploads/
 *.dump
 backups/
 restore_tmp/
+
+# =========================
+# BUILD / SECURITY EVIDENCE
+# =========================
+artifacts/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml

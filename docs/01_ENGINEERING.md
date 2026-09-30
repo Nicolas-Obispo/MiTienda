@@ -141,6 +141,47 @@ validacion de migraciones, separacion de secretos/ambientes, identificacion del
 artefacto y rollback probado (`CICD-01`). Los estados y criterios centrales de
 estos findings viven en `15_LEGAL_AND_OPERATIONAL` 27.8.1 y 28.6.
 
+### Baseline reproducible ET100.2
+
+El baseline inicial aprobado por `DEC-068` es CPython x64 3.13.15, Node
+24.21.0, npm 12.1.0 y `uv` 0.12.19. `backend/pyproject.toml` es el manifest
+Python, `backend/uv.lock` su lock universal acotado a CPython 3.13 sobre Windows
+x86-64 y Linux x86-64, y `frontend/package-lock.json` v3 es el lock frontend.
+`uv` es tooling y no dependencia runtime. El backend separa runtime minimo,
+grupo `test`, grupo `security` y extra opcional `embeddings`; el provider local
+se conserva, pero `sentence-transformers` no pertenece al runtime minimo.
+
+El runner canonico es `python tools/feedgo.py <comando>`; en Windows puede
+invocarse mediante `tools/feedgo.ps1`. Instalacion backend: `uv sync --locked
+--no-default-groups`; tests completos: `uv run --locked --group test --extra
+embeddings python -m unittest discover -s tests`; frontend: `npm ci`, `npm run
+lint` y `npm run build`. `.env.example` es solo contrato sanitizado: nunca se
+reutilizan sus placeholders como secretos.
+
+Una actualizacion requiere editar el manifest, regenerar el lock solamente
+desde registries aprobados, revisar lifecycle scripts, ejecutar instalacion
+limpia, SCA, tests/build y conservar el diff. El rollback consiste en restaurar
+manifest y lock juntos al commit aprobado y repetir la instalacion limpia; no
+se mezcla un manifest nuevo con un lock anterior.
+
+Inventario host observado en ET100.2: Git 2.50.1, MySQL client/mysqldump 8.0.44,
+Chrome 153, Edge 154 y browsers Playwright versionados por su package. Son
+prerrequisitos de host, no dependencias Python/Node ni decisiones permanentes.
+Los modelos de embeddings no se descargan durante la instalacion del extra y
+permanecen artefactos opcionales externos al lock. Se observo en el host el
+cache `sentence-transformers/all-MiniLM-L6-v2`, pero su revision y checksum aun
+no estan gobernados; `MODEL-LOCK-001` exige fijarlos antes de habilitar el
+provider local en staging aislado.
+
+El contrato JWT HS256 usa PyJWT 2.15.1. `python-jose` y la dependencia
+vulnerable `ecdsa` no pertenecen al manifest ni al lock; la autoridad de
+sesion continua en `FeedGoSession`, con JWT versionado y SID obligatorio. El
+frontend genera su SBOM production CycloneDX JSON 1.6 mediante
+`@cyclonedx/cyclonedx-npm` 6.0.1 como dev-tool; `libxmljs2` queda explicitamente
+denegado en `allowScripts` porque la salida JSON validada no requiere ejecutar
+su lifecycle nativo. Los SBOM generados siguen siendo artefactos ignorados y
+no fuente versionada.
+
 ## Fuente unica de verdad
 
 Cada dato debe tener un unico propietario.

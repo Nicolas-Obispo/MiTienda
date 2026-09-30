@@ -562,7 +562,8 @@ Estado de continuidad:
   `AUTH-ABUSE-01`, `AUTH-POLICY-01` y `AUTH-LEGACY-01` estan cerrados.
 - Etapa activa: ETAPA 100 - Fundacion de Validacion y Staging Aislado.
 - ET100.1 - auditoria de reproducibilidad, herramientas y ejecucion: cerrada.
-  No existe otro sprint activo; ET100.2 a ET100.6 requieren autorizacion.
+- ET100.2 - dependencias, build, inventario, secrets baseline y SBOM: cerrada
+  por autorizacion humana expresa. ET100.3 a ET100.6 permanecen pendientes.
 - ETAPA 100A - Identity-First y Resolucion de Identidad Verificada: etapa futura
   planificada, posterior a ET100 y anterior a ET101; pendiente y no iniciada.
 - Checkpoint intermedio aprobado: sistema visual Liquid consolidado y bloque
@@ -767,12 +768,14 @@ Cerrada.
 Bloque vigente:
 
 ETAPA 100 permanece en curso. ET100.1 - Auditoria de reproducibilidad,
-herramientas y ejecucion queda cerrada. No existe otro sprint activo.
+herramientas y ejecucion y ET100.2 - Dependencias, build, inventario, secrets
+baseline y SBOM quedan cerradas. ET100.3 permanece pendiente y no iniciada; no
+hay otro sprint activo.
 
 Objetivo inmediato:
 
-Revisar y autorizar por separado ET100.2 - dependencias, build, inventario,
-secrets baseline y SBOM. ET100.2 no fue iniciado.
+Esperar autorizacion humana para iniciar ET100.3. No generar datos sinteticos,
+construir staging ni adelantar ET100.4 a ET100.6 o ET100A.
 
 Resultado ET100.1:
 
@@ -788,6 +791,29 @@ Resultado ET100.1:
 - el conjunto minimo recomendado y los diferimientos quedan registrados en el
   owner `docs/05_SEARCH_ROADMAP.md`; ninguna herramienta o dependencia nueva
   fue instalada.
+
+Cierre ET100.2 aprobado:
+
+- baseline versionado CPython 3.13.15, Node 24.21.0, npm 12.1.0 y `uv` 0.12.19;
+  backend migra a `pyproject.toml`/`uv.lock`, con runtime, test/security y
+  embeddings opcionales separados; frontend conserva lock v3 y `npm ci`;
+- instalaciones limpias runtime y embeddings pasan fuera de `backend/venv`;
+  backend 830/830 PASS (37 skips MySQL declarados), auth/session/recovery 85/85
+  PASS, frontend lint sin errores y build PASS; coverage informativa backend =
+  82 % combinado;
+- `npm audit` queda 0 findings y Gitleaks pasa canario, historia y cambios con
+  dos falsos positivos historicos explicitamente trazados y con vencimiento;
+- `SCA-PY-001` se resolvio sin excepcion al sustituir `python-jose` por PyJWT
+  2.15.1 y retirar `ecdsa`; `pip-audit` queda 0/0 para runtime y embeddings.
+  Semgrep CE 1.178.0 completo el scan local con metricas OFF (4 reglas, 506
+  targets, 0 errores/0 findings) fuera de la frontera sandbox que bloqueaba el
+  certificate store. El SBOM frontend production valida CycloneDX JSON 1.6 con
+  el generador oficial versionado.
+- matriz final: Critical 0; High 0; blockers tecnicos ET100.2 = 0; Medium 1
+  transferido y no bloqueante (`MODEL-LOCK-001`, precondicion anterior a usar
+  embeddings en staging); Low 1 informativo. ET100.2 queda CERRADA por
+  autorizacion humana expresa. El cierre no declara `SECURITY GO`, Internet GO,
+  Google ON ni staging construido.
 
 Planificacion futura aprobada:
 

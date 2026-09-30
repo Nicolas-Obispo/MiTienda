@@ -1,0 +1,22 @@
+version: 1
+exceptions:
+  - id: SECRET-ET1002-001
+    scanner: gitleaks
+    rule: generic-api-key
+    fingerprint: ed1feca6c21169befbd7166acbeea16ba64bc54f:backend/tests/test_password_login_http_mysql.py:generic-api-key:85
+    working_tree_fingerprint: backend/tests/test_password_login_http_mysql.py:generic-api-key:85
+    disposition: false_positive
+    justification: Synthetic invalid password used only by a MySQL authentication test.
+    owner: Engineering and Security
+    review_by: 2026-10-31
+    original_finding_preserved: true
+  - id: SECRET-ET1002-002
+    scanner: gitleaks
+    rule: generic-api-key
+    fingerprint: ed1feca6c21169befbd7166acbeea16ba64bc54f:backend/probe_auth_enumeration_b3.py:generic-api-key:185
+    working_tree_fingerprint: backend/probe_auth_enumeration_b3.py:generic-api-key:184
+    disposition: false_positive
+    justification: Synthetic invalid password used only by the B3 anti-enumeration probe.
+    owner: Engineering and Security
+    review_by: 2026-10-31
+    original_finding_preserved: true
