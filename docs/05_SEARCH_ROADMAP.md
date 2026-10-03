@@ -1662,7 +1662,7 @@ Division maxima sugerida:
 - 100.1 - auditoria de reproducibilidad, matriz de herramientas y ejecucion
   (cerrada);
 - 100.2 - dependencias, build, inventario, secrets baseline y SBOM (cerrada);
-- 100.3 - datos sinteticos deterministas y perfiles representativos;
+- 100.3 - datos sinteticos deterministas y perfiles representativos (cerrada);
 - 100.4 - staging aislado, reset, accesos y providers de prueba;
 - 100.5 - observabilidad base y correlacion de evidencia;
 - 100.6 - automatizacion reproducible, runbook y gate de fundacion.
@@ -1673,8 +1673,9 @@ duplicar la matriz central de `15_LEGAL_AND_OPERATIONAL`.
 
 Estado:
 
-En curso. ET100.1 y ET100.2 estan cerradas. ET100.3 a ET100.6 permanecen
-pendientes y no se implementan por anticipado; no hay otro sprint activo.
+En curso. ET100.1, ET100.2 y ET100.3 estan cerradas. ET100.4 a ET100.6
+permanecen pendientes y no se implementan por anticipado. ET100A permanece
+planificada y no iniciada; no hay otro sprint activo.
 
 Resultado ET100.1:
 
@@ -1740,7 +1741,54 @@ Evidencia de cierre ET100.2:
   de obtencion/verificacion.
 
 Cerrar ET100.2 no declara `SECURITY GO`, Internet GO, Google ON ni staging
-construido. ET100.3 permanece pendiente y no iniciada.
+construido.
+
+Inicio ET100.3:
+
+- se aprueba un compilador de escenarios determinista con profiles base
+  `smoke` y `functional`; `representative` requiere primero una matriz y
+  cardinalidades justificadas y no puede materializarse sin autorizacion
+  posterior;
+- `mitienda_stage100_test` es el unico target. Materializador/validador y reset
+  tecnico usan identidades MySQL diferentes y un tercer observer read-only
+  certifica lifecycle/locks con columnas allowlisted de Performance Schema.
+  Sus grants son exactos y no conceden acceso a `mitienda`, privilegios
+  globales ni capacidad de delegacion;
+- ET100.3 puede implementar reset tecnico solo para demostrar regeneracion y
+  fingerprint logico estable; ET100.4 conserva provisioning y lifecycle
+  operativo de staging;
+- `SimulatedEmbeddingProvider` es exclusivo. `MODEL-LOCK-001` queda como gate
+  inicial de ET100.4 antes del provider local;
+- `tools/feedgo.py` se extiende como runner unico. `uv` se obtiene solo mediante
+  una accion explicita desde artefacto oficial verificado y se resuelve por
+  receipt, SHA-256 y version exacta, sin descarga silenciosa ni dependencia de
+  PATH residual;
+- el primer bloque de ET100.3 implementa exclusivamente esas guardas de MySQL y
+  toolchain. Profiles, blueprint, materializador, datos, reset y medios no se
+  implementan en ese bloque.
+- el segundo bloque incorpora exclusivamente la fundacion logica pura del
+  blueprint y su fingerprint: input versionado, seed obligatorio, reloj fijo,
+  aliases estables, IDs deterministas opt-in y normalizacion criptografica
+  explicita. No materializa profiles ni accede a DB.
+
+Evidencia de cierre ET100.3:
+
+- `smoke` queda certificado con 20 filas y fingerprint estable despues de
+  apply, reset a `HEAD_EMPTY_PASS` y regeneracion;
+- `functional` queda materializado y certificado read-only sobre MySQL aislado
+  con 93 filas, schema HEAD e invariantes completos;
+- `representative` queda compilado como blueprint puro de 129 filas. Su
+  materializacion no pertenece a ET100.3 y es gate obligatorio de ET100.4;
+- bootstrap y reset usan el plan HEAD de 39 tablas y 115 indices; el lifecycle
+  DDL fail-closed demuestra timeout, cancelacion exacta y ausencia de locks,
+  sesiones o procesos residuales;
+- `synthetic-validate`, los guards de privacidad/PII/secretos y las recetas
+  versionadas `synthetic-media-recipe-v1` quedan como contratos de entrada de
+  ET100.4; `backend/uploads` nunca es fuente de fixtures;
+- `SimulatedEmbeddingProvider` fue el unico provider. `MODEL-LOCK-001` sigue
+  siendo gate de entrada de ET100.4 antes de habilitar embeddings locales;
+- regresion final focal 90/90 PASS y backend 921 tests OK, 38 skips declarados.
+  Blockers de ET100.3: cero. ET100.4 permanece pendiente y no iniciada.
 
 ### ☐ ETAPA 100A
 

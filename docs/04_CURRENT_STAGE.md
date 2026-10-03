@@ -563,7 +563,9 @@ Estado de continuidad:
 - Etapa activa: ETAPA 100 - Fundacion de Validacion y Staging Aislado.
 - ET100.1 - auditoria de reproducibilidad, herramientas y ejecucion: cerrada.
 - ET100.2 - dependencias, build, inventario, secrets baseline y SBOM: cerrada
-  por autorizacion humana expresa. ET100.3 a ET100.6 permanecen pendientes.
+  por autorizacion humana expresa.
+- ET100.3 - datos sinteticos deterministas: cerrada por autorizacion humana
+  expresa; ET100.4 a ET100.6 permanecen pendientes y no iniciadas.
 - ETAPA 100A - Identity-First y Resolucion de Identidad Verificada: etapa futura
   planificada, posterior a ET100 y anterior a ET101; pendiente y no iniciada.
 - Checkpoint intermedio aprobado: sistema visual Liquid consolidado y bloque
@@ -769,13 +771,75 @@ Bloque vigente:
 
 ETAPA 100 permanece en curso. ET100.1 - Auditoria de reproducibilidad,
 herramientas y ejecucion y ET100.2 - Dependencias, build, inventario, secrets
-baseline y SBOM quedan cerradas. ET100.3 permanece pendiente y no iniciada; no
-hay otro sprint activo.
+baseline y SBOM quedan cerradas. ET100.3 - Datos sinteticos deterministas queda
+cerrada por autorizacion humana expresa; no hay otro sprint activo. ET100.4
+permanece pendiente y no iniciada.
 
 Objetivo inmediato:
 
-Esperar autorizacion humana para iniciar ET100.3. No generar datos sinteticos,
+Esperar autorizacion humana separada para iniciar ET100.4. ET100.3 entrega
+schema HEAD reproducible, lifecycle DDL fail-closed, profiles y fingerprints,
+materializador/reset tecnico, recetas sinteticas y validacion read-only. No
 construir staging ni adelantar ET100.4 a ET100.6 o ET100A.
+
+Contrato aprobado de ET100.3:
+
+- arquitectura de compilador de escenarios determinista, sin Faker generico;
+- target exclusivo `mitienda_stage100_test`, con credenciales distintas para
+  materializacion/validacion, reset tecnico y observacion read-only del
+  lifecycle, grants minimos y cero permisos sobre `mitienda`, privilegios
+  globales o `GRANT`;
+- reset tecnico limitado a la DB aislada para probar
+  `apply -> fingerprint -> reset -> regeneracion -> mismo fingerprint`;
+  ET100.4 conserva ownership del provisioning/lifecycle operativo de staging;
+- profiles base obligatorios `smoke` y `functional`; `representative` exige
+  primero matriz y cardinalidades justificadas y su materializacion requiere
+  autorizacion posterior;
+- determinismo logico: bcrypt, tokens y valores criptograficos conservan su
+  aleatoriedad y el fingerprint normaliza solo campos explicitamente
+  gobernados sin omitir sus invariantes;
+- `SimulatedEmbeddingProvider` es exclusivo en ET100.3. `MODEL-LOCK-001` pasa
+  al gate de entrada de ET100.4 antes de habilitar embeddings locales;
+- `tools/feedgo.py` sigue siendo el runner unico y `uv` debe resolverse por
+  version, artefacto oficial, SHA-256 y receipt verificable, sin PATH residual
+  ni descarga silenciosa;
+- fixture secret obligatorio fuera de Git y distinto de secretos runtime;
+  medios exclusivamente sinteticos por recetas versionadas, sin leer ni copiar
+  `backend/uploads`.
+
+Prerequisitos locales del primer bloque:
+
+- CPython x64 3.13.15 y `uv` 0.12.19 quedan verificados. Se acepta la desviacion
+  de que el instalador oficial actualizo in-place la instalacion Python 3.13
+  registrada, sin PATH, launcher o asociaciones nuevas;
+- Node 24.21.0 y npm 12.1.0 quedan instalados side-by-side bajo la cache
+  ignorada, sin alterar Node/npm globales, y el runner canonico los resuelve;
+- las cuentas MySQL segregadas quedan provisionadas con grants exactos. El
+  laboratorio `mitienda_stage100_test` conserva schema HEAD y el dataset
+  `functional` certificado; ninguna credencial ET100.3 accede a `mitienda`.
+
+Evidencia de cierre ET100.3:
+
+- `smoke`: 20 filas; apply, reset tecnico, `HEAD_EMPTY_PASS` y regeneracion
+  producen el mismo fingerprint logico
+  `270e49fbb75c5dfb28baa98e4e888370b551cb88ac7707f56afad5e934ddb8cb`;
+- `functional`: 93 filas materializadas en MySQL aislado y certificadas
+  read-only, fingerprint
+  `ce296eaac309698a382e3bc932ec270e0b45336ac563180b7b145064912d2e33`;
+- `representative`: blueprint puro de 129 filas y fingerprint
+  `6449fff23402a480bdb42dac00adff4f2f549946bf41087bc2f4cda07cc76748`;
+  su materializacion queda diferida como gate obligatorio de ET100.4;
+- schema HEAD reproducible: 39 tablas, 115 indices y plan DDL canonico
+  `27758f1f0794d9fa04daf38de2dd23096d11af8858119adbb517a3383e091322`;
+  lifecycle real de timeout/cancelacion certificado sin locks, sesiones o
+  procesos residuales;
+- recetas `synthetic-media-recipe-v1`, guards de privacidad/PII/secretos y
+  `synthetic-validate` quedan entregados a ET100.4; no se lee ni copia
+  `backend/uploads`;
+- toolchain exacto PASS; contratos focales 90/90 PASS y suite backend final
+  921 tests OK con 38 skips declarados. No queda blocker de ET100.3.
+- `SimulatedEmbeddingProvider` fue exclusivo. `MODEL-LOCK-001` permanece gate
+  de entrada de ET100.4 antes de cualquier embedding local.
 
 Resultado ET100.1:
 

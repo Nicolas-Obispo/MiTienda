@@ -64,6 +64,7 @@ restore_tmp/
 # BUILD / SECURITY EVIDENCE
 # =========================
 artifacts/
+.tools/
 .coverage
 .coverage.*
 htmlcov/

@@ -9,6 +9,60 @@ Para detalle histórico extenso previo, ver:
 - HISTORY.md
 - NUEVOHISTORY.md
 
+## ETAPA 100 - Cierre de ET100.3
+
+**Estado:** ETAPA 100 en curso; ET100.1, ET100.2 y ET100.3 cerradas;
+ET100.4 permanece pendiente y no iniciada
+
+- ET100.3 cierra el compilador determinista versionado, la frontera MySQL
+  segregada, el lifecycle DDL fail-closed y los comandos canonicos de
+  bootstrap, apply, reset y validacion read-only sin acceso a `mitienda`.
+- `smoke` materializa 20 filas y demuestra
+  `apply -> reset -> HEAD_EMPTY_PASS -> regenerate` con fingerprint estable
+  `270e49fbb75c5dfb28baa98e4e888370b551cb88ac7707f56afad5e934ddb8cb`.
+  `functional` materializa y certifica 93 filas con fingerprint
+  `ce296eaac309698a382e3bc932ec270e0b45336ac563180b7b145064912d2e33`.
+- `representative` queda aprobado como blueprint puro de 129 filas, fingerprint
+  `6449fff23402a480bdb42dac00adff4f2f549946bf41087bc2f4cda07cc76748`;
+  su materializacion es gate obligatorio de ET100.4 y no se adelanta.
+- Privacidad, secretos y rutas fallan cerrado; los medios usan recetas
+  `synthetic-media-recipe-v1` reproducibles y nunca leen `backend/uploads`.
+  `synthetic-validate` certifica blueprint o MySQL sin mutaciones.
+- Regresion final: contratos focales 90/90 PASS y suite backend 921 tests OK
+  con 38 skips declarados. `SimulatedEmbeddingProvider` fue exclusivo.
+  `MODEL-LOCK-001` permanece gate de entrada de ET100.4 antes de habilitar
+  embeddings locales. El cierre no inicia staging, ET100.4 ni ET100A y no
+  declara Google ON, Internet GO o `SECURITY GO`.
+
+## ETAPA 100 - Inicio de ET100.3
+
+**Estado:** ETAPA 100 y ET100.3 en curso; ET100.1 y ET100.2 cerradas
+
+- ET100.3 inicia por autorizacion humana expresa bajo `DEC-069`, con compilador
+  determinista, DB exclusiva `mitienda_stage100_test`, credenciales separadas,
+  profiles base `smoke`/`functional`, determinismo logico y embedding simulado.
+- El primer bloque incorpora un guard fail-closed de driver, host, target,
+  identidad efectiva y grants exactos. Materializacion y reset tecnico quedan
+  separados y cualquier acceso a `mitienda`, privilegio global o delegacion se
+  rechaza.
+- `uv` 0.12.19 queda gobernado por manifest y hashes oficiales Windows/Linux
+  x86-64. La adquisicion requiere comando y archivo local explicitos; la
+  resolucion exige receipt, checksum de ejecutable y version exacta, sin red ni
+  PATH residual.
+- Este bloque no implementa profiles, blueprint, materializador, reset, medios
+  o datasets y no construye staging. ET100.4 a ET100.6 y ET100A permanecen
+  pendientes; Google sigue OFF, Internet NO-GO y `SECURITY GO` no declarado.
+- Los prerequisitos quedan preparados: CPython 3.13.15 fue actualizado por el
+  instalador oficial sobre la instalacion 3.13 registrada con aceptacion humana,
+  `uv` 0.12.19 verifica archive/receipt/binario, y Node 24.21.0 con npm 12.1.0
+  vive side-by-side sin alterar la instalacion global. Las dos cuentas MySQL
+  quedan segregadas y sin acceso a `mitienda`; el schema aislado aun no fue
+  creado y no se ejecuto DDL/DML de datos.
+- La fundacion logica queda implementada sin I/O: version/seed/reloj obligatorios,
+  aliases estables, UUID determinista solo por opt-in y fingerprint SHA-256
+  canonico. IDs de DB y material criptografico opaco se excluyen mediante reglas
+  tipadas; sus invariantes funcionales permanecen dentro del fingerprint.
+
 ## ETAPA 100 - Cierre de ET100.2
 
 **Estado:** ETAPA 100 en curso; ET100.1 y ET100.2 cerradas; ET100.3 pendiente

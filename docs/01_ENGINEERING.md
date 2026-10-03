@@ -182,6 +182,64 @@ denegado en `allowScripts` porque la salida JSON validada no requiere ejecutar
 su lifecycle nativo. Los SBOM generados siguen siendo artefactos ignorados y
 no fuente versionada.
 
+### Toolchain y frontera MySQL de ET100.3
+
+`DEC-069` conserva `tools/feedgo.py` como runner unico y elimina la dependencia
+de una instalacion residual de `uv`. `tools/toolchain.json` fija version,
+artefactos oficiales Windows/Linux x86-64 y SHA-256. La instalacion parte de un
+archivo local obtenido explicitamente, verifica checksum antes de extraer y
+genera un receipt con el hash del ejecutable. Toda resolucion posterior exige
+receipt, hash y `uv --version` exactos. El runner no descarga herramientas y no
+usa automaticamente un `uv` encontrado en PATH.
+
+El prerequisito local de ET100.3 acepto expresamente que el instalador oficial
+de CPython actualizara la instalacion registrada existente de 3.13.5 a 3.13.15
+en su misma ubicacion; no se modificaron PATH, launcher o asociaciones ni se
+realizaran reinstalaciones adicionales. Node 24.21.0 permanece side-by-side en
+la cache ignorada del proyecto para no alterar Node global; su ZIP se verifica
+contra `SHASUMS256.txt` oficial. npm 12.1.0 se instala solo dentro de ese arbol
+desde `registry.npmjs.org`, con lifecycle deshabilitado y la integridad oficial
+registrada en `tools/toolchain.json`.
+
+Los comandos sinteticos usan exclusivamente `mitienda_stage100_test`. La
+configuracion requiere tres usuarios distintos: materializador/validador con
+`SELECT`, `INSERT`, `UPDATE`, `DELETE`; reset tecnico con `CREATE`, `DROP`,
+`ALTER`, `INDEX`, `REFERENCES`; y observer read-only limitado por columna a las
+vistas necesarias de Performance Schema. Las guardas comprueban driver
+`mysql+pymysql`, host local, DB configurada y seleccionada, identidad efectiva
+y conjunto exacto de grants. `USAGE` global sin privilegios es la unica
+declaracion `*.*` admitida; cualquier permiso sobre `mitienda`, otro schema, un
+rol, `ALL PRIVILEGES` o `GRANT OPTION` bloquea la operacion. El reset conserva
+por separado la capacidad minima de `KILL QUERY`; el observer nunca recibe
+`PROCESS`, `CONNECTION_ADMIN`, `SUPER` ni capacidad de cancelar conexiones.
+
+La fundacion logica de ET100.3 es pura y no importa ORM ni abre conexiones. El
+input obligatorio combina `dataset_version`, profile, seed y una politica de
+reloj fija con anchor UTC; aliases y relaciones se validan antes de compilar.
+Los UUID deterministas son opt-in por entidad y los IDs autoincrementales de DB
+quedan fuera de identidad y fingerprint logicos. El fingerprint usa JSON
+canonico y SHA-256 con version de contrato. Un valor criptografico aleatorio
+solo puede excluir su material opaco mediante una categoria cerrada y sus
+invariantes funcionales explicitas; cambios de algoritmo, costo, estado o dato
+funcional siguen alterando el fingerprint. No existe ignore por nombre de
+campo ni fallback al reloj real.
+
+ET100.3 queda cerrada con un materializador de transaccion unica, reset tecnico
+limitado al laboratorio y certificacion read-only. `smoke` contiene 20 filas,
+`functional` 93 y `representative` 129; este ultimo permanece blueprint puro y
+su materializacion pertenece al gate de ET100.4. El schema HEAD se reproduce
+mediante un plan canonico de 39 tablas y 115 indices y todo DDL usa lifecycle
+con timeout, killer/observer segregados, estado UNKNOWN fail-closed y cero
+retry automatico.
+
+Los medios se describen mediante recetas versionadas
+`synthetic-media-recipe-v1`; nunca se leen ni copian uploads ordinarios. El
+validador canonico certifica blueprint o materializacion MySQL con guards de
+PII, secretos, rutas y sentencias read-only. ET100.4 debe consumir estos
+contratos, materializar `representative` y resolver `MODEL-LOCK-001` antes de
+habilitar embeddings locales. Hasta entonces el unico provider permitido es
+`SimulatedEmbeddingProvider`.
+
 ## Fuente unica de verdad
 
 Cada dato debe tener un unico propietario.

@@ -1262,3 +1262,45 @@ No reemplaza la documentación oficial existente.
   aprobados. `MODEL-LOCK-001` se transfiere como precondicion antes de usar
   embeddings en staging. El cierre no declara `SECURITY GO`, Internet GO,
   Google ON ni staging construido, y no inicia ET100.3.
+
+## DEC-069
+
+- ID: DEC-069
+- Titulo: Frontera determinista, MySQL aislada y toolchain verificable de
+  ET100.3
+- Estado: Aprobada y satisfecha; ET100.3 cerrada por autorizacion humana
+  expresa. ET100.4 permanece pendiente y no iniciada.
+- Generacion: ET100.3 usa un compilador de escenarios determinista, no Faker
+  generico. `smoke` y `functional` son obligatorios. `representative` requiere
+  primero matriz y cardinalidades justificadas; materializarlo exige otra
+  autorizacion. El contrato es determinismo logico, nunca byte a byte: hashes,
+  tokens y valores criptograficos conservan aleatoriedad y se normalizan solo
+  mediante reglas explicitas que validan sus invariantes.
+- Datos y privacidad: fixture secret local obligatorio fuera de Git, diferente
+  de secretos runtime y nunca impreso. Los medios deben surgir de recetas
+  sinteticas versionadas; queda prohibido leer o copiar `backend/uploads` o
+  datos ordinarios/productivos.
+- Target: el unico target de ET100.3 es `mitienda_stage100_test` con schema HEAD
+  limpio. Materializador/validador y reset tecnico usan usuarios MySQL
+  distintos; un tercer observer read-only ve solo columnas allowlisted de
+  threads/metadata locks y no puede cancelar conexiones. Sus grants son
+  minimos y sin permisos sobre `mitienda`, privilegios globales ni `GRANT`.
+- Reset: ET100.3 puede ejecutar un reset tecnico exclusivo de su DB aislada
+  para probar apply, fingerprint, reset y regeneracion. ET100.4 conserva el
+  ownership del provisioning y lifecycle operativo del staging.
+- Toolchain: `tools/feedgo.py` permanece runner unico. `uv` 0.12.19 se resuelve
+  mediante manifest, artefactos oficiales Windows/Linux x86-64, SHA-256 y
+  receipt local verificable. La adquisicion es una accion explicita; ningun
+  comando de build/test/generacion descarga herramientas silenciosamente ni
+  confia en una instalacion residual de PATH.
+- Embeddings: ET100.3 usa exclusivamente `SimulatedEmbeddingProvider`.
+  `MODEL-LOCK-001` es gate de entrada de ET100.4 antes de habilitar el provider
+  local; no existe fallback silencioso desde local a simulado.
+- Resultado: `smoke` 20 y `functional` 93 quedan materializados/certificados en
+  MySQL aislado; `representative` queda como blueprint puro 129 y se difiere a
+  ET100.4. Los fingerprints logicos, recetas de medios, privacidad y validador
+  read-only son reproducibles. El lifecycle DDL y schema HEAD quedan
+  certificados fail-closed sin acceso a `mitienda`.
+- Limites: ET100.3 no construye staging ni materializa `representative`, no
+  inicia ET100.4 ni ET100A, no implementa identity-first y no modifica Google
+  OFF, Internet NO-GO o la ausencia de `SECURITY GO`.

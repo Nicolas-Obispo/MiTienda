@@ -1369,6 +1369,20 @@ ETAPA 99 queda formalmente cerrada con sus findings propietarios satisfechos.
 Este cierre no modifica los findings ni gates posteriores de la matriz, no
 declara `SECURITY GO`, mantiene Google OFF y no autoriza Internet GO.
 
+ET100.3 queda cerrada bajo `DEC-069`. Su DB de prueba
+`mitienda_stage100_test` exige identidades separadas y grants exactos para
+materializacion y reset tecnico, sin acceso a `mitienda`, privilegios globales
+o capacidad de delegacion. Esta frontera local aporta evidencia futura para
+`DB-SEC-01`, pero no cierra ese finding ni demuestra red privada, TLS o least
+privilege de una infraestructura desplegada. Los datos y medios de ET100.3
+son sinteticos; fixture secrets permanecen fuera de Git y nunca se registran
+en logs o evidencia. Los guards rechazan PII, secretos, rutas y medios no
+allowlisted; las recetas no leen `backend/uploads`. `functional` queda
+certificado con 93 filas y `representative` permanece blueprint puro hasta el
+gate de ET100.4. `MODEL-LOCK-001` sigue bloqueando embeddings locales en
+staging. Este cierre no cierra `DB-SEC-01`, no construye staging y no declara
+Internet GO ni `SECURITY GO`.
+
 ETAPA 100A - Identity-First y Resolucion de Identidad Verificada queda
 planificada, pendiente y no iniciada despues de ET100 y antes de ET101. Su
 evidencia sera consumida por ET108, ET109.2, `AUTH-SENSITIVE-01`,
